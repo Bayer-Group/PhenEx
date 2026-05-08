@@ -27,6 +27,7 @@ class Table2(Reporter):
         time_points: List of days from index to evaluate outcomes (e.g., [90, 365])
         right_censor_phenotypes: List of phenotypes for right censoring (e.g., death)
         end_of_study_period: End date of study period for administrative censoring
+        phenotype_names: Optional list of outcome phenotype names to include (default: all outcomes)
 
     Example:
         ```python
@@ -53,11 +54,13 @@ class Table2(Reporter):
         decimal_places: int = 3,
         right_censor_phenotypes: Optional[List[Phenotype]] = None,
         end_of_study_period: Optional["datetime"] = None,
+        phenotype_names: Optional[List[str]] = None,
     ):
         super().__init__(decimal_places=decimal_places)
         self.time_points = sorted(time_points)  # Sort time points
         self.right_censor_phenotypes = right_censor_phenotypes or []
         self.end_of_study_period = end_of_study_period
+        self.phenotype_names = phenotype_names
 
     def execute(self, cohort) -> pd.DataFrame:
         """
@@ -79,6 +82,7 @@ class Table2(Reporter):
             - N_Censored: Number of censored patients
             - Time_Under_Risk: Follow-up time in patient-years
             - Incidence_Rate: Incidence rate per 100 patient-years
+            - Incidence_Rate_Per_Patient_Month: Incidence rate per patient-month
         """
         self.cohort = cohort
 
@@ -87,7 +91,17 @@ class Table2(Reporter):
             logger.info("No outcomes in cohort. Table2 is empty")
             return pd.DataFrame()
 
-        self.outcomes = cohort.outcomes
+        if self.phenotype_names is not None:
+            self.outcomes = [
+                p for p in cohort.outcomes if p.name in self.phenotype_names
+            ]
+            missing = set(self.phenotype_names) - {p.name for p in self.outcomes}
+            if missing:
+                logger.warning(
+                    f"No matching outcome phenotypes found for: {sorted(missing)}"
+                )
+        else:
+            self.outcomes = cohort.outcomes
         logger.info(
             f"Starting Table2 analysis with {len(self.outcomes)} outcomes at {len(self.time_points)} time points"
         )
@@ -165,9 +179,11 @@ class Table2(Reporter):
         n_censored = int(row["N_Censored"])
         total_followup_days = float(row["Total_Followup_Days"])
 
-        # Convert to patient-years and calculate incidence rate
+        # Convert to patient-years and calculate incidence rates
         time_years = total_followup_days / 365.25
+        time_patient_months = total_followup_days / 30.4375
         incidence_rate = (n_events / time_years * 100) if time_years > 0 else 0
+        incidence_rate_ppm = (n_events / time_patient_months) if time_patient_months > 0 else 0
 
         logger.debug(
             f"Outcome {outcome.name} at {time_point} days: {n_events} events, {n_censored} censored. "
@@ -180,6 +196,7 @@ class Table2(Reporter):
             "N_Censored": n_censored,
             "Time_Under_Risk": round(time_years, self.decimal_places),
             "Incidence_Rate": round(incidence_rate, self.decimal_places),
+            "Incidence_Rate_Per_Patient_Month": round(incidence_rate_ppm, self.decimal_places),
         }
 
     def _calculate_per_patient_time_under_risk(
@@ -462,6 +479,7 @@ class Table2(Reporter):
         # Round numeric columns
         numeric_columns = [
             "Incidence_Rate",
+            "Incidence_Rate_Per_Patient_Month",
             "Time_Under_Risk",
         ]
         for col in numeric_columns:
@@ -477,6 +495,7 @@ class Table2(Reporter):
             "N_Total",
             "Time_Under_Risk",
             "Incidence_Rate",
+            "Incidence_Rate_Per_Patient_Month",
         ]
 
         # Only include columns that exist
