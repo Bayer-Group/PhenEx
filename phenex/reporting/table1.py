@@ -306,7 +306,11 @@ class Table1(Reporter):
                 )
                 if len(values) < 2:
                     continue
-                kde = gaussian_kde(values)
+                # For integer-valued data, widen the bandwidth to avoid
+                # spiky peaks at each integer and produce smooth plateaus.
+                is_integer = np.allclose(values, np.round(values))
+                bw = 1.5 if is_integer else None
+                kde = gaussian_kde(values, bw_method=bw)
                 lo, hi = float(values.min()), float(values.max())
                 pad = (hi - lo) * PADDING if hi > lo else 1.0
                 x = np.linspace(lo - pad, hi + pad, N_POINTS)
