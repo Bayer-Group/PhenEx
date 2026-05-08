@@ -49,6 +49,14 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
     [menuState, onReplace, onAdd],
   );
 
+  const handleMenuDeselect = useCallback(
+    (fullName: string) => {
+      const index = selections.findIndex((s) => s.cohortName === fullName);
+      if (index >= 0) onRemove(index);
+    },
+    [selections, onRemove],
+  );
+
   const handleClose = useCallback(() => setMenuState(null), []);
 
   return (
@@ -62,6 +70,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
           onRemove={() => onRemove(i)}
         />
       ))}
+      <div style={{ height: 20 }} />
       <PlusButton onClick={handlePlusClick} />
 
       {menuState && (
@@ -70,6 +79,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
           groups={groups}
           activeSelections={selections}
           onSelect={handleMenuSelect}
+          onDeselect={handleMenuDeselect}
           onClose={handleClose}
           closeOnSelect={menuState.type === 'replace'}
         />
@@ -133,6 +143,7 @@ const PlusButton: FC<PlusButtonProps> = ({ onClick }) => {
       className={styles.plusBtn}
       onClick={() => ref.current && onClick(ref.current)}
       aria-label="Add cohort"
+      style={{ height: 30}}
     >
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

@@ -15,10 +15,10 @@ export const colorConfig = {
     fezolinetant: [199, 109, 102] as const,
   },
   cohortColorOrder: [
-    'dark_green',
-    'green',
-    'light_green',
     'cyan',
+    'dark_green',
+    'light_green',
+    'green',
     'grey',
     'purple',
   ] as const,

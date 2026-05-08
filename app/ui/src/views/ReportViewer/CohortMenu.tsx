@@ -11,6 +11,8 @@ interface CohortMenuProps {
   activeSelections: LegendSelection[];
   /** Called when user picks a cohort */
   onSelect: (fullName: string) => void;
+  /** Called when user clicks an active cohort to deselect it */
+  onDeselect?: (fullName: string) => void;
   onClose: () => void;
   /** If false the menu stays open after a selection (used for multi-add). */
   closeOnSelect?: boolean;
@@ -21,6 +23,7 @@ export const CohortMenu: FC<CohortMenuProps> = ({
   groups,
   activeSelections,
   onSelect,
+  onDeselect,
   onClose,
   closeOnSelect = true,
 }) => {
@@ -58,7 +61,10 @@ export const CohortMenu: FC<CohortMenuProps> = ({
   );
 
   const handleClick = (fullName: string) => {
-    if (activeSet.has(fullName)) return;
+    if (activeSet.has(fullName)) {
+      onDeselect?.(fullName);
+      return;
+    }
     onSelect(fullName);
     if (closeOnSelect) onClose();
   };

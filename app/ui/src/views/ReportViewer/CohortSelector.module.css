@@ -26,9 +26,9 @@
 }
 
 .legendDot {
-  width: 10px;
-  height: 20px;
-  border-radius: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 9px;
   flex-shrink: 0;
 }
 

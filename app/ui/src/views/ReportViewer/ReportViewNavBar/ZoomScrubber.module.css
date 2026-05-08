@@ -1,6 +1,6 @@
 .scrubber {
   position: relative;
-  width: 100%;
+  width: 80px;
   height: 24px;
   background: rgba(255, 255, 255, 0.9);
   border: var(--line-color) 1px solid;
