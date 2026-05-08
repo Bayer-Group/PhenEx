@@ -2,13 +2,11 @@ import { useSyncExternalStore, useCallback } from 'react';
 
 type Listener = () => void;
 
-interface HoverState {
+interface ActiveState {
   index: number | null;
-  mouseX: number;
-  mouseY: number;
 }
 
-let state: HoverState = { index: null, mouseX: 0, mouseY: 0 };
+let state: ActiveState = { index: null };
 const listeners = new Set<Listener>();
 
 function subscribe(listener: Listener) {
@@ -20,13 +18,8 @@ function getSnapshot() {
   return state;
 }
 
-function setHover(index: number | null, x?: number, y?: number) {
-  const next: HoverState = {
-    index,
-    mouseX: x ?? state.mouseX,
-    mouseY: y ?? state.mouseY,
-  };
-  if (next.index === state.index && next.mouseX === state.mouseX && next.mouseY === state.mouseY) return;
+function toggle(index: number) {
+  const next: ActiveState = { index: state.index === index ? null : index };
   state = next;
   listeners.forEach((l) => l());
 }
@@ -34,16 +27,10 @@ function setHover(index: number | null, x?: number, y?: number) {
 export function useBarHoverStore() {
   const current = useSyncExternalStore(subscribe, getSnapshot);
 
-  const onEnter = useCallback((i: number, e: React.MouseEvent) => setHover(i, e.clientX, e.clientY), []);
-  const onMove = useCallback((e: React.MouseEvent) => setHover(state.index, e.clientX, e.clientY), []);
-  const onLeave = useCallback(() => setHover(null), []);
+  const onClick = useCallback((i: number) => toggle(i), []);
 
   return {
-    hoveredIndex: current.index,
-    mouseX: current.mouseX,
-    mouseY: current.mouseY,
-    onEnter,
-    onMove,
-    onLeave,
+    activeIndex: current.index,
+    onClick,
   };
 }

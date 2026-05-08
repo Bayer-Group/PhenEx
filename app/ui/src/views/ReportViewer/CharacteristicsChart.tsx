@@ -7,6 +7,7 @@ import {
   groupCharacteristicsBySection,
 } from './types';
 import { BarChartCellRenderer } from './CellRenderers/BarChartCellRenderer';
+import { useBarHoverStore } from './CellRenderers/useBarHoverStore';
 import styles from './CharacteristicsChart.module.css';
 import sectionStyles from './ReportViewer.module.css';
 
@@ -200,6 +201,7 @@ const NumericRow: FC<{
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
 }> = ({ name, cohortData, kdeData }) => {
+  const { activeIndex, onClick } = useBarHoverStore();
   const curves = cohortData
     .map((cd) => {
       const curve = kdeData[cd.name]?.[name];
@@ -225,16 +227,20 @@ const NumericRow: FC<{
       <div className={styles.kdeCell}>
         {curves.length > 0 ? (
           <svg width={KDE_W} height={KDE_TOTAL_H} className={styles.kdeSvg}>
-            {curves.map((c) => (
-              <path
-                key={c.cohortName}
-                d={buildKdePath(c.curve, KDE_PLOT_W, KDE_H, KDE_PAD, gMin, gMax)}
-                fill="none"
-                stroke={c.color}
-                strokeWidth={1.5}
-                opacity={0.85}
-              />
-            ))}
+            {curves.map((c) => {
+              const idx = cohortData.findIndex((cd) => cd.name === c.cohortName);
+              const dimmed = activeIndex !== null && activeIndex !== idx;
+              return (
+                <path
+                  key={c.cohortName}
+                  d={buildKdePath(c.curve, KDE_PLOT_W, KDE_H, KDE_PAD, gMin, gMax)}
+                  fill="none"
+                  stroke={c.color}
+                  strokeWidth={1.5}
+                  opacity={dimmed ? 0.15 : 0.85}
+                />
+              );
+            })}
             {/* x-axis ticks */}
             {Array.from({ length: N_TICKS + 1 }, (_, i) => {
               const frac = i / N_TICKS;
@@ -261,11 +267,17 @@ const NumericRow: FC<{
             <div key={k} className={styles.statsHeaderCell}>{k}</div>
           ))}
         </div>
-        {cohortData.map((cd) => {
+        {cohortData.map((cd, i) => {
           const row = cd.data.rows.find((r) => r.Name === name);
           if (!row) return null;
+          const dimmed = activeIndex !== null && activeIndex !== i;
           return (
-            <div key={cd.name} className={styles.statsRow}>
+            <div
+              key={cd.name}
+              className={styles.statsRow}
+              onClick={() => onClick(i)}
+              style={{ opacity: dimmed ? 0.25 : 1, cursor: 'pointer' }}
+            >
               <div className={styles.statsCohortCell}>
                 <span className={styles.statDot} style={{ backgroundColor: cd.color }} />
               </div>
