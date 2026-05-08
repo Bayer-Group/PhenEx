@@ -183,7 +183,9 @@ class Table2(Reporter):
         time_years = total_followup_days / 365.25
         time_patient_months = total_followup_days / 30.4375
         incidence_rate = (n_events / time_years * 100) if time_years > 0 else 0
-        incidence_rate_ppm = (n_events / time_patient_months) if time_patient_months > 0 else 0
+        incidence_rate_ppm = (
+            (n_events / time_patient_months) if time_patient_months > 0 else 0
+        )
 
         logger.debug(
             f"Outcome {outcome.name} at {time_point} days: {n_events} events, {n_censored} censored. "
@@ -196,7 +198,9 @@ class Table2(Reporter):
             "N_Censored": n_censored,
             "Time_Under_Risk": round(time_years, self.decimal_places),
             "Incidence_Rate": round(incidence_rate, self.decimal_places),
-            "Incidence_Rate_Per_Patient_Month": round(incidence_rate_ppm, self.decimal_places),
+            "Incidence_Rate_Per_Patient_Month": round(
+                incidence_rate_ppm, self.decimal_places
+            ),
         }
 
     def _calculate_per_patient_time_under_risk(
@@ -229,7 +233,7 @@ class Table2(Reporter):
             Ibis table with per-patient followup data
         """
         # Get cohort index table
-        index_table = self.cohort.table
+        index_table = self.cohort.index_table
 
         # Rename EVENT_DATE to INDEX_DATE for clarity
         index_table = index_table.mutate(INDEX_DATE=index_table.EVENT_DATE)

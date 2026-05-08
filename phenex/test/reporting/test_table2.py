@@ -1046,15 +1046,25 @@ class TestTable2:
 
         # Create 3 outcomes
         outcomes = []
-        for name, event_day in [("outcome_a", 100), ("outcome_b", 200), ("outcome_c", 300)]:
+        for name, event_day in [
+            ("outcome_a", 100),
+            ("outcome_b", 200),
+            ("outcome_c", 300),
+        ]:
             outcome_data = []
             for i in range(1, 11):
                 if i <= 3:
                     outcome_data.append(
-                        {"PERSON_ID": i, "EVENT_DATE": base_date + timedelta(days=event_day), "BOOLEAN": True}
+                        {
+                            "PERSON_ID": i,
+                            "EVENT_DATE": base_date + timedelta(days=event_day),
+                            "BOOLEAN": True,
+                        }
                     )
                 else:
-                    outcome_data.append({"PERSON_ID": i, "EVENT_DATE": None, "BOOLEAN": False})
+                    outcome_data.append(
+                        {"PERSON_ID": i, "EVENT_DATE": None, "BOOLEAN": False}
+                    )
             outcomes.append(MockPhenotype(name, pd.DataFrame(outcome_data)))
 
         cohort = self._create_mock_cohort(10, outcomes)
@@ -1065,7 +1075,9 @@ class TestTable2:
         assert set(results_all["Outcome"]) == {"outcome_a", "outcome_b", "outcome_c"}
 
         # With phenotype_names: only subset reported
-        table2_subset = Table2(time_points=[365], phenotype_names=["outcome_a", "outcome_c"])
+        table2_subset = Table2(
+            time_points=[365], phenotype_names=["outcome_a", "outcome_c"]
+        )
         results_subset = table2_subset.execute(cohort)
         assert set(results_subset["Outcome"]) == {"outcome_a", "outcome_c"}
         assert len(results_subset) == 2
@@ -1092,17 +1104,40 @@ class TestTable2:
         base_date = pd.to_datetime("2020-01-01").date()
 
         # 10 patients, 3 with events
-        cohort_data = [{"PERSON_ID": i, "EVENT_DATE": base_date, "BOOLEAN": True} for i in range(1, 11)]
+        cohort_data = [
+            {"PERSON_ID": i, "EVENT_DATE": base_date, "BOOLEAN": True}
+            for i in range(1, 11)
+        ]
         outcome_data = []
         for i in range(1, 11):
             if i == 1:
-                outcome_data.append({"PERSON_ID": i, "EVENT_DATE": base_date + timedelta(days=100), "BOOLEAN": True})
+                outcome_data.append(
+                    {
+                        "PERSON_ID": i,
+                        "EVENT_DATE": base_date + timedelta(days=100),
+                        "BOOLEAN": True,
+                    }
+                )
             elif i == 2:
-                outcome_data.append({"PERSON_ID": i, "EVENT_DATE": base_date + timedelta(days=200), "BOOLEAN": True})
+                outcome_data.append(
+                    {
+                        "PERSON_ID": i,
+                        "EVENT_DATE": base_date + timedelta(days=200),
+                        "BOOLEAN": True,
+                    }
+                )
             elif i == 3:
-                outcome_data.append({"PERSON_ID": i, "EVENT_DATE": base_date + timedelta(days=300), "BOOLEAN": True})
+                outcome_data.append(
+                    {
+                        "PERSON_ID": i,
+                        "EVENT_DATE": base_date + timedelta(days=300),
+                        "BOOLEAN": True,
+                    }
+                )
             else:
-                outcome_data.append({"PERSON_ID": i, "EVENT_DATE": None, "BOOLEAN": False})
+                outcome_data.append(
+                    {"PERSON_ID": i, "EVENT_DATE": None, "BOOLEAN": False}
+                )
 
         outcome = MockPhenotype("test_outcome", pd.DataFrame(outcome_data))
         cohort = MockCohort(pd.DataFrame(cohort_data), [outcome])
@@ -1117,9 +1152,9 @@ class TestTable2:
         expected_events = 3
         expected_rate_ppm = expected_events / expected_patient_months
 
-        assert abs(result["Incidence_Rate_Per_Patient_Month"] - expected_rate_ppm) < 0.01, (
-            f"Expected {expected_rate_ppm:.4f}, got {result['Incidence_Rate_Per_Patient_Month']}"
-        )
+        assert (
+            abs(result["Incidence_Rate_Per_Patient_Month"] - expected_rate_ppm) < 0.01
+        ), f"Expected {expected_rate_ppm:.4f}, got {result['Incidence_Rate_Per_Patient_Month']}"
 
     def test_incidence_rate_per_patient_month_in_pretty_display(self):
         """Test that Incidence_Rate_Per_Patient_Month is included in get_pretty_display."""
