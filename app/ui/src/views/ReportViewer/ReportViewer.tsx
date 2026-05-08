@@ -1,4 +1,4 @@
-import { FC, useState, useCallback, useMemo, useRef } from 'react';
+import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import styles from './ReportViewer.module.css';
 import { PanZoomScrollbar } from '../../components/CustomScrollbar/PanZoomScrollbar';
 import { usePanZoom } from '../../hooks/usePanZoom';
@@ -99,6 +99,13 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     }
     return [];
   });
+
+  // Sync selections when initialSelections arrives asynchronously (e.g. from server)
+  useEffect(() => {
+    if (initialSelections?.length) {
+      setSelections(initialSelections);
+    }
+  }, [initialSelections]);
 
   const updateSelections = useCallback(
     (updater: LegendSelection[] | ((prev: LegendSelection[]) => LegendSelection[])) => {
