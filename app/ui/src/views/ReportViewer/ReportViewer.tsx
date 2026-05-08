@@ -426,24 +426,22 @@ export const ReportViewer: FC = () => {
         center = {
           <>
             <ReportNavPanelCard title="Baseline characteristics">
+              <>
               <SectionSelector
                 sections={baselineSectionNames}
                 onSelect={(name) => scrollToSection(name, baselineSectionRefs.current)}
               />
-            </ReportNavPanelCard>
-            <ReportNavPanelCard title="Outcomes">
               <SectionSelector
                 sections={outcomesSectionNames}
                 onSelect={(name) => scrollToSection(name, outcomesSectionRefs.current)}
               />
+              </>
             </ReportNavPanelCard>
           </>
         }
         bottom={
           <>
-            <ReportNavPanelCard title="Zoom">
               <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
-            </ReportNavPanelCard>
           </>
         }
       />

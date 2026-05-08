@@ -97,7 +97,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
   }
 
   function getBounds() {
-    const padX = getOpt('paddingX', 1000);
+    const padX = getOpt('paddingX', 600);
     const padY = getOpt('paddingY', 400);
     const vp = vpDims();
     const s = t.current.scale;
@@ -249,12 +249,12 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
         setTransform(cx - contentX * newScale, cy - contentY * newScale, newScale);
       } else {
         if (Date.now() - lastZoomTime < 200) return;
-        // Pan
+        // Pan: vertical only by default, shift = horizontal
         if (e.shiftKey) {
           const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
           setTransform(t.current.x - dx, t.current.y, t.current.scale);
         } else {
-          setTransform(t.current.x - e.deltaX, t.current.y - e.deltaY, t.current.scale);
+          setTransform(t.current.x, t.current.y - e.deltaY, t.current.scale);
         }
       }
     };

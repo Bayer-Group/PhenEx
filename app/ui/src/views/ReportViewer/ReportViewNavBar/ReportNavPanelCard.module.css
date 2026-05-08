@@ -1,8 +1,14 @@
 .card {
-  padding: 0px 12px 20px 12px;
+  padding: 0px 12px 0px 12px;
   box-sizing: border-box;
   margin-bottom: 0px;
   border-bottom: var(--line-color) 1px solid;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .title {
@@ -14,5 +20,31 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #666;
-  /* background-color: red; */
+}
+
+.collapseBtn {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  color: #999;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.collapseBtn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #333;
+}
+
+.body {
+  overflow: hidden;
+  transition: max-height 0.25s ease;
 }

@@ -1,7 +1,7 @@
 .panel {
   position: fixed;
   top: 20px;
-  right: 30px;
+  right: 40px;
   bottom: 20px;
   width: 330px;
   display: flex;
@@ -20,6 +20,12 @@
 .top {
   flex: 0 0 auto;
   width: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  box-sizing: border-box;
+  border: var(--line-color) 1px solid;
 }
 
 .center {
@@ -27,8 +33,12 @@
   width: 100%;
   overflow-y: auto;
   min-height: 0;
-  background: transparent;
-}
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  box-sizing: border-box;
+  border: var(--line-color) 1px solid;}
 
 .bottom {
   flex: 0 0 auto;
