@@ -45,6 +45,9 @@
   box-sizing: border-box;
 }
 
+.booleanChartCell{
+    width: clamp(1000px, calc(350px / var(--pz-scale, 1)), 2000px);
+}
 /* ── Categorical group ───────────────────────────────────────────────── */
 
 .categoricalGroup {

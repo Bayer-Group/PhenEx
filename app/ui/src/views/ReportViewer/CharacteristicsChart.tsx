@@ -102,7 +102,7 @@ const BooleanRow: FC<{ name: string; cohortData: CohortClassified[] }> = ({
   return (
     <div className={styles.row} style={{ minHeight: rowHeight }}>
       <div className={styles.nameCell}>{name}</div>
-      <div className={styles.chartCell}>
+      <div className={styles.booleanChartCell}>
         <BarChartCellRenderer data={{ name, _meta: { cohortData } }} />
       </div>
     </div>
