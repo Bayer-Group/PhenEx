@@ -73,6 +73,11 @@
   cursor: default;
 }
 
+.cohortRow:hover{
+  background-color: rgba(232, 231, 231, 0.2);
+}
+
+
 /* ── Pct cell (left) ──────────────────────────────────────────────────── */
 .pctCell {
   width: 15%;
@@ -98,10 +103,18 @@
 }
 
 .barFill {
-  border-radius: 2px;
-  flex-shrink: 0;
+  border-radius: 0px 2px 2px 0px;
+  /* flex-shrink: 0; */
   height: 100%;
+  border: 1px solid transparent;
+  /* box-sizing: border-box; */
+  transition: border-color 0.15s ease;
 }
+
+.cohortRow:hover .barFill {
+  border-color: black;
+}
+
 
 /* ── N cell (right) ───────────────────────────────────────────────────── */
 .nCell {
@@ -120,12 +133,12 @@
 /* ── Tooltip ──────────────────────────────────────────────────────────── */
 .tooltip {
   position: fixed;
-  transform: translate(-50%, -100%);
+  transform: translate(-10px, -200%);
   padding: 4px 8px;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.8);
   color: #fff;
-  font-size: 11px;
+  font-size: 16px;
   white-space: nowrap;
   pointer-events: none;
   z-index: 9999;

@@ -1,6 +1,7 @@
-import { FC } from 'react';
+import { FC, useState, useRef } from 'react';
 import { type CohortClassified } from '../types';
 import { useBarHoverStore } from './useBarHoverStore';
+import { Portal } from '../../../components/Portal/Portal';
 import styles from './BarChartCellRenderer.module.css';
 
 const DEFAULT_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -19,6 +20,8 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
   const { cohortData, ticks = DEFAULT_TICKS } = data._meta;
   const { name } = data;
   const { activeIndex, onClick } = useBarHoverStore();
+  const [hover, setHover] = useState<{ index: number; x: number; top: number } | null>(null);
+  const barRefs = useRef<Record<number, HTMLDivElement>>({});
 
   // Always include the 100 line
   const allTicks = ticks.includes(100) ? ticks : [...ticks, 100];
@@ -49,8 +52,18 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
           return (
             <div
               key={i}
+              ref={(el) => { if (el) barRefs.current[i] = el; }}
               className={styles.cohortRow}
               onClick={() => onClick(i)}
+              onMouseEnter={(e) => {
+                const rect = barRefs.current[i]?.getBoundingClientRect();
+                if (rect) setHover({ index: i, x: e.clientX, top: rect.top });
+              }}
+              onMouseMove={(e) => {
+                const rect = barRefs.current[i]?.getBoundingClientRect();
+                if (rect) setHover({ index: i, x: e.clientX, top: rect.top });
+              }}
+              onMouseLeave={() => setHover(null)}
               style={{ cursor: 'pointer' }}
             >
               <div className={styles.pctCell} style={{ opacity: dimmed ? 0.25 : 1 }}>
@@ -69,6 +82,17 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
           );
         })}
       </div>
+
+      {hover && (
+        <Portal>
+          <div
+            className={styles.tooltip}
+            style={{ left: hover.x, top: hover.top - 4 }}
+          >
+            {cohortData[hover.index]?.name}
+          </div>
+        </Portal>
+      )}
     </div>
   );
 };
