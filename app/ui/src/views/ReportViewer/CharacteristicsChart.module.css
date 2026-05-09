@@ -84,9 +84,10 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding: 6px 0;
+  padding: 0px 0;
   box-sizing: border-box;
   overflow: visible;
+  margin-right:20px;
 }
 
 .kdeSvg {
