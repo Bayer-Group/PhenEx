@@ -196,27 +196,16 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   }, [outcomesEntries]);
 
   // ── Table2 + TimeToEvent (outcomes analysis) ──────────────────────────
-  console.log('[ReportViewer] table2Data:', table2Data);
-  console.log('[ReportViewer] timeToEventData:', timeToEventData);
-  console.log('[ReportViewer] selections:', selections.map(s => s.cohortName));
   const outcomesCohorts: OutcomesCohort[] = useMemo(
-    () => {
-      const result = selections
-        .map((sel) => {
-          const t2 = table2Data?.[sel.cohortName] ?? [];
-          const tte = timeToEventData?.[sel.cohortName] ?? [];
-          console.log(`[ReportViewer] cohort=${sel.cohortName} table2=${t2.length} tte=${tte.length}`);
-          return {
-            name: sel.cohortName,
-            color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
-            table2: t2,
-            timeToEvent: tte,
-          };
-        })
-        .filter((c) => c.table2.length > 0 || c.timeToEvent.length > 0);
-      console.log('[ReportViewer] outcomesCohorts:', result.length);
-      return result;
-    },
+    () =>
+      selections
+        .map((sel) => ({
+          name: sel.cohortName,
+          color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
+          table2: table2Data?.[sel.cohortName] ?? [],
+          timeToEvent: timeToEventData?.[sel.cohortName] ?? [],
+        }))
+        .filter((c) => c.table2.length > 0 || c.timeToEvent.length > 0),
     [selections, table2Data, timeToEventData],
   );
 

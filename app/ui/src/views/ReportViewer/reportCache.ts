@@ -12,14 +12,12 @@ import type { CohortEntry, LegendSelection, Table2Row, TimeToEventRow } from './
 const PREFIX = 'phenex:report:';
 const SEL_PREFIX = 'phenex:report:sel:';
 
-/** All data needed to display a run, fetched once and cached. */
+/** Core run data cached in localStorage. */
 export interface RunData {
   entries: CohortEntry[];
   outcomesEntries: CohortEntry[];
   info: Record<string, string>;
   waterfall: Record<string, unknown>;
-  table2?: Record<string, Table2Row[]>;
-  timeToEvent?: Record<string, TimeToEventRow[]>;
 }
 
 function runKey(runId: string): string {
@@ -61,6 +59,35 @@ export function clearAllCaches(): void {
     if (key?.startsWith(PREFIX)) toRemove.push(key);
   }
   toRemove.forEach((k) => localStorage.removeItem(k));
+}
+
+// ── Table2 / TimeToEvent caches (separate entries to keep RunData small) ─
+
+function table2Key(runId: string): string { return `${PREFIX}table2:${runId}`; }
+function tteKey(runId: string): string { return `${PREFIX}tte:${runId}`; }
+
+export function getCachedTable2(runId: string): Record<string, Table2Row[]> | null {
+  try {
+    const raw = localStorage.getItem(table2Key(runId));
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+export function setCachedTable2(runId: string, data: Record<string, Table2Row[]>): void {
+  try { localStorage.setItem(table2Key(runId), JSON.stringify(data)); }
+  catch { /* localStorage full */ }
+}
+
+export function getCachedTimeToEvent(runId: string): Record<string, TimeToEventRow[]> | null {
+  try {
+    const raw = localStorage.getItem(tteKey(runId));
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+export function setCachedTimeToEvent(runId: string, data: Record<string, TimeToEventRow[]>): void {
+  try { localStorage.setItem(tteKey(runId), JSON.stringify(data)); }
+  catch { /* localStorage full */ }
 }
 
 // ── Selection persistence ───────────────────────────────────────────────
