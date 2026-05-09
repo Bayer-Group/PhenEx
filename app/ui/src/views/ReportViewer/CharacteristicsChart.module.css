@@ -8,7 +8,8 @@
 
 .row {
   display: flex;
-  align-items: stretch;
+  /* width:100%; */
+  /* background-color: blue; */
   border-bottom: 1px solid var(--line-color,red);
 }
 
@@ -46,7 +47,7 @@
 }
 
 .booleanChartCell{
-    width: clamp(1000px, calc(350px / var(--pz-scale, 1)), 2000px);
+    width: 50%;
 }
 /* ── Categorical group ───────────────────────────────────────────────── */
 

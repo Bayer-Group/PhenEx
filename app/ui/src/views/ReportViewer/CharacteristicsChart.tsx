@@ -12,11 +12,6 @@ import { NumericTableCellRenderer } from './CellRenderers/NumericTableCellRender
 import { SectionCard } from './SectionCard';
 import styles from './CharacteristicsChart.module.css';
 
-/* ── Constants ───────────────────────────────────────────────────────── */
-
-const BAR_ROW_H = 16;
-const ROW_PADDING_TOP = 20;
-const ROW_PADDING_BOTTOM = 20;
 /* ── Main component ──────────────────────────────────────────────────── */
 
 interface CharacteristicsChartProps {
@@ -97,10 +92,8 @@ const BooleanRow: FC<{ name: string; cohortData: CohortClassified[] }> = ({
   name,
   cohortData,
 }) => {
-  const rowHeight =
-    cohortData.length * BAR_ROW_H + ROW_PADDING_TOP + ROW_PADDING_BOTTOM;
   return (
-    <div className={styles.row} style={{ minHeight: rowHeight }}>
+    <div className={styles.row}>
       <div className={styles.nameCell}>{name}</div>
       <div className={styles.booleanChartCell}>
         <BarChartCellRenderer data={{ name, _meta: { cohortData } }} />
@@ -132,16 +125,13 @@ const CategoricalRow: FC<{
     return cats;
   }, [baseName, cohortData]);
 
-  const subRowHeight =
-    cohortData.length * BAR_ROW_H + ROW_PADDING_TOP + ROW_PADDING_BOTTOM;
-
   return (
     <div className={styles.categoricalGroup}>
       <div className={styles.categoricalHeader}>{baseName}</div>
       {categories.map((cat) => {
         const fullName = `${baseName}=${cat}`;
         return (
-          <div key={cat} className={styles.row} style={{ minHeight: subRowHeight }}>
+          <div key={cat} className={styles.row}>
             <div className={`${styles.nameCell} ${styles.subNameCell}`}>
               {cat}
             </div>

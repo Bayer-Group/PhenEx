@@ -87,7 +87,7 @@
   display: flex;
   align-items: center;
   position: relative;
-  height: 16px;
+  height: clamp(18px, calc(14px / var(--pz-scale, 1)), 30px);
   cursor: default;
   border-radius: 5px;
   background-color: transparent;
@@ -106,7 +106,7 @@
   top: 0;
   box-sizing: border-box;
   padding: 0 6px;
-  font-size: var(--font_size_items, 12px);
+  font-size: clamp(16px, calc(12px / var(--pz-scale, 1)), 30px);
   color: #666;
   white-space: nowrap;
   line-height: 16px;
@@ -118,7 +118,7 @@
 .barCell {
   width: 60%;
   flex-shrink: 0;
-  height: 14px;
+  height: 100%;
   display: flex;
   align-items: center;
   transition: opacity 0.15s ease;
@@ -145,7 +145,7 @@
   padding-left: 10px;
   font-family: 'IBMPlexSans-regular', sans-serif;
   
-  font-size: 12px;
+  font-size: clamp(10px, calc(12px / var(--pz-scale, 1)), 30px);
   color: #333;
   white-space: nowrap;
   line-height: 16px;
