@@ -10,6 +10,7 @@ import { ReportNavPanel } from './ReportViewNavBar/ReportNavPanel';
 import { ReportNavPanelCard } from './ReportViewNavBar/ReportNavPanelCard';
 import { SectionSelector } from './SectionSelector';
 import { ZoomScrubber } from './ReportViewNavBar/ZoomScrubber';
+import { useVisibleSection } from './useVisibleSection';
 import {
   classifyRows,
   parseCohortGroups,
@@ -237,6 +238,9 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   // ── Pan & zoom ────────────────────────────────────────────────────────
   const baselineSectionRefs = useRef(new Map<string, HTMLDivElement>());
   const outcomesSectionRefs = useRef(new Map<string, HTMLDivElement>());
+  const attritionRef = useRef<HTMLDivElement>(null);
+  const baselineGroupRef = useRef<HTMLDivElement>(null);
+  const outcomesGroupRef = useRef<HTMLDivElement>(null);
 
   const pz = usePanZoom({
     minScale: 0.1,
@@ -264,6 +268,38 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     [pz],
   );
 
+  const scrollToElement = useCallback(
+    (el: HTMLElement | null) => {
+      const contentInner = pz.contentRef.current;
+      if (!el || !contentInner) return;
+      let top = 0;
+      let current: HTMLElement | null = el;
+      while (current && current !== contentInner) {
+        top += current.offsetTop;
+        current = current.offsetParent as HTMLElement | null;
+      }
+      pz.panToContent(0, top);
+    },
+    [pz],
+  );
+
+  // ── Visible section tracking ──────────────────────────────────────────
+  const getVisibleSections = useCallback(() => {
+    const entries: { name: string; element: HTMLElement }[] = [];
+    if (attritionRef.current) entries.push({ name: 'Attrition', element: attritionRef.current });
+    if (baselineGroupRef.current) entries.push({ name: 'Baseline characteristics', element: baselineGroupRef.current });
+    for (const [name, el] of baselineSectionRefs.current) {
+      entries.push({ name, element: el });
+    }
+    if (outcomesGroupRef.current) entries.push({ name: 'Outcomes', element: outcomesGroupRef.current });
+    for (const [name, el] of outcomesSectionRefs.current) {
+      entries.push({ name, element: el });
+    }
+    return entries;
+  }, []);
+
+  const activeSection = useVisibleSection(pz.viewportRef, pz.contentRef, getVisibleSections);
+
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
@@ -289,13 +325,24 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           <div style={{ height: 20}} />
           <ReportNavPanelCard title="Outline" background={false}>
             <SectionSelector
+              title="Attrition"
+              sections={[]}
+              activeSection={activeSection}
+              onTitleClick={() => scrollToElement(attritionRef.current)}
+              onSelect={() => {}}
+            />
+            <SectionSelector
               title="Baseline characteristics"
               sections={baselineSectionNames}
+              activeSection={activeSection}
+              onTitleClick={() => scrollToElement(baselineGroupRef.current)}
               onSelect={(name) => scrollToSection(name, baselineSectionRefs.current)}
             />
             <SectionSelector
               title="Outcomes"
               sections={outcomesSectionNames}
+              activeSection={activeSection}
+              onTitleClick={() => scrollToElement(outcomesGroupRef.current)}
               onSelect={(name) => scrollToSection(name, outcomesSectionRefs.current)}
             />
           </ReportNavPanelCard>
@@ -320,26 +367,32 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
           {cohortData.length > 0 && (
             <>
-              <ChartGroup title="Attrition">
-                <AttritionChart cohortData={cohortData} waterfall={waterfallData} />
-              </ChartGroup>
+              <div ref={attritionRef}>
+                <ChartGroup title="Attrition">
+                  <AttritionChart cohortData={cohortData} waterfall={waterfallData} />
+                </ChartGroup>
+              </div>
 
-              <ChartGroup title="Baseline Characteristics">
+              <div ref={baselineGroupRef}>
+                <ChartGroup title="Baseline Characteristics">
                 <CharacteristicsChart
                   cohortData={cohortData}
                   sections={sections}
                   sectionRefs={baselineSectionRefs.current}
                 />
               </ChartGroup>
+              </div>
 
               {outcomesCohortData.length > 0 && (
-                <ChartGroup title="Outcomes">
-                  <CharacteristicsChart
-                    cohortData={outcomesCohortData}
-                    sections={outcomesSections}
-                    sectionRefs={outcomesSectionRefs.current}
-                  />
-                </ChartGroup>
+                <div ref={outcomesGroupRef}>
+                  <ChartGroup title="Outcomes">
+                    <CharacteristicsChart
+                      cohortData={outcomesCohortData}
+                      sections={outcomesSections}
+                      sectionRefs={outcomesSectionRefs.current}
+                    />
+                  </ChartGroup>
+                </div>
               )}
 
               <div className={styles.bottomSpacer} />
