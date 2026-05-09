@@ -1,8 +1,9 @@
 .card {
   border: 1px solid var(--line-color, #e0e0e0);
-  border-radius: 12px;
+  border-top:none;
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 0px;
+    /* background-color: red; */
 }
 
 .title {
@@ -11,4 +12,7 @@
   padding: 16px 20px 12px;
   font-family: 'IBMPlexSans-bold', sans-serif;
   border-bottom: 1px solid var(--line-color, #e0e0e0);
+  padding-left: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 90px);
+  padding-top: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 90px);
+
 }
