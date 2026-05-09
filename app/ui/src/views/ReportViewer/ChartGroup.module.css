@@ -6,14 +6,16 @@
   flex-direction: column;
   gap: 20px;
   border: 1px solid var(--line-color, #e0e0e0);
+  background-color: rgba(238, 238, 238, 1);
 }
 
 .title {
-  font-size: clamp(14px, calc(18px / var(--pz-scale, 1)), 28px);
+  font-size: clamp(30px, calc(18px / var(--pz-scale, 1)), 90px);
   font-weight: 600;
   color: var(--color-text-secondary, #888);
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  background-color: aqua;
 }
 
 .content {

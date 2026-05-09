@@ -32,12 +32,14 @@
   padding-top:3px;
   padding-bottom:5px;
   display: flex;
+  position: relative;
   /* align-items: center; */
 }
 
 .headerPct {
-  width: 15%;
-  flex-shrink: 0;
+  position: absolute;
+  right: 100%;
+  top: 0;
   box-sizing: border-box;
   text-align: center;
   padding: 0 6px;
@@ -84,6 +86,7 @@
 .cohortRow { /* This is a bar row*/
   display: flex;
   align-items: center;
+  position: relative;
   height: 16px;
   cursor: default;
   border-radius: 5px;
@@ -98,16 +101,17 @@
 
 /* ── Pct cell (left) ──────────────────────────────────────────────────── */
 .pctCell {
-  width: 15%;
-  flex-shrink: 0;
+  position: absolute;
+  right: 100%;
+  top: 0;
   box-sizing: border-box;
-  text-align: right;
   padding: 0 6px;
   font-size: var(--font_size_items, 12px);
   color: #666;
   white-space: nowrap;
   line-height: 16px;
   transition: opacity 0.15s ease;
+  text-align: right;
 }
 
 /* ── Bar cell (center) ────────────────────────────────────────────────── */

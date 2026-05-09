@@ -40,13 +40,12 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
       </div>
 
       {/* Grid lines positioned over the bar column */}
-      <div className={styles.gridOverlay} style={{ left: '15%', width: '60%' }}>
-        {allTicks.map((t) => (
-          <div key={t} className={styles.gridLine} style={{ left: `${t}%` }} />
-        ))}
-      </div>
-
       <div className={styles.rows}>
+        <div className={styles.gridOverlay} style={{ left: '0%', width: '60%' }}>
+          {allTicks.map((t) => (
+            <div key={t} className={styles.gridLine} style={{ left: `${t}%` }} />
+          ))}
+        </div>
         {cohortData.map((cd, i) => {
           const row = cd.data.rows.find((r) => r.Name === name);
           const pct = row?.Pct ?? 0;

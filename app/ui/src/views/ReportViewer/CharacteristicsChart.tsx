@@ -100,7 +100,7 @@ const BooleanRow: FC<{ name: string; cohortData: CohortClassified[] }> = ({
   const rowHeight =
     cohortData.length * BAR_ROW_H + ROW_PADDING_TOP + ROW_PADDING_BOTTOM;
   return (
-    <div className={styles.row} style={{ height: rowHeight }}>
+    <div className={styles.row} style={{ minHeight: rowHeight }}>
       <div className={styles.nameCell}>{name}</div>
       <div className={styles.chartCell}>
         <BarChartCellRenderer data={{ name, _meta: { cohortData } }} />
@@ -141,7 +141,7 @@ const CategoricalRow: FC<{
       {categories.map((cat) => {
         const fullName = `${baseName}=${cat}`;
         return (
-          <div key={cat} className={styles.row} style={{ height: subRowHeight }}>
+          <div key={cat} className={styles.row} style={{ minHeight: subRowHeight }}>
             <div className={`${styles.nameCell} ${styles.subNameCell}`}>
               {cat}
             </div>

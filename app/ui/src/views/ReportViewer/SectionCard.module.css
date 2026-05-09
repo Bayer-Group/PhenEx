@@ -2,8 +2,8 @@
   border: 1px solid var(--line-color, #e0e0e0);
   border-top:none;
   overflow: hidden;
-  margin-bottom: 0px;
-    /* background-color: red; */
+  margin-bottom: 10px;
+    background-color: white; /* SECTION CARD BACKGROUND COLOR includes all rows or characteristics chart */
 }
 
 .title {
@@ -14,5 +14,4 @@
   border-bottom: 1px solid var(--line-color, #e0e0e0);
   padding-left: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 90px);
   padding-top: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 90px);
-
 }
