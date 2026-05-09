@@ -1,7 +1,7 @@
 import { FC, useState, useRef } from 'react';
 import { type CohortClassified } from '../types';
 import { useBarHoverStore } from './useBarHoverStore';
-import { Portal } from '../../../components/Portal/Portal';
+import { CohortNameTooltip } from './CohortNameTooltip';
 import styles from './BarChartCellRenderer.module.css';
 
 const DEFAULT_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -88,14 +88,11 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
       </div>
 
       {hover && (
-        <Portal>
-          <div
-            className={styles.tooltip}
-            style={{ left: hover.x, top: hover.top - 4 }}
-          >
-            {cohortData[hover.index]?.name}
-          </div>
-        </Portal>
+        <CohortNameTooltip
+          name={cohortData[hover.index]?.name ?? ''}
+          x={hover.x}
+          top={hover.top}
+        />
       )}
     </div>
   );

@@ -1,0 +1,14 @@
+.card {
+  border: 1px solid var(--line-color, #e0e0e0);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: clamp(10px, calc(14px / var(--pz-scale, 1)), 28px);
+  color: #333;
+  padding: 16px 20px 12px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  border-bottom: 1px solid var(--line-color, #e0e0e0);
+}

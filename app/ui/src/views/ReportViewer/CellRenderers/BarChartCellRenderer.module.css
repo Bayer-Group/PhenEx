@@ -87,6 +87,8 @@
   height: 16px;
   cursor: default;
   border-radius: 5px;
+  background-color: transparent;
+  transition: background-color 0.3s ease 0.3s;
 }
 
 .cohortRow:hover{
@@ -124,7 +126,7 @@
   height: 100%;
   border: 1px solid transparent;
   /* box-sizing: border-box; */
-  transition: border-color 0.15s ease;
+  transition: border-color 0.3s ease 0.3s;
 }
 
 .cohortRow:hover .barFill {

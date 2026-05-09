@@ -9,8 +9,8 @@ import {
 import { BarChartCellRenderer } from './CellRenderers/BarChartCellRenderer';
 import { KDEChartCellRenderer } from './CellRenderers/KDEChartCellRenderer';
 import { NumericTableCellRenderer } from './CellRenderers/NumericTableCellRenderer';
+import { SectionCard } from './SectionCard';
 import styles from './CharacteristicsChart.module.css';
-import sectionStyles from './ReportViewer.module.css';
 
 /* ── Constants ───────────────────────────────────────────────────────── */
 
@@ -52,16 +52,14 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
       {groups.map((g, gi) => {
         const key = g.section ?? `_ungrouped_${gi}`;
         return (
-          <div
+          <SectionCard
             key={key}
+            title={g.section ?? undefined}
             ref={(el) => {
               if (el) sectionRefs.set(key, el);
               else sectionRefs.delete(key);
             }}
           >
-            {g.section && (
-              <h3 className={sectionStyles.sectionHeader}>{g.section}</h3>
-            )}
             {g.items.map((item) => (
               <CharacteristicRow
                 key={item.baseName}
@@ -70,7 +68,7 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
                 kdeData={kdeData}
               />
             ))}
-          </div>
+          </SectionCard>
         );
       })}
     </div>

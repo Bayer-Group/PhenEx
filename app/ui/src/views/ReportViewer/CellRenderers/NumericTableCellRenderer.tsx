@@ -1,8 +1,7 @@
 import { FC, useState, useRef } from 'react';
 import { type CohortClassified } from '../types';
 import { useBarHoverStore } from './useBarHoverStore';
-import { Portal } from '../../../components/Portal/Portal';
-import tooltipStyles from './BarChartCellRenderer.module.css';
+import { CohortNameTooltip } from './CohortNameTooltip';
 import styles from './NumericTableCellRenderer.module.css';
 
 const STAT_KEYS = ['Mean', 'STD', 'Median', 'Min', 'Max'] as const;
@@ -77,14 +76,11 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
       </div>
 
       {hover && (
-        <Portal>
-          <div
-            className={tooltipStyles.tooltip}
-            style={{ left: hover.x, top: hover.top - 4 }}
-          >
-            {cohortData[hover.index]?.name}
-          </div>
-        </Portal>
+        <CohortNameTooltip
+          name={cohortData[hover.index]?.name ?? ''}
+          x={hover.x}
+          top={hover.top}
+        />
       )}
     </>
   );

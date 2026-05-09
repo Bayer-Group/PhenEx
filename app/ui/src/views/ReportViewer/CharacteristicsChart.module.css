@@ -13,11 +13,12 @@
 }
 
 .row:hover {
-  background: rgba(211, 213, 215, 0.04);
+  /* background: rgba(211, 213, 215, 0.04); */
 }
 
+
 .nameCell {
-  width: clamp(100px, calc(350px / var(--pz-scale, 1)), 700px);
+  width: clamp(100px, calc(350px / var(--pz-scale, 1)), 400px);
 
   flex-shrink: 0;
   font-family: 'IBMPlexSans-bold', sans-serif;
@@ -27,7 +28,7 @@
   word-break: break-word;
   white-space: normal;
   padding: 5px 20px 0px 20px;
-  text-align: right;
+  text-align: left;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -35,7 +36,7 @@
 }
 
 .chartCell {
-  width: 300px;
+  width: clamp(100px, calc(350px / var(--pz-scale, 1)), 700px);
   flex-shrink: 0;
   box-sizing: border-box;
 }
