@@ -1,14 +1,14 @@
 .chartGroup {
-  border: calc(1px / var(--zoom-scale, 1)) solid rgba(255, 255, 255, 0.08);
+  border: calc(1px / var(--pz-scale, 1)) solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  padding: calc(40px / var(--zoom-scale, 1));
+  padding: calc(40px / var(--pz-scale, 1));
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
 .title {
-  font-size: clamp(14px, calc(18px / var(--zoom-scale, 1)), 28px);
+  font-size: clamp(14px, calc(18px / var(--pz-scale, 1)), 28px);
   font-weight: 600;
   color: var(--color-text-secondary, #888);
   letter-spacing: 0.05em;

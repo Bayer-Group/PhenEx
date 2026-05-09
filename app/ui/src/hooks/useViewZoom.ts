@@ -66,6 +66,8 @@ export function useViewZoom(options: UseViewZoomOptions = {}): UseViewZoomReturn
     (x: number, y: number, scale: number) => {
       if (transformRef.current) {
         transformRef.current.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+        transformRef.current.style.setProperty('--pz-scale', scale.toString());
+        // Legacy alias kept for existing CSS that references --zoom-scale
         transformRef.current.style.setProperty('--zoom-scale', scale.toString());
       }
       currentTransform.current = { x, y, scale };

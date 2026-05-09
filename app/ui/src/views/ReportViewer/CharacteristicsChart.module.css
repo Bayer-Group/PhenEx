@@ -20,7 +20,7 @@
   width: 350px;
   flex-shrink: 0;
   font-family: 'IBMPlexSans-bold', sans-serif;
-  font-size: clamp(18px, calc(14px / var(--zoom-scale, 1)), 24px);
+  font-size: clamp(10px, calc(14px / var(--pz-scale, 1)), 40px);
   color: #333;
   line-height: 1.25;
   word-break: break-word;
@@ -51,7 +51,7 @@
 
 .categoricalHeader {
   font-family: 'IBMPlexSans-bold', sans-serif;
-  font-size: clamp(16px, calc(12px / var(--zoom-scale, 1)), 20px);
+  font-size: clamp(16px, calc(12px / var(--pz-scale, 1)), 20px);
   color: #666;
   padding: 12px 10px 4px 20px;
   text-align: right;
@@ -61,7 +61,7 @@
 
 .subNameCell {
   font-family: 'IBMPlexSans-regular', sans-serif;
-  font-size: clamp(14px, calc(12px / var(--zoom-scale, 1)), 18px);
+  font-size: clamp(14px, calc(18px / var(--pz-scale, 1)), 18px);
   color: #555;
   padding-left: 40px;
 }

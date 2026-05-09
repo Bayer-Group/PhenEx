@@ -21,7 +21,7 @@
   width: 350px;
   flex-shrink: 0;
   font-family: 'IBMPlexSans-bold', sans-serif;
-  font-size: clamp(18px, calc(14px / var(--zoom-scale, 1)), 24px);
+  font-size: clamp(18px, calc(14px / var(--pz-scale, 1)), 24px);
   color: #333;
   line-height: 1.25;
   word-break: break-word;

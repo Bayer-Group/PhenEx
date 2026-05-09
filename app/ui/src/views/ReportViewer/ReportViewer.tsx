@@ -2,6 +2,7 @@ import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import styles from './ReportViewer.module.css';
 import { PanZoomScrollbar } from '../../components/CustomScrollbar/PanZoomScrollbar';
 import { usePanZoom } from '../../hooks/usePanZoom';
+import { PanZoomScaleProvider } from '../../hooks/PanZoomScaleContext';
 import { CohortSelector } from './CohortSelector';
 import { CharacteristicsChart } from './CharacteristicsChart';
 import { OutcomesChart, type OutcomesCohort } from './OutcomesChart';
@@ -391,6 +392,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         <div className={styles.topGradient} />
 
         <div className={styles.contentInner} ref={pz.contentRef}>
+         <PanZoomScaleProvider value={pz.scale}>
           {loading && <div className={styles.loading}>Loading…</div>}
 
           {!loading && !cohortData.length && (
@@ -438,6 +440,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               <div className={styles.bottomSpacer} />
             </>
           )}
+         </PanZoomScaleProvider>
         </div>
         <PanZoomScrollbar {...pz.scrollbar} />
       </div>

@@ -39,6 +39,8 @@ export interface ScrollbarBinding {
 export interface UsePanZoomReturn {
   viewportRef: React.RefObject<HTMLDivElement | null>;
   contentRef: React.RefObject<HTMLDivElement | null>;
+  /** Current scale factor (reactive). */
+  scale: number;
   zoomPercentage: number;
   setZoomPercentage: (pct: number) => void;
   panToContent: (contentX: number, contentY: number) => void;
@@ -124,6 +126,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
     if (el) {
       el.style.transform = `translate(${t.current.x}px, ${t.current.y}px) scale(${t.current.scale})`;
       el.style.transformOrigin = '0 0';
+      el.style.setProperty('--pz-scale', String(t.current.scale));
     }
 
     const vp = vpDims();
@@ -231,36 +234,73 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
 
     let lastZoomTime = 0;
 
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
+    /** Zoom around a viewport-relative point. */
+    function zoomAt(vpX: number, vpY: number, newScale: number) {
       const mn = getOpt('minScale', 0.1);
       const mx = getOpt('maxScale', 2);
+      const s = clamp(newScale, mn, mx);
+      const contentX = (vpX - t.current.x) / t.current.scale;
+      const contentY = (vpY - t.current.y) / t.current.scale;
+      setTransform(vpX - contentX * s, vpY - contentY * s, s);
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
 
       if (e.metaKey || e.ctrlKey) {
-        // Zoom around cursor
+        // Cmd+scroll or trackpad pinch (browsers set ctrlKey for pinch)
         lastZoomTime = Date.now();
         const delta = -e.deltaY * 0.008;
-        const newScale = clamp(t.current.scale * (1 + delta), mn, mx);
         const rect = el.getBoundingClientRect();
-        const cx = e.clientX - rect.left;
-        const cy = e.clientY - rect.top;
-        const contentX = (cx - t.current.x) / t.current.scale;
-        const contentY = (cy - t.current.y) / t.current.scale;
-        setTransform(cx - contentX * newScale, cy - contentY * newScale, newScale);
+        zoomAt(
+          e.clientX - rect.left,
+          e.clientY - rect.top,
+          t.current.scale * (1 + delta),
+        );
       } else {
         if (Date.now() - lastZoomTime < 200) return;
-        // Pan: vertical only by default, shift = horizontal
-        if (e.shiftKey) {
-          const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-          setTransform(t.current.x - dx, t.current.y, t.current.scale);
-        } else {
-          setTransform(t.current.x, t.current.y - e.deltaY, t.current.scale);
-        }
+        // Pan: trackpads send deltaX for horizontal, deltaY for vertical
+        const dx = e.shiftKey
+          ? (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY)
+          : e.deltaX;
+        const dy = e.deltaY;
+        setTransform(t.current.x - dx, t.current.y - dy, t.current.scale);
       }
     };
 
+    // Safari fires gesturestart/gesturechange for trackpad pinch instead
+    // of ctrlKey wheel events.
+    let gestureStartScale = 1;
+
+    const onGestureStart = (e: Event) => {
+      e.preventDefault();
+      gestureStartScale = t.current.scale;
+    };
+
+    const onGestureChange = (e: Event) => {
+      e.preventDefault();
+      const ge = e as unknown as { scale: number; clientX: number; clientY: number };
+      lastZoomTime = Date.now();
+      const rect = el.getBoundingClientRect();
+      zoomAt(
+        ge.clientX - rect.left,
+        ge.clientY - rect.top,
+        gestureStartScale * ge.scale,
+      );
+    };
+
+    const onGestureEnd = (e: Event) => { e.preventDefault(); };
+
     el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
+    el.addEventListener('gesturestart', onGestureStart, { passive: false } as AddEventListenerOptions);
+    el.addEventListener('gesturechange', onGestureChange, { passive: false } as AddEventListenerOptions);
+    el.addEventListener('gestureend', onGestureEnd, { passive: false } as AddEventListenerOptions);
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('gesturestart', onGestureStart);
+      el.removeEventListener('gesturechange', onGestureChange);
+      el.removeEventListener('gestureend', onGestureEnd);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Drag to pan ───────────────────────────────────────────────────────
@@ -373,9 +413,13 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
     setTransform(t.current.x, y, t.current.scale);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Derive reactive scale from zoomPct
+  const scale = minScale + (clamp(zoomPct, 0, 100) / 100) * (maxScale - minScale);
+
   return {
     viewportRef,
     contentRef,
+    scale,
     zoomPercentage: zoomPct,
     setZoomPercentage,
     panToContent,
