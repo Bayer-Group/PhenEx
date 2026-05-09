@@ -1,0 +1,129 @@
+/* ── Stats grid ───────────────────────────────────────────────────────── */
+
+.statsGrid {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  align-self: center;
+  margin: 0;
+}
+
+.statsHeaderRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.statsHeaderCell {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200, 200, 200, 0.8);
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.statsHeaderCell:last-child {
+  border-right: none;
+}
+
+.statsRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.statsRow:hover {
+  background: rgba(211, 213, 215, 0.04);
+}
+
+.statsRow + .statsRow {
+  border-top: 1px solid var(--line-color, #e0e0e0);
+}
+
+.statsCohortCell {
+  width: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.statDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statsValueCell {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #333;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.statsValueCell:last-child {
+  border-right: none;
+}
+
+.statsPctCell {
+  width: 60px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #333;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.statsPctHeaderCell {
+  width: 60px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200, 200, 200, 0.8);
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.statsNCell {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #333;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.statsNHeaderCell {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200, 200, 200, 0.8);
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
