@@ -31,7 +31,11 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
       {/* Header row */}
       <div className={styles.headerRow}>
         <div className={styles.headerPct}>%</div>
-        <div className={styles.headerBar} />
+        <div className={styles.headerBar}>
+          {[0, 20, 40, 60, 80, 100].map((t) => (
+            <span key={t} className={styles.headerTick} style={{ left: `${t}%` }}>{t}</span>
+          ))}
+        </div>
         <div className={styles.headerN}>N</div>
       </div>
 
