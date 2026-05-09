@@ -9,8 +9,7 @@
 .row {
   display: flex;
   align-items: stretch;
-  border: 1px solid var(--line-color,red);
-  margin-bottom:10px;
+  border-bottom: 1px solid var(--line-color,red);
 }
 
 .row:hover {
@@ -27,12 +26,12 @@
   line-height: 1.25;
   word-break: break-word;
   white-space: normal;
-  padding: 0px 20px 0px 20px;
-  text-align: left;
+  padding: 5px 20px 0px 20px;
+  text-align: right;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: top;
 }
 
 .chartCell {

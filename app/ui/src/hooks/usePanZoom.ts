@@ -259,12 +259,13 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
         );
       } else {
         if (Date.now() - lastZoomTime < 200) return;
-        // Pan: trackpads send deltaX for horizontal, deltaY for vertical
-        const dx = e.shiftKey
-          ? (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY)
-          : e.deltaX;
-        const dy = e.deltaY;
-        setTransform(t.current.x - dx, t.current.y - dy, t.current.scale);
+        // Pan: vertical only (shift+scroll for horizontal)
+        if (e.shiftKey) {
+          const dx = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+          setTransform(t.current.x - dx, t.current.y, t.current.scale);
+        } else {
+          setTransform(t.current.x, t.current.y - e.deltaY, t.current.scale);
+        }
       }
     };
 
