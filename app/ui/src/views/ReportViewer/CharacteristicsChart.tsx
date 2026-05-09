@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useState, useRef } from 'react';
 import {
   type CohortClassified,
   type CharacteristicItem,
@@ -8,7 +8,9 @@ import {
 } from './types';
 import { BarChartCellRenderer } from './CellRenderers/BarChartCellRenderer';
 import { useBarHoverStore } from './CellRenderers/useBarHoverStore';
+import { Portal } from '../../components/Portal/Portal';
 import styles from './CharacteristicsChart.module.css';
+import barStyles from './CellRenderers/BarChartCellRenderer.module.css';
 import sectionStyles from './ReportViewer.module.css';
 
 /* ── Constants ───────────────────────────────────────────────────────── */
@@ -202,6 +204,8 @@ const NumericRow: FC<{
   kdeData: Record<string, Record<string, KdeCurve>>;
 }> = ({ name, cohortData, kdeData }) => {
   const { activeIndex, onClick } = useBarHoverStore();
+  const [hover, setHover] = useState<{ index: number; x: number; top: number } | null>(null);
+  const rowRefs = useRef<Record<number, HTMLDivElement>>({});
   const curves = cohortData
     .map((cd) => {
       const curve = kdeData[cd.name]?.[name];
@@ -276,8 +280,18 @@ const NumericRow: FC<{
           return (
             <div
               key={cd.name}
+              ref={(el) => { if (el) rowRefs.current[i] = el; }}
               className={styles.statsRow}
               onClick={() => onClick(i)}
+              onMouseEnter={(e) => {
+                const rect = rowRefs.current[i]?.getBoundingClientRect();
+                if (rect) setHover({ index: i, x: e.clientX, top: rect.top });
+              }}
+              onMouseMove={(e) => {
+                const rect = rowRefs.current[i]?.getBoundingClientRect();
+                if (rect) setHover({ index: i, x: e.clientX, top: rect.top });
+              }}
+              onMouseLeave={() => setHover(null)}
               style={{ opacity: dimmed ? 0.25 : 1, cursor: 'pointer' }}
             >
               <div className={styles.statsCohortCell}>
@@ -298,6 +312,17 @@ const NumericRow: FC<{
           );
         })}
       </div>
+
+      {hover && (
+        <Portal>
+          <div
+            className={barStyles.tooltip}
+            style={{ left: hover.x, top: hover.top - 4 }}
+          >
+            {cohortData[hover.index]?.name}
+          </div>
+        </Portal>
+      )}
     </div>
   );
 };

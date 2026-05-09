@@ -71,6 +71,7 @@
   align-items: center;
   height: 16px;
   cursor: default;
+  border-radius: 5px;
 }
 
 .cohortRow:hover{
@@ -133,7 +134,7 @@
 /* ── Tooltip ──────────────────────────────────────────────────────────── */
 .tooltip {
   position: fixed;
-  transform: translate(-10px, -200%);
+  transform: translate(-10px, -120%);
   padding: 4px 8px;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.8);
