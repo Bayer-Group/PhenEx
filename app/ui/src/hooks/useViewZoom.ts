@@ -126,13 +126,11 @@ export function useViewZoom(options: UseViewZoomOptions = {}): UseViewZoomReturn
         const zoomSpeed = 0.01;
         const delta = -e.deltaY * zoomSpeed;
         const newScale = Math.max(minScale, Math.min(maxScale, current.scale * (1 + delta)));
-        const centerX = el.clientWidth / 2;
-        const centerY = el.clientHeight / 2;
-        const pointX = (centerX - current.x) / current.scale;
-        const pointY = (centerY - current.y) / current.scale;
-        const newX = centerX - pointX * newScale;
-        const newY = centerY - pointY * newScale;
-        applyTransform(newX, newY, newScale);
+        const rect = el.getBoundingClientRect();
+        const cursorY = e.clientY - rect.top;
+        const pointY = (cursorY - current.y) / current.scale;
+        const newY = cursorY - pointY * newScale;
+        applyTransform(0, newY, newScale);
       } else {
         if (Date.now() - lastZoomTime.current < 200) return;
 
