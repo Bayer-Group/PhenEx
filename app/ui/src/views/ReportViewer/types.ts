@@ -102,6 +102,31 @@ export interface KdeCurve {
   y: number[];
 }
 
+/* ── Table2 (incidence rates) ──────────────────────────────────────── */
+
+export interface Table2Row {
+  Outcome: string;
+  Time_Point: number;
+  N_Events: number;
+  N_Censored: number;
+  Time_Under_Risk: number;
+  Incidence_Rate: number;
+  Incidence_Rate_Per_Patient_Month: number;
+}
+
+/* ── Time-to-event (Kaplan–Meier) ──────────────────────────────────── */
+
+export interface TimeToEventRow {
+  Outcome: string;
+  Timeline: number;
+  Survival_Probability: number;
+  CI_Lower: number;
+  CI_Upper: number;
+  At_Risk: number;
+  Events: number;
+  Censored: number;
+}
+
 export interface Table1Data {
   rows: Table1Row[];
   sections: Record<string, string[]>;

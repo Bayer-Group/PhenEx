@@ -1,0 +1,115 @@
+/* ── OutcomesChart layout ─────────────────────────────────────────────── */
+
+.container {
+  user-select: none;
+}
+
+/* ── Row ─────────────────────────────────────────────────────────────── */
+
+.row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--line-color, #e0e0e0);
+  min-height: 120px;
+}
+
+.row:hover {
+  background: rgba(211, 213, 215, 0.04);
+}
+
+.nameCell {
+  width: 350px;
+  flex-shrink: 0;
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-size: clamp(18px, calc(14px / var(--zoom-scale, 1)), 24px);
+  color: #333;
+  line-height: 1.25;
+  word-break: break-word;
+  white-space: normal;
+  padding: 0 20px;
+  text-align: right;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.kmCell {
+  width: 300px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* ── Table2 stats grid ───────────────────────────────────────────────── */
+
+.statsGrid {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  align-self: center;
+  margin: 0;
+}
+
+.statsHeaderRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.statsHeaderCell {
+  width: 90px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200, 200, 200, 0.8);
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.statsRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.statsRow:hover {
+  background: rgba(211, 213, 215, 0.04);
+}
+
+.statsRow + .statsRow {
+  border-top: 1px solid var(--line-color, #e0e0e0);
+}
+
+.statsCohortCell {
+  width: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.statDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statsValueCell {
+  width: 90px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #333;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}

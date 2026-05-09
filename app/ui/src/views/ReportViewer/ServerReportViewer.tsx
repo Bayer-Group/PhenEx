@@ -9,8 +9,10 @@ import {
   fetchRunInfo,
   fetchReportAnalysis,
   fetchKdeCombined,
+  fetchTable2Combined,
+  fetchTimeToEventCombined,
 } from './ReportViewerDataService';
-import type { KdeCurve } from './types';
+import type { KdeCurve, Table2Row, TimeToEventRow } from './types';
 import { getCached, setCache, saveSelections, loadSelections, type RunData } from './reportCache';
 import {
   parseCohortGroups,
@@ -48,6 +50,8 @@ export const ServerReportViewer: FC = () => {
   const [allCohortEntries, setAllCohortEntries] = useState<CohortEntry[]>([]);
   const [allOutcomesEntries, setAllOutcomesEntries] = useState<CohortEntry[]>([]);
   const [waterfallData, setWaterfallData] = useState<Record<string, unknown>>({});
+  const [table2Data, setTable2Data] = useState<Record<string, Table2Row[]> | undefined>();
+  const [timeToEventData, setTimeToEventData] = useState<Record<string, TimeToEventRow[]> | undefined>();
   const [loadingRun, setLoadingRun] = useState(false);
   const [initialSelections, setInitialSelections] = useState<LegendSelection[] | undefined>();
 
@@ -97,16 +101,24 @@ export const ServerReportViewer: FC = () => {
     if (cached) {
       const frozenPromise = fetchFrozenCohortsCombined(runId).catch(() => []);
       frozenPromise.then((_frozenCohorts) => {
-        applyLoadedData(runId, cached.entries, cached.outcomesEntries, cached.waterfall);
+        applyLoadedData(runId, cached.entries, cached.outcomesEntries, cached.waterfall, cached.table2, cached.timeToEvent);
       });
       Promise.all([
         fetchKdeCombined(runId).catch(() => ({})),
         fetchKdeCombined(runId, 'table1_outcomes').catch(() => ({})),
-      ]).then(([kdes, outcomesKdes]) => {
+        fetchTable2Combined(runId).catch(() => ({})),
+        fetchTimeToEventCombined(runId).catch(() => ({})),
+      ]).then(([kdes, outcomesKdes, table2, timeToEvent]) => {
         mergeKdesIntoEntries(cached.entries, kdes);
         mergeKdesIntoEntries(cached.outcomesEntries, outcomesKdes);
         setAllCohortEntries([...cached.entries]);
         setAllOutcomesEntries([...cached.outcomesEntries]);
+        const t2 = Object.keys(table2 as Record<string, unknown>).length ? table2 as Record<string, Table2Row[]> : undefined;
+        const tte = Object.keys(timeToEvent as Record<string, unknown>).length ? timeToEvent as Record<string, TimeToEventRow[]> : undefined;
+        if (t2 || tte) {
+          setTable2Data(t2);
+          setTimeToEventData(tte);
+        }
       });
       return;
     }
@@ -119,18 +131,27 @@ export const ServerReportViewer: FC = () => {
       fetchWaterfallCombined(runId).catch(() => ({})),
       fetchKdeCombined(runId).catch(() => ({})),
       fetchKdeCombined(runId, 'table1_outcomes').catch(() => ({})),
+      fetchTable2Combined(runId).catch(() => ({})),
+      fetchTimeToEventCombined(runId).catch(() => ({})),
     ])
-      .then(([entries, outcomesEntries, _frozenCohorts, _info, waterfall, kdes, outcomesKdes]) => {
+      .then(([entries, outcomesEntries, _frozenCohorts, _info, waterfall, kdes, outcomesKdes, table2, timeToEvent]) => {
+        console.log('[ServerReportViewer] raw table2:', table2);
+        console.log('[ServerReportViewer] raw timeToEvent:', timeToEvent);
         mergeKdesIntoEntries(entries, kdes as Record<string, Record<string, KdeCurve>>);
         mergeKdesIntoEntries(outcomesEntries, outcomesKdes as Record<string, Record<string, KdeCurve>>);
+        const t2 = Object.keys(table2 as Record<string, unknown>).length ? table2 as Record<string, Table2Row[]> : undefined;
+        const tte = Object.keys(timeToEvent as Record<string, unknown>).length ? timeToEvent as Record<string, TimeToEventRow[]> : undefined;
+        console.log('[ServerReportViewer] t2:', t2, 'tte:', tte);
         const runData: RunData = {
           entries: entries.map(e => ({ ...e, data: { rows: e.data.rows, sections: e.data.sections } })),
           outcomesEntries: outcomesEntries.map(e => ({ ...e, data: { rows: e.data.rows, sections: e.data.sections } })),
           info: _info,
           waterfall,
+          table2: t2,
+          timeToEvent: tte,
         };
         setCache(runId, runData);
-        applyLoadedData(runId, entries, outcomesEntries, waterfall);
+        applyLoadedData(runId, entries, outcomesEntries, waterfall, t2, tte);
       })
       .catch((err) => {
         console.error('[ServerReportViewer] failed to load run data:', err);
@@ -139,11 +160,21 @@ export const ServerReportViewer: FC = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const applyLoadedData = useCallback(
-    (runId: string, entries: CohortEntry[], outcomesEntries: CohortEntry[], waterfall: Record<string, unknown>) => {
+    (
+      runId: string,
+      entries: CohortEntry[],
+      outcomesEntries: CohortEntry[],
+      waterfall: Record<string, unknown>,
+      table2?: Record<string, Table2Row[]>,
+      timeToEvent?: Record<string, TimeToEventRow[]>,
+    ) => {
       const names = entries.map((e) => e.cohortName);
+      console.log('[ServerReportViewer] applyLoadedData table2:', table2, 'timeToEvent:', timeToEvent);
       setAllCohortEntries(entries);
       setAllOutcomesEntries(outcomesEntries);
       setWaterfallData(waterfall);
+      setTable2Data(table2);
+      setTimeToEventData(timeToEvent);
 
       // Priority: URL params > saved state > default first cohort
       const cohortParams = urlCohortsRef.current;
@@ -205,6 +236,8 @@ export const ServerReportViewer: FC = () => {
       allCohortEntries={allCohortEntries}
       allOutcomesEntries={allOutcomesEntries}
       waterfallData={waterfallData}
+      table2Data={table2Data}
+      timeToEventData={timeToEventData}
       runId={selectedRun}
       loading={loadingRun}
       storageKey={selectedRun ? `report-zoom-${selectedRun}` : undefined}

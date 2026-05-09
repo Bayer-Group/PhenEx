@@ -184,3 +184,33 @@ def get_table1_combined(
     if combined is None:
         raise HTTPException(status_code=404, detail=f"'{filename}' not found for run '{run_id}'")
     return _nan_to_none(combined)
+
+
+# ── Combined Table2 (incidence rates, all cohorts) ───────────────────────
+
+@router.get("/report/runs/{run_id}/table2_combined")
+def get_table2_combined(run_id: str) -> Dict[str, Any]:
+    """Return combined Table2 incidence-rate data for all cohorts.
+
+    Reads ``combined_Table2.json`` produced by ``report_concatenator.py``.
+    Returns an empty dict if not found.
+    """
+    data = storage.read_run_file(run_id, "combined_Table2.json")
+    if data is None:
+        return {}
+    return _nan_to_none(data)
+
+
+# ── Combined TimeToEvent (Kaplan–Meier, all cohorts) ─────────────────────
+
+@router.get("/report/runs/{run_id}/time_to_event_combined")
+def get_time_to_event_combined(run_id: str) -> Dict[str, Any]:
+    """Return combined time-to-event (KM) data for all cohorts.
+
+    Reads ``combined_TimeToEvent.json`` produced by ``report_concatenator.py``.
+    Returns an empty dict if not found.
+    """
+    data = storage.read_run_file(run_id, "combined_TimeToEvent.json")
+    if data is None:
+        return {}
+    return _nan_to_none(data)

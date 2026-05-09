@@ -7,7 +7,7 @@
  *   - run info (from info.txt)
  */
 
-import type { CohortEntry, LegendSelection } from './types';
+import type { CohortEntry, LegendSelection, Table2Row, TimeToEventRow } from './types';
 
 const PREFIX = 'phenex:report:';
 const SEL_PREFIX = 'phenex:report:sel:';
@@ -18,6 +18,8 @@ export interface RunData {
   outcomesEntries: CohortEntry[];
   info: Record<string, string>;
   waterfall: Record<string, unknown>;
+  table2?: Record<string, Table2Row[]>;
+  timeToEvent?: Record<string, TimeToEventRow[]>;
 }
 
 function runKey(runId: string): string {

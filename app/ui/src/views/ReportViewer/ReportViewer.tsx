@@ -4,6 +4,7 @@ import { PanZoomScrollbar } from '../../components/CustomScrollbar/PanZoomScroll
 import { usePanZoom } from '../../hooks/usePanZoom';
 import { CohortSelector } from './CohortSelector';
 import { CharacteristicsChart } from './CharacteristicsChart';
+import { OutcomesChart, type OutcomesCohort } from './OutcomesChart';
 import { AttritionChart } from './AttritionChart';
 import { ChartGroup } from './ChartGroup';
 import { ReportNavPanel } from './ReportViewNavBar/ReportNavPanel';
@@ -19,6 +20,8 @@ import {
   type CohortClassified,
   type CohortGroup,
   type LegendSelection,
+  type Table2Row,
+  type TimeToEventRow,
 } from './types';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
@@ -39,6 +42,8 @@ export interface ReportViewerProps {
   allCohortEntries: CohortEntry[];
   allOutcomesEntries: CohortEntry[];
   waterfallData: Record<string, unknown>;
+  table2Data?: Record<string, Table2Row[]>;
+  timeToEventData?: Record<string, TimeToEventRow[]>;
   runId: string | null;
   loading?: boolean;
   title?: string;
@@ -53,6 +58,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   allCohortEntries,
   allOutcomesEntries,
   waterfallData,
+  table2Data,
+  timeToEventData,
   runId,
   loading = false,
   title = 'LUMINOUS',
@@ -188,6 +195,31 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     return null;
   }, [outcomesEntries]);
 
+  // ── Table2 + TimeToEvent (outcomes analysis) ──────────────────────────
+  console.log('[ReportViewer] table2Data:', table2Data);
+  console.log('[ReportViewer] timeToEventData:', timeToEventData);
+  console.log('[ReportViewer] selections:', selections.map(s => s.cohortName));
+  const outcomesCohorts: OutcomesCohort[] = useMemo(
+    () => {
+      const result = selections
+        .map((sel) => {
+          const t2 = table2Data?.[sel.cohortName] ?? [];
+          const tte = timeToEventData?.[sel.cohortName] ?? [];
+          console.log(`[ReportViewer] cohort=${sel.cohortName} table2=${t2.length} tte=${tte.length}`);
+          return {
+            name: sel.cohortName,
+            color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
+            table2: t2,
+            timeToEvent: tte,
+          };
+        })
+        .filter((c) => c.table2.length > 0 || c.timeToEvent.length > 0);
+      console.log('[ReportViewer] outcomesCohorts:', result.length);
+      return result;
+    },
+    [selections, table2Data, timeToEventData],
+  );
+
   // ── Interaction handlers ──────────────────────────────────────────────
   const findGroupInfo = useCallback(
     (fullName: string) => {
@@ -241,6 +273,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   const attritionRef = useRef<HTMLDivElement>(null);
   const baselineGroupRef = useRef<HTMLDivElement>(null);
   const outcomesGroupRef = useRef<HTMLDivElement>(null);
+  const outcomesAnalysisRef = useRef<HTMLDivElement>(null);
 
   const pz = usePanZoom({
     minScale: 0.1,
@@ -295,6 +328,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     for (const [name, el] of outcomesSectionRefs.current) {
       entries.push({ name, element: el });
     }
+    if (outcomesAnalysisRef.current) entries.push({ name: 'Outcomes Analysis', element: outcomesAnalysisRef.current });
     return entries;
   }, []);
 
@@ -345,6 +379,15 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               onTitleClick={() => scrollToElement(outcomesGroupRef.current)}
               onSelect={(name) => scrollToSection(name, outcomesSectionRefs.current)}
             />
+            {outcomesCohorts.length > 0 && (
+              <SectionSelector
+                title="Outcomes Analysis"
+                sections={[]}
+                activeSection={activeSection}
+                onTitleClick={() => scrollToElement(outcomesAnalysisRef.current)}
+                onSelect={() => {}}
+              />
+            )}
           </ReportNavPanelCard>
           </>
         }
@@ -391,6 +434,14 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                       sections={outcomesSections}
                       sectionRefs={outcomesSectionRefs.current}
                     />
+                  </ChartGroup>
+                </div>
+              )}
+
+              {outcomesCohorts.length > 0 && (
+                <div ref={outcomesAnalysisRef}>
+                  <ChartGroup title="Outcomes Analysis">
+                    <OutcomesChart cohorts={outcomesCohorts} />
                   </ChartGroup>
                 </div>
               )}

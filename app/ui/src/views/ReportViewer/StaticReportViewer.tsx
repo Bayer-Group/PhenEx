@@ -8,7 +8,7 @@
  */
 import { FC, useMemo } from 'react';
 import { ReportViewer } from './ReportViewer';
-import type { KdeCurve } from './types';
+import type { KdeCurve, Table2Row, TimeToEventRow } from './types';
 import type { CohortEntry } from './types';
 
 // ── Embedded data interface ─────────────────────────────────────────────
@@ -19,6 +19,8 @@ interface EmbeddedReportData {
   kdes?: Record<string, Record<string, KdeCurve>>;
   kdes_outcomes?: Record<string, Record<string, KdeCurve>>;
   waterfall?: Record<string, unknown>;
+  table2?: Record<string, Table2Row[]>;
+  timeToEvent?: Record<string, TimeToEventRow[]>;
   info?: Record<string, string>;
   runId?: string;
 }
@@ -63,6 +65,16 @@ export const StaticReportViewer: FC = () => {
     [reportData],
   );
 
+  const table2Data = useMemo(
+    () => reportData?.table2,
+    [reportData],
+  );
+
+  const timeToEventData = useMemo(
+    () => reportData?.timeToEvent,
+    [reportData],
+  );
+
   if (!reportData) {
     return <div style={{ padding: 40, color: '#999' }}>No report data embedded.</div>;
   }
@@ -72,6 +84,8 @@ export const StaticReportViewer: FC = () => {
       allCohortEntries={allCohortEntries}
       allOutcomesEntries={allOutcomesEntries}
       waterfallData={waterfallData}
+      table2Data={table2Data}
+      timeToEventData={timeToEventData}
       runId={reportData.runId ?? null}
       title="PhenEx Report"
     />

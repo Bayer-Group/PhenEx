@@ -1,5 +1,5 @@
 import { api } from '@/api/httpClient';
-import type { Table1Data, CohortEntry } from './types';
+import type { Table1Data, CohortEntry, Table2Row, TimeToEventRow } from './types';
 
 const BASE = '/report';
 
@@ -132,5 +132,23 @@ export async function fetchReportAnalysis(
     analysis: Record<string, string>;
     cohorts_analyzed: string[];
   }>(`${BASE}/analyze`, { run_id: runId, cohort_names: cohortNames });
+  return data;
+}
+
+/** Fetch combined Table2 incidence-rate data for all cohorts. */
+export async function fetchTable2Combined(
+  runId: string,
+): Promise<Record<string, Table2Row[]>> {
+  const url = `${BASE}/runs/${encodeURIComponent(runId)}/table2_combined`;
+  const { data } = await api.get<Record<string, Table2Row[]>>(url);
+  return data;
+}
+
+/** Fetch combined time-to-event (Kaplan–Meier) data for all cohorts. */
+export async function fetchTimeToEventCombined(
+  runId: string,
+): Promise<Record<string, TimeToEventRow[]>> {
+  const url = `${BASE}/runs/${encodeURIComponent(runId)}/time_to_event_combined`;
+  const { data } = await api.get<Record<string, TimeToEventRow[]>>(url);
   return data;
 }
