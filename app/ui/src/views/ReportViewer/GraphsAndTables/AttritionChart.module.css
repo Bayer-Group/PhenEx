@@ -3,6 +3,11 @@
   flex-direction: row;
   gap: 60px;
   align-items: flex-start;
+  padding-left: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
+  padding-right: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
+  padding-bottom: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 80px);
+  border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+  margin-bottom: 20px;
 }
 
 .cohortBlock {

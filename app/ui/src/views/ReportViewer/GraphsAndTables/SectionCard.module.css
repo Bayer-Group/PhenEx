@@ -1,9 +1,12 @@
 .card {
   border: 1px solid var(--line-color, #e0e0e0);
   border-top:none;
+  border-bottom: none;
   overflow: hidden;
-  margin-bottom: 10px;
     background-color: white; /* SECTION CARD BACKGROUND COLOR includes all rows or characteristics chart */
+    border-left: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+    border-right: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+
 }
 
 .title { /* each section within baseline characteristics i.e. 'hcru'*/
@@ -11,7 +14,7 @@
   color: #333;
   padding: 16px 20px 12px;
   font-family: 'IBMPlexSans-bold', sans-serif;
-  /* border-bottom: 1px solid var(--line-color, #e0e0e0); */
+  border-bottom: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
   padding-left: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
   padding-top: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 50px);
   padding-bottom: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 20px);

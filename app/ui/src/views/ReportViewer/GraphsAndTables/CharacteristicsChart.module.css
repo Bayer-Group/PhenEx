@@ -10,8 +10,9 @@
   display: flex;
   /* width:100%; */
   /* background-color: blue; */
-  border-bottom: 1px solid var(--line-color,red);
-  padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 100px);
+    border-bottom: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+  padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 20px);
+  /* padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 100px); */
 }
 
 .row:hover {
@@ -31,11 +32,11 @@
   white-space: normal;
   padding: 5px 20px 0px 20px;
   padding-left: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 120px);
-  padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 100px);
-  padding-top: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 100px);
-  padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 120px);
+  padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 10px);
+  padding-top: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 10px);
+  padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 80px);
 
-  text-align: left;
+  text-align: right;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -43,7 +44,7 @@
 }
 
 .chartCell {
-  width: clamp(100px, calc(350px / var(--pz-scale, 1)), 700px);
+  width: clamp(100px, calc(350px / var(--pz-scale, 1)), 400px);
   flex-shrink: 0;
   box-sizing: border-box;
 }
