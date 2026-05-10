@@ -258,6 +258,12 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   );
 
   // ── Pan & zoom ────────────────────────────────────────────────────────
+  const INITIAL_X = -140;
+  const INITIAL_Y = 0;
+  const INITIAL_SCALE = 1;
+  const PAN_X_OFFSET = 20;
+  const PAN_Y_OFFSET = 100;
+
   const baselineSectionRefs = useRef(new Map<string, HTMLDivElement>());
   const outcomesSectionRefs = useRef(new Map<string, HTMLDivElement>());
   const attritionRef = useRef<HTMLDivElement>(null);
@@ -268,8 +274,10 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   const pz = usePanZoom({
     minScale: 0.1,
     maxScale: 2.5,
-    initialTransform: { x: 0, y: 0, scale: 1 },
+    initialTransform: { x: INITIAL_X, y: INITIAL_Y, scale: INITIAL_SCALE },
     storageKey,
+    panTargetXOffset: PAN_X_OFFSET,
+    panTargetYOffset: PAN_Y_OFFSET,
   });
 
   const baselineSectionNames = useMemo(() => (sections ? Object.keys(sections) : []), [sections]);
@@ -383,7 +391,25 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         }
 
         bottom={
-          <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
+          <>
+            <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
+            <button
+              onClick={pz.resetView}
+              style={{
+                marginTop: 8,
+                padding: '4px 12px',
+                fontSize: 12,
+                cursor: 'pointer',
+                border: '1px solid #ccc',
+                borderRadius: 4,
+                background: '#fff',
+                color: '#333',
+                width: '100%',
+              }}
+            >
+              Home
+            </button>
+          </>
         }
       />
 

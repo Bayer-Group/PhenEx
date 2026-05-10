@@ -25,6 +25,10 @@ export interface UsePanZoomOptions {
   paddingY?: number;
   /** localStorage key for persisting transform state. */
   storageKey?: string;
+  /** X offset when panning to content (default 20). */
+  panTargetXOffset?: number;
+  /** Y offset when panning to content (default 100). */
+  panTargetYOffset?: number;
 }
 
 export interface ScrollbarBinding {
@@ -44,6 +48,8 @@ export interface UsePanZoomReturn {
   zoomPercentage: number;
   setZoomPercentage: (pct: number) => void;
   panToContent: (contentX: number, contentY: number) => void;
+  /** Reset to initial transform (animated). */
+  resetView: () => void;
   /** Call after content dimensions may have changed. */
   remeasure: () => void;
   scrollbar: ScrollbarBinding;
@@ -377,8 +383,8 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
 
   const panToContent = useCallback((contentX: number, contentY: number) => {
     const { scale, x: startX, y: startY } = t.current;
-    const targetX = -contentX * scale + 100;
-    const targetY = -contentY * scale + 100;
+    const targetX = -contentX * scale + getOpt('panTargetXOffset', 20);
+    const targetY = -contentY * scale + getOpt('panTargetYOffset', 100);
     const duration = 400;
     const start = performance.now();
 
@@ -402,6 +408,32 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
 
   const remeasure = useCallback(() => measure(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const resetView = useCallback(() => {
+    const { x: startX, y: startY, scale: startScale } = t.current;
+    const targetX = initialTransform.x;
+    const targetY = initialTransform.y;
+    const targetScale = initialTransform.scale;
+    const duration = 400;
+    const start = performance.now();
+
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+
+    const ease = (p: number) => (p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p);
+
+    const step = (now: number) => {
+      const p = clamp((now - start) / duration, 0, 1);
+      const e = ease(p);
+      setTransform(
+        startX + (targetX - startX) * e,
+        startY,
+        startScale + (targetScale - startScale) * e,
+      );
+      if (p < 1) animRef.current = requestAnimationFrame(step);
+      else animRef.current = null;
+    };
+    animRef.current = requestAnimationFrame(step);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const onScrollH = useCallback((fraction: number) => {
     const b = getBounds();
     const x = b.maxX - fraction * (b.maxX - b.minX);
@@ -424,6 +456,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
     zoomPercentage: zoomPct,
     setZoomPercentage,
     panToContent,
+    resetView,
     remeasure,
     scrollbar: {
       hTrackRef,
