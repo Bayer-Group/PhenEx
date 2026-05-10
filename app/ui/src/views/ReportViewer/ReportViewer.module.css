@@ -6,7 +6,7 @@
   width: 100vw;
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
-  background-color: #f1f1f1;
+  background-color:white; /* BACKGROUND COLOR */
 }
 
 /* ── Header card (bottom-right) ───────────────────────────────────────── */

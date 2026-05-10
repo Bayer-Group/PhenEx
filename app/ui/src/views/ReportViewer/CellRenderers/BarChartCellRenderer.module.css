@@ -92,6 +92,8 @@
   border-radius: 5px;
   background-color: transparent;
   transition: background-color 0.3s ease 0.3s;
+    /* border: 1px solid rgba(0,0,0,1); */
+
 }
 
 .cohortRow:hover{
@@ -118,8 +120,8 @@
 .barCell {
   width: 60%;
   flex-shrink: 0;
-  height: 100%;
-  display: flex;
+  height: calc(100% - 2px);
+  /* display: flex; */
   align-items: center;
   transition: opacity 0.15s ease;
 }

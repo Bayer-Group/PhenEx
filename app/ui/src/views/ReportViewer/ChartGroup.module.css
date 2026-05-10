@@ -6,7 +6,7 @@
   flex-direction: column;
   gap: 20px;
   border: 1px solid var(--line-color, #e0e0e0);
-  background-color: rgba(238, 238, 238, 1);
+  background-color: white;
 }
 
 .title {
