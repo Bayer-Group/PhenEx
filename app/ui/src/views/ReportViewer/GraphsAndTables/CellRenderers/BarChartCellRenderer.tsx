@@ -1,5 +1,5 @@
 import { FC, useState, useRef } from 'react';
-import { type CohortClassified } from '../types';
+import { type CohortClassified } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { CohortNameTooltip } from './CohortNameTooltip';
 import styles from './BarChartCellRenderer.module.css';

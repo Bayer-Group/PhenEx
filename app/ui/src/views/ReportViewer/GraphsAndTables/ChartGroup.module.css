@@ -9,13 +9,14 @@
   background-color: white;
 }
 
-.title {
+.title { /* attrition, baseline characteristics, outcomes, etc title */
+  padding-left: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 60px);
+
   font-size: clamp(30px, calc(18px / var(--pz-scale, 1)), 90px);
   font-weight: 600;
-  color: var(--color-text-secondary, #888);
+  color: black;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  background-color: aqua;
 }
 
 .content {

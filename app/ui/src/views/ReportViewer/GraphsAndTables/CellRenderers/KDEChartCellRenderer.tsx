@@ -1,5 +1,5 @@
 import { FC, useRef, useState, useLayoutEffect } from 'react';
-import { type CohortClassified, type KdeCurve } from '../types';
+import { type CohortClassified, type KdeCurve } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import styles from './KDEChartCellRenderer.module.css';
 

@@ -1,5 +1,5 @@
 import { FC, useMemo } from 'react';
-import { type Table2Row, type TimeToEventRow } from './types';
+import { type Table2Row, type TimeToEventRow } from '../types';
 import { KaplanMeierCellRenderer, type KMCurve } from './CellRenderers/KaplanMeierCellRenderer';
 import { useBarHoverStore } from './CellRenderers/useBarHoverStore';
 import styles from './OutcomesChart.module.css';

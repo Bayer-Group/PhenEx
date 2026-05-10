@@ -1,6 +1,6 @@
 import { FC, useEffect, useRef, useCallback } from 'react';
 import { Portal } from '@/components/Portal/Portal';
-import { getCohortColor, type CohortGroup, type LegendSelection } from './types';
+import { getCohortColor, type CohortGroup, type LegendSelection } from '../types';
 import styles from './CohortSelector.module.css';
 
 interface CohortMenuProps {

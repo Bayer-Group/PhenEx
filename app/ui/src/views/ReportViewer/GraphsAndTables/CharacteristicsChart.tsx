@@ -5,7 +5,7 @@ import {
   type KdeCurve,
   collectCharacteristics,
   groupCharacteristicsBySection,
-} from './types';
+} from '../types';
 import { BarChartCellRenderer } from './CellRenderers/BarChartCellRenderer';
 import { KDEChartCellRenderer } from './CellRenderers/KDEChartCellRenderer';
 import { NumericTableCellRenderer } from './CellRenderers/NumericTableCellRenderer';

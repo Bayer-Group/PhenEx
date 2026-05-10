@@ -1,6 +1,6 @@
 import { FC, useMemo } from 'react';
-import { CohortDefinitionReportD3 } from '../StudyViewer/StudyViewerCohortDefinitions/CohortDefinitionReportD3';
-import { type CohortClassified } from './types';
+import { CohortDefinitionReportD3 } from '../../StudyViewer/StudyViewerCohortDefinitions/CohortDefinitionReportD3';
+import { type CohortClassified } from '../types';
 import styles from './AttritionChart.module.css';
 
 /** Shape of a single row in waterfall.json */
