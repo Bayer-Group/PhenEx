@@ -50,6 +50,8 @@ export interface UsePanZoomReturn {
   panToContent: (contentX: number, contentY: number) => void;
   /** Reset to initial transform (animated). */
   resetView: () => void;
+  /** Whether the current view matches the initial transform. */
+  isAtHome: boolean;
   /** Call after content dimensions may have changed. */
   remeasure: () => void;
   scrollbar: ScrollbarBinding;
@@ -85,6 +87,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
   const [zoomPct, setZoomPct] = useState(
     ((initialTransform.scale - minScale) / (maxScale - minScale)) * 100,
   );
+  const [isAtHome, setIsAtHome] = useState(true);
 
   // ── Pure helpers (read only from refs — safe in stale closures) ──────
 
@@ -170,6 +173,12 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
       const mx = getOpt('maxScale', 2);
       setZoomPct(((t.current.scale - mn) / (mx - mn)) * 100);
     }
+
+    // Update isAtHome
+    const atHome =
+      Math.abs(t.current.scale - initialTransform.scale) < 0.001 &&
+      Math.abs(t.current.x - initialTransform.x) < 1;
+    setIsAtHome(atHome);
 
     // Persist (debounced)
     const key = optsRef.current.storageKey;
@@ -457,6 +466,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
     setZoomPercentage,
     panToContent,
     resetView,
+    isAtHome,
     remeasure,
     scrollbar: {
       hTrackRef,

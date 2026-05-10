@@ -391,25 +391,26 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         }
 
         bottom={
-          <>
+          <div style={{ fontSize: '14px', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
             <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
-            <button
-              onClick={pz.resetView}
-              style={{
-                marginTop: 8,
-                padding: '4px 12px',
-                fontSize: 12,
-                cursor: 'pointer',
-                border: '1px solid #ccc',
-                borderRadius: 4,
-                background: '#fff',
-                color: '#333',
-                width: '100%',
-              }}
-            >
-              Home
-            </button>
-          </>
+            {!pz.isAtHome && (
+              <button
+                onClick={pz.resetView}
+                title="Reset view"
+                style={{
+                  padding: 4,
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  opacity: 0.5,
+                }}
+              >
+                reset view
+              </button>
+            )}
+          </div>
         }
       />
 
