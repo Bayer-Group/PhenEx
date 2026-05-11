@@ -9,7 +9,7 @@ import styles from './KDEChartCellRenderer.module.css';
 const PAD = 4;
 const STROKE_PAD = 2;
 const DEFAULT_W = 300;
-const MARGIN_BOTTOM = 4;
+const MARGIN_BOTTOM = 30;
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
 
@@ -62,6 +62,7 @@ export const KDEChartCellRenderer: FC<KDEChartCellRendererProps> = ({
   }, []);
 
   const plotH = Math.max(10, containerH - MARGIN_BOTTOM - STROKE_PAD);
+
   const svgH = STROKE_PAD + plotH;
 
   const curves = cohortData

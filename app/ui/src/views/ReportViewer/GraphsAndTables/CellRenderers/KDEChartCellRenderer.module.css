@@ -7,6 +7,8 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  padding-top: clamp(80px, calc(18px / var(--pz-scale, 1)), 100px);
+  padding-bottom: clamp(10px, calc(18px / var(--pz-scale, 1)), 40px);
 }
 
 .kdeSvg {

@@ -97,7 +97,8 @@
   display: flex;
   align-items: stretch;
   border-bottom: 1px solid var(--line-color, #e0e0e0);
-  min-height: 70px;
+  min-height: clamp(200px, calc(300px / var(--pz-scale, 1)), 130px);
+
 }
 
 .numericRow:hover {

@@ -36,7 +36,7 @@
   position: absolute;
   top: 0;
   transform: translate(-50%, 0);
-  font-size: 11px;
+  font-size: clamp(16px, calc(14px / var(--pz-scale, 1)), 40px);
   color: black;
   white-space: nowrap;
   padding: 0 2px;

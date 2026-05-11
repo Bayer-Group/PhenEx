@@ -1,17 +1,19 @@
 .container {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  gap: 0px;
 }
 
 .kdeSection {
-  flex: 1;
-  min-height: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .boxPlotSection {
-  flex-shrink: 0;
+  position: absolute;
+  top: clamp(10px, calc(80px / var(--pz-scale, 1)), 60px);
+  left: 0;
+  right: 0;
+  pointer-events: none;
 }
