@@ -39,6 +39,7 @@ export const BoxPlotModal: FC<BoxPlotModalProps> = ({
           xMax={xMax}
           width={MODAL_CHART_W}
           showGrid
+          showLabels
           cohortIndex={cohortIndex}
         />
       </div>

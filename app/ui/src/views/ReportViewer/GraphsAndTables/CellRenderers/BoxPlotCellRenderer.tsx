@@ -2,6 +2,7 @@ import { FC, useRef, useState } from 'react';
 import { type CohortClassified } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { NumericChartFrame } from './NumericChartFrame';
+import { BoxPlotModal } from './BoxPlotModal';
 import styles from './BoxPlotCellRenderer.module.css';
 
 /* ── Layout constants ────────────────────────────────────────────────── */
@@ -104,6 +105,8 @@ interface BoxPlotCellRendererProps {
   showGrid?: boolean;
   /** If set, only show the box plot for this cohort index. */
   cohortIndex?: number;
+  /** Always show landmark labels (for modal use). */
+  showLabels?: boolean;
 }
 
 export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
@@ -114,11 +117,13 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   width: widthProp,
   showGrid = false,
   cohortIndex,
+  showLabels = false,
 }) => {
   const W = widthProp ?? DEFAULT_W;
   const PLOT_W = W - PAD * 2;
   const { activeIndex } = useBarHoverStore();
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const xRange = xMax - xMin || 1;
@@ -145,7 +150,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   if (entries.length === 0) return null;
 
   const plotH = entries.length * (ROW_H + ROW_GAP) - ROW_GAP;
-  const svgH = plotH + (hoveredRow !== null ? LABEL_ROW_H : 0);
+  const svgH = plotH + (showLabels ? LABEL_ROW_H : 0);
   const boxH = ROW_H * 0.6;
 
   const content = (
@@ -160,9 +165,15 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
           if (!rect) return;
           const localY = e.clientY - rect.top;
           const idx = Math.floor(localY / (ROW_H + ROW_GAP));
-          setHoveredRow(idx >= 0 && idx < entries.length ? idx : null);
+          if (idx >= 0 && idx < entries.length) {
+            setHoveredRow(idx);
+            setHoverPos({ x: e.clientX, y: rect.top });
+          } else {
+            setHoveredRow(null);
+            setHoverPos(null);
+          }
         }}
-        onMouseLeave={() => setHoveredRow(null)}
+        onMouseLeave={() => { setHoveredRow(null); setHoverPos(null); }}
       >
         {entries.map((e, i) => {
           const cy = i * (ROW_H + ROW_GAP) + ROW_H / 2;
@@ -171,57 +182,61 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
 
           return (
             <g key={e.index} opacity={0.85}>
-              {/* Whisker: min → max */}
               <line x1={toX(stats.min)} y1={cy} x2={toX(stats.max)} y2={cy} stroke={e.color} strokeWidth={1} />
-              {/* Min cap */}
               <line x1={toX(stats.min)} y1={cy - boxH * 0.3} x2={toX(stats.min)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1} />
-              {/* Max cap */}
               <line x1={toX(stats.max)} y1={cy - boxH * 0.3} x2={toX(stats.max)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1} />
-              {/* IQR box */}
               <rect
                 x={toX(stats.p25)} y={boxTop}
                 width={toX(stats.p75) - toX(stats.p25)} height={boxH}
                 fill={e.color} fillOpacity={0.2}
                 stroke={e.color} strokeWidth={1.5} rx={1}
               />
-              {/* Median */}
               <line x1={toX(stats.median)} y1={boxTop} x2={toX(stats.median)} y2={boxTop + boxH} stroke={e.color} strokeWidth={2} />
-              {/* Mean */}
               {stats.mean != null && <circle cx={toX(stats.mean)} cy={cy} r={2.5} fill={e.color} />}
+
+              {/* Always-visible labels (modal mode) */}
+              {showLabels && (() => {
+                const labelY = plotH + LABEL_ROW_H - 4;
+                const positioned = deOverlap(getLandmarks(stats), toX);
+                return positioned.map(({ val, label, labelX, originX }) => (
+                  <g key={label}>
+                    <line
+                      x1={originX} y1={cy + boxH * 0.3 + 1}
+                      x2={labelX} y2={labelY - 9}
+                      stroke={e.color} strokeWidth={0.5} strokeOpacity={0.4}
+                    />
+                    <text
+                      x={labelX} y={labelY}
+                      textAnchor="middle" fontSize={9}
+                      fill={e.color}
+                      fontFamily="IBMPlexSans-regular, sans-serif"
+                    >
+                      {label}: {fmt(val)}
+                    </text>
+                  </g>
+                ));
+              })()}
             </g>
           );
         })}
-
-        {/* Leader lines + labels for hovered row */}
-        {hoveredRow !== null && (() => {
-          const e = entries[hoveredRow];
-          if (!e) return null;
-          const cy = hoveredRow * (ROW_H + ROW_GAP) + ROW_H / 2;
-          const labelY = plotH + LABEL_ROW_H - 4;
-          const positioned = deOverlap(getLandmarks(e.stats), toX);
-
-          return positioned.map(({ label, labelX, originX }) => (
-            <g key={label}>
-              {/* Leader line from landmark to label */}
-              <line
-                x1={originX} y1={cy + boxH * 0.3 + 1}
-                x2={labelX} y2={labelY - 9}
-                stroke={e.color} strokeWidth={0.5} strokeOpacity={0.5}
-              />
-              {/* Label text */}
-              <text
-                x={labelX} y={labelY}
-                textAnchor="middle"
-                fontSize={9}
-                fill={e.color}
-                fontFamily="IBMPlexSans-regular, sans-serif"
-              >
-                {label}: {fmt(getLandmarks(e.stats).find(m => m.label === label)!.val)}
-              </text>
-            </g>
-          ));
-        })()}
       </svg>
+
+      {hoveredRow !== null && hoverPos && (() => {
+        const e = entries[hoveredRow];
+        if (!e) return null;
+        return (
+          <BoxPlotModal
+            name={name}
+            cohortData={cohortData}
+            xMin={xMin}
+            xMax={xMax}
+            x={hoverPos.x}
+            y={hoverPos.y}
+            cohortIndex={e.index}
+            onClose={() => { setHoveredRow(null); setHoverPos(null); }}
+          />
+        );
+      })()}
     </div>
   );
 

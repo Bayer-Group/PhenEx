@@ -3,6 +3,7 @@ import { type CohortClassified, type KdeCurve } from '../../types';
 import { KDEChartCellRenderer } from './KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
 import { NumericGraphModal } from './NumericGraphModal';
+import { useBarHoverStore } from './useBarHoverStore';
 import styles from './NumericGraphCellRenderer.module.css';
 
 interface NumericGraphCellRendererProps {
@@ -17,6 +18,7 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
   kdeData,
 }) => {
   const [modal, setModal] = useState<{ x: number; y: number } | null>(null);
+  const { activeIndex } = useBarHoverStore();
 
   // Compute shared x range from both KDE curves and box-plot stats
   const { xMin, xMax } = useMemo(() => {
@@ -61,14 +63,17 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
           xMax={xMax}
         />
       </div>
-      <div className={styles.boxPlotSection}>
-        <BoxPlotCellRenderer
-          name={name}
-          cohortData={cohortData}
-          xMin={xMin}
-          xMax={xMax}
-        />
-      </div>
+      {activeIndex != null && (
+        <div className={styles.boxPlotSection}>
+          <BoxPlotCellRenderer
+            name={name}
+            cohortData={cohortData}
+            xMin={xMin}
+            xMax={xMax}
+            cohortIndex={activeIndex}
+          />
+        </div>
+      )}
 
       {modal && (
         <NumericGraphModal

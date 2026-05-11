@@ -19,34 +19,20 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   onAdd,
   onRemove,
 }) => {
-  const { activeIndex } = useBarHoverStore();
+  const { activeIndex, onClick: toggleCohort } = useBarHoverStore();
   const [menuState, setMenuState] = useState<{
-    type: 'replace' | 'add';
-    index: number;
     rect: DOMRect;
   } | null>(null);
 
-  const handleItemClick = useCallback(
-    (index: number, el: HTMLElement) => {
-      setMenuState({ type: 'replace', index, rect: el.getBoundingClientRect() });
-    },
-    [],
-  );
-
   const handlePlusClick = useCallback((el: HTMLElement) => {
-    setMenuState({ type: 'add', index: -1, rect: el.getBoundingClientRect() });
+    setMenuState({ rect: el.getBoundingClientRect() });
   }, []);
 
   const handleMenuSelect = useCallback(
     (fullName: string) => {
-      if (!menuState) return;
-      if (menuState.type === 'replace') {
-        onReplace(menuState.index, fullName);
-      } else {
-        onAdd(fullName);
-      }
+      onAdd(fullName);
     },
-    [menuState, onReplace, onAdd],
+    [onAdd],
   );
 
   const handleMenuDeselect = useCallback(
@@ -66,7 +52,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
           key={`${sel.cohortName}-${sel.colorIndex}`}
           selection={sel}
           dimmed={activeIndex !== null && activeIndex !== i}
-          onClick={(el) => handleItemClick(i, el)}
+          onClick={() => toggleCohort(i)}
           onRemove={() => onRemove(i)}
         />
       ))}
@@ -81,7 +67,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
           onSelect={handleMenuSelect}
           onDeselect={handleMenuDeselect}
           onClose={handleClose}
-          closeOnSelect={menuState.type === 'replace'}
+          closeOnSelect={false}
         />
       )}
     </div>
@@ -93,12 +79,11 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 interface LegendItemProps {
   selection: LegendSelection;
   dimmed: boolean;
-  onClick: (el: HTMLElement) => void;
+  onClick: () => void;
   onRemove: () => void;
 }
 
 const LegendItem: FC<LegendItemProps> = ({ selection, dimmed, onClick, onRemove }) => {
-  const ref = useRef<HTMLDivElement>(null);
   const color = getCohortColor(selection.groupIndex, selection.subIndex, selection.totalSubs);
 
   // Parse labels
@@ -108,10 +93,9 @@ const LegendItem: FC<LegendItemProps> = ({ selection, dimmed, onClick, onRemove 
 
   return (
     <div
-      ref={ref}
       className={styles.legendItem}
-      style={{ opacity: dimmed ? 0.25 : 1, transition: 'opacity 0.15s ease' }}
-      onClick={() => ref.current && onClick(ref.current)}
+      style={{ opacity: dimmed ? 0.25 : 1, transition: 'opacity 0.15s ease', cursor: 'pointer' }}
+      onClick={onClick}
     >
       <div className={styles.legendDot} style={{ background: color }} />
       <span className={styles.legendItemTop}>{topLabel}</span>

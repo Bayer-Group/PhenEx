@@ -258,7 +258,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   );
 
   // ── Pan & zoom ────────────────────────────────────────────────────────
-  const INITIAL_X = 20;
+  const INITIAL_X = -100;
   const INITIAL_Y = 0;
   const INITIAL_SCALE = 1;
   const PAN_X_OFFSET = 20;

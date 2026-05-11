@@ -2,11 +2,54 @@
   width: 600px;
 }
 
+.header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
 .title {
   font-family: 'IBMPlexSans-bold', sans-serif;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.legend {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.legendBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--cohort-color);
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.legendBtn:hover {
+  opacity: 0.8;
+}
+
+.legendBtnOff {
+  opacity: 0.4;
+}
+
+.legendSwatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  border: 1px solid var(--cohort-color);
 }
 
 .kdeSection {
