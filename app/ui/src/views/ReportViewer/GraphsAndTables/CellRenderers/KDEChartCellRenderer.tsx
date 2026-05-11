@@ -7,8 +7,7 @@ import styles from './KDEChartCellRenderer.module.css';
 
 const PAD = 4;
 const STROKE_PAD = 2; // vertical padding so strokes aren't clipped at top
-const W = 300;
-const PLOT_W = W - PAD * 2;
+const DEFAULT_W = 300;
 const MARGIN_BOTTOM = 4;
 const HEADER_H = 25;
 const AXIS_H = 16;
@@ -67,6 +66,7 @@ interface KDEChartCellRendererProps {
   kdeData: Record<string, Record<string, KdeCurve>>;
   xMin?: number;
   xMax?: number;
+  width?: number;
 }
 
 export const KDEChartCellRenderer: FC<KDEChartCellRendererProps> = ({
@@ -75,7 +75,10 @@ export const KDEChartCellRenderer: FC<KDEChartCellRendererProps> = ({
   kdeData,
   xMin: xMinProp,
   xMax: xMaxProp,
+  width: widthProp,
 }) => {
+  const W = widthProp ?? DEFAULT_W;
+  const PLOT_W = W - PAD * 2;
   const { activeIndex } = useBarHoverStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerH, setContainerH] = useState(0);
