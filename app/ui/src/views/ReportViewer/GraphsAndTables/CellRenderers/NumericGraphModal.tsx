@@ -1,6 +1,7 @@
 import { FC } from 'react';
 import { type CohortClassified, type KdeCurve } from '../../types';
 import { HoverOrDragPortal } from '../../../../components/Portal/HoverOrDragPortal';
+import { NumericChartFrame } from './NumericChartFrame';
 import { KDEChartCellRenderer } from './KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
 import styles from './NumericGraphModal.module.css';
@@ -32,17 +33,18 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
     <HoverOrDragPortal x={x} y={y} onClose={onClose}>
       <div className={styles.container}>
         <div className={styles.title}>{name}</div>
-        <div className={styles.kdeSection}>
-          <KDEChartCellRenderer
-            name={name}
-            cohortData={cohortData}
-            kdeData={kdeData}
-            xMin={xMin}
-            xMax={xMax}
-            width={MODAL_CHART_W}
-          />
-        </div>
-        <div className={styles.boxPlotSection}>
+        <NumericChartFrame xMin={xMin} xMax={xMax} width={MODAL_CHART_W} showTicks>
+          <div className={styles.kdeSection}>
+            <KDEChartCellRenderer
+              name={name}
+              cohortData={cohortData}
+              kdeData={kdeData}
+              xMin={xMin}
+              xMax={xMax}
+              width={MODAL_CHART_W}
+              showTicks={false}
+            />
+          </div>
           <BoxPlotCellRenderer
             name={name}
             cohortData={cohortData}
@@ -50,7 +52,7 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
             xMax={xMax}
             width={MODAL_CHART_W}
           />
-        </div>
+        </NumericChartFrame>
       </div>
     </HoverOrDragPortal>
   );
