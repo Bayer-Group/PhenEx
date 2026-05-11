@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import json
 import re
@@ -584,6 +585,14 @@ class Node:
             NotImplementedError: This method should be implemented by subclasses.
         """
         raise NotImplementedError()
+
+    def copy(self):
+        """Return a deep copy of this node with _table_name_prefix cleared on all nodes."""
+        clone = copy.deepcopy(self)
+        clone._table_name_prefix = None
+        for dep in clone.dependencies:
+            dep._table_name_prefix = None
+        return clone
 
     def __eq__(self, other: "Node") -> bool:
         return hash(self) == hash(other)
