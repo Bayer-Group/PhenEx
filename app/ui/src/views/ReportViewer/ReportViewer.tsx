@@ -345,16 +345,6 @@ export const ReportViewer: FC<ReportViewerProps> = ({
       <ReportNavPanel
         top={
           <>
-          <ReportNavPanelCard title="Visible cohorts">
-            <CohortSelector
-              groups={groups}
-              selections={selections}
-              onReplace={handleReplace}
-              onAdd={handleAdd}
-              onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
-            />
-          </ReportNavPanelCard>
-          <div style={{ height: 20}} />
           <ReportNavPanelCard title="Outline" background={false}>
             <SectionSelector
               title="Attrition"
@@ -391,7 +381,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         }
 
         bottom={
-          <div style={{ fontSize: '14px', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <>
+            <div style={{ fontSize: '14px', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
             <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
             {!pz.isAtHome && (
               <button
@@ -411,6 +402,16 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               </button>
             )}
           </div>
+          <ReportNavPanelCard title="Visible cohorts" background={true}>
+            <CohortSelector
+              groups={groups}
+              selections={selections}
+              onReplace={handleReplace}
+              onAdd={handleAdd}
+              onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
+            />
+          </ReportNavPanelCard>
+        </>
         }
       />
 

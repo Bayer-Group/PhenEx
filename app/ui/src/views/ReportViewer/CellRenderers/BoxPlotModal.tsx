@@ -1,6 +1,6 @@
 import { FC } from 'react';
-import { type CohortClassified } from '../../types';
-import { HoverOrDragPortal } from '../../../../components/Portal/HoverOrDragPortal';
+import { type CohortClassified } from '../types';
+import { HoverOrDragPortal } from '../../../components/Portal/HoverOrDragPortal';
 import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
 import styles from './BoxPlotModal.module.css';
 

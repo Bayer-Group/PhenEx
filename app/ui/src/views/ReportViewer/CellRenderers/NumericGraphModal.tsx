@@ -1,6 +1,6 @@
 import { FC, useState, useMemo, useCallback } from 'react';
-import { type CohortClassified, type KdeCurve } from '../../types';
-import { HoverOrDragPortal } from '../../../../components/Portal/HoverOrDragPortal';
+import { type CohortClassified, type KdeCurve } from '../types';
+import { HoverOrDragPortal } from '../../../components/Portal/HoverOrDragPortal';
 import { NumericChartFrame } from './NumericChartFrame';
 import { KDEChartCellRenderer } from './KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';

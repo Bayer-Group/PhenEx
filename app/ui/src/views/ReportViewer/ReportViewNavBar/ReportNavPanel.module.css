@@ -3,6 +3,7 @@
   top: 20px;
   right: 40px;
   width: 330px;
+  bottom:20px;
   display: flex;
   flex-direction: column;
   background: transparent;
@@ -52,6 +53,7 @@
   flex: 0 0 auto;
   width: 100%;
   padding-top:20px;
+  overflow: visible;
   /* background: rgba(255, 255, 255, 0.9);
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);

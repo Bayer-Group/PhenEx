@@ -1,5 +1,5 @@
 import { FC, useRef, useState, useLayoutEffect } from 'react';
-import { type TimeToEventRow } from '../../types';
+import { type TimeToEventRow } from '../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import styles from './KaplanMeierCellRenderer.module.css';
 

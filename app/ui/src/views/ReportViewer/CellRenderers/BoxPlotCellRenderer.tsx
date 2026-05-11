@@ -1,5 +1,5 @@
 import { FC, useRef, useState } from 'react';
-import { type CohortClassified } from '../../types';
+import { type CohortClassified } from '../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { NumericChartFrame } from './NumericChartFrame';
 import { BoxPlotModal } from './BoxPlotModal';

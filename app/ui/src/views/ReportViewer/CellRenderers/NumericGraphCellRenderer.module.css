@@ -12,7 +12,7 @@
 
 .boxPlotSection {
   position: absolute;
-  top: clamp(10px, calc(80px / var(--pz-scale, 1)), 60px);
+  top: clamp(10px, calc(40px / var(--pz-scale, 1)), 40px);
   left: 0;
   right: 0;
   pointer-events: none;

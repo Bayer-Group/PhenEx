@@ -6,9 +6,9 @@ import {
   collectCharacteristics,
   groupCharacteristicsBySection,
 } from '../types';
-import { BarChartCellRenderer } from './CellRenderers/BarChartCellRenderer';
-import { NumericGraphCellRenderer } from './CellRenderers/NumericGraphCellRenderer';
-import { NumericTableCellRenderer } from './CellRenderers/NumericTableCellRenderer';
+import { BarChartCellRenderer } from '../CellRenderers/BarChartCellRenderer';
+import { NumericGraphCellRenderer } from '../CellRenderers/NumericGraphCellRenderer';
+import { NumericTableCellRenderer } from '../CellRenderers/NumericTableCellRenderer';
 import { SectionCard } from './SectionCard';
 import styles from './CharacteristicsChart.module.css';
 
