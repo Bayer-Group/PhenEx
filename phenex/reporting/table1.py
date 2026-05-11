@@ -381,12 +381,10 @@ class Table1(Reporter):
             payload["sections"] = self.characteristic_sections
 
         if hasattr(self, "_value_distributions") and self._value_distributions:
-            payload['kdes'] = self._value_distributions
-
+            payload["kdes"] = self._value_distributions
 
         with filepath.open("w") as f:
             json.dump(payload, f, indent=2, default=str)
-
 
         return str(filepath.absolute())
 
