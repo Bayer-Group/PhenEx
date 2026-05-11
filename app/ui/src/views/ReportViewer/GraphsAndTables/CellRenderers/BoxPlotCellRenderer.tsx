@@ -85,6 +85,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   const PLOT_W = W - PAD * 2;
   const { activeIndex } = useBarHoverStore();
   const [hovered, setHovered] = useState(false);
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const xRange = xMax - xMin || 1;
@@ -119,9 +120,22 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
     <div
       className={styles.container}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setHoveredRow(null); }}
     >
-      <svg ref={svgRef} width={W} height={svgH} className={styles.plotSvg}>
+      <svg
+        ref={svgRef}
+        width={W}
+        height={svgH}
+        className={styles.plotSvg}
+        onMouseMove={(e) => {
+          const rect = svgRef.current?.getBoundingClientRect();
+          if (!rect) return;
+          const localY = e.clientY - rect.top;
+          const rowIndex = Math.floor(localY / (ROW_H + ROW_GAP));
+          setHoveredRow(rowIndex >= 0 && rowIndex < entries.length ? rowIndex : null);
+        }}
+        onMouseLeave={() => setHoveredRow(null)}
+      >
         {entries.map((e, i) => {
           const cy = i * (ROW_H + ROW_GAP) + ROW_H / 2;
           const boxTop = cy - boxH / 2;
@@ -197,9 +211,11 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
         })}
       </svg>
 
-      {/* Portal tooltips for landmarks */}
-      {hovered && svgRect && entries.map((e, i) => {
-        const cy = i * (ROW_H + ROW_GAP) + ROW_H / 2;
+      {/* Portal tooltips for landmarks — only for hovered row */}
+      {hovered && svgRect && hoveredRow !== null && (() => {
+        const e = entries[hoveredRow];
+        if (!e) return null;
+        const cy = hoveredRow * (ROW_H + ROW_GAP) + ROW_H / 2;
         const screenTop = svgRect.top + (cy / svgH) * svgRect.height;
 
         return getLandmarks(e.stats).map(({ val, label }) => {
@@ -217,7 +233,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
             </Portal>
           );
         });
-      })}
+      })()}
     </div>
   );
 };
