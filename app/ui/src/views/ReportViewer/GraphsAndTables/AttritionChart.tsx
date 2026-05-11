@@ -51,12 +51,15 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall 
   const charts = useMemo(() => {
     return cohortData
       .map((cd) => {
-        const payload = waterfall[cd.name] as WaterfallPayload | undefined;
-        if (!payload?.rows?.length) return null;
+        const raw = waterfall[cd.name];
+        if (!raw) return null;
+        // Handle both formats: array of rows directly, or { rows: [...] }
+        const rows: WaterfallRow[] = Array.isArray(raw) ? raw : (raw as WaterfallPayload).rows;
+        if (!rows?.length) return null;
         return {
           cohortName: cd.name,
           color: cd.color,
-          rows: waterfallToD3Rows(payload.rows),
+          rows: waterfallToD3Rows(rows),
         };
       })
       .filter(Boolean) as { cohortName: string; color: string; rows: any[] }[];
