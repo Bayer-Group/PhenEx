@@ -7,7 +7,7 @@ import {
   groupCharacteristicsBySection,
 } from '../types';
 import { BarChartCellRenderer } from './CellRenderers/BarChartCellRenderer';
-import { KDEChartCellRenderer } from './CellRenderers/KDEChartCellRenderer';
+import { NumericGraphCellRenderer } from './CellRenderers/NumericGraphCellRenderer';
 import { NumericTableCellRenderer } from './CellRenderers/NumericTableCellRenderer';
 import { SectionCard } from './SectionCard';
 import styles from './CharacteristicsChart.module.css';
@@ -156,9 +156,9 @@ const NumericRow: FC<{
 }> = ({ name, cohortData, kdeData }) => {
   return (
     <div className={styles.numericRow}>
-      <div className={styles.nameCell}>{name}</div>
+      <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{name}</div>
       <div className={styles.kdeCell}>
-        <KDEChartCellRenderer name={name} cohortData={cohortData} kdeData={kdeData} />
+        <NumericGraphCellRenderer name={name} cohortData={cohortData} kdeData={kdeData} />
       </div>
       <NumericTableCellRenderer name={name} cohortData={cohortData} />
     </div>

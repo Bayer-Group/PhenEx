@@ -43,6 +43,15 @@
   justify-content: top;
 }
 
+.numericNameCell{
+  width: clamp(100px, calc(700px / var(--pz-scale, 1)), 200px);
+  padding-left: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 30px);
+  padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 10px);
+  padding-top: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 10px);
+  padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 10px);
+
+}
+
 .chartCell {
   width: clamp(100px, calc(350px / var(--pz-scale, 1)), 400px);
   flex-shrink: 0;

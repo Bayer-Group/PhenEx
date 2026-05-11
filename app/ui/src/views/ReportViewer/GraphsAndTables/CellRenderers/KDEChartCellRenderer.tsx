@@ -65,12 +65,16 @@ interface KDEChartCellRendererProps {
   name: string;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
+  xMin?: number;
+  xMax?: number;
 }
 
 export const KDEChartCellRenderer: FC<KDEChartCellRendererProps> = ({
   name,
   cohortData,
   kdeData,
+  xMin: xMinProp,
+  xMax: xMaxProp,
 }) => {
   const { activeIndex } = useBarHoverStore();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -105,6 +109,8 @@ export const KDEChartCellRenderer: FC<KDEChartCellRendererProps> = ({
     }
   }
   if (!isFinite(gMin)) { gMin = 0; gMax = 1; }
+  if (xMinProp != null) gMin = xMinProp;
+  if (xMaxProp != null) gMax = xMaxProp;
 
   const ticks = niceTicks(gMin, gMax);
 
@@ -146,11 +152,11 @@ export const KDEChartCellRenderer: FC<KDEChartCellRendererProps> = ({
               return (
                 <path
                   key={c.cohortName}
+                  className={styles.kdePath}
                   d={buildPath(c.curve, PLOT_W, plotH, PAD, STROKE_PAD, gMin, gMax)}
                   fill="none"
                   stroke={c.color}
-                  strokeWidth={2}                  strokeLinecap="round"
-                  strokeLinejoin="round"                  opacity={dimmed ? 0.15 : 0.85}
+                  opacity={dimmed ? 0.15 : 0.85}
                 />
               );
             })}
