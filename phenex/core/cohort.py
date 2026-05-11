@@ -854,6 +854,7 @@ class Cohort:
     def delete_entry_inclusion_exclusion(self, con):
         """Delete entry criterion, inclusion, and exclusion phenotype tables."""
         nodes = [self.entry_criterion] + self.inclusions + self.exclusions
+
         for node in nodes:
             node.delete_table(con)
             for dep in node.dependencies:
@@ -865,17 +866,27 @@ class Cohort:
         if self.index_table_node:
             self.index_table_node.delete_table(con)
 
+    def _get_tables_and_build_stages(self, con, tables=None):
+        con = self._prepare_database_connector_for_execution(con)
+        tables = self._prepare_tables_for_execution(con, tables)
+        self.build_stages(tables)
+        return con, tables
+
     def delete_subset_tables_entry(self, con):
         """Delete subset tables created after entry filtering."""
-        if self.subset_tables_entry_nodes:
-            for node in self.subset_tables_entry_nodes:
-                node.delete_table(con)
+        if not self.subset_tables_entry_nodes:
+            self._get_tables_and_build_stages(con)
+
+        for node in self.subset_tables_entry_nodes:
+            node.delete_table(con)
 
     def delete_subset_tables_index(self, con):
         """Delete subset tables created after index filtering."""
-        if self.subset_tables_index_nodes:
-            for node in self.subset_tables_index_nodes:
-                node.delete_table(con)
+        if not self.subset_tables_index_nodes:
+            self._get_tables_and_build_stages(con)
+
+        for node in self.subset_tables_index_nodes:
+            node.delete_table(con)
 
     def delete_characteristics(self, con):
         """Delete baseline characteristics phenotype tables."""
@@ -897,6 +908,10 @@ class Cohort:
 
     def delete_reporters(self, con):
         """Delete reporter tables (table1, waterfall, custom reporters)."""
+
+        if not self.waterfall_node:
+            self._get_tables_and_build_stages(con)
+
         reporter_nodes = [
             self.table1_node,
             self.table1_detailed_node,
