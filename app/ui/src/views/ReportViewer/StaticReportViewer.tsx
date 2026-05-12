@@ -21,6 +21,7 @@ interface EmbeddedReportData {
   waterfall?: Record<string, unknown>;
   table2?: Record<string, Table2Row[]>;
   timeToEvent?: Record<string, TimeToEventRow[]>;
+  studyRegistry?: Record<string, unknown>;
   info?: Record<string, string>;
   runId?: string;
 }
@@ -74,6 +75,10 @@ export const StaticReportViewer: FC = () => {
     () => reportData?.timeToEvent,
     [reportData],
   );
+
+  if (reportData?.studyRegistry) {
+    console.log('[StaticReportViewer] study_registry received', reportData.studyRegistry);
+  }
 
   if (!reportData) {
     return <div style={{ padding: 40, color: '#999' }}>No report data embedded.</div>;

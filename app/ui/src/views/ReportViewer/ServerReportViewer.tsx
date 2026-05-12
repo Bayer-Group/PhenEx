@@ -11,6 +11,7 @@ import {
   fetchKdeCombined,
   fetchTable2Combined,
   fetchTimeToEventCombined,
+  fetchStudyRegistry,
 } from './ReportViewerDataService';
 import type { KdeCurve, Table2Row, TimeToEventRow } from './types';
 import { getCached, setCache, getCachedTable2, setCachedTable2, getCachedTimeToEvent, setCachedTimeToEvent, saveSelections, loadSelections, type RunData } from './reportCache';
@@ -210,6 +211,16 @@ export const ServerReportViewer: FC = () => {
   useEffect(() => {
     if (selectedRun) loadRun(selectedRun);
   }, [selectedRun, loadRun]);
+
+  // ── Study registry ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!selectedRun) return;
+    fetchStudyRegistry(selectedRun)
+      .then((registry) => {
+        console.log('[ServerReportViewer] study_registry received', registry);
+      })
+      .catch(() => {});
+  }, [selectedRun]);
 
   // ── AI analysis ───────────────────────────────────────────────────────
   useEffect(() => {

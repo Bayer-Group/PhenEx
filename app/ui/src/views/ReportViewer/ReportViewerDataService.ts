@@ -152,3 +152,12 @@ export async function fetchTimeToEventCombined(
   const { data } = await api.get<Record<string, TimeToEventRow[]>>(url);
   return data;
 }
+
+/** Fetch the study registry (row metadata, comments). */
+export async function fetchStudyRegistry(
+  runId: string,
+): Promise<Record<string, unknown>> {
+  const url = `${BASE}/runs/${encodeURIComponent(runId)}/study_registry`;
+  const { data } = await api.get<Record<string, unknown>>(url);
+  return data;
+}

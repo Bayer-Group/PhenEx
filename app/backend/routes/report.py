@@ -214,3 +214,16 @@ def get_time_to_event_combined(run_id: str) -> Dict[str, Any]:
     if data is None:
         return {}
     return _nan_to_none(data)
+
+
+@router.get("/report/runs/{run_id}/study_registry")
+def get_study_registry(run_id: str) -> Dict[str, Any]:
+    """Return the study registry (row metadata and comments).
+
+    Reads ``study_registry.json`` produced by ``study_registry_generator.py``.
+    Returns an empty dict if not found.
+    """
+    data = storage.read_run_file(run_id, "study_registry.json")
+    if data is None:
+        return {}
+    return data
