@@ -23,6 +23,8 @@ export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs }) 
   const [closing, setClosing] = useState(false);
   const mountY = useRef(lastClickY);
 
+  const marginTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;
+
   const bcItems = useMemo(
     () => (breadcrumbs ?? []).map((b) => ({ displayName: b, onClick: () => {} })),
     [breadcrumbs],
@@ -56,7 +58,10 @@ export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs }) 
         className={`${styles.overlay} ${closing ? styles.closing : ''}`}
         onClick={handleOverlayClick}
       >
-        <div className={styles.modal} style={{ marginTop: `${Math.min(Math.round(mountY.current * 70), 50)}vh` }}>
+        <div
+          className={styles.modal}
+          style={{ marginTop, '--modal-top': marginTop } as React.CSSProperties}
+        >
           {bcItems.length > 0 && (
             <SmartBreadcrumbs
               items={bcItems}

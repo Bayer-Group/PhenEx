@@ -23,7 +23,7 @@
 
 
 .nameCell {
-  width: clamp(200px, calc(700px / var(--pz-scale, 1)), 700px);
+  width: clamp(200px, calc(700px / var(--pz-scale, 1)), 500px);
 
   flex-shrink: 0;
   font-family: 'IBMPlexSans-bold', sans-serif;
@@ -58,6 +58,7 @@
   width: clamp(200px, calc(500px / var(--pz-scale, 1)), 350px);
   padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 10px);
   text-align: left;
+  padding-left: min(calc(max(40px * var(--pz-scale, 1), 10px) + 20px), 40px);
 
 }
 .chartCell {

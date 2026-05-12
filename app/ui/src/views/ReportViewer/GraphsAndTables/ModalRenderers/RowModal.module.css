@@ -3,12 +3,11 @@
   inset: 0;
   z-index: 10000;
   display: flex;
+  align-items: flex-start;
   animation: fadeIn 0.15s ease-out;
   background-color: rgba(255,255,255,.2);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-    /* align-items: center; */
-  /* justify-content: center; */
 }
 
 .overlay.closing {
@@ -18,19 +17,19 @@
 .modal {
   animation: scaleIn 0.15s ease-out;
   margin-left: 12%;
-pointer-events: none;
-height:100%;
+  pointer-events: none;
+  width: fit-content;
 }
 
 .rowContent{
   padding: 30px 100px 30px 50px;
-pointer-events: all;
-
+  pointer-events: all;
   background: white;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   border-radius: 3px;
   border: 1px solid var(--line-color);
-
+  max-height: calc(100vh - var(--modal-top, 25vh) - 60px);
+  overflow-y: auto;
 }
 
 .closing .modal {
