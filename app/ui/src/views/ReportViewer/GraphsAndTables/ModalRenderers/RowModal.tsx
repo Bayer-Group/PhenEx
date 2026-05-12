@@ -22,8 +22,18 @@ interface RowModalProps {
 export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs }) => {
   const [closing, setClosing] = useState(false);
   const mountY = useRef(lastClickY);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [modalH, setModalH] = useState(400);
 
-  const marginTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;
+  const desiredTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;
+
+  useEffect(() => {
+    const el = modalRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setModalH(entry.borderBoxSize[0].blockSize));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const bcItems = useMemo(
     () => (breadcrumbs ?? []).map((b) => ({ displayName: b, onClick: () => {} })),
@@ -59,8 +69,9 @@ export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs }) 
         onClick={handleOverlayClick}
       >
         <div
+          ref={modalRef}
           className={styles.modal}
-          style={{ marginTop, '--modal-top': marginTop } as React.CSSProperties}
+          style={{ '--desired-top': desiredTop, '--modal-h': `${modalH}px` } as React.CSSProperties}
         >
           {bcItems.length > 0 && (
             <SmartBreadcrumbs
