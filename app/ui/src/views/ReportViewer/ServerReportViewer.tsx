@@ -20,7 +20,7 @@ import {
   type CohortEntry,
   type LegendSelection,
 } from './types';
-import { buildSequentialRowList, type StudyRegistry } from './studyRegistryUtils';
+import { buildSequentialRowList, type StudyRegistry, type RegistryComment } from './studyRegistryUtils';
 
 /** Merge combined KDE data into each cohort entry's `kdes` field. */
 function mergeKdesIntoEntries(
@@ -237,6 +237,11 @@ export const ServerReportViewer: FC = () => {
     [studyRegistry, allCohortEntries, allOutcomesEntries, waterfallData, table2Data, timeToEventData],
   );
 
+  const registryComments = useMemo(
+    () => (studyRegistry?.comments ?? []) as RegistryComment[],
+    [studyRegistry],
+  );
+
   useEffect(() => {
     if (sequentialRows.length > 0) {
       console.log(`[ServerReportViewer] sequential row list (${sequentialRows.length} rows)`, sequentialRows);
@@ -268,6 +273,7 @@ export const ServerReportViewer: FC = () => {
       table2Data={table2Data}
       timeToEventData={timeToEventData}
       sequentialRows={sequentialRows}
+      registryComments={registryComments}
       runId={selectedRun}
       loading={loadingRun}
       storageKey={selectedRun ? `report-zoom-${selectedRun}` : undefined}

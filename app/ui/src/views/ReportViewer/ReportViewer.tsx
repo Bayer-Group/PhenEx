@@ -25,7 +25,7 @@ import {
   type Table2Row,
   type TimeToEventRow,
 } from './types';
-import { type SequentialRow } from './studyRegistryUtils';
+import { type SequentialRow, type RegistryComment } from './studyRegistryUtils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -48,6 +48,7 @@ export interface ReportViewerProps {
   table2Data?: Record<string, Table2Row[]>;
   timeToEventData?: Record<string, TimeToEventRow[]>;
   sequentialRows?: SequentialRow[];
+  registryComments?: RegistryComment[];
   runId: string | null;
   loading?: boolean;
   title?: string;
@@ -65,6 +66,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   table2Data,
   timeToEventData,
   sequentialRows,
+  registryComments,
   runId,
   loading = false,
   title = 'LUMINOUS',
@@ -441,6 +443,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                   sectionRefs={baselineSectionRefs.current}
                   groupTitle="Baseline Characteristics"
                   sequentialRows={sequentialRows}
+                  registryComments={registryComments}
+                  onScrollToRow={scrollToElement}
                 />
               </ChartGroup>
               </div>
@@ -454,6 +458,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                       sectionRefs={outcomesSectionRefs.current}
                       groupTitle="Outcomes"
                       sequentialRows={sequentialRows}
+                      registryComments={registryComments}
+                      onScrollToRow={scrollToElement}
                     />
                   </ChartGroup>
                 </div>

@@ -6,7 +6,7 @@ import {
   collectCharacteristics,
   groupCharacteristicsBySection,
 } from '../types';
-import { type SequentialRow } from '../studyRegistryUtils';
+import { type SequentialRow, type RegistryComment } from '../studyRegistryUtils';
 import { BarChartCellRenderer } from './RowRenderers/BarChartCellRenderer';
 import { CategoricalBarChartCellRenderer } from './RowRenderers/CategoricalBarChartCellRenderer';
 import { NumericGraphCellRenderer } from './RowRenderers/NumericGraphCellRenderer';
@@ -22,6 +22,8 @@ interface CharacteristicsChartProps {
   sectionRefs: Map<string, HTMLDivElement>;
   groupTitle?: string;
   sequentialRows?: SequentialRow[];
+  registryComments?: RegistryComment[];
+  onScrollToRow?: (el: HTMLElement | null) => void;
 }
 
 export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
@@ -30,6 +32,8 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
   sectionRefs,
   groupTitle,
   sequentialRows,
+  registryComments,
+  onScrollToRow,
 }) => {
   const items = useMemo(() => collectCharacteristics(cohortData), [cohortData]);
   const groups = useMemo(
@@ -100,6 +104,8 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
           kdeData={kdeData}
           onClose={closeViewer}
           onNavigate={setViewerIndex}
+          onScrollToRow={onScrollToRow}
+          registryComments={registryComments}
         />
       )}
     </div>
@@ -133,7 +139,7 @@ const BooleanRow: FC<{ name: string; cohortData: CohortClassified[]; onOpen: (na
   const handleClick = useCallback(() => onOpen(name), [name, onOpen]);
 
   return (
-    <div className={styles.row} onClick={handleClick} style={{ cursor: 'pointer' }}>
+    <div className={styles.row} onClick={handleClick} style={{ cursor: 'pointer' }} data-row-name={name}>
       <div className={styles.nameCell}>{name}</div>
       <div className={styles.booleanChartCell}>
         <BarChartCellRenderer data={{ name, _meta: { cohortData } }} isModal />
@@ -152,7 +158,7 @@ const CategoricalRow: FC<{
   const handleClick = useCallback(() => onOpen(baseName), [baseName, onOpen]);
 
   return (
-    <div className={styles.numericRow} onClick={handleClick} style={{ cursor: 'pointer' }}>
+    <div className={styles.numericRow} onClick={handleClick} style={{ cursor: 'pointer' }} data-row-name={baseName}>
       <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{baseName}</div>
       <div className={styles.kdeCell}>
         <CategoricalBarChartCellRenderer
@@ -176,7 +182,7 @@ const NumericRow: FC<{
   const handleClick = useCallback(() => onOpen(name), [name, onOpen]);
 
   return (
-    <div className={styles.numericRow} onClick={handleClick} style={{ cursor: 'pointer' }}>
+    <div className={styles.numericRow} onClick={handleClick} style={{ cursor: 'pointer' }} data-row-name={name}>
       <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{name}</div>
       <div className={styles.kdeCell}>
         <NumericGraphCellRenderer name={name} cohortData={cohortData} kdeData={kdeData} />

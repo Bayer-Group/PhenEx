@@ -10,7 +10,7 @@ import { FC, useMemo } from 'react';
 import { ReportViewer } from './ReportViewer';
 import type { KdeCurve, Table2Row, TimeToEventRow } from './types';
 import type { CohortEntry } from './types';
-import { buildSequentialRowList, type StudyRegistry } from './studyRegistryUtils';
+import { buildSequentialRowList, type StudyRegistry, type RegistryComment } from './studyRegistryUtils';
 
 // ── Embedded data interface ─────────────────────────────────────────────
 
@@ -89,6 +89,11 @@ export const StaticReportViewer: FC = () => {
     );
   }, [reportData, allCohortEntries, allOutcomesEntries, waterfallData, table2Data, timeToEventData]);
 
+  const registryComments = useMemo(() => {
+    const registry = (reportData?.studyRegistry as StudyRegistry) ?? null;
+    return (registry?.comments ?? []) as RegistryComment[];
+  }, [reportData]);
+
   if (sequentialRows.length > 0) {
     console.log(`[StaticReportViewer] sequential row list (${sequentialRows.length} rows)`, sequentialRows);
   }
@@ -105,6 +110,7 @@ export const StaticReportViewer: FC = () => {
       table2Data={table2Data}
       timeToEventData={timeToEventData}
       sequentialRows={sequentialRows}
+      registryComments={registryComments}
       runId={reportData.runId ?? null}
       title="PhenEx Report"
     />

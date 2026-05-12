@@ -1,6 +1,6 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type CohortClassified, type KdeCurve } from '../../types';
-import { type SequentialRow } from '../../studyRegistryUtils';
+import { type SequentialRow, type RegistryComment } from '../../studyRegistryUtils';
 import { Portal } from '../../../../components/Portal/Portal';
 import { SmartBreadcrumbs } from '../../../../components/SmartBreadcrumbs';
 import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
@@ -14,6 +14,7 @@ import numericStyles from './NumericGraphModal.module.css';
 import booleanStyles from './BooleanRowModal.module.css';
 import categoricalStyles from './CategoricalRowModal.module.css';
 import styles from './HorizontalRowViewer.module.css';
+import ReactMarkdown from 'react-markdown';
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -38,6 +39,8 @@ interface HorizontalRowViewerProps {
   kdeData: Record<string, Record<string, KdeCurve>>;
   onClose: () => void;
   onNavigate: (index: number) => void;
+  onScrollToRow?: (el: HTMLElement | null) => void;
+  registryComments?: RegistryComment[];
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -49,15 +52,25 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   kdeData,
   onClose,
   onNavigate,
+  onScrollToRow,
+  registryComments,
 }) => {
   const [closing, setClosing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
+  const hasNavigated = useRef(false);
   const mountY = useRef(lastClickY);
 
   const current = rows[currentIndex];
   const desiredTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;
+
+  // Scroll the background report to the current row (only after first nav)
+  useEffect(() => {
+    if (!hasNavigated.current || !onScrollToRow || !current) return;
+    const el = document.querySelector(`[data-row-name="${CSS.escape(current.name)}"]`) as HTMLElement | null;
+    onScrollToRow(el);
+  }, [currentIndex, current, onScrollToRow]);
 
   // ── Scroll management ─────────────────────────────────────────────────
 
@@ -97,28 +110,26 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 
   // ── Close / keyboard ─────────────────────────────────────────────────
 
+  const navigate = useCallback((index: number) => {
+    hasNavigated.current = true;
+    onNavigate(index);
+  }, [onNavigate]);
+
   const startClose = useCallback(() => {
     if (closing) return;
     setClosing(true);
     setTimeout(onClose, ANIM_MS);
   }, [closing, onClose]);
 
-  const handleOverlayClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.target === e.currentTarget) startClose();
-    },
-    [startClose],
-  );
-
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') startClose();
-      if (e.key === 'ArrowLeft') { e.preventDefault(); if (currentIndex > 0) onNavigate(currentIndex - 1); }
-      if (e.key === 'ArrowRight') { e.preventDefault(); if (currentIndex < rows.length - 1) onNavigate(currentIndex + 1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); if (currentIndex > 0) navigate(currentIndex - 1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); if (currentIndex < rows.length - 1) navigate(currentIndex + 1); }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [startClose, currentIndex, rows.length, onNavigate]);
+  }, [startClose, currentIndex, rows.length, navigate]);
 
   if (!current) return null;
 
@@ -126,49 +137,124 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     <Portal>
       <div
         className={`${styles.overlay} ${closing ? styles.closing : ''}`}
-        onClick={handleOverlayClick}
+        onClick={startClose}
       >
         {/* Horizontal strip of cards — all cells in DOM, only nearby ones render content */}
         <div className={styles.scroller} ref={scrollRef} style={{ gap: CELL_GAP }}>
           {rows.map((row) => {
             const isFocused = row.index === currentIndex;
             const nearby = Math.abs(row.index - currentIndex) <= RENDER_NEIGHBOURS;
-            const rowBc = [row.category, row.reporter, row.section, row.name]
-              .filter(Boolean)
-              .map((b) => ({ displayName: b as string, onClick: () => {} }));
             return (
-              <div
+              <HorizontalCell
                 key={row.index}
                 ref={isFocused ? focusedRef : null}
-                className={styles.cell}
-                style={{ '--desired-top': desiredTop } as React.CSSProperties}
-                onClick={isFocused ? undefined : () => onNavigate(row.index)}
-              >
-                <div className={styles.verticalWrapper}>
-                    <SmartBreadcrumbs
-                    items={rowBc}
-                    compact
-                    classNameSmartBreadcrumbsContainer={styles.breadcrumbs}
-                    classNameBreadcrumbItem={styles.crumb}
-                    classNameBreadcrumbLastItem={styles.crumbLast}
-                    />
-                    <div className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}>
-                    <div className={styles.cardTitle}>
-                        {row.registry?.display_name || row.name}
-                    </div>
-                    <div className={styles.cardContent}>
-                        {nearby
-                        ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} />
-                        : null}
-                    </div>
-                    </div>
-                </div>
-              </div>
+                row={row}
+                isFocused={isFocused}
+                nearby={nearby}
+                desiredTop={desiredTop}
+                cohortData={cohortData}
+                kdeData={kdeData}
+                registryComments={registryComments}
+                onNavigate={navigate}
+              />
             );
           })}
         </div>
       </div>
     </Portal>
+  );
+};
+
+/* ── HorizontalCell ──────────────────────────────────────────────────── */
+
+interface HorizontalCellProps {
+  row: SequentialRow;
+  isFocused: boolean;
+  nearby: boolean;
+  desiredTop: string;
+  cohortData: CohortClassified[];
+  kdeData: Record<string, Record<string, KdeCurve>>;
+  registryComments?: RegistryComment[];
+  onNavigate: (index: number) => void;
+}
+
+const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
+  ({ row, isFocused, nearby, desiredTop, cohortData, kdeData, registryComments, onNavigate }, ref) => {
+    const rowBc = useMemo(
+      () => [row.category, row.reporter, row.section, row.name]
+        .filter(Boolean)
+        .map((b) => ({ displayName: b as string, onClick: () => {} })),
+      [row],
+    );
+
+    // Resolve comment IDs to actual comment objects
+    const comments = useMemo(() => {
+      if (!registryComments?.length || !row.registry?.comments?.length) return [];
+      return row.registry.comments
+        .map((id) => registryComments[id])
+        .filter(Boolean);
+    }, [registryComments, row.registry]);
+
+    return (
+      <div
+        ref={ref}
+        className={styles.cell}
+        style={{ '--desired-top': desiredTop } as React.CSSProperties}
+        onClick={isFocused ? undefined : () => onNavigate(row.index)}
+      >
+        <div className={styles.cellInner}>
+          {/* Left: breadcrumbs + card */}
+          <div className={styles.verticalWrapper}>
+            <SmartBreadcrumbs
+              items={rowBc}
+              compact
+              classNameSmartBreadcrumbsContainer={styles.breadcrumbs}
+              classNameBreadcrumbItem={styles.crumb}
+              classNameBreadcrumbLastItem={styles.crumbLast}
+            />
+            <div
+              className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.cardTitle}>
+                {row.registry?.display_name || row.name}
+              </div>
+              <div className={styles.cardContent}>
+                {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} /> : null}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: comment cards */}
+          {comments.length > 0 && (
+            <div className={styles.commentsWrapper}>
+              {comments.map((comment, i) => (
+                <CommentCard key={i} comment={comment} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  },
+);
+
+/* ── CommentCard ─────────────────────────────────────────────────────── */
+
+const CommentCard: FC<{ comment: RegistryComment }> = ({ comment }) => {
+  const statusLabel = comment.status === 'pinned' ? '📌' : comment.status === 'resolved' ? '✓' : '';
+
+  return (
+    <div className={styles.commentCard} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.commentHeader}>
+        <span className={styles.commentUser}>{comment.user}</span>
+        {statusLabel && <span className={styles.commentStatus}>{statusLabel}</span>}
+        <span className={styles.commentDate}>{comment.date}</span>
+      </div>
+      <div className={styles.commentBody}>
+        <ReactMarkdown>{comment.text}</ReactMarkdown>
+      </div>
+    </div>
   );
 };
 
