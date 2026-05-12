@@ -1,7 +1,8 @@
-import { FC, useState, useRef } from 'react';
+import { FC, useState, useRef, useCallback } from 'react';
 import { type CohortClassified } from '../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { CohortNameTooltip } from './CohortNameTooltip';
+import { BooleanRowModal } from './BooleanRowModal';
 import styles from './BarChartCellRenderer.module.css';
 
 const DEFAULT_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -14,14 +15,20 @@ interface BarChartCellRendererProps {
       ticks?: number[];
     };
   };
+  /** When true, suppress click-to-open-modal (used inside BooleanRowModal). */
+  isModal?: boolean;
 }
 
-export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) => {
+export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isModal }) => {
   const { cohortData, ticks = DEFAULT_TICKS } = data._meta;
   const { name } = data;
-  const { activeIndex, onClick } = useBarHoverStore();
+  const { activeIndex } = useBarHoverStore();
   const [hover, setHover] = useState<{ index: number; x: number; top: number } | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const barRefs = useRef<Record<number, HTMLDivElement>>({});
+
+  const openModal = useCallback(() => { if (!isModal) setModalOpen(true); }, [isModal]);
+  const closeModal = useCallback(() => setModalOpen(false), []);
 
   // Always include the 100 line
   const allTicks = ticks.includes(100) ? ticks : [...ticks, 100];
@@ -57,7 +64,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
               key={i}
               ref={(el) => { if (el) barRefs.current[i] = el; }}
               className={styles.cohortRow}
-              onClick={() => onClick(i)}
+              onClick={openModal}
               onMouseEnter={(e) => {
                 const rect = barRefs.current[i]?.getBoundingClientRect();
                 if (rect) setHover({ index: i, x: e.clientX, top: rect.top });
@@ -91,6 +98,14 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
           name={cohortData[hover.index]?.name ?? ''}
           x={hover.x}
           top={hover.top}
+        />
+      )}
+
+      {modalOpen && (
+        <BooleanRowModal
+          name={name}
+          cohortData={cohortData}
+          onClose={closeModal}
         />
       )}
     </div>

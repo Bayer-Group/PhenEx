@@ -1,7 +1,5 @@
 .container {
-  width: 800px;
-  background-color: white;
-  border-radius: 10px;
+  width: 600px;
 }
 
 .header {
@@ -52,13 +50,4 @@
   height: 8px;
   border-radius: 2px;
   border: 1px solid var(--cohort-color);
-}
-
-.kdeSection {
-  height: 160px;
-  min-height: 0;
-}
-
-.boxPlotSection {
-  flex-shrink: 0;
 }

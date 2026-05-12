@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { type CohortClassified } from '../types';
-import { HoverOrDragPortal } from '../../../components/Portal/HoverOrDragPortal';
+import { RowModal } from './RowModal';
 import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
 import styles from './BoxPlotModal.module.css';
 
@@ -11,8 +11,6 @@ interface BoxPlotModalProps {
   cohortData: CohortClassified[];
   xMin: number;
   xMax: number;
-  x: number;
-  y: number;
   /** Show only this cohort's box plot. */
   cohortIndex: number;
   onClose: () => void;
@@ -23,13 +21,11 @@ export const BoxPlotModal: FC<BoxPlotModalProps> = ({
   cohortData,
   xMin,
   xMax,
-  x,
-  y,
   cohortIndex,
   onClose,
 }) => {
   return (
-    <HoverOrDragPortal x={x} y={y} onClose={onClose}>
+    <RowModal onClose={onClose}>
       <div className={styles.container}>
         <div className={styles.title}>{name}</div>
         <BoxPlotCellRenderer
@@ -43,6 +39,6 @@ export const BoxPlotModal: FC<BoxPlotModalProps> = ({
           cohortIndex={cohortIndex}
         />
       </div>
-    </HoverOrDragPortal>
+    </RowModal>
   );
 };

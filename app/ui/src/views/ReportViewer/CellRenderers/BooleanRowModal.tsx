@@ -1,31 +1,20 @@
 import { FC, useState, useMemo, useCallback } from 'react';
-import { type CohortClassified, type KdeCurve } from '../types';
+import { type CohortClassified } from '../types';
 import { RowModal } from './RowModal';
-import { NumericChartFrame } from './NumericChartFrame';
-import { KDEChartCellRenderer } from './KDEChartCellRenderer';
-import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
-import styles from './NumericGraphModal.module.css';
+import { BarChartCellRenderer } from './BarChartCellRenderer';
+import styles from './BooleanRowModal.module.css';
 
-const MODAL_CHART_W = 560;
-
-interface NumericGraphModalProps {
+interface BooleanRowModalProps {
   name: string;
   cohortData: CohortClassified[];
-  kdeData: Record<string, Record<string, KdeCurve>>;
-  xMin: number;
-  xMax: number;
   onClose: () => void;
 }
 
-export const NumericGraphModal: FC<NumericGraphModalProps> = ({
+export const BooleanRowModal: FC<BooleanRowModalProps> = ({
   name,
   cohortData,
-  kdeData,
-  xMin,
-  xMax,
   onClose,
 }) => {
-  // All cohorts visible by default
   const [visible, setVisible] = useState<Set<number>>(
     () => new Set(cohortData.map((_, i) => i)),
   );
@@ -54,9 +43,7 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
               <button
                 key={cd.name}
                 className={`${styles.legendBtn} ${visible.has(i) ? '' : styles.legendBtnOff}`}
-                style={{
-                  '--cohort-color': cd.color,
-                } as React.CSSProperties}
+                style={{ '--cohort-color': cd.color } as React.CSSProperties}
                 onClick={() => toggleCohort(i)}
               >
                 <span
@@ -68,27 +55,10 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
             ))}
           </div>
         </div>
-        <NumericChartFrame xMin={xMin} xMax={xMax} width={MODAL_CHART_W} showTicks>
-          <div className={styles.kdeSection}>
-            <KDEChartCellRenderer
-              name={name}
-              cohortData={filteredCohortData}
-              kdeData={kdeData}
-              xMin={xMin}
-              xMax={xMax}
-              width={MODAL_CHART_W}
-              showTicks={false}
-            />
-          </div>
-          <BoxPlotCellRenderer
-            name={name}
-            cohortData={filteredCohortData}
-            xMin={xMin}
-            xMax={xMax}
-            width={MODAL_CHART_W}
-            showLabels
-          />
-        </NumericChartFrame>
+        <BarChartCellRenderer
+          data={{ name, _meta: { cohortData: filteredCohortData } }}
+          isModal
+        />
       </div>
     </RowModal>
   );

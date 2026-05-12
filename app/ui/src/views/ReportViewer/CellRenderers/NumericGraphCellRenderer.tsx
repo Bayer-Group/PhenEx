@@ -17,7 +17,7 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
   cohortData,
   kdeData,
 }) => {
-  const [modal, setModal] = useState<{ x: number; y: number } | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const { activeIndex } = useBarHoverStore();
 
   // Compute shared x range from row stats (Min/Max) only.
@@ -37,11 +37,8 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
     return { xMin: lo, xMax: hi };
   }, [name, cohortData]);
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    setModal({ x: e.clientX, y: e.clientY });
-  }, []);
-
-  const closeModal = useCallback(() => setModal(null), []);
+  const handleClick = useCallback(() => setModalOpen(true), []);
+  const closeModal = useCallback(() => setModalOpen(false), []);
 
   return (
     <div className={styles.container} onClick={handleClick} style={{ cursor: 'pointer' }}>
@@ -66,15 +63,13 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
         </div>
       )}
 
-      {modal && (
+      {modalOpen && (
         <NumericGraphModal
           name={name}
           cohortData={cohortData}
           kdeData={kdeData}
           xMin={xMin}
           xMax={xMax}
-          x={modal.x}
-          y={modal.y}
           onClose={closeModal}
         />
       )}

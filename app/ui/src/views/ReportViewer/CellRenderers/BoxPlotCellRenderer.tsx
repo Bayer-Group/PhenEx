@@ -134,7 +134,6 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   const PLOT_W = W - PAD * 2;
   const { activeIndex } = useBarHoverStore();
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
-  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const xRange = xMax - xMin || 1;
@@ -181,13 +180,11 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
           const idx = Math.floor(localY / (ROW_H + ROW_GAP));
           if (idx >= 0 && idx < entries.length) {
             setHoveredRow(idx);
-            setHoverPos({ x: e.clientX, y: rect.top });
           } else {
             setHoveredRow(null);
-            setHoverPos(null);
           }
         }}
-        onMouseLeave={() => { setHoveredRow(null); setHoverPos(null); }}
+        onMouseLeave={() => setHoveredRow(null)}
       >
         {entries.map((e, i) => {
           const cy = i * (ROW_H + ROW_GAP) + ROW_H / 2;
@@ -236,7 +233,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
       </svg>
       )}
 
-      {hoveredRow !== null && hoverPos && (() => {
+      {hoveredRow !== null && (() => {
         const e = entries[hoveredRow];
         if (!e) return null;
         return (
@@ -245,10 +242,8 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
             cohortData={cohortData}
             xMin={xMin}
             xMax={xMax}
-            x={hoverPos.x}
-            y={hoverPos.y}
             cohortIndex={e.index}
-            onClose={() => { setHoveredRow(null); setHoverPos(null); }}
+            onClose={() => setHoveredRow(null)}
           />
         );
       })()}
