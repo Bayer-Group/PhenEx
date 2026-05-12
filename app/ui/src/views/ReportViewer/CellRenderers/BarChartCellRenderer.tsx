@@ -18,9 +18,11 @@ interface BarChartCellRendererProps {
   /** When true, suppress click-to-open-modal (used inside BooleanRowModal). */
   isModal?: boolean;
   breadcrumbs?: string[];
+  /** Number of decimal places for the % column (default 0). */
+  pctDecimals?: number;
 }
 
-export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isModal, breadcrumbs }) => {
+export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isModal, breadcrumbs, pctDecimals = 0 }) => {
   const { cohortData, ticks = DEFAULT_TICKS } = data._meta;
   const { name } = data;
   const { activeIndex } = useBarHoverStore();
@@ -78,7 +80,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
               style={{ cursor: 'pointer' }}
             >
               <div className={styles.pctCell} style={{ opacity: dimmed ? 0.25 : 1 }}>
-                <strong>{Math.round(pct)}</strong>
+                <strong>{pct.toFixed(pctDecimals)}</strong>
               </div>
               <div className={styles.barCell} style={{ opacity: dimmed ? 0.25 : 1 }}>
                 <div

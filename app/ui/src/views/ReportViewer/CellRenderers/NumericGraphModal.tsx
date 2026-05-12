@@ -62,7 +62,7 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
           <div className={styles.card}>
             <NumericTableCellRenderer name={name} cohortData={filteredCohortData} hideNPct />
           </div>
-          <div className={styles.card}>
+          <div className={`${styles.card} ${styles.barChartCard}`}>
             <BarChartCellRenderer
               data={{ name, _meta: { cohortData: filteredCohortData } }}
               isModal

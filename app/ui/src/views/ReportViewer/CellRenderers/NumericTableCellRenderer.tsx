@@ -4,7 +4,7 @@ import { useBarHoverStore } from './useBarHoverStore';
 import { CohortNameTooltip } from './CohortNameTooltip';
 import styles from './NumericTableCellRenderer.module.css';
 
-const STAT_KEYS = ['Mean', 'STD', 'Median', 'Min', 'Max'] as const;
+const STAT_KEYS = ['Min', 'Mean', 'STD', 'Median', 'Max'] as const;
 
 const fmt = (v: number | null | undefined) => {
   if (v == null || isNaN(v)) return '–';
