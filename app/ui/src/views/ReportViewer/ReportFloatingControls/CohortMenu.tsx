@@ -40,15 +40,15 @@ export const CohortMenu: FC<CohortMenuProps> = ({
     return () => document.removeEventListener('mousedown', handle);
   }, [onClose]);
 
-  // Compute position: below anchor, anchored to right
+  // Compute position: above anchor, anchored to right
   const computeStyle = useCallback((): React.CSSProperties => {
-    const top = anchorRect.bottom + 4;
+    const bottom = window.innerHeight - anchorRect.top + 4;
     const right = window.innerWidth - anchorRect.right;
     return {
       position: 'fixed',
-      top: Math.max(top, 8),
+      bottom: Math.max(bottom, 8),
       right: Math.max(right, 8),
-      maxHeight: window.innerHeight - top - 8,
+      maxHeight: anchorRect.top - 12,
     };
   }, [anchorRect]);
 
@@ -75,6 +75,7 @@ export const CohortMenu: FC<CohortMenuProps> = ({
         ref={menuRef}
         className={styles.menu}
         style={computeStyle()}
+        onMouseLeave={onClose}
       >
         <div className={styles.menuGrid}>
           {groups.map((group) => (

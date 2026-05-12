@@ -50,7 +50,7 @@
 }
 
 .headerBar {
-  width: 60%;
+  width: 100%;
   flex-shrink: 0;
   position: relative;
 }
@@ -118,7 +118,7 @@
 
 /* ── Bar cell (center) ────────────────────────────────────────────────── */
 .barCell {
-  width: 60%;
+  width: 100%;
   flex-shrink: 0;
   height: calc(100% - 2px);
   /* display: flex; */

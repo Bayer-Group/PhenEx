@@ -62,7 +62,8 @@
 }
 
 .booleanChartCell{
-    width: 50%;
+  width: clamp(200px, calc(500px / var(--pz-scale, 1)), 400px);
+
 }
 /* ── Categorical group ───────────────────────────────────────────────── */
 
@@ -106,7 +107,7 @@
 }
 
 .kdeCell {
-  width: 300px;
+  width: clamp(200px, calc(500px / var(--pz-scale, 1)), 600px);
   flex-shrink: 0;
   display: flex;
   align-items: center;

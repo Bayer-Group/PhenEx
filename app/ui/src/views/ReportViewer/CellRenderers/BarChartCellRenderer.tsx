@@ -41,7 +41,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
 
       {/* Grid lines positioned over the bar column */}
       <div className={styles.rows}>
-        <div className={styles.gridOverlay} style={{ left: '0%', width: '60%' }}>
+        <div className={styles.gridOverlay} style={{ left: '0%', width: '100%' }}>
           {allTicks.map((t) => (
             <div key={t} className={styles.gridLine} style={{ left: `${t}%` }} />
           ))}

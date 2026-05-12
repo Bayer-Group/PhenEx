@@ -46,6 +46,11 @@ function waterfallToD3Rows(rows: WaterfallRow[]) {
     }));
 }
 
+function getDatabaseSize(rows: WaterfallRow[]): number | null {
+  const dbRow = rows.find((r) => r.Type === 'info' && r.Remaining != null && r.Name !== 'Final Cohort Size');
+  return dbRow?.Remaining ?? null;
+}
+
 export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall }) => {
   /** Build per-cohort D3 row arrays from the combined waterfall data. */
   const charts = useMemo(() => {
@@ -60,9 +65,10 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall 
           cohortName: cd.name,
           color: cd.color,
           rows: waterfallToD3Rows(rows),
+          databaseSize: getDatabaseSize(rows),
         };
       })
-      .filter(Boolean) as { cohortName: string; color: string; rows: any[] }[];
+      .filter(Boolean) as { cohortName: string; color: string; rows: any[]; databaseSize: number | null }[];
   }, [cohortData, waterfall]);
 
   if (!charts.length) return null;
@@ -78,6 +84,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall 
             <CohortDefinitionReportD3
               rows={chart.rows}
               cohortId={chart.cohortName}
+              databaseSize={chart.databaseSize}
             />
           </div>
         </div>

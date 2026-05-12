@@ -66,6 +66,7 @@ const getD3HierarchicalTextColor = (effectiveType: string | undefined): string =
 interface CohortDefinitionReportD3Props {
   rows: any[];
   cohortId: string;
+  databaseSize?: number | null;
   onRowClick?: (row: any, index: number) => void;
   onExpandClick?: (row: any, index: number) => void;
 }
@@ -79,6 +80,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
   {
     rows,
     cohortId,
+    databaseSize,
     onRowClick,
     onExpandClick,
   },
@@ -166,7 +168,7 @@ export const CohortDefinitionReportD3 = forwardRef<CohortDefinitionReportD3Ref, 
     const allRows = [
       { 
         name: 'Total Database Size', 
-        count: rows[0]?.count, 
+        count: databaseSize ?? rows[0]?.count, 
         effective_type: 'database', 
         hierarchical_index: 0,
         hideExclusion: true,

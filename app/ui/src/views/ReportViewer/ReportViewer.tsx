@@ -10,8 +10,8 @@ import { AttritionChart } from './GraphsAndTables/AttritionChart';
 import { ChartGroup } from './GraphsAndTables/ChartGroup';
 import { ReportNavPanel } from './ReportViewNavBar/ReportNavPanel';
 import { ReportNavPanelCard } from './ReportViewNavBar/ReportNavPanelCard';
-import { SectionSelector } from './ReportFloatingControls/SectionSelector';
 import { ZoomScrubber } from './ReportViewNavBar/ZoomScrubber';
+import { OutlineBar, type OutlineEntry } from './OutlineBar';
 import { useVisibleSection } from './useVisibleSection';
 import {
   classifyRows,
@@ -332,6 +332,26 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
   const activeSection = useVisibleSection(pz.viewportRef, pz.contentRef, getVisibleSections);
 
+  // ── Outline entries ───────────────────────────────────────────────────
+  const outlineEntries: OutlineEntry[] = useMemo(() => {
+    const entries: OutlineEntry[] = [];
+    entries.push({ name: 'Attrition', level: 0, onClick: () => scrollToElement(attritionRef.current) });
+    entries.push({ name: 'Baseline characteristics', level: 0, onClick: () => scrollToElement(baselineGroupRef.current) });
+    for (const name of baselineSectionNames) {
+      entries.push({ name, level: 1, onClick: () => scrollToSection(name, baselineSectionRefs.current) });
+    }
+    if (outcomesSectionNames.length > 0) {
+      entries.push({ name: 'Outcomes', level: 0, onClick: () => scrollToElement(outcomesGroupRef.current) });
+      for (const name of outcomesSectionNames) {
+        entries.push({ name, level: 1, onClick: () => scrollToSection(name, outcomesSectionRefs.current) });
+      }
+    }
+    if (outcomesCohorts.length > 0) {
+      entries.push({ name: 'Outcomes Analysis', level: 0, onClick: () => scrollToElement(outcomesAnalysisRef.current) });
+    }
+    return entries;
+  }, [baselineSectionNames, outcomesSectionNames, outcomesCohorts.length, scrollToElement, scrollToSection]);
+
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
@@ -342,44 +362,9 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         </span>
       </div>
 
-      <ReportNavPanel
-        top={
-          <>
-          <ReportNavPanelCard title="Outline" background={false}>
-            <SectionSelector
-              title="Attrition"
-              sections={[]}
-              activeSection={activeSection}
-              onTitleClick={() => scrollToElement(attritionRef.current)}
-              onSelect={() => {}}
-            />
-            <SectionSelector
-              title="Baseline characteristics"
-              sections={baselineSectionNames}
-              activeSection={activeSection}
-              onTitleClick={() => scrollToElement(baselineGroupRef.current)}
-              onSelect={(name) => scrollToSection(name, baselineSectionRefs.current)}
-            />
-            <SectionSelector
-              title="Outcomes"
-              sections={outcomesSectionNames}
-              activeSection={activeSection}
-              onTitleClick={() => scrollToElement(outcomesGroupRef.current)}
-              onSelect={(name) => scrollToSection(name, outcomesSectionRefs.current)}
-            />
-            {outcomesCohorts.length > 0 && (
-              <SectionSelector
-                title="Outcomes Analysis"
-                sections={[]}
-                activeSection={activeSection}
-                onTitleClick={() => scrollToElement(outcomesAnalysisRef.current)}
-                onSelect={() => {}}
-              />
-            )}
-          </ReportNavPanelCard>
-          </>
-        }
+      <OutlineBar entries={outlineEntries} activeSection={activeSection} />
 
+      <ReportNavPanel
         bottom={
           <>
             <div style={{ fontSize: '14px', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
