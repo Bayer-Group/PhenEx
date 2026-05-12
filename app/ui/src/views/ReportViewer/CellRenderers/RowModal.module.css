@@ -17,7 +17,7 @@
 
 .modal {
   animation: scaleIn 0.15s ease-out;
-  margin-left: 10%;
+  margin-left: 12%;
 pointer-events: none;
 height:100%;
 }
@@ -27,8 +27,9 @@ height:100%;
 pointer-events: all;
 
   background: white;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+  border: 1px solid var(--line-color);
 
 }
 

@@ -1,17 +1,20 @@
 .chartGroup {
-  /* border: calc(1px / var(--pz-scale, 1)) solid var(--line-color); */
+  border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
   /* padding: calc(10px / var(--pz-scale, 1)); */
   display: flex;
   flex-direction: column;
   /* border-top: 1px solid var(--line-color, #e0e0e0); */
-  background-color: white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  margin-bottom: 30px;
+  overflow: hidden;
 
 }
 
 .title { /* attrition, baseline characteristics, outcomes, etc title */
-  padding-top: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 20px);
+  padding-top: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 40px);
   padding-bottom: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 80px);
-  border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+  /* border: calc(1px / var(--pz-scale, 1)) solid var(--line-color); */
   border-bottom:none;
   padding-left: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 60px);
   font-size: clamp(30px, calc(18px / var(--pz-scale, 1)), 90px);

@@ -10,7 +10,7 @@
   display: flex;
   /* width:100%; */
   /* background-color: blue; */
-    border-bottom: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+    /* border-bottom: calc(1px / var(--pz-scale, 1)) solid var(--line-color); */
   padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 20px);
   /* padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 100px); */
 }
@@ -32,14 +32,15 @@
   white-space: normal;
   padding: 5px 20px 0px 20px;
   padding-left: min(calc(max(30px * var(--pz-scale, 1), 10px) + 20px), 30px);
-  padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 10px);
-  padding-top: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 10px);
+  padding-bottom: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 20px);
+  padding-top: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 20px);
   padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 80px);
   text-align: right;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: top;
+  background-color: transparent;
 }
 /* 
 .numericNameCell{
@@ -58,13 +59,13 @@
 
 }
 .chartCell {
-  width: clamp(100px, calc(350px / var(--pz-scale, 1)), 400px);
+  width: clamp(100px, calc(350px / var(--pz-scale, 1)), 600px);
   flex-shrink: 0;
   box-sizing: border-box;
 }
 
 .booleanChartCell{
-  width: clamp(200px, calc(500px / var(--pz-scale, 1)), 400px);
+  width: clamp(200px, calc(400px / var(--pz-scale, 1)), 400px);
 
 }
 /* ── Categorical group ───────────────────────────────────────────────── */
@@ -99,13 +100,13 @@
 .numericRow {
   display: flex;
   align-items: stretch;
-  border-bottom: 1px solid var(--line-color, #e0e0e0);
+  /* border-bottom: 1px solid var(--line-color, #e0e0e0); */
   min-height: clamp(200px, calc(300px / var(--pz-scale, 1)), 130px);
 
 }
 
 .numericRow:hover {
-  background: rgba(211, 213, 215, 0.04);
+  /* background: rgba(211, 213, 215, 0.04); */
 }
 
 .kdeCell {

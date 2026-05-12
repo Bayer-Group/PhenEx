@@ -56,7 +56,7 @@ export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs }) 
         className={`${styles.overlay} ${closing ? styles.closing : ''}`}
         onClick={handleOverlayClick}
       >
-        <div className={styles.modal} style={{ marginTop: `${Math.round(mountY.current * 70)}vh` }}>
+        <div className={styles.modal} style={{ marginTop: `${Math.min(Math.round(mountY.current * 70), 50)}vh` }}>
           {bcItems.length > 0 && (
             <SmartBreadcrumbs
               items={bcItems}
