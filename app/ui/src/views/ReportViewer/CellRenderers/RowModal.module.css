@@ -7,6 +7,8 @@
   background-color: rgba(255,255,255,.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+    /* align-items: center; */
+  /* justify-content: center; */
 }
 
 .overlay.closing {
@@ -16,7 +18,7 @@
 .modal {
   animation: scaleIn 0.15s ease-out;
   margin-left: 10%;
-  margin-top:15%;
+  margin-top:10%;
   height:100%;
 }
 

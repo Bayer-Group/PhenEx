@@ -6,6 +6,7 @@ import { NumericChartFrame } from './NumericChartFrame';
 import { KDEChartCellRenderer } from './KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
 import { NumericTableCellRenderer } from './NumericTableCellRenderer';
+import { BarChartCellRenderer } from './BarChartCellRenderer';
 import styles from './NumericGraphModal.module.css';
 
 interface NumericGraphModalProps {
@@ -34,26 +35,41 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
     <RowModal onClose={onClose} breadcrumbs={breadcrumbs}>
       <div className={styles.container}>
         <ModalLegend cohortData={cohortData} visible={visible} onToggle={toggle} />
-        <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
-          <div className={styles.kdeSection}>
-            <KDEChartCellRenderer
-              name={name}
-              cohortData={filteredCohortData}
-              kdeData={kdeData}
-              xMin={xMin}
-              xMax={xMax}
-              showTicks={false}
+
+        <div className={styles.topRow}>
+          <div className={styles.distributionCard}>
+            <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
+              <div className={styles.kdeSection}>
+                <KDEChartCellRenderer
+                  name={name}
+                  cohortData={filteredCohortData}
+                  kdeData={kdeData}
+                  xMin={xMin}
+                  xMax={xMax}
+                  showTicks={false}
+                />
+              </div>
+              <BoxPlotCellRenderer
+                name={name}
+                cohortData={filteredCohortData}
+                xMin={xMin}
+                xMax={xMax}
+                showLabels
+              />
+            </NumericChartFrame>
+          </div>
+
+          <div className={styles.card}>
+            <BarChartCellRenderer
+              data={{ name, _meta: { cohortData: filteredCohortData } }}
+              isModal
             />
           </div>
-          <BoxPlotCellRenderer
-            name={name}
-            cohortData={filteredCohortData}
-            xMin={xMin}
-            xMax={xMax}
-            showLabels
-          />
-        </NumericChartFrame>
-        <NumericTableCellRenderer name={name} cohortData={filteredCohortData} />
+        </div>
+
+        <div className={styles.card}>
+          <NumericTableCellRenderer name={name} cohortData={filteredCohortData} />
+        </div>
       </div>
     </RowModal>
   );

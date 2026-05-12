@@ -44,15 +44,6 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
 
   return (
     <div className={styles.container} onClick={handleClick} style={{ cursor: 'pointer' }}>
-      <div className={styles.kdeSection}>
-        <KDEChartCellRenderer
-          name={name}
-          cohortData={cohortData}
-          kdeData={kdeData}
-          xMin={xMin}
-          xMax={xMax}
-        />
-      </div>
       {activeIndex != null && (
         <div className={styles.boxPlotSection}>
           <BoxPlotCellRenderer
@@ -64,6 +55,15 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
           />
         </div>
       )}
+      <div className={styles.kdeSection}>
+        <KDEChartCellRenderer
+          name={name}
+          cohortData={cohortData}
+          kdeData={kdeData}
+          xMin={xMin}
+          xMax={xMax}
+        />
+      </div>
 
       {modalOpen && (
         <NumericGraphModal
