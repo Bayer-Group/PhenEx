@@ -5,6 +5,7 @@ import { ModalLegend, useCohortVisibility, useFilteredCohortData } from './Modal
 import { NumericChartFrame } from './NumericChartFrame';
 import { KDEChartCellRenderer } from './KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
+import { NumericTableCellRenderer } from './NumericTableCellRenderer';
 import styles from './NumericGraphModal.module.css';
 
 interface NumericGraphModalProps {
@@ -52,6 +53,7 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
             showLabels
           />
         </NumericChartFrame>
+        <NumericTableCellRenderer name={name} cohortData={filteredCohortData} />
       </div>
     </RowModal>
   );
