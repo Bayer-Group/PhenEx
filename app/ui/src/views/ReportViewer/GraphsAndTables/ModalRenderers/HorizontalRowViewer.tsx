@@ -1,7 +1,8 @@
-import { FC, useCallback, useMemo } from 'react';
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type CohortClassified, type KdeCurve } from '../../types';
 import { type SequentialRow } from '../../studyRegistryUtils';
-import { RowModal } from './RowModal';
+import { Portal } from '../../../../components/Portal/Portal';
+import { SmartBreadcrumbs } from '../../../../components/SmartBreadcrumbs';
 import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
 import { BarChartCellRenderer } from '../RowRenderers/BarChartCellRenderer';
 import { CategoricalBarChartCellRenderer } from '../RowRenderers/CategoricalBarChartCellRenderer';
@@ -12,6 +13,23 @@ import { NumericTableCellRenderer } from '../RowRenderers/NumericTableCellRender
 import numericStyles from './NumericGraphModal.module.css';
 import booleanStyles from './BooleanRowModal.module.css';
 import categoricalStyles from './CategoricalRowModal.module.css';
+import styles from './HorizontalRowViewer.module.css';
+
+// ── Constants ───────────────────────────────────────────────────────────
+
+const ANIM_MS = 150;
+const VISIBLE_NEIGHBOURS = 3;
+const CELL_GAP = 16;
+
+/** Track the last click Y so cards appear at the caller's position. */
+let lastClickY = 0.1;
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', (e) => {
+    lastClickY = e.clientY / window.innerHeight;
+  }, true);
+}
+
+// ── Props ───────────────────────────────────────────────────────────────
 
 interface HorizontalRowViewerProps {
   rows: SequentialRow[];
@@ -22,6 +40,8 @@ interface HorizontalRowViewerProps {
   onNavigate: (index: number) => void;
 }
 
+// ── Component ───────────────────────────────────────────────────────────
+
 export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   rows,
   currentIndex,
@@ -30,28 +50,128 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   onClose,
   onNavigate,
 }) => {
+  const [closing, setClosing] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const focusedRef = useRef<HTMLDivElement>(null);
+  const didInitialScroll = useRef(false);
+  const mountY = useRef(lastClickY);
+
   const current = rows[currentIndex];
+  const desiredTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;
+
+  // Visible window of cards
+  const startIdx = Math.max(0, currentIndex - VISIBLE_NEIGHBOURS);
+  const endIdx = Math.min(rows.length - 1, currentIndex + VISIBLE_NEIGHBOURS);
+  const visibleRows = useMemo(
+    () => rows.slice(startIdx, endIdx + 1),
+    [rows, startIdx, endIdx],
+  );
+
+  // ── Scroll management ─────────────────────────────────────────────────
+
+  const centerFocused = useCallback((behavior: ScrollBehavior) => {
+    const scroller = scrollRef.current;
+    const card = focusedRef.current;
+    if (!scroller || !card) return;
+    const target = card.offsetLeft - (scroller.clientWidth - card.offsetWidth) / 2;
+    scroller.scrollTo({ left: Math.max(0, target), behavior });
+  }, []);
+
+  // Smooth scroll on navigate
+  useEffect(() => {
+    if (!didInitialScroll.current) return;
+    centerFocused('smooth');
+  }, [currentIndex, centerFocused]);
+
+  // Instant scroll on mount
+  useEffect(() => {
+    if (didInitialScroll.current) return;
+    didInitialScroll.current = true;
+    centerFocused('instant');
+  }, [centerFocused]);
+
+  // Wheel → horizontal scroll
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      scroller.scrollBy({ left: e.deltaY * 2, behavior: 'instant' });
+    };
+    scroller.addEventListener('wheel', onWheel, { passive: false });
+    return () => scroller.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // ── Close / keyboard ─────────────────────────────────────────────────
+
+  const startClose = useCallback(() => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(onClose, ANIM_MS);
+  }, [closing, onClose]);
+
+  const handleOverlayClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget) startClose();
+    },
+    [startClose],
+  );
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') startClose();
+      if (e.key === 'ArrowLeft') { e.preventDefault(); if (currentIndex > 0) onNavigate(currentIndex - 1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); if (currentIndex < rows.length - 1) onNavigate(currentIndex + 1); }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [startClose, currentIndex, rows.length, onNavigate]);
+
   if (!current) return null;
 
-  const breadcrumbs = [current.category, current.reporter, current.section, current.name]
-    .filter(Boolean) as string[];
-
-  const goPrev = useCallback(() => {
-    if (currentIndex > 0) onNavigate(currentIndex - 1);
-  }, [currentIndex, onNavigate]);
-
-  const goNext = useCallback(() => {
-    if (currentIndex < rows.length - 1) onNavigate(currentIndex + 1);
-  }, [currentIndex, rows.length, onNavigate]);
-
   return (
-    <RowModal onClose={onClose} breadcrumbs={breadcrumbs} onPrev={currentIndex > 0 ? goPrev : undefined} onNext={currentIndex < rows.length - 1 ? goNext : undefined}>
-      <RowContent
-        row={current}
-        cohortData={cohortData}
-        kdeData={kdeData}
-      />
-    </RowModal>
+    <Portal>
+      <div
+        className={`${styles.overlay} ${closing ? styles.closing : ''}`}
+        onClick={handleOverlayClick}
+      >
+        {/* Horizontal strip of fit-content cards */}
+        <div className={styles.scroller} ref={scrollRef} style={{ gap: CELL_GAP }}>
+          {visibleRows.map((row) => {
+            const isFocused = row.index === currentIndex;
+            const rowBc = [row.category, row.reporter, row.section, row.name]
+              .filter(Boolean)
+              .map((b) => ({ displayName: b as string, onClick: () => {} }));
+            return (
+              <div
+                key={row.index}
+                ref={isFocused ? focusedRef : null}
+                className={styles.cell}
+                style={{ '--desired-top': desiredTop } as React.CSSProperties}
+                onClick={isFocused ? undefined : () => onNavigate(row.index)}
+              >
+                <SmartBreadcrumbs
+                  items={rowBc}
+                  compact
+                  classNameSmartBreadcrumbsContainer={styles.breadcrumbs}
+                  classNameBreadcrumbItem={styles.crumb}
+                  classNameBreadcrumbLastItem={styles.crumbLast}
+                />
+                <div className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}>
+                  <div className={styles.cardTitle}>
+                    {row.registry?.display_name || row.name}
+                  </div>
+                  <div className={styles.cardContent}>
+                    <RowContent row={row} cohortData={cohortData} kdeData={kdeData} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Portal>
   );
 };
 

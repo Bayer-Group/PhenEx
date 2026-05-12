@@ -1,0 +1,109 @@
+/* Full-screen overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.15s ease-out;
+  background-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.overlay.closing {
+  animation: fadeOut 0.15s ease-in forwards;
+}
+
+/* Horizontal scroller fills the overlay */
+.scroller {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 24px;
+  scrollbar-width: none;
+}
+
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+
+/* Each cell is a vertical wrapper: breadcrumbs + card, positioned at click Y */
+.cell {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--desired-top, 20vh);
+  width: fit-content;
+  min-width: 500px;
+  transition: opacity 0.2s;
+}
+
+/* Breadcrumbs sit above the card */
+.breadcrumbs {
+  margin-bottom: 6px;
+  pointer-events: all;
+}
+
+.crumb {
+  color: black;
+  font-size: var(--font_size_breadcrumb, 11px);
+}
+
+.crumbLast {
+  display: none;
+}
+
+/* The white content card — fit-content height, scrollable if too tall */
+.card {
+  background: white;
+  border: 1px solid var(--line-color, #e0e0e0);
+  border-radius: 3px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  padding: 30px 100px 30px 50px;
+  width: fit-content;
+  min-width: 500px;
+  max-height: calc(100vh - var(--desired-top, 20vh) - 40px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: opacity 0.2s, border-color 0.2s;
+}
+
+.cardFocused {
+  border-color: #333;
+  opacity: 1;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.cardNeighbour {
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+.cardNeighbour:hover {
+  opacity: 0.65;
+}
+
+.cardTitle {
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: black;
+  font-size: var(--font_size_pagetitle, 18px);
+  margin-bottom: 12px;
+}
+
+.cardContent {
+  /* Content takes its natural height */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
