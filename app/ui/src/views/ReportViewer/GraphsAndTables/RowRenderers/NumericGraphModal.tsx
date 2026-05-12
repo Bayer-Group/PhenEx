@@ -1,11 +1,12 @@
 import { FC } from 'react';
 import { type CohortClassified, type KdeCurve } from '../../types';
-import { RowModal } from './RowModal';
+import { RowModal } from '../ModalRenderers/RowModal';
 import { ModalLegend, useCohortVisibility, useFilteredCohortData } from './ModalLegend';
-import { NumericChartFrame } from '../RowRenderers/NumericChartFrame';
-import { KDEChartCellRenderer } from '../RowRenderers/KDEChartCellRenderer';
-import { BoxPlotCellRenderer } from '../RowRenderers/BoxPlotCellRenderer';
-import { NumericTableCellRenderer } from '../RowRenderers/NumericTableCellRenderer';
+import { NumericChartFrame } from './NumericChartFrame';
+import { KDEChartCellRenderer } from './KDEChartCellRenderer';
+import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
+import { NumericTableCellRenderer } from '../../CellRenderers/NumericTableCellRenderer';
+import { BarChartCellRenderer } from './BarChartCellRenderer';
 import styles from './NumericGraphModal.module.css';
 
 interface NumericGraphModalProps {
@@ -33,7 +34,7 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
   return (
     <RowModal onClose={onClose} breadcrumbs={breadcrumbs}>
       <div className={styles.container}>
-        {/* <ModalLegend cohortData={cohortData} visible={visible} onToggle={toggle} /> */}
+        <ModalLegend cohortData={cohortData} visible={visible} onToggle={toggle} />
 
         <div className={styles.distributionCard}>
           <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
@@ -59,7 +60,14 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
 
         <div className={styles.bottomRow}>
           <div className={styles.card}>
-            <NumericTableCellRenderer name={name} cohortData={filteredCohortData} showBar />
+            <NumericTableCellRenderer name={name} cohortData={filteredCohortData} hideNPct />
+          </div>
+          <div className={`${styles.card} ${styles.barChartCard}`}>
+            <BarChartCellRenderer
+              data={{ name, _meta: { cohortData: filteredCohortData } }}
+              isModal
+              pctDecimals={1}
+            />
           </div>
         </div>
       </div>

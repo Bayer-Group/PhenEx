@@ -10,11 +10,6 @@
   gap: 12px;
 }
 
-.bottomRow > .card:last-child {
-  flex: 1;
-  min-width: 0;
-}
-
 .card {
   background: var(--background_color_card, rgba(255, 255, 255, 0.06));
   border-radius: 8px;
@@ -32,7 +27,4 @@
 .kdeSection {
   height: 160px;
   min-height: 0;
-}
-.barChartCard{
-  padding: 30px 80px 30px 50px;
 }

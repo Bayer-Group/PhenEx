@@ -127,3 +127,26 @@
   align-items: center;
   justify-content: flex-start;
 }
+
+/* ── Bar column ───────────────────────────────────────────────────────── */
+
+.statsBarHeaderCell {
+  width: 120px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.statsBarCell {
+  width: 120px;
+  flex-shrink: 0;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 0 3px 3px 0;
+}

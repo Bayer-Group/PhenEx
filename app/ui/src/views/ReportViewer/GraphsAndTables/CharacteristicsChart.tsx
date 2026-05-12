@@ -10,6 +10,7 @@ import { BarChartCellRenderer } from './RowRenderers/BarChartCellRenderer';
 import { CategoricalBarChartCellRenderer } from './RowRenderers/CategoricalBarChartCellRenderer';
 import { NumericGraphCellRenderer } from './RowRenderers/NumericGraphCellRenderer';
 import { BooleanRowModal } from './ModalRenderers/BooleanRowModal';
+import { CategoricalRowModal } from './ModalRenderers/CategoricalRowModal';
 import { NumericGraphModal } from './ModalRenderers/NumericGraphModal';
 import { SectionCard } from './SectionCard';
 import styles from './CharacteristicsChart.module.css';
@@ -141,7 +142,7 @@ const CategoricalRow: FC<{
         />
       </div>
       {modalOpen && (
-        <BooleanRowModal name={baseName} cohortData={cohortData} onClose={closeModal} breadcrumbs={breadcrumbs} />
+        <CategoricalRowModal baseName={baseName} cohortData={cohortData} onClose={closeModal} breadcrumbs={breadcrumbs} />
       )}
     </div>
   );

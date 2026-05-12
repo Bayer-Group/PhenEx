@@ -15,12 +15,16 @@ interface NumericTableCellRendererProps {
   name: string;
   cohortData: CohortClassified[];
   hideNPct?: boolean;
+  showBar?: boolean;
+  pctDecimals?: number;
 }
 
 export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
   name,
   cohortData,
   hideNPct,
+  showBar,
+  pctDecimals = 1,
 }) => {
   const { activeIndex, onClick } = useBarHoverStore();
   const [hover, setHover] = useState<{ index: number; x: number; top: number } | null>(null);
@@ -32,6 +36,7 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
         <div className={styles.statsHeaderRow}>
           <div className={styles.statsCohortCell} />
           {!hideNPct && <div className={styles.statsPctHeaderCell}>%</div>}
+          {!hideNPct && showBar && <div className={styles.statsBarHeaderCell} />}
           {!hideNPct && <div className={styles.statsNHeaderCell}>N</div>}
           {STAT_KEYS.map((k) => (
             <div key={k} className={styles.statsHeaderCell}>{k}</div>
@@ -40,6 +45,7 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
         {cohortData.map((cd, i) => {
           const row = cd.data.rows.find((r) => r.Name === name);
           if (!row) return null;
+          const pct = row.Pct ?? 0;
           const dimmed = activeIndex !== null && activeIndex !== i;
           return (
             <div
@@ -63,7 +69,15 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
               </div>
               {!hideNPct && (
                 <div className={styles.statsPctCell}>
-                  {row.Pct != null ? `${Math.round(row.Pct * 10) / 10}` : '–'}
+                  {pct.toFixed(pctDecimals)}
+                </div>
+              )}
+              {!hideNPct && showBar && (
+                <div className={styles.statsBarCell}>
+                  <div
+                    className={styles.barFill}
+                    style={{ width: `${Math.max(0, pct)}%`, backgroundColor: cd.color }}
+                  />
                 </div>
               )}
               {!hideNPct && (
