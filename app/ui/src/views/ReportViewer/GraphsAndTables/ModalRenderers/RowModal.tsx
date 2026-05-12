@@ -76,12 +76,14 @@ export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs }) 
           {bcItems.length > 0 && (
             <SmartBreadcrumbs
               items={bcItems}
+              compact={true}
               classNameSmartBreadcrumbsContainer={styles.breadcrumbs}
               classNameBreadcrumbItem={styles.crumb}
               classNameBreadcrumbLastItem={styles.crumbLast}
             />
           )}
-          <div className={styles.rowContent}>{children}</div>
+          <div className={styles.rowContent}>
+            <div className={styles.cardTitle}>{bcItems[bcItems.length - 1]?.displayName}</div>{children}</div>
         </div>
       </div>
     </Portal>

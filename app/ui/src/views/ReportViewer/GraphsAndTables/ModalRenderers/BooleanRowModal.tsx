@@ -24,7 +24,7 @@ export const BooleanRowModal: FC<BooleanRowModalProps> = ({
   return (
     <RowModal onClose={onClose} breadcrumbs={breadcrumbs}>
       <div className={styles.container}>
-        <ModalLegend cohortData={cohortData} visible={visible} onToggle={toggle} />
+        {/* <ModalLegend cohortData={cohortData} visible={visible} onToggle={toggle} /> */}
         <BarChartCellRenderer
           data={{ name, _meta: { cohortData: filteredCohortData } }}
           isModal

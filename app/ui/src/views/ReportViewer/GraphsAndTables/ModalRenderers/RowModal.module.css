@@ -45,6 +45,12 @@
 }
 
 .crumbLast {
+  display: none;
+}
+
+
+.cardTitle {
+  font-family: "IBMPlexSans-bold", sans-serif;
   color: black;
   font-size: var(--font_size_pagetitle, 18px);
 }
