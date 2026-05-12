@@ -66,6 +66,7 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
             <BarChartCellRenderer
               data={{ name, _meta: { cohortData: filteredCohortData } }}
               isModal
+              pctDecimals={1}
             />
           </div>
         </div>
