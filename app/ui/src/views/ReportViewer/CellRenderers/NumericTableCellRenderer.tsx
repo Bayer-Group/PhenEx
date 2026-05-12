@@ -14,11 +14,13 @@ const fmt = (v: number | null | undefined) => {
 interface NumericTableCellRendererProps {
   name: string;
   cohortData: CohortClassified[];
+  hideNPct?: boolean;
 }
 
 export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
   name,
   cohortData,
+  hideNPct,
 }) => {
   const { activeIndex, onClick } = useBarHoverStore();
   const [hover, setHover] = useState<{ index: number; x: number; top: number } | null>(null);
@@ -29,8 +31,8 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
       <div className={styles.statsGrid}>
         <div className={styles.statsHeaderRow}>
           <div className={styles.statsCohortCell} />
-          <div className={styles.statsPctHeaderCell}>%</div>
-          <div className={styles.statsNHeaderCell}>N</div>
+          {!hideNPct && <div className={styles.statsPctHeaderCell}>%</div>}
+          {!hideNPct && <div className={styles.statsNHeaderCell}>N</div>}
           {STAT_KEYS.map((k) => (
             <div key={k} className={styles.statsHeaderCell}>{k}</div>
           ))}
@@ -59,12 +61,16 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
               <div className={styles.statsCohortCell}>
                 <span className={styles.statDot} style={{ backgroundColor: cd.color }} />
               </div>
-              <div className={styles.statsPctCell}>
-                {row.Pct != null ? `${Math.round(row.Pct * 10) / 10}` : '–'}
-              </div>
-              <div className={styles.statsNCell}>
-                {row.N != null ? row.N.toLocaleString() : '–'}
-              </div>
+              {!hideNPct && (
+                <div className={styles.statsPctCell}>
+                  {row.Pct != null ? `${Math.round(row.Pct * 10) / 10}` : '–'}
+                </div>
+              )}
+              {!hideNPct && (
+                <div className={styles.statsNCell}>
+                  {row.N != null ? row.N.toLocaleString() : '–'}
+                </div>
+              )}
               {STAT_KEYS.map((k) => (
                 <div key={k} className={styles.statsValueCell}>
                   {fmt(row[k] as number | null | undefined)}

@@ -5,12 +5,12 @@
   gap: 12px;
 }
 
-.topRow {
+.bottomRow {
   display: flex;
   gap: 12px;
 }
 
-.topRow > .card:first-child {
+.bottomRow > .card:last-child {
   flex: 1;
   min-width: 0;
 }
@@ -19,6 +19,7 @@
   background: var(--background_color_card, rgba(255, 255, 255, 0.06));
   border-radius: 8px;
   padding: 12px;
+  background-color: red;
 }
 
 .distributionCard {

@@ -36,39 +36,38 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
       <div className={styles.container}>
         <ModalLegend cohortData={cohortData} visible={visible} onToggle={toggle} />
 
-        <div className={styles.topRow}>
-          <div className={styles.distributionCard}>
-            <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
-              <div className={styles.kdeSection}>
-                <KDEChartCellRenderer
-                  name={name}
-                  cohortData={filteredCohortData}
-                  kdeData={kdeData}
-                  xMin={xMin}
-                  xMax={xMax}
-                  showTicks={false}
-                />
-              </div>
-              <BoxPlotCellRenderer
+        <div className={styles.distributionCard}>
+          <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
+            <div className={styles.kdeSection}>
+              <KDEChartCellRenderer
                 name={name}
                 cohortData={filteredCohortData}
+                kdeData={kdeData}
                 xMin={xMin}
                 xMax={xMax}
-                showLabels
+                showTicks={false}
               />
-            </NumericChartFrame>
-          </div>
+            </div>
+            <BoxPlotCellRenderer
+              name={name}
+              cohortData={filteredCohortData}
+              xMin={xMin}
+              xMax={xMax}
+              showLabels
+            />
+          </NumericChartFrame>
+        </div>
 
+        <div className={styles.bottomRow}>
+          <div className={styles.card}>
+            <NumericTableCellRenderer name={name} cohortData={filteredCohortData} hideNPct />
+          </div>
           <div className={styles.card}>
             <BarChartCellRenderer
               data={{ name, _meta: { cohortData: filteredCohortData } }}
               isModal
             />
           </div>
-        </div>
-
-        <div className={styles.card}>
-          <NumericTableCellRenderer name={name} cohortData={filteredCohortData} />
         </div>
       </div>
     </RowModal>
