@@ -7,7 +7,7 @@ import styles from './BoxPlotCellRenderer.module.css';
 
 /* ── Layout constants ────────────────────────────────────────────────── */
 
-const PAD = 4;
+const PAD = 2;
 const DEFAULT_W = 300;
 const ROW_H = 14;
 const ROW_GAP = 2;

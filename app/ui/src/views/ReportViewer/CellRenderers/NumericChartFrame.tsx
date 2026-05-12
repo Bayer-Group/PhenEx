@@ -3,7 +3,7 @@ import styles from './NumericChartFrame.module.css';
 
 /* ── Shared axis helpers (exported for reuse) ────────────────────────── */
 
-const PAD = 4;
+const PAD = 2;
 
 export function niceTicks(min: number, max: number): number[] {
   const range = max - min;
