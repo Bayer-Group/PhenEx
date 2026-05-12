@@ -144,22 +144,24 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 style={{ '--desired-top': desiredTop } as React.CSSProperties}
                 onClick={isFocused ? undefined : () => onNavigate(row.index)}
               >
-                <SmartBreadcrumbs
-                  items={rowBc}
-                  compact
-                  classNameSmartBreadcrumbsContainer={styles.breadcrumbs}
-                  classNameBreadcrumbItem={styles.crumb}
-                  classNameBreadcrumbLastItem={styles.crumbLast}
-                />
-                <div className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}>
-                  <div className={styles.cardTitle}>
-                    {row.registry?.display_name || row.name}
-                  </div>
-                  <div className={styles.cardContent}>
-                    {nearby
-                      ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} />
-                      : null}
-                  </div>
+                <div className={styles.verticalWrapper}>
+                    <SmartBreadcrumbs
+                    items={rowBc}
+                    compact
+                    classNameSmartBreadcrumbsContainer={styles.breadcrumbs}
+                    classNameBreadcrumbItem={styles.crumb}
+                    classNameBreadcrumbLastItem={styles.crumbLast}
+                    />
+                    <div className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}>
+                    <div className={styles.cardTitle}>
+                        {row.registry?.display_name || row.name}
+                    </div>
+                    <div className={styles.cardContent}>
+                        {nearby
+                        ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} />
+                        : null}
+                    </div>
+                    </div>
                 </div>
               </div>
             );
