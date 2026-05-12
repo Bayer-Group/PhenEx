@@ -20,21 +20,12 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
   const [modal, setModal] = useState<{ x: number; y: number } | null>(null);
   const { activeIndex } = useBarHoverStore();
 
-  // Compute shared x range from both KDE curves and box-plot stats
+  // Compute shared x range from row stats (Min/Max) only.
+  // KDE curves extend beyond these but are clipped to [Min, Max].
   const { xMin, xMax } = useMemo(() => {
     let lo = Infinity;
     let hi = -Infinity;
 
-    // From KDE curves
-    for (const cd of cohortData) {
-      const curve = kdeData[cd.name]?.[name];
-      if (curve?.x.length) {
-        if (curve.x[0] < lo) lo = curve.x[0];
-        if (curve.x[curve.x.length - 1] > hi) hi = curve.x[curve.x.length - 1];
-      }
-    }
-
-    // From numeric row stats
     for (const cd of cohortData) {
       const row = cd.data.rows.find((r) => r.Name === name);
       if (!row) continue;
@@ -44,7 +35,7 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
 
     if (!isFinite(lo)) { lo = 0; hi = 1; }
     return { xMin: lo, xMax: hi };
-  }, [name, cohortData, kdeData]);
+  }, [name, cohortData]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     setModal({ x: e.clientX, y: e.clientY });

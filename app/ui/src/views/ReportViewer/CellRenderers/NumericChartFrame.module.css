@@ -3,6 +3,7 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+  overflow: visible;
 }
 
 /* ── Grid lines ──────────────────────────────────────────────────────── */
@@ -30,6 +31,7 @@
   top: 2px;
   left: 0;
   right: 0;
+  overflow: visible;
 }
 
 .headerTick {
