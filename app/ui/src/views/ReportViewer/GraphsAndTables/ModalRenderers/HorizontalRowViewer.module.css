@@ -24,7 +24,6 @@
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0 24px;
-  scroll-behavior: smooth;
   scrollbar-width: none;
 }
 
