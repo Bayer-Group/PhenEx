@@ -49,6 +49,33 @@
 }
 
 
+.navRow {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.navButton {
+  background: none;
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 10px;
+  color: #333;
+  line-height: 1;
+}
+
+.navButton:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.navButton:not(:disabled):hover {
+  background: #f0f0f0;
+}
+
 .cardTitle {
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;

@@ -17,9 +17,11 @@ interface RowModalProps {
   children: React.ReactNode;
   onClose: () => void;
   breadcrumbs?: string[];
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
-export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs }) => {
+export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs, onPrev, onNext }) => {
   const [closing, setClosing] = useState(false);
   const mountY = useRef(lastClickY);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -57,10 +59,12 @@ export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs }) 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') startClose();
+      if (e.key === 'ArrowLeft' && onPrev) { e.preventDefault(); onPrev(); }
+      if (e.key === 'ArrowRight' && onNext) { e.preventDefault(); onNext(); }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [startClose]);
+  }, [startClose, onPrev, onNext]);
 
   return (
     <Portal>
@@ -83,6 +87,22 @@ export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs }) 
             />
           )}
           <div className={styles.rowContent}>
+            {(onPrev || onNext) && (
+              <div className={styles.navRow}>
+                <button
+                  className={styles.navButton}
+                  onClick={(e) => { e.stopPropagation(); onPrev?.(); }}
+                  disabled={!onPrev}
+                  aria-label="Previous row"
+                >←</button>
+                <button
+                  className={styles.navButton}
+                  onClick={(e) => { e.stopPropagation(); onNext?.(); }}
+                  disabled={!onNext}
+                  aria-label="Next row"
+                >→</button>
+              </div>
+            )}
             <div className={styles.cardTitle}>{bcItems[bcItems.length - 1]?.displayName}</div>{children}</div>
         </div>
       </div>

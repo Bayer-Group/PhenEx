@@ -6,12 +6,11 @@ import {
   collectCharacteristics,
   groupCharacteristicsBySection,
 } from '../types';
+import { type SequentialRow } from '../studyRegistryUtils';
 import { BarChartCellRenderer } from './RowRenderers/BarChartCellRenderer';
 import { CategoricalBarChartCellRenderer } from './RowRenderers/CategoricalBarChartCellRenderer';
 import { NumericGraphCellRenderer } from './RowRenderers/NumericGraphCellRenderer';
-import { BooleanRowModal } from './ModalRenderers/BooleanRowModal';
-import { CategoricalRowModal } from './ModalRenderers/CategoricalRowModal';
-import { NumericGraphModal } from './ModalRenderers/NumericGraphModal';
+import { HorizontalRowViewer } from './ModalRenderers/HorizontalRowViewer';
 import { SectionCard } from './SectionCard';
 import styles from './CharacteristicsChart.module.css';
 
@@ -22,6 +21,7 @@ interface CharacteristicsChartProps {
   sections: Record<string, string[]> | null;
   sectionRefs: Map<string, HTMLDivElement>;
   groupTitle?: string;
+  sequentialRows?: SequentialRow[];
 }
 
 export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
@@ -29,6 +29,7 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
   sections,
   sectionRefs,
   groupTitle,
+  sequentialRows,
 }) => {
   const items = useMemo(() => collectCharacteristics(cohortData), [cohortData]);
   const groups = useMemo(
@@ -44,6 +45,25 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
     }
     return result;
   }, [cohortData]);
+
+  // Modal state: index into sequentialRows, or null
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const closeViewer = useCallback(() => setViewerIndex(null), []);
+
+  // Build a lookup: row name → sequential index for this reporter
+  const nameToSeqIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!sequentialRows) return map;
+    for (const sr of sequentialRows) {
+      if (!map.has(sr.name)) map.set(sr.name, sr.index);
+    }
+    return map;
+  }, [sequentialRows]);
+
+  const openRow = useCallback((name: string) => {
+    const idx = nameToSeqIndex.get(name);
+    if (idx != null) setViewerIndex(idx);
+  }, [nameToSeqIndex]);
 
   if (!items.length) return null;
 
@@ -66,13 +86,22 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
                 item={item}
                 cohortData={cohortData}
                 kdeData={kdeData}
-                groupTitle={groupTitle}
-                sectionTitle={g.section}
+                onOpen={openRow}
               />
             ))}
           </SectionCard>
         );
       })}
+      {viewerIndex != null && sequentialRows && (
+        <HorizontalRowViewer
+          rows={sequentialRows}
+          currentIndex={viewerIndex}
+          cohortData={cohortData}
+          kdeData={kdeData}
+          onClose={closeViewer}
+          onNavigate={setViewerIndex}
+        />
+      )}
     </div>
   );
 };
@@ -83,39 +112,32 @@ const CharacteristicRow: FC<{
   item: CharacteristicItem;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
-  groupTitle?: string;
-  sectionTitle?: string | null;
-}> = ({ item, cohortData, kdeData, groupTitle, sectionTitle }) => {
-  const breadcrumbs = [groupTitle, sectionTitle ?? undefined, item.baseName].filter(Boolean) as string[];
+  onOpen: (name: string) => void;
+}> = ({ item, cohortData, kdeData, onOpen }) => {
   if (item.type === 'categorical') {
-    return <CategoricalRow baseName={item.baseName} cohortData={cohortData} breadcrumbs={breadcrumbs} />;
+    return <CategoricalRow baseName={item.baseName} cohortData={cohortData} onOpen={onOpen} />;
   }
   if (item.type === 'numeric') {
-    return <NumericRow name={item.baseName} cohortData={cohortData} kdeData={kdeData} breadcrumbs={breadcrumbs} />;
+    return <NumericRow name={item.baseName} cohortData={cohortData} kdeData={kdeData} onOpen={onOpen} />;
   }
-  return <BooleanRow name={item.baseName} cohortData={cohortData} breadcrumbs={breadcrumbs} />;
+  return <BooleanRow name={item.baseName} cohortData={cohortData} onOpen={onOpen} />;
 };
 
 /* ── Boolean row ─────────────────────────────────────────────────────── */
 
-const BooleanRow: FC<{ name: string; cohortData: CohortClassified[]; breadcrumbs?: string[] }> = ({
+const BooleanRow: FC<{ name: string; cohortData: CohortClassified[]; onOpen: (name: string) => void }> = ({
   name,
   cohortData,
-  breadcrumbs,
+  onOpen,
 }) => {
-  const [modalOpen, setModalOpen] = useState(false);
-  const openModal = useCallback(() => setModalOpen(true), []);
-  const closeModal = useCallback(() => setModalOpen(false), []);
+  const handleClick = useCallback(() => onOpen(name), [name, onOpen]);
 
   return (
-    <div className={styles.row} onClick={openModal} style={{ cursor: 'pointer' }}>
+    <div className={styles.row} onClick={handleClick} style={{ cursor: 'pointer' }}>
       <div className={styles.nameCell}>{name}</div>
       <div className={styles.booleanChartCell}>
         <BarChartCellRenderer data={{ name, _meta: { cohortData } }} isModal />
       </div>
-      {modalOpen && (
-        <BooleanRowModal name={name} cohortData={cohortData} onClose={closeModal} breadcrumbs={breadcrumbs} />
-      )}
     </div>
   );
 };
@@ -125,14 +147,12 @@ const BooleanRow: FC<{ name: string; cohortData: CohortClassified[]; breadcrumbs
 const CategoricalRow: FC<{
   baseName: string;
   cohortData: CohortClassified[];
-  breadcrumbs?: string[];
-}> = ({ baseName, cohortData, breadcrumbs }) => {
-  const [modalOpen, setModalOpen] = useState(false);
-  const openModal = useCallback(() => setModalOpen(true), []);
-  const closeModal = useCallback(() => setModalOpen(false), []);
+  onOpen: (name: string) => void;
+}> = ({ baseName, cohortData, onOpen }) => {
+  const handleClick = useCallback(() => onOpen(baseName), [baseName, onOpen]);
 
   return (
-    <div className={styles.numericRow} onClick={openModal} style={{ cursor: 'pointer' }}>
+    <div className={styles.numericRow} onClick={handleClick} style={{ cursor: 'pointer' }}>
       <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{baseName}</div>
       <div className={styles.kdeCell}>
         <CategoricalBarChartCellRenderer
@@ -141,9 +161,6 @@ const CategoricalRow: FC<{
           orientation="vertical"
         />
       </div>
-      {modalOpen && (
-        <CategoricalRowModal baseName={baseName} cohortData={cohortData} onClose={closeModal} breadcrumbs={breadcrumbs} />
-      )}
     </div>
   );
 };
@@ -154,42 +171,16 @@ const NumericRow: FC<{
   name: string;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
-  breadcrumbs?: string[];
-}> = ({ name, cohortData, kdeData, breadcrumbs }) => {
-  const [modalOpen, setModalOpen] = useState(false);
-  const openModal = useCallback(() => setModalOpen(true), []);
-  const closeModal = useCallback(() => setModalOpen(false), []);
-
-  const { xMin, xMax } = useMemo(() => {
-    let lo = Infinity;
-    let hi = -Infinity;
-    for (const cd of cohortData) {
-      const row = cd.data.rows.find((r) => r.Name === name);
-      if (!row) continue;
-      if (row.Min != null && row.Min < lo) lo = row.Min;
-      if (row.Max != null && row.Max > hi) hi = row.Max;
-    }
-    if (!isFinite(lo)) { lo = 0; hi = 1; }
-    return { xMin: lo, xMax: hi };
-  }, [name, cohortData]);
+  onOpen: (name: string) => void;
+}> = ({ name, cohortData, kdeData, onOpen }) => {
+  const handleClick = useCallback(() => onOpen(name), [name, onOpen]);
 
   return (
-    <div className={styles.numericRow} onClick={openModal} style={{ cursor: 'pointer' }}>
+    <div className={styles.numericRow} onClick={handleClick} style={{ cursor: 'pointer' }}>
       <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{name}</div>
       <div className={styles.kdeCell}>
         <NumericGraphCellRenderer name={name} cohortData={cohortData} kdeData={kdeData} />
       </div>
-      {modalOpen && (
-        <NumericGraphModal
-          name={name}
-          cohortData={cohortData}
-          kdeData={kdeData}
-          xMin={xMin}
-          xMax={xMax}
-          onClose={closeModal}
-          breadcrumbs={breadcrumbs}
-        />
-      )}
     </div>
   );
 };

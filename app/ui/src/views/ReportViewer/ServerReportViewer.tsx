@@ -20,6 +20,7 @@ import {
   type CohortEntry,
   type LegendSelection,
 } from './types';
+import { buildSequentialRowList, type StudyRegistry } from './studyRegistryUtils';
 
 /** Merge combined KDE data into each cohort entry's `kdes` field. */
 function mergeKdesIntoEntries(
@@ -213,14 +214,34 @@ export const ServerReportViewer: FC = () => {
   }, [selectedRun, loadRun]);
 
   // ── Study registry ────────────────────────────────────────────────────
+  const [studyRegistry, setStudyRegistry] = useState<StudyRegistry | null>(null);
+
   useEffect(() => {
     if (!selectedRun) return;
     fetchStudyRegistry(selectedRun)
       .then((registry) => {
-        console.log('[ServerReportViewer] study_registry received', registry);
+        setStudyRegistry(registry as StudyRegistry);
       })
       .catch(() => {});
   }, [selectedRun]);
+
+  const sequentialRows = useMemo(
+    () => buildSequentialRowList(
+      studyRegistry,
+      allCohortEntries,
+      allOutcomesEntries,
+      waterfallData,
+      table2Data,
+      timeToEventData,
+    ),
+    [studyRegistry, allCohortEntries, allOutcomesEntries, waterfallData, table2Data, timeToEventData],
+  );
+
+  useEffect(() => {
+    if (sequentialRows.length > 0) {
+      console.log(`[ServerReportViewer] sequential row list (${sequentialRows.length} rows)`, sequentialRows);
+    }
+  }, [sequentialRows]);
 
   // ── AI analysis ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -246,6 +267,7 @@ export const ServerReportViewer: FC = () => {
       waterfallData={waterfallData}
       table2Data={table2Data}
       timeToEventData={timeToEventData}
+      sequentialRows={sequentialRows}
       runId={selectedRun}
       loading={loadingRun}
       storageKey={selectedRun ? `report-zoom-${selectedRun}` : undefined}

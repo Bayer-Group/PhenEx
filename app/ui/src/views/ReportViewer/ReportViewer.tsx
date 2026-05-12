@@ -25,6 +25,7 @@ import {
   type Table2Row,
   type TimeToEventRow,
 } from './types';
+import { type SequentialRow } from './studyRegistryUtils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ export interface ReportViewerProps {
   waterfallData: Record<string, unknown>;
   table2Data?: Record<string, Table2Row[]>;
   timeToEventData?: Record<string, TimeToEventRow[]>;
+  sequentialRows?: SequentialRow[];
   runId: string | null;
   loading?: boolean;
   title?: string;
@@ -62,6 +64,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   waterfallData,
   table2Data,
   timeToEventData,
+  sequentialRows,
   runId,
   loading = false,
   title = 'LUMINOUS',
@@ -437,6 +440,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                   sections={sections}
                   sectionRefs={baselineSectionRefs.current}
                   groupTitle="Baseline Characteristics"
+                  sequentialRows={sequentialRows}
                 />
               </ChartGroup>
               </div>
@@ -449,6 +453,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                       sections={outcomesSections}
                       sectionRefs={outcomesSectionRefs.current}
                       groupTitle="Outcomes"
+                      sequentialRows={sequentialRows}
                     />
                   </ChartGroup>
                 </div>

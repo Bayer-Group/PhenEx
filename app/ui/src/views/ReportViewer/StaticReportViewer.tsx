@@ -10,6 +10,7 @@ import { FC, useMemo } from 'react';
 import { ReportViewer } from './ReportViewer';
 import type { KdeCurve, Table2Row, TimeToEventRow } from './types';
 import type { CohortEntry } from './types';
+import { buildSequentialRowList, type StudyRegistry } from './studyRegistryUtils';
 
 // ── Embedded data interface ─────────────────────────────────────────────
 
@@ -76,8 +77,20 @@ export const StaticReportViewer: FC = () => {
     [reportData],
   );
 
-  if (reportData?.studyRegistry) {
-    console.log('[StaticReportViewer] study_registry received', reportData.studyRegistry);
+  const sequentialRows = useMemo(() => {
+    const registry = (reportData?.studyRegistry as StudyRegistry) ?? null;
+    return buildSequentialRowList(
+      registry,
+      allCohortEntries,
+      allOutcomesEntries,
+      waterfallData,
+      table2Data,
+      timeToEventData,
+    );
+  }, [reportData, allCohortEntries, allOutcomesEntries, waterfallData, table2Data, timeToEventData]);
+
+  if (sequentialRows.length > 0) {
+    console.log(`[StaticReportViewer] sequential row list (${sequentialRows.length} rows)`, sequentialRows);
   }
 
   if (!reportData) {
@@ -91,6 +104,7 @@ export const StaticReportViewer: FC = () => {
       waterfallData={waterfallData}
       table2Data={table2Data}
       timeToEventData={timeToEventData}
+      sequentialRows={sequentialRows}
       runId={reportData.runId ?? null}
       title="PhenEx Report"
     />
