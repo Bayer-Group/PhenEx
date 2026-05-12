@@ -18,7 +18,7 @@ import styles from './HorizontalRowViewer.module.css';
 // ── Constants ───────────────────────────────────────────────────────────
 
 const ANIM_MS = 150;
-const VISIBLE_NEIGHBOURS = 3;
+const RENDER_NEIGHBOURS = 3; // only render chart content for cells within this range
 const CELL_GAP = 16;
 
 /** Track the last click Y so cards appear at the caller's position. */
@@ -59,46 +59,38 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const current = rows[currentIndex];
   const desiredTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;
 
-  // Visible window of cards
-  const startIdx = Math.max(0, currentIndex - VISIBLE_NEIGHBOURS);
-  const endIdx = Math.min(rows.length - 1, currentIndex + VISIBLE_NEIGHBOURS);
-  const visibleRows = useMemo(
-    () => rows.slice(startIdx, endIdx + 1),
-    [rows, startIdx, endIdx],
-  );
-
   // ── Scroll management ─────────────────────────────────────────────────
 
-  const centerFocused = useCallback((behavior: ScrollBehavior) => {
+  const centerFocused = useCallback((instant: boolean) => {
     const scroller = scrollRef.current;
     const card = focusedRef.current;
     if (!scroller || !card) return;
-    const target = card.offsetLeft - (scroller.clientWidth - card.offsetWidth) / 2;
-    scroller.scrollTo({ left: Math.max(0, target), behavior });
+    const target = Math.max(0, card.offsetLeft - (scroller.clientWidth - card.offsetWidth) / 2);
+    if (instant) {
+      scroller.scrollLeft = target;
+    } else {
+      scroller.scrollTo({ left: target, behavior: 'smooth' });
+    }
   }, []);
 
-  // Smooth scroll on navigate
+  // Smooth scroll on navigate (rAF so the new ref is painted first)
   useEffect(() => {
     if (!didInitialScroll.current) return;
-    centerFocused('smooth');
+    requestAnimationFrame(() => centerFocused(false));
   }, [currentIndex, centerFocused]);
 
   // Instant scroll on mount
   useEffect(() => {
     if (didInitialScroll.current) return;
     didInitialScroll.current = true;
-    centerFocused('instant');
+    centerFocused(true);
   }, [centerFocused]);
 
-  // Wheel → horizontal scroll
+  // Block trackpad / wheel scrolling
   useEffect(() => {
     const scroller = scrollRef.current;
     if (!scroller) return;
-    const onWheel = (e: WheelEvent) => {
-      if (e.deltaY === 0) return;
-      e.preventDefault();
-      scroller.scrollBy({ left: e.deltaY * 2, behavior: 'instant' });
-    };
+    const onWheel = (e: WheelEvent) => e.preventDefault();
     scroller.addEventListener('wheel', onWheel, { passive: false });
     return () => scroller.removeEventListener('wheel', onWheel);
   }, []);
@@ -136,10 +128,11 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
         className={`${styles.overlay} ${closing ? styles.closing : ''}`}
         onClick={handleOverlayClick}
       >
-        {/* Horizontal strip of fit-content cards */}
+        {/* Horizontal strip of cards — all cells in DOM, only nearby ones render content */}
         <div className={styles.scroller} ref={scrollRef} style={{ gap: CELL_GAP }}>
-          {visibleRows.map((row) => {
+          {rows.map((row) => {
             const isFocused = row.index === currentIndex;
+            const nearby = Math.abs(row.index - currentIndex) <= RENDER_NEIGHBOURS;
             const rowBc = [row.category, row.reporter, row.section, row.name]
               .filter(Boolean)
               .map((b) => ({ displayName: b as string, onClick: () => {} }));
@@ -163,7 +156,9 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                     {row.registry?.display_name || row.name}
                   </div>
                   <div className={styles.cardContent}>
-                    <RowContent row={row} cohortData={cohortData} kdeData={kdeData} />
+                    {nearby
+                      ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} />
+                      : null}
                   </div>
                 </div>
               </div>
