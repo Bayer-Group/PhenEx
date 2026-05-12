@@ -1,6 +1,6 @@
 import { FC, useState, useRef, useCallback } from 'react';
 import { getCohortColor, type CohortGroup, type LegendSelection } from './types';
-import { useBarHoverStore } from './CellRenderers/useBarHoverStore';
+import { useBarHoverStore } from './GraphsAndTables/RowRenderers/useBarHoverStore';
 import { CohortMenu } from './ReportFloatingControls/CohortMenu';
 import styles from './CohortSelector.module.css';
 

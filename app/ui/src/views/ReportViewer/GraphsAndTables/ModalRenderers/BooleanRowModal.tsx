@@ -1,8 +1,8 @@
 import { FC } from 'react';
-import { type CohortClassified } from '../types';
+import { type CohortClassified } from '../../types';
 import { RowModal } from './RowModal';
 import { ModalLegend, useCohortVisibility, useFilteredCohortData } from './ModalLegend';
-import { BarChartCellRenderer } from './BarChartCellRenderer';
+import { BarChartCellRenderer } from '../RowRenderers/BarChartCellRenderer';
 import styles from './BooleanRowModal.module.css';
 
 interface BooleanRowModalProps {

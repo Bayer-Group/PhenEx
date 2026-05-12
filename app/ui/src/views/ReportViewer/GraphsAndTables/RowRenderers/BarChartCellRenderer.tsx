@@ -1,8 +1,8 @@
 import { FC, useState, useRef, useCallback } from 'react';
-import { type CohortClassified } from '../types';
+import { type CohortClassified } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { CohortNameTooltip } from './CohortNameTooltip';
-import { BooleanRowModal } from './BooleanRowModal';
+import { BooleanRowModal } from '../ModalRenderers/BooleanRowModal';
 import styles from './BarChartCellRenderer.module.css';
 
 const DEFAULT_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];

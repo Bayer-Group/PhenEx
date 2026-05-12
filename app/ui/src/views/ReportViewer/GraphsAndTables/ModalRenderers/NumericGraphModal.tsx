@@ -1,12 +1,12 @@
 import { FC } from 'react';
-import { type CohortClassified, type KdeCurve } from '../types';
+import { type CohortClassified, type KdeCurve } from '../../types';
 import { RowModal } from './RowModal';
 import { ModalLegend, useCohortVisibility, useFilteredCohortData } from './ModalLegend';
-import { NumericChartFrame } from './NumericChartFrame';
-import { KDEChartCellRenderer } from './KDEChartCellRenderer';
-import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
-import { NumericTableCellRenderer } from './NumericTableCellRenderer';
-import { BarChartCellRenderer } from './BarChartCellRenderer';
+import { NumericChartFrame } from '../RowRenderers/NumericChartFrame';
+import { KDEChartCellRenderer } from '../RowRenderers/KDEChartCellRenderer';
+import { BoxPlotCellRenderer } from '../RowRenderers/BoxPlotCellRenderer';
+import { NumericTableCellRenderer } from '../RowRenderers/NumericTableCellRenderer';
+import { BarChartCellRenderer } from '../RowRenderers/BarChartCellRenderer';
 import styles from './NumericGraphModal.module.css';
 
 interface NumericGraphModalProps {

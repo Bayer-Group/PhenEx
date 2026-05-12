@@ -1,8 +1,8 @@
 import { FC, useRef, useState, useLayoutEffect } from 'react';
-import { type CohortClassified } from '../types';
+import { type CohortClassified } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { NumericChartFrame } from './NumericChartFrame';
-import { BoxPlotModal } from './BoxPlotModal';
+import { BoxPlotModal } from '../ModalRenderers/BoxPlotModal';
 import styles from './BoxPlotCellRenderer.module.css';
 
 /* ── Layout constants ────────────────────────────────────────────────── */
@@ -205,28 +205,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
               <line x1={toX(stats.median)} y1={boxTop} x2={toX(stats.median)} y2={boxTop + boxH} stroke={e.color} strokeWidth={2} />
               {stats.mean != null && <circle cx={toX(stats.mean)} cy={cy} r={2.5} fill={e.color} />}
 
-              {/* Always-visible labels (modal mode) */}
-              {showLabels && (() => {
-                const labelY = plotH + LABEL_ROW_H - 4;
-                const positioned = deOverlap(getLandmarks(stats), toX);
-                return positioned.map(({ val, label, labelX, originX }) => (
-                  <g key={label}>
-                    <line
-                      x1={originX} y1={cy + boxH * 0.3 + 1}
-                      x2={labelX} y2={labelY - 9}
-                      stroke={e.color} strokeWidth={0.5} strokeOpacity={0.4}
-                    />
-                    <text
-                      x={labelX} y={labelY}
-                      textAnchor="middle" fontSize={9}
-                      fill={e.color}
-                      fontFamily="IBMPlexSans-regular, sans-serif"
-                    >
-                      {label}: {fmt(val)}
-                    </text>
-                  </g>
-                ));
-              })()}
+              
             </g>
           );
         })}

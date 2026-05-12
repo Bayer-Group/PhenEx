@@ -1,5 +1,5 @@
 import { FC, useEffect, useRef, useState } from 'react';
-import { Portal } from '../../../components/Portal/Portal';
+import { Portal } from '../../../../components/Portal/Portal';
 import styles from './CohortNameTooltip.module.css';
 
 interface CohortNameTooltipProps {

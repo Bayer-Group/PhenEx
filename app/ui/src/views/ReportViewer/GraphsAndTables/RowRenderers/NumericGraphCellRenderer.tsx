@@ -1,8 +1,8 @@
 import { FC, useMemo, useCallback, useState } from 'react';
-import { type CohortClassified, type KdeCurve } from '../types';
+import { type CohortClassified, type KdeCurve } from '../../types';
 import { KDEChartCellRenderer } from './KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
-import { NumericGraphModal } from './NumericGraphModal';
+import { NumericGraphModal } from '../ModalRenderers/NumericGraphModal';
 import { useBarHoverStore } from './useBarHoverStore';
 import styles from './NumericGraphCellRenderer.module.css';
 

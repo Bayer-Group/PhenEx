@@ -1,6 +1,6 @@
 import { FC, useEffect, useCallback, useState, useMemo, useRef } from 'react';
-import { Portal } from '../../../components/Portal/Portal';
-import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs';
+import { Portal } from '../../../../components/Portal/Portal';
+import { SmartBreadcrumbs } from '../../../../components/SmartBreadcrumbs';
 import styles from './RowModal.module.css';
 
 const ANIM_MS = 150;

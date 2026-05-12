@@ -1,7 +1,7 @@
 import { FC } from 'react';
-import { type CohortClassified } from '../types';
+import { type CohortClassified } from '../../types';
 import { RowModal } from './RowModal';
-import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
+import { BoxPlotCellRenderer } from '../RowRenderers/BoxPlotCellRenderer';
 import styles from './BoxPlotModal.module.css';
 
 const MODAL_CHART_W = 560;

@@ -1,5 +1,5 @@
 import { FC, useState, useMemo, useCallback } from 'react';
-import { type CohortClassified } from '../types';
+import { type CohortClassified } from '../../types';
 import styles from './ModalLegend.module.css';
 
 interface ModalLegendProps {
