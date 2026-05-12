@@ -12,6 +12,8 @@
   /* background-color: blue; */
     /* border-bottom: calc(1px / var(--pz-scale, 1)) solid var(--line-color); */
   padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 20px);
+  padding-right: min(calc(max(200px * var(--pz-scale, 1), 10px) + 40px), 200px);
+
   /* padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 100px); */
 }
 
@@ -21,7 +23,7 @@
 
 
 .nameCell {
-  width: clamp(200px, calc(500px / var(--pz-scale, 1)), 400px);
+  width: clamp(200px, calc(700px / var(--pz-scale, 1)), 700px);
 
   flex-shrink: 0;
   font-family: 'IBMPlexSans-bold', sans-serif;
@@ -55,7 +57,7 @@
 .numericNameCell{
   width: clamp(200px, calc(500px / var(--pz-scale, 1)), 350px);
   padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 10px);
-
+  text-align: left;
 
 }
 .chartCell {
@@ -110,7 +112,7 @@
 }
 
 .kdeCell {
-  width: clamp(200px, calc(500px / var(--pz-scale, 1)), 800px);
+  width: clamp(400px, calc(800px / var(--pz-scale, 1)), 800px);
   flex-shrink: 0;
   display: flex;
   align-items: center;

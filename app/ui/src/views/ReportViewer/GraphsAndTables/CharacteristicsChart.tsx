@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useState, useCallback } from 'react';
 import {
   type CohortClassified,
   type CharacteristicItem,
@@ -7,8 +7,10 @@ import {
   groupCharacteristicsBySection,
 } from '../types';
 import { BarChartCellRenderer } from './RowRenderers/BarChartCellRenderer';
+import { CategoricalBarChartCellRenderer } from './RowRenderers/CategoricalBarChartCellRenderer';
 import { NumericGraphCellRenderer } from './RowRenderers/NumericGraphCellRenderer';
-import { NumericTableCellRenderer } from './RowRenderers/NumericTableCellRenderer';
+import { BooleanRowModal } from './ModalRenderers/BooleanRowModal';
+import { NumericGraphModal } from './ModalRenderers/NumericGraphModal';
 import { SectionCard } from './SectionCard';
 import styles from './CharacteristicsChart.module.css';
 
@@ -100,12 +102,19 @@ const BooleanRow: FC<{ name: string; cohortData: CohortClassified[]; breadcrumbs
   cohortData,
   breadcrumbs,
 }) => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const openModal = useCallback(() => setModalOpen(true), []);
+  const closeModal = useCallback(() => setModalOpen(false), []);
+
   return (
-    <div className={styles.row}>
+    <div className={styles.row} onClick={openModal} style={{ cursor: 'pointer' }}>
       <div className={styles.nameCell}>{name}</div>
       <div className={styles.booleanChartCell}>
-        <BarChartCellRenderer data={{ name, _meta: { cohortData } }} breadcrumbs={breadcrumbs} />
+        <BarChartCellRenderer data={{ name, _meta: { cohortData } }} isModal />
       </div>
+      {modalOpen && (
+        <BooleanRowModal name={name} cohortData={cohortData} onClose={closeModal} breadcrumbs={breadcrumbs} />
+      )}
     </div>
   );
 };
@@ -117,42 +126,23 @@ const CategoricalRow: FC<{
   cohortData: CohortClassified[];
   breadcrumbs?: string[];
 }> = ({ baseName, cohortData, breadcrumbs }) => {
-  const categories = useMemo(() => {
-    const cats: string[] = [];
-    const catSet = new Set<string>();
-    for (const cd of cohortData) {
-      const items = cd.classified.categoricals[baseName];
-      if (items) {
-        for (const item of items) {
-          if (!catSet.has(item.category)) {
-            catSet.add(item.category);
-            cats.push(item.category);
-          }
-        }
-      }
-    }
-    return cats;
-  }, [baseName, cohortData]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const openModal = useCallback(() => setModalOpen(true), []);
+  const closeModal = useCallback(() => setModalOpen(false), []);
 
   return (
-    <div className={styles.categoricalGroup}>
-      <div className={styles.categoricalHeader}>{baseName}</div>
-      {categories.map((cat) => {
-        const fullName = `${baseName}=${cat}`;
-        return (
-          <div key={cat} className={styles.row}>
-            <div className={`${styles.nameCell} ${styles.subNameCell}`}>
-              {cat}
-            </div>
-            <div className={styles.chartCell}>
-              <BarChartCellRenderer
-                data={{ name: fullName, _meta: { cohortData } }}
-                breadcrumbs={breadcrumbs}
-              />
-            </div>
-          </div>
-        );
-      })}
+    <div className={styles.numericRow} onClick={openModal} style={{ cursor: 'pointer' }}>
+      <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{baseName}</div>
+      <div className={styles.kdeCell}>
+        <CategoricalBarChartCellRenderer
+          baseName={baseName}
+          cohortData={cohortData}
+          orientation="vertical"
+        />
+      </div>
+      {modalOpen && (
+        <BooleanRowModal name={baseName} cohortData={cohortData} onClose={closeModal} breadcrumbs={breadcrumbs} />
+      )}
     </div>
   );
 };
@@ -165,13 +155,40 @@ const NumericRow: FC<{
   kdeData: Record<string, Record<string, KdeCurve>>;
   breadcrumbs?: string[];
 }> = ({ name, cohortData, kdeData, breadcrumbs }) => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const openModal = useCallback(() => setModalOpen(true), []);
+  const closeModal = useCallback(() => setModalOpen(false), []);
+
+  const { xMin, xMax } = useMemo(() => {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const cd of cohortData) {
+      const row = cd.data.rows.find((r) => r.Name === name);
+      if (!row) continue;
+      if (row.Min != null && row.Min < lo) lo = row.Min;
+      if (row.Max != null && row.Max > hi) hi = row.Max;
+    }
+    if (!isFinite(lo)) { lo = 0; hi = 1; }
+    return { xMin: lo, xMax: hi };
+  }, [name, cohortData]);
+
   return (
-    <div className={styles.numericRow}>
+    <div className={styles.numericRow} onClick={openModal} style={{ cursor: 'pointer' }}>
       <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{name}</div>
       <div className={styles.kdeCell}>
-        <NumericGraphCellRenderer name={name} cohortData={cohortData} kdeData={kdeData} breadcrumbs={breadcrumbs} />
+        <NumericGraphCellRenderer name={name} cohortData={cohortData} kdeData={kdeData} />
       </div>
-      {/* <NumericTableCellRenderer name={name} cohortData={cohortData} /> */}
+      {modalOpen && (
+        <NumericGraphModal
+          name={name}
+          cohortData={cohortData}
+          kdeData={kdeData}
+          xMin={xMin}
+          xMax={xMax}
+          onClose={closeModal}
+          breadcrumbs={breadcrumbs}
+        />
+      )}
     </div>
   );
 };

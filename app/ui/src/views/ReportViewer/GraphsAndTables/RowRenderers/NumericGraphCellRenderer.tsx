@@ -1,8 +1,7 @@
-import { FC, useMemo, useCallback, useState } from 'react';
+import { FC, useMemo } from 'react';
 import { type CohortClassified, type KdeCurve } from '../../types';
 import { KDEChartCellRenderer } from './KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
-import { NumericGraphModal } from '../ModalRenderers/NumericGraphModal';
 import { useBarHoverStore } from './useBarHoverStore';
 import styles from './NumericGraphCellRenderer.module.css';
 
@@ -10,16 +9,13 @@ interface NumericGraphCellRendererProps {
   name: string;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
-  breadcrumbs?: string[];
 }
 
 export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
   name,
   cohortData,
   kdeData,
-  breadcrumbs,
 }) => {
-  const [modalOpen, setModalOpen] = useState(false);
   const { activeIndex } = useBarHoverStore();
 
   // Compute shared x range from row stats (Min/Max) only.
@@ -39,11 +35,8 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
     return { xMin: lo, xMax: hi };
   }, [name, cohortData]);
 
-  const handleClick = useCallback(() => setModalOpen(true), []);
-  const closeModal = useCallback(() => setModalOpen(false), []);
-
   return (
-    <div className={styles.container} onClick={handleClick} style={{ cursor: 'pointer' }}>
+    <div className={styles.container}>
       {activeIndex != null && (
         <div className={styles.boxPlotSection}>
           <BoxPlotCellRenderer
@@ -64,18 +57,6 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
           xMax={xMax}
         />
       </div>
-
-      {modalOpen && (
-        <NumericGraphModal
-          name={name}
-          cohortData={cohortData}
-          kdeData={kdeData}
-          xMin={xMin}
-          xMax={xMax}
-          onClose={closeModal}
-          breadcrumbs={breadcrumbs}
-        />
-      )}
     </div>
   );
 };
