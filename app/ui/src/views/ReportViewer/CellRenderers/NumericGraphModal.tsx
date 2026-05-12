@@ -1,12 +1,11 @@
-import { FC, useState, useMemo, useCallback } from 'react';
+import { FC } from 'react';
 import { type CohortClassified, type KdeCurve } from '../types';
 import { RowModal } from './RowModal';
+import { ModalLegend, useCohortVisibility, useFilteredCohortData } from './ModalLegend';
 import { NumericChartFrame } from './NumericChartFrame';
 import { KDEChartCellRenderer } from './KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
 import styles from './NumericGraphModal.module.css';
-
-const MODAL_CHART_W = 560;
 
 interface NumericGraphModalProps {
   name: string;
@@ -15,6 +14,7 @@ interface NumericGraphModalProps {
   xMin: number;
   xMax: number;
   onClose: () => void;
+  breadcrumbs?: string[];
 }
 
 export const NumericGraphModal: FC<NumericGraphModalProps> = ({
@@ -24,51 +24,16 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
   xMin,
   xMax,
   onClose,
+  breadcrumbs,
 }) => {
-  // All cohorts visible by default
-  const [visible, setVisible] = useState<Set<number>>(
-    () => new Set(cohortData.map((_, i) => i)),
-  );
-
-  const toggleCohort = useCallback((i: number) => {
-    setVisible((prev) => {
-      const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
-      return next;
-    });
-  }, []);
-
-  const filteredCohortData = useMemo(
-    () => cohortData.filter((_, i) => visible.has(i)),
-    [cohortData, visible],
-  );
+  const { visible, toggle } = useCohortVisibility(cohortData.length);
+  const filteredCohortData = useFilteredCohortData(cohortData, visible);
 
   return (
-    <RowModal onClose={onClose}>
+    <RowModal onClose={onClose} breadcrumbs={breadcrumbs}>
       <div className={styles.container}>
-        <div className={styles.header}>
-          <div className={styles.title}>{name}</div>
-          <div className={styles.legend}>
-            {cohortData.map((cd, i) => (
-              <button
-                key={cd.name}
-                className={`${styles.legendBtn} ${visible.has(i) ? '' : styles.legendBtnOff}`}
-                style={{
-                  '--cohort-color': cd.color,
-                } as React.CSSProperties}
-                onClick={() => toggleCohort(i)}
-              >
-                <span
-                  className={styles.legendSwatch}
-                  style={{ background: visible.has(i) ? cd.color : 'transparent' }}
-                />
-                {cd.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        <NumericChartFrame xMin={xMin} xMax={xMax} width={MODAL_CHART_W} showTicks>
+        <ModalLegend cohortData={cohortData} visible={visible} onToggle={toggle} />
+        <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
           <div className={styles.kdeSection}>
             <KDEChartCellRenderer
               name={name}
@@ -76,7 +41,6 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
               kdeData={kdeData}
               xMin={xMin}
               xMax={xMax}
-              width={MODAL_CHART_W}
               showTicks={false}
             />
           </div>
@@ -85,7 +49,6 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
             cohortData={filteredCohortData}
             xMin={xMin}
             xMax={xMax}
-            width={MODAL_CHART_W}
             showLabels
           />
         </NumericChartFrame>

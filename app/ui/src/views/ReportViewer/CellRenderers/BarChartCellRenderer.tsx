@@ -17,9 +17,10 @@ interface BarChartCellRendererProps {
   };
   /** When true, suppress click-to-open-modal (used inside BooleanRowModal). */
   isModal?: boolean;
+  breadcrumbs?: string[];
 }
 
-export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isModal }) => {
+export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isModal, breadcrumbs }) => {
   const { cohortData, ticks = DEFAULT_TICKS } = data._meta;
   const { name } = data;
   const { activeIndex } = useBarHoverStore();
@@ -106,6 +107,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
           name={name}
           cohortData={cohortData}
           onClose={closeModal}
+          breadcrumbs={breadcrumbs}
         />
       )}
     </div>

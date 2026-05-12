@@ -1,5 +1,6 @@
-import { FC, useEffect, useCallback, useState } from 'react';
+import { FC, useEffect, useCallback, useState, useMemo } from 'react';
 import { Portal } from '../../../components/Portal/Portal';
+import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs';
 import styles from './RowModal.module.css';
 
 const ANIM_MS = 150;
@@ -7,10 +8,16 @@ const ANIM_MS = 150;
 interface RowModalProps {
   children: React.ReactNode;
   onClose: () => void;
+  breadcrumbs?: string[];
 }
 
-export const RowModal: FC<RowModalProps> = ({ children, onClose }) => {
+export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs }) => {
   const [closing, setClosing] = useState(false);
+
+  const bcItems = useMemo(
+    () => (breadcrumbs ?? []).map((b) => ({ displayName: b, onClick: () => {} })),
+    [breadcrumbs],
+  );
 
   const startClose = useCallback(() => {
     if (closing) return;
@@ -40,7 +47,17 @@ export const RowModal: FC<RowModalProps> = ({ children, onClose }) => {
         className={`${styles.overlay} ${closing ? styles.closing : ''}`}
         onClick={handleOverlayClick}
       >
-        <div className={styles.modal}>{children}</div>
+        <div className={styles.modal}>
+          {bcItems.length > 0 && (
+            <SmartBreadcrumbs
+              items={bcItems}
+              classNameSmartBreadcrumbsContainer={styles.breadcrumbs}
+              classNameBreadcrumbItem={styles.crumb}
+              classNameBreadcrumbLastItem={styles.crumbLast}
+            />
+          )}
+          <div className={styles.rowContent}>{children}</div>
+        </div>
       </div>
     </Portal>
   );

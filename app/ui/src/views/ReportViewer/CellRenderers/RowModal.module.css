@@ -3,10 +3,8 @@
   inset: 0;
   z-index: 10000;
   display: flex;
-  align-items: center;
-  justify-content: center;
   animation: fadeIn 0.15s ease-out;
-  background-color: var(--color_translucent);
+  background-color: rgba(255,255,255,.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -16,15 +14,37 @@
 }
 
 .modal {
-  background: var(--background_color_focus, #1e1e2e);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  padding: 12px 16px 16px;
   animation: scaleIn 0.15s ease-out;
+  margin-left: 10%;
+  margin-top:15%;
+  height:100%;
+}
+
+.rowContent{
+  padding: 30px 100px 30px 50px;
+
+  background: white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+
 }
 
 .closing .modal {
   animation: scaleOut 0.15s ease-in forwards;
+}
+
+.breadcrumbs {
+  margin-bottom: 8px;
+}
+
+.crumb {
+  color: black;
+  font-size: var(--font_size_breadcrumb, 11px);
+}
+
+.crumbLast {
+  color: black;
+  font-size: var(--font_size_pagetitle, 18px);
 }
 
 @keyframes fadeIn {

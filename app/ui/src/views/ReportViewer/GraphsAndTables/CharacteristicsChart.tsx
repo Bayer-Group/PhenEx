@@ -18,12 +18,14 @@ interface CharacteristicsChartProps {
   cohortData: CohortClassified[];
   sections: Record<string, string[]> | null;
   sectionRefs: Map<string, HTMLDivElement>;
+  groupTitle?: string;
 }
 
 export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
   cohortData,
   sections,
   sectionRefs,
+  groupTitle,
 }) => {
   const items = useMemo(() => collectCharacteristics(cohortData), [cohortData]);
   const groups = useMemo(
@@ -61,6 +63,8 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
                 item={item}
                 cohortData={cohortData}
                 kdeData={kdeData}
+                groupTitle={groupTitle}
+                sectionTitle={g.section}
               />
             ))}
           </SectionCard>
@@ -76,27 +80,31 @@ const CharacteristicRow: FC<{
   item: CharacteristicItem;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
-}> = ({ item, cohortData, kdeData }) => {
+  groupTitle?: string;
+  sectionTitle?: string | null;
+}> = ({ item, cohortData, kdeData, groupTitle, sectionTitle }) => {
+  const breadcrumbs = [groupTitle, sectionTitle ?? undefined, item.baseName].filter(Boolean) as string[];
   if (item.type === 'categorical') {
-    return <CategoricalRow baseName={item.baseName} cohortData={cohortData} />;
+    return <CategoricalRow baseName={item.baseName} cohortData={cohortData} breadcrumbs={breadcrumbs} />;
   }
   if (item.type === 'numeric') {
-    return <NumericRow name={item.baseName} cohortData={cohortData} kdeData={kdeData} />;
+    return <NumericRow name={item.baseName} cohortData={cohortData} kdeData={kdeData} breadcrumbs={breadcrumbs} />;
   }
-  return <BooleanRow name={item.baseName} cohortData={cohortData} />;
+  return <BooleanRow name={item.baseName} cohortData={cohortData} breadcrumbs={breadcrumbs} />;
 };
 
 /* ── Boolean row ─────────────────────────────────────────────────────── */
 
-const BooleanRow: FC<{ name: string; cohortData: CohortClassified[] }> = ({
+const BooleanRow: FC<{ name: string; cohortData: CohortClassified[]; breadcrumbs?: string[] }> = ({
   name,
   cohortData,
+  breadcrumbs,
 }) => {
   return (
     <div className={styles.row}>
       <div className={styles.nameCell}>{name}</div>
       <div className={styles.booleanChartCell}>
-        <BarChartCellRenderer data={{ name, _meta: { cohortData } }} />
+        <BarChartCellRenderer data={{ name, _meta: { cohortData } }} breadcrumbs={breadcrumbs} />
       </div>
     </div>
   );
@@ -107,7 +115,8 @@ const BooleanRow: FC<{ name: string; cohortData: CohortClassified[] }> = ({
 const CategoricalRow: FC<{
   baseName: string;
   cohortData: CohortClassified[];
-}> = ({ baseName, cohortData }) => {
+  breadcrumbs?: string[];
+}> = ({ baseName, cohortData, breadcrumbs }) => {
   const categories = useMemo(() => {
     const cats: string[] = [];
     const catSet = new Set<string>();
@@ -138,6 +147,7 @@ const CategoricalRow: FC<{
             <div className={styles.chartCell}>
               <BarChartCellRenderer
                 data={{ name: fullName, _meta: { cohortData } }}
+                breadcrumbs={breadcrumbs}
               />
             </div>
           </div>
@@ -153,12 +163,13 @@ const NumericRow: FC<{
   name: string;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
-}> = ({ name, cohortData, kdeData }) => {
+  breadcrumbs?: string[];
+}> = ({ name, cohortData, kdeData, breadcrumbs }) => {
   return (
     <div className={styles.numericRow}>
       <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{name}</div>
       <div className={styles.kdeCell}>
-        <NumericGraphCellRenderer name={name} cohortData={cohortData} kdeData={kdeData} />
+        <NumericGraphCellRenderer name={name} cohortData={cohortData} kdeData={kdeData} breadcrumbs={breadcrumbs} />
       </div>
       {/* <NumericTableCellRenderer name={name} cohortData={cohortData} /> */}
     </div>

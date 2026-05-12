@@ -127,7 +127,8 @@
 }
 
 .barFill {
-  border-radius: 0px 2px 2px 0px;
+  border-radius: 0px clamp(4px, calc(12px / var(--pz-scale, 1)), 5px) clamp(4px, calc(12px / var(--pz-scale, 1)), 5px) 0px;
+
   /* flex-shrink: 0; */
   height: 100%;
   border: 1px solid transparent;

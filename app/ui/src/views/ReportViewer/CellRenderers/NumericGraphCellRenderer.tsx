@@ -10,12 +10,14 @@ interface NumericGraphCellRendererProps {
   name: string;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
+  breadcrumbs?: string[];
 }
 
 export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
   name,
   cohortData,
   kdeData,
+  breadcrumbs,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const { activeIndex } = useBarHoverStore();
@@ -71,6 +73,7 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
           xMin={xMin}
           xMax={xMax}
           onClose={closeModal}
+          breadcrumbs={breadcrumbs}
         />
       )}
     </div>

@@ -13,6 +13,7 @@ import { ReportNavPanelCard } from './ReportViewNavBar/ReportNavPanelCard';
 import { ZoomScrubber } from './ReportViewNavBar/ZoomScrubber';
 import { OutlineBar, type OutlineEntry } from './OutlineBar';
 import { useVisibleSection } from './useVisibleSection';
+import { Portal } from '../../components/Portal/Portal';
 import {
   classifyRows,
   parseCohortGroups,
@@ -362,12 +363,14 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
-      <div className={styles.titleContainer}>
-        <span className={styles.title}>{title}</span>
-        <span className={styles.subtitle}>
-          {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
-        </span>
-      </div>
+      <Portal>
+        <div className={styles.titleContainer}>
+          <span className={styles.title}>{title}</span>
+          <span className={styles.subtitle}>
+            {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
+          </span>
+        </div>
+      </Portal>
 
       <OutlineBar entries={outlineEntries} activeSection={activeSection} />
 
@@ -433,6 +436,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                   cohortData={cohortData}
                   sections={sections}
                   sectionRefs={baselineSectionRefs.current}
+                  groupTitle="Baseline Characteristics"
                 />
               </ChartGroup>
               </div>
@@ -444,6 +448,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                       cohortData={outcomesCohortData}
                       sections={outcomesSections}
                       sectionRefs={outcomesSectionRefs.current}
+                      groupTitle="Outcomes"
                     />
                   </ChartGroup>
                 </div>

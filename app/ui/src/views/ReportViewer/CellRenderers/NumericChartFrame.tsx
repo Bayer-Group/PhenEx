@@ -1,4 +1,4 @@
-import { FC, ReactNode } from 'react';
+import { FC, ReactNode, useRef, useState, useEffect } from 'react';
 import styles from './NumericChartFrame.module.css';
 
 /* ── Shared axis helpers (exported for reuse) ────────────────────────── */
@@ -45,7 +45,7 @@ export function toPixel(v: number, xMin: number, xMax: number, width: number): n
 interface NumericChartFrameProps {
   xMin: number;
   xMax: number;
-  width: number;
+  width?: number;
   showTicks?: boolean;
   children: ReactNode;
 }
@@ -53,15 +53,29 @@ interface NumericChartFrameProps {
 export const NumericChartFrame: FC<NumericChartFrameProps> = ({
   xMin,
   xMax,
-  width,
+  width: widthProp,
   showTicks = true,
   children,
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerW, setContainerW] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setContainerW(entry.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const width = widthProp ?? containerW;
   const ticks = niceTicks(xMin, xMax);
   const px = (v: number) => toPixel(v, xMin, xMax, width);
 
   return (
-    <div className={styles.frame}>
+    <div ref={containerRef} className={styles.frame}>
+      {width > 0 && (
+        <>
       {/* Grid lines */}
       <div className={styles.gridOverlay} style={{ left: 0, width }}>
         {ticks.map((t) => (
@@ -84,6 +98,8 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
       <div className={styles.content}>
         {children}
       </div>
+        </>
+      )}
     </div>
   );
 };
