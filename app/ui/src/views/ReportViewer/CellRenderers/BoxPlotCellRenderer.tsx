@@ -1,4 +1,4 @@
-import { FC, useRef, useState } from 'react';
+import { FC, useRef, useState, useLayoutEffect } from 'react';
 import { type CohortClassified } from '../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { NumericChartFrame } from './NumericChartFrame';
@@ -119,7 +119,18 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   cohortIndex,
   showLabels = false,
 }) => {
-  const W = widthProp ?? DEFAULT_W;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerW, setContainerW] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setContainerW(entry.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const W = widthProp ?? (containerW || DEFAULT_W);
   const PLOT_W = W - PAD * 2;
   const { activeIndex } = useBarHoverStore();
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
@@ -154,11 +165,14 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   const boxH = ROW_H * 0.6;
 
   const content = (
-    <div className={styles.container}>
+    <div ref={containerRef} className={styles.container}>
+      {containerW > 0 && entries.length > 0 && (
       <svg
         ref={svgRef}
-        width={W}
+        width="100%"
         height={svgH}
+        viewBox={`0 0 ${W} ${svgH}`}
+        preserveAspectRatio="none"
         className={styles.plotSvg}
         onMouseMove={(e) => {
           const rect = svgRef.current?.getBoundingClientRect();
@@ -220,6 +234,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
           );
         })}
       </svg>
+      )}
 
       {hoveredRow !== null && hoverPos && (() => {
         const e = entries[hoveredRow];

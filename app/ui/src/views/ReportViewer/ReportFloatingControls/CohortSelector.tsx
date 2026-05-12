@@ -1,4 +1,4 @@
-import { FC, useState, useRef, useCallback } from 'react';
+import { FC, useState, useRef, useCallback, useMemo } from 'react';
 import { getCohortColor, type CohortGroup, type LegendSelection } from '../types';
 import { useBarHoverStore } from '../CellRenderers/useBarHoverStore';
 import { CohortMenu } from './CohortMenu';
@@ -45,16 +45,37 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
   const handleClose = useCallback(() => setMenuState(null), []);
 
+  // Group selections by parent cohort, preserving original indices
+  const grouped = useMemo(() => {
+    const map = new Map<string, { parent: string; items: { sel: LegendSelection; originalIndex: number }[] }>();
+    const order: string[] = [];
+    for (let i = 0; i < selections.length; i++) {
+      const sel = selections[i];
+      const parent = groups[sel.groupIndex]?.parent ?? sel.cohortName;
+      if (!map.has(parent)) {
+        map.set(parent, { parent, items: [] });
+        order.push(parent);
+      }
+      map.get(parent)!.items.push({ sel, originalIndex: i });
+    }
+    return order.map((p) => map.get(p)!);
+  }, [selections, groups]);
+
   return (
     <div className={styles.legendBar}>
-      {selections.map((sel, i) => (
-        <LegendItem
-          key={`${sel.cohortName}-${sel.colorIndex}`}
-          selection={sel}
-          dimmed={activeIndex !== null && activeIndex !== i}
-          onClick={() => toggleCohort(i)}
-          onRemove={() => onRemove(i)}
-        />
+      {grouped.map((group) => (
+        <div key={group.parent} className={styles.legendGroup}>
+          <div className={styles.legendGroupTitle}>{group.parent}</div>
+          {group.items.map(({ sel, originalIndex }) => (
+            <LegendItem
+              key={`${sel.cohortName}-${sel.colorIndex}`}
+              selection={sel}
+              dimmed={activeIndex !== null && activeIndex !== originalIndex}
+              onClick={() => toggleCohort(originalIndex)}
+              onRemove={() => onRemove(originalIndex)}
+            />
+          ))}
+        </div>
       ))}
       <div style={{ height: 20 }} />
       <PlusButton onClick={handlePlusClick} />
@@ -86,10 +107,9 @@ interface LegendItemProps {
 const LegendItem: FC<LegendItemProps> = ({ selection, dimmed, onClick, onRemove }) => {
   const color = getCohortColor(selection.groupIndex, selection.subIndex, selection.totalSubs);
 
-  // Parse labels
+  // Parse labels — only show the subcohort part
   const idx = selection.cohortName.indexOf('__');
-  const bottomLabel = idx === -1 ? 'main' : selection.cohortName.substring(idx + 2);
-  const topLabel = idx === -1 ? selection.cohortName : selection.cohortName.substring(0, idx);
+  const label = idx === -1 ? 'main' : selection.cohortName.substring(idx + 2);
 
   return (
     <div
@@ -98,9 +118,7 @@ const LegendItem: FC<LegendItemProps> = ({ selection, dimmed, onClick, onRemove 
       onClick={onClick}
     >
       <div className={styles.legendDot} style={{ background: color }} />
-      <span className={styles.legendItemTop}>{topLabel}</span>
-      <span className={styles.legendItemDot}>·</span>
-      <span className={styles.legendItemBottom}>{bottomLabel}</span>
+      <span className={styles.legendItemLabel}>{label}</span>
       <button
         className={styles.removeBtn}
         onClick={(e) => { e.stopPropagation(); onRemove(); }}

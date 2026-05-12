@@ -160,7 +160,7 @@ const NumericRow: FC<{
       <div className={styles.kdeCell}>
         <NumericGraphCellRenderer name={name} cohortData={cohortData} kdeData={kdeData} />
       </div>
-      <NumericTableCellRenderer name={name} cohortData={cohortData} />
+      {/* <NumericTableCellRenderer name={name} cohortData={cohortData} /> */}
     </div>
   );
 };

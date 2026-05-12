@@ -249,10 +249,17 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   const handleAdd = useCallback(
     (fullName: string) => {
       const info = findGroupInfo(fullName);
-      updateSelections((prev) => [
-        ...prev,
-        { cohortName: fullName, colorIndex: nextColorIndex(), ...info },
-      ]);
+      updateSelections((prev) => {
+        const newSel = { cohortName: fullName, colorIndex: nextColorIndex(), ...info };
+        // Insert next to siblings from the same parent group
+        const lastSiblingIdx = prev.findLastIndex((s) => s.groupIndex === info.groupIndex);
+        if (lastSiblingIdx >= 0) {
+          const next = [...prev];
+          next.splice(lastSiblingIdx + 1, 0, newSel);
+          return next;
+        }
+        return [...prev, newSel];
+      });
     },
     [nextColorIndex, findGroupInfo, updateSelections],
   );

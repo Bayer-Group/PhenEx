@@ -13,10 +13,14 @@ export const ReportNavPanelCard: FC<ReportNavPanelCardProps> = ({ title, backgro
   const [height, setHeight] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    if (bodyRef.current && !collapsed) {
-      setHeight(bodyRef.current.scrollHeight);
-    }
-  }, [children, collapsed]);
+    const el = bodyRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      if (!collapsed) setHeight(el.scrollHeight);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [collapsed]);
 
   return (
     <div className={styles.card + (background ? ` ${styles.background}` : '')}>

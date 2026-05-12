@@ -70,7 +70,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data }) =>
               style={{ cursor: 'pointer' }}
             >
               <div className={styles.pctCell} style={{ opacity: dimmed ? 0.25 : 1 }}>
-                <strong>{Math.round(pct * 10) / 10}</strong>
+                <strong>{Math.round(pct)}</strong>
               </div>
               <div className={styles.barCell} style={{ opacity: dimmed ? 0.25 : 1 }}>
                 <div
