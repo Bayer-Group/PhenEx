@@ -207,6 +207,13 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     );
   }, [studyRegistry, cohortEntries, outcomesEntries, waterfallData, table2Data, timeToEventData, selectedCohortNames]);
 
+  // Map of reporter → cohort data so HorizontalRowViewer can render any reporter
+  const cohortDataMap = useMemo(() => {
+    const map: Record<string, typeof cohortData> = { table1: cohortData };
+    if (outcomesCohortData.length > 0) map.table1_outcomes = outcomesCohortData;
+    return map;
+  }, [cohortData, outcomesCohortData]);
+
   // ── Table2 + TimeToEvent ──────────────────────────────────────────────
   const table2Cohorts: Table2Cohort[] = useMemo(
     () =>
@@ -464,6 +471,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                   sectionRefs={baselineSectionRefs.current}
                   reporter="table1"
                   sequentialRows={sequentialRows}
+                  cohortDataMap={cohortDataMap}
                   onScrollToRow={scrollToElement}
                 />
               </ChartGroup>
@@ -478,6 +486,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                       sectionRefs={outcomesSectionRefs.current}
                       reporter="table1_outcomes"
                       sequentialRows={sequentialRows}
+                      cohortDataMap={cohortDataMap}
                       onScrollToRow={scrollToElement}
                     />
                   </ChartGroup>

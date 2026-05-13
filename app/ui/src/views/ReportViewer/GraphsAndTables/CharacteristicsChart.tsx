@@ -1,4 +1,4 @@
-import { FC, useMemo, useState, useCallback } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 import {
   type CohortClassified,
   type CharacteristicItem,
@@ -23,6 +23,8 @@ interface CharacteristicsChartProps {
   /** Reporter key used to filter sequentialRows (e.g. 'table1', 'table1_outcomes') */
   reporter: string;
   sequentialRows?: SequentialRow[];
+  /** Map of reporter → cohort data, so HorizontalRowViewer can render any reporter's rows */
+  cohortDataMap?: Record<string, CohortClassified[]>;
   onScrollToRow?: (el: HTMLElement | null) => void;
 }
 
@@ -32,6 +34,7 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
   sectionRefs,
   reporter,
   sequentialRows,
+  cohortDataMap,
   onScrollToRow,
 }) => {
   const items = useMemo(() => collectCharacteristics(cohortData), [cohortData]);
@@ -39,13 +42,6 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
     () => groupCharacteristicsBySection(items, sections),
     [items, sections],
   );
-
-  // Filter sequential rows to only this reporter so the modal never crosses data boundaries
-  const filteredRows = useMemo(() => {
-    if (!sequentialRows) return undefined;
-    const rows = sequentialRows.filter((r) => r.reporter === reporter);
-    return rows.map((r, i) => ({ ...r, index: i }));
-  }, [sequentialRows, reporter]);
 
   // Derive KDE data from cohortData (already loaded with table1)
   const kdeData = useMemo(() => {
@@ -60,20 +56,28 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const closeViewer = useCallback(() => setViewerIndex(null), []);
 
-  // Build a lookup: row name → sequential index for this reporter
+  // Build a lookup: row name → sequential index (matching this reporter in the global list)
   const nameToSeqIndex = useMemo(() => {
     const map = new Map<string, number>();
-    if (!filteredRows) return map;
-    for (const sr of filteredRows) {
-      if (!map.has(sr.name)) map.set(sr.name, sr.index);
+    if (!sequentialRows) return map;
+    for (const sr of sequentialRows) {
+      if (sr.reporter === reporter && !map.has(sr.name)) {
+        map.set(sr.name, sr.index);
+      }
     }
     return map;
-  }, [filteredRows]);
+  }, [sequentialRows, reporter]);
 
   const openRow = useCallback((name: string) => {
     const idx = nameToSeqIndex.get(name);
     if (idx != null) setViewerIndex(idx);
   }, [nameToSeqIndex]);
+
+  // Fallback cohortDataMap if not provided (single-reporter mode)
+  const resolvedMap = useMemo(
+    () => cohortDataMap ?? { [reporter]: cohortData },
+    [cohortDataMap, reporter, cohortData],
+  );
 
   if (!items.length) return null;
 
@@ -102,12 +106,11 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
           </SectionCard>
         );
       })}
-      {viewerIndex != null && filteredRows && (
+      {viewerIndex != null && sequentialRows && (
         <HorizontalRowViewer
-          rows={filteredRows}
+          rows={sequentialRows}
           currentIndex={viewerIndex}
-          cohortData={cohortData}
-          kdeData={kdeData}
+          cohortDataMap={resolvedMap}
           onClose={closeViewer}
           onNavigate={setViewerIndex}
           onScrollToRow={onScrollToRow}

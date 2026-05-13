@@ -102,6 +102,7 @@
 }
 
 .menuItemActive {
+  background: var(--color_accent_blue, #3b82f6);
   color: white;
   font-weight: 600;
 }

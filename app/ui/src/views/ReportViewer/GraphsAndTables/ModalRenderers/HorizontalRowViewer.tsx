@@ -36,8 +36,7 @@ if (typeof window !== 'undefined') {
 interface HorizontalRowViewerProps {
   rows: SequentialRow[];
   currentIndex: number;
-  cohortData: CohortClassified[];
-  kdeData: Record<string, Record<string, KdeCurve>>;
+  cohortDataMap: Record<string, CohortClassified[]>;
   onClose: () => void;
   onNavigate: (index: number) => void;
   onScrollToRow?: (el: HTMLElement | null) => void;
@@ -48,8 +47,7 @@ interface HorizontalRowViewerProps {
 export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   rows,
   currentIndex,
-  cohortData,
-  kdeData,
+  cohortDataMap,
   onClose,
   onNavigate,
   onScrollToRow,
@@ -241,8 +239,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 isFocused={isFocused}
                 nearby={nearby}
                 desiredTop={desiredTop}
-                cohortData={cohortData}
-                kdeData={kdeData}
+                cohortDataMap={cohortDataMap}
                 onNavigate={navigate}
               />
             );
@@ -260,13 +257,21 @@ interface HorizontalCellProps {
   isFocused: boolean;
   nearby: boolean;
   desiredTop: string;
-  cohortData: CohortClassified[];
-  kdeData: Record<string, Record<string, KdeCurve>>;
+  cohortDataMap: Record<string, CohortClassified[]>;
   onNavigate: (index: number) => void;
 }
 
 const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, isFocused, nearby, desiredTop, cohortData, kdeData, onNavigate }, ref) => {
+  ({ row, isFocused, nearby, desiredTop, cohortDataMap, onNavigate }, ref) => {
+    const cohortData = cohortDataMap[row.reporter] ?? [];
+    const kdeData = useMemo(() => {
+      const result: Record<string, Record<string, KdeCurve>> = {};
+      for (const cd of cohortData) {
+        if (cd.data.kdes) result[cd.name] = cd.data.kdes;
+      }
+      return result;
+    }, [cohortData]);
+
     // Comments are stored inline on the registry row
     const comments = useMemo(() => {
       return row.registry?.comments?.filter((c) => c.text) ?? [];

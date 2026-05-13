@@ -11,6 +11,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   outcomes: 'Outcomes',
 };
 
+const CAT_KEYS = ['attrition', 'baseline_characteristics', 'outcomes'] as const;
+
 /* ── Props ───────────────────────────────────────────────────────────── */
 
 interface HorizontalRowTitleProps {
@@ -96,15 +98,27 @@ const CrumbMenu: FC<CrumbMenuProps> = ({
 }) => {
   const rect = anchorEl.getBoundingClientRect();
 
+  // Scroll active item into view when menu opens
+  const setMenuRef = useCallback((el: HTMLDivElement | null) => {
+    (menuRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+    if (el) {
+      const active = el.querySelector(`.${styles.menuItemActive}`) as HTMLElement | null;
+      if (active) {
+        // Delay so layout is settled
+        requestAnimationFrame(() => active.scrollIntoView({ block: 'nearest' }));
+      }
+    }
+  }, [menuRef]);
+
   return (
     <Portal>
       <div
-        ref={menuRef}
+        ref={setMenuRef}
         className={styles.menu}
         style={{
           position: 'fixed',
-          top: rect.top,
-          left: rect.right + 8,
+          top: rect.bottom,
+          left: rect.left,
         }}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
@@ -135,11 +149,23 @@ export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
   const sectionLabel = current.section;
 
   // Build option lists for each level
-  const { sectionOptions, rowOptions } = useMemo(() => {
-    // Sections: unique sections → navigate to first row in that section
+  const { categoryOptions, sectionOptions, rowOptions } = useMemo(() => {
+    // Categories: first row index per category key
+    const catMap = new Map<string, number>();
+    for (const r of rows) {
+      if (!catMap.has(r.category)) catMap.set(r.category, r.index);
+    }
+    const catEntries = CAT_KEYS
+      .filter((key) => catMap.has(key))
+      .map((key) => ({
+        label: CATEGORY_LABELS[key] ?? key,
+        index: catMap.get(key)!,
+      }));
+
+    // Sections within the current category
     const secMap = new Map<string, number>();
     for (const r of rows) {
-      if (r.section && !secMap.has(r.section)) {
+      if (r.category === current.category && r.section && !secMap.has(r.section)) {
         secMap.set(r.section, r.index);
       }
     }
@@ -154,7 +180,7 @@ export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
         index: r.index,
       }));
 
-    return { sectionOptions: secOpts, rowOptions: rOpts };
+    return { categoryOptions: catEntries, sectionOptions: secOpts, rowOptions: rOpts };
   }, [rows, currentIndex, current]);
 
   return (
@@ -163,10 +189,10 @@ export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
     //   style={{ paddingTop: desiredTop }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Level 1: Study name (no menu) */}
+      {/* Level 1: Study name — menu shows categories */}
       <Crumb
         label={studyTitle}
-        options={[]}
+        options={categoryOptions}
         level="study"
         onNavigate={onNavigate}
       />
