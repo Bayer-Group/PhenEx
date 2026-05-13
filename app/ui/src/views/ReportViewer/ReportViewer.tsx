@@ -18,6 +18,7 @@ import {
   classifyRows,
   parseCohortGroups,
   getCohortColor,
+  mergeSections,
   type CohortEntry,
   type CohortClassified,
   type CohortGroup,
@@ -162,13 +163,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     [cohortEntries, selections],
   );
 
-  const sections = useMemo(() => {
-    for (const entry of cohortEntries) {
-      const s = entry.data.sections;
-      if (s && Object.keys(s).length) return s;
-    }
-    return null;
-  }, [cohortEntries]);
+  const sections = useMemo(() => mergeSections(cohortEntries), [cohortEntries]);
 
   // ── Outcomes ──────────────────────────────────────────────────────────
   const outcomesEntries = useMemo(
@@ -194,13 +189,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     [outcomesEntries, selections],
   );
 
-  const outcomesSections = useMemo(() => {
-    for (const entry of outcomesEntries) {
-      const s = entry.data.sections;
-      if (s && Object.keys(s).length) return s;
-    }
-    return null;
-  }, [outcomesEntries]);
+  const outcomesSections = useMemo(() => mergeSections(outcomesEntries), [outcomesEntries]);
 
   // ── Table2 + TimeToEvent ──────────────────────────────────────────────
   const table2Cohorts: Table2Cohort[] = useMemo(

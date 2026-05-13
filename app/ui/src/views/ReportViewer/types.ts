@@ -174,6 +174,42 @@ export interface MixedSectionGroup {
   items: CharacteristicItem[];
 }
 
+/**
+ * Merge section dictionaries from multiple cohort entries.
+ * Preserves section order from the first cohort that defines each section,
+ * and unions the row names within each section across all cohorts.
+ */
+export function mergeSections(
+  entries: CohortEntry[],
+): Record<string, string[]> | null {
+  const merged: Record<string, string[]> = {};
+  const sectionOrder: string[] = [];
+
+  for (const entry of entries) {
+    const s = entry.data.sections;
+    if (!s) continue;
+    for (const [sec, names] of Object.entries(s)) {
+      if (!(sec in merged)) {
+        merged[sec] = [];
+        sectionOrder.push(sec);
+      }
+      const existing = new Set(merged[sec]);
+      for (const name of names) {
+        if (!existing.has(name)) {
+          merged[sec].push(name);
+          existing.add(name);
+        }
+      }
+    }
+  }
+
+  if (sectionOrder.length === 0) return null;
+  // Rebuild in insertion order
+  const result: Record<string, string[]> = {};
+  for (const sec of sectionOrder) result[sec] = merged[sec];
+  return result;
+}
+
 /** Collect all unique characteristics across cohorts, preserving order. */
 export function collectCharacteristics(cohortData: CohortClassified[]): CharacteristicItem[] {
   const seen = new Map<string, CharacteristicType>();

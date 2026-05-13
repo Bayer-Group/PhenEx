@@ -80,28 +80,52 @@ function extractRowNames(
     case 'table1':
     case 'table1_outcomes': {
       const entries = reporter === 'table1' ? table1Data : outcomesData;
-      const entry = entries[0];
-      if (!entry) return { names: [], sections: null, rowTypes };
+      if (!entries.length) return { names: [], sections: null, rowTypes };
       const seen = new Set<string>();
       const unique: string[] = [];
-      for (const row of entry.data.rows) {
-        if (row.Name === 'Cohort') continue;
-        if (row._level && row._level > 0) continue;
-        const eqIdx = row.Name.indexOf('=');
-        const baseName = eqIdx !== -1 ? row.Name.substring(0, eqIdx) : row.Name;
-        if (!seen.has(baseName)) {
-          seen.add(baseName);
-          unique.push(baseName);
-          if (eqIdx !== -1) {
-            rowTypes.set(baseName, 'categorical');
-          } else if (row.Mean != null && !isNaN(row.Mean)) {
-            rowTypes.set(baseName, 'numeric');
-          } else {
-            rowTypes.set(baseName, 'boolean');
+      for (const entry of entries) {
+        for (const row of entry.data.rows) {
+          if (row.Name === 'Cohort') continue;
+          if (row._level && row._level > 0) continue;
+          const eqIdx = row.Name.indexOf('=');
+          const baseName = eqIdx !== -1 ? row.Name.substring(0, eqIdx) : row.Name;
+          if (!seen.has(baseName)) {
+            seen.add(baseName);
+            unique.push(baseName);
+            if (eqIdx !== -1) {
+              rowTypes.set(baseName, 'categorical');
+            } else if (row.Mean != null && !isNaN(row.Mean)) {
+              rowTypes.set(baseName, 'numeric');
+            } else {
+              rowTypes.set(baseName, 'boolean');
+            }
           }
         }
       }
-      return { names: unique, sections: entry.data.sections, rowTypes };
+      // Merge sections across all cohorts
+      const mergedSections: Record<string, string[]> = {};
+      const sectionOrder: string[] = [];
+      for (const entry of entries) {
+        const s = entry.data.sections;
+        if (!s) continue;
+        for (const [sec, names] of Object.entries(s)) {
+          if (!(sec in mergedSections)) {
+            mergedSections[sec] = [];
+            sectionOrder.push(sec);
+          }
+          const existing = new Set(mergedSections[sec]);
+          for (const name of names) {
+            if (!existing.has(name)) {
+              mergedSections[sec].push(name);
+              existing.add(name);
+            }
+          }
+        }
+      }
+      const finalSections = sectionOrder.length > 0
+        ? Object.fromEntries(sectionOrder.map((s) => [s, mergedSections[s]]))
+        : null;
+      return { names: unique, sections: finalSections, rowTypes };
     }
     case 'waterfall': {
       const firstKey = Object.keys(waterfallData)[0];
