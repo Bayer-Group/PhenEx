@@ -26,7 +26,7 @@ import {
   type Table2Row,
   type TimeToEventRow,
 } from './types';
-import { type SequentialRow, type RegistryComment } from './studyRegistryUtils';
+import { buildSequentialRowList, type StudyRegistry } from './studyRegistryUtils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -48,8 +48,7 @@ export interface ReportViewerProps {
   waterfallData: Record<string, unknown>;
   table2Data?: Record<string, Table2Row[]>;
   timeToEventData?: Record<string, TimeToEventRow[]>;
-  sequentialRows?: SequentialRow[];
-  registryComments?: RegistryComment[];
+  studyRegistry?: StudyRegistry | null;
   runId: string | null;
   loading?: boolean;
   title?: string;
@@ -66,8 +65,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   waterfallData,
   table2Data,
   timeToEventData,
-  sequentialRows,
-  registryComments,
+  studyRegistry,
   runId,
   loading = false,
   title = 'LUMINOUS',
@@ -190,6 +188,24 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   );
 
   const outcomesSections = useMemo(() => mergeSections(outcomesEntries), [outcomesEntries]);
+
+  // ── Sequential rows (built from selected data so navigable rows = displayed rows)
+  const sequentialRows = useMemo(() => {
+    const filteredTable2 = table2Data
+      ? Object.fromEntries(Object.entries(table2Data).filter(([k]) => selectedCohortNames.has(k)))
+      : undefined;
+    const filteredTTE = timeToEventData
+      ? Object.fromEntries(Object.entries(timeToEventData).filter(([k]) => selectedCohortNames.has(k)))
+      : undefined;
+    return buildSequentialRowList(
+      studyRegistry ?? null,
+      cohortEntries,
+      outcomesEntries,
+      waterfallData,
+      Object.keys(filteredTable2 ?? {}).length ? filteredTable2 : undefined,
+      Object.keys(filteredTTE ?? {}).length ? filteredTTE : undefined,
+    );
+  }, [studyRegistry, cohortEntries, outcomesEntries, waterfallData, table2Data, timeToEventData, selectedCohortNames]);
 
   // ── Table2 + TimeToEvent ──────────────────────────────────────────────
   const table2Cohorts: Table2Cohort[] = useMemo(
@@ -448,7 +464,6 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                   sectionRefs={baselineSectionRefs.current}
                   groupTitle="Baseline Characteristics"
                   sequentialRows={sequentialRows}
-                  registryComments={registryComments}
                   onScrollToRow={scrollToElement}
                 />
               </ChartGroup>
@@ -463,7 +478,6 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                       sectionRefs={outcomesSectionRefs.current}
                       groupTitle="Outcomes"
                       sequentialRows={sequentialRows}
-                      registryComments={registryComments}
                       onScrollToRow={scrollToElement}
                     />
                   </ChartGroup>

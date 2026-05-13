@@ -6,7 +6,7 @@ import {
   collectCharacteristics,
   groupCharacteristicsBySection,
 } from '../types';
-import { type SequentialRow, type RegistryComment } from '../studyRegistryUtils';
+import { type SequentialRow } from '../studyRegistryUtils';
 import { BarChartCellRenderer } from './RowRenderers/BarChartCellRenderer';
 import { CategoricalBarChartCellRenderer } from './RowRenderers/CategoricalBarChartCellRenderer';
 import { NumericGraphCellRenderer } from './RowRenderers/NumericGraphCellRenderer';
@@ -22,7 +22,6 @@ interface CharacteristicsChartProps {
   sectionRefs: Map<string, HTMLDivElement>;
   groupTitle?: string;
   sequentialRows?: SequentialRow[];
-  registryComments?: RegistryComment[];
   onScrollToRow?: (el: HTMLElement | null) => void;
 }
 
@@ -32,7 +31,6 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
   sectionRefs,
   groupTitle,
   sequentialRows,
-  registryComments,
   onScrollToRow,
 }) => {
   const items = useMemo(() => collectCharacteristics(cohortData), [cohortData]);
@@ -105,7 +103,6 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
           onClose={closeViewer}
           onNavigate={setViewerIndex}
           onScrollToRow={onScrollToRow}
-          registryComments={registryComments}
         />
       )}
     </div>

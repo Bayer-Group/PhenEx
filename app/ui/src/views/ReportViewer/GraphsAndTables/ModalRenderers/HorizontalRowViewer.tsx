@@ -41,7 +41,6 @@ interface HorizontalRowViewerProps {
   onClose: () => void;
   onNavigate: (index: number) => void;
   onScrollToRow?: (el: HTMLElement | null) => void;
-  registryComments?: RegistryComment[];
 }
 
 // ── Component ───────────────────────────────────────────────────────────
