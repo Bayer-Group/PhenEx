@@ -21,6 +21,7 @@ import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/Si
 
 const ANIM_MS = 150;
 const RENDER_NEIGHBOURS = 3; // only render chart content for cells within this range
+const PRERENDER_NEIGHBOURS = RENDER_NEIGHBOURS + 1; // pre-render one extra so content is ready before scroll lands
 const CELL_GAP = 16;
 
 /** Track the last click Y so cards appear at the caller's position. */
@@ -230,7 +231,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
         <div className={styles.scroller} ref={scrollRef} style={{ gap: CELL_GAP }}>
           {rows.map((row) => {
             const isFocused = row.index === currentIndex;
-            const nearby = Math.abs(row.index - currentIndex) <= RENDER_NEIGHBOURS;
+            const nearby = Math.abs(row.index - currentIndex) <= PRERENDER_NEIGHBOURS;
             return (
               <HorizontalCell
                 key={row.index}
