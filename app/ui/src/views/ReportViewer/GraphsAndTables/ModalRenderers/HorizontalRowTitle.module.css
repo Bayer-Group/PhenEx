@@ -93,7 +93,7 @@
 }
 
 .menuItem:hover {
-  background: var(--color_accent_blue, #3b82f6);
+  border-color: var(--color_accent_blue, #3b82f6);
   color: white;
 }
 
