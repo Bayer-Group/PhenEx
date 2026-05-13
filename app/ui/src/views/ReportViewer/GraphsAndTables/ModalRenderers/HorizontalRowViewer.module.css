@@ -41,6 +41,7 @@
   transition: opacity 0.2s;
 
 }
+
 .verticalWrapper {
   margin-left: 10%;
   width: fit-content;
@@ -120,26 +121,25 @@
 /* Outer column: stretches to full height of the cell */
 .commentsColumn {
   display: flex;
-  flex-direction: column;
-  align-self: stretch;
+  /* flex-direction: column;
+  align-self: stretch; */
   min-width: 260px;
   max-width: 340px;
   flex-shrink: 0;
-  background-color: violet;
+  height: calc(100vh - 0px);
+  overflow: hidden;
 }
 
 /* Inner scrollable area */
 .commentsScroll {
-  background-color: aliceblue;
   flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  /* height: 100vh; */
+  overflow: auto !important;
   scrollbar-width: none;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-top: var(--desired-top, 20vh);
+  padding-top: calc(var(--desired-top, 20vh) + 45px);
   padding-right: 10px;
 }
 

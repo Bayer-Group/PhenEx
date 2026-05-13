@@ -100,11 +100,15 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     centerFocused(true);
   }, [centerFocused]);
 
-  // Block trackpad / wheel scrolling
+  // Block trackpad / wheel scrolling (except inside comments scroll)
   useEffect(() => {
     const scroller = scrollRef.current;
     if (!scroller) return;
-    const onWheel = (e: WheelEvent) => e.preventDefault();
+    const onWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest(`.${styles.commentsScroll}`)) return;
+      e.preventDefault();
+    };
     scroller.addEventListener('wheel', onWheel, { passive: false });
     return () => scroller.removeEventListener('wheel', onWheel);
   }, []);
@@ -240,12 +244,12 @@ const DUMMY_COMMENTS: RegistryComment[] = [
   { date: '2026-05-10', user: 'Rule Engine', status: 'accepted', text: '**Prevalence** looks reasonable across all cohorts. No outliers detected.' },
   { date: '2026-05-10', user: 'AI Analyst', status: 'accepted', text: 'The distribution is **consistent** with published literature benchmarks. Consider reviewing the tail values for sensitivity.' },
   { date: '2026-05-10', user: 'QC Bot', status: 'pinned', text: 'Missing data rate is below **2%** — within acceptable thresholds. No imputation required.' },
-  { date: '2026-05-10', user: 'Rule Engine', status: 'accepted', text: '**Prevalence** looks reasonable across all cohorts. No outliers detected.' },
-  { date: '2026-05-10', user: 'AI Analyst', status: 'accepted', text: 'The distribution is **consistent** with published literature benchmarks. Consider reviewing the tail values for sensitivity.' },
-  { date: '2026-05-10', user: 'QC Bot', status: 'pinned', text: 'Missing data rate is below **2%** — within acceptable thresholds. No imputation required.' },
-  { date: '2026-05-10', user: 'Rule Engine', status: 'accepted', text: '**Prevalence** looks reasonable across all cohorts. No outliers detected.' },
-  { date: '2026-05-10', user: 'AI Analyst', status: 'accepted', text: 'The distribution is **consistent** with published literature benchmarks. Consider reviewing the tail values for sensitivity.' },
-  { date: '2026-05-10', user: 'QC Bot', status: 'pinned', text: 'Missing data rate is below **2%** — within acceptable thresholds. No imputation required.' },
+//   { date: '2026-05-10', user: 'Rule Engine', status: 'accepted', text: '**Prevalence** looks reasonable across all cohorts. No outliers detected.' },
+//   { date: '2026-05-10', user: 'AI Analyst', status: 'accepted', text: 'The distribution is **consistent** with published literature benchmarks. Consider reviewing the tail values for sensitivity.' },
+//   { date: '2026-05-10', user: 'QC Bot', status: 'pinned', text: 'Missing data rate is below **2%** — within acceptable thresholds. No imputation required.' },
+//   { date: '2026-05-10', user: 'Rule Engine', status: 'accepted', text: '**Prevalence** looks reasonable across all cohorts. No outliers detected.' },
+//   { date: '2026-05-10', user: 'AI Analyst', status: 'accepted', text: 'The distribution is **consistent** with published literature benchmarks. Consider reviewing the tail values for sensitivity.' },
+//   { date: '2026-05-10', user: 'QC Bot', status: 'pinned', text: 'Missing data rate is below **2%** — within acceptable thresholds. No imputation required.' },
 ];
 
 const CommentsColumn: FC<{ comments: RegistryComment[] }> = ({ comments }) => {
