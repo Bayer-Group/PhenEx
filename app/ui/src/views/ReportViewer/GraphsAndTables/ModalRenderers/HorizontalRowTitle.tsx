@@ -27,12 +27,13 @@ interface HorizontalRowTitleProps {
 
 interface CrumbProps {
   label: string;
+  activeLabel: string;
   options: { label: string; index: number }[];
   level: 'study' | 'category' | 'section';
   onNavigate: (index: number) => void;
 }
 
-const Crumb: FC<CrumbProps> = ({ label, options, level, onNavigate }) => {
+const Crumb: FC<CrumbProps> = ({ label, activeLabel, options, level, onNavigate }) => {
   const ref = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -71,7 +72,7 @@ const Crumb: FC<CrumbProps> = ({ label, options, level, onNavigate }) => {
           anchorEl={ref.current}
           menuRef={menuRef}
           options={options}
-          currentLabel={label}
+          currentLabel={activeLabel}
           onSelect={handleSelect}
           onMouseEnter={cancelClose}
           onMouseLeave={() => setOpen(false)}
@@ -192,6 +193,7 @@ export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
       {/* Level 1: Study name — menu shows categories */}
       <Crumb
         label={studyTitle}
+        activeLabel={categoryLabel}
         options={categoryOptions}
         level="study"
         onNavigate={onNavigate}
@@ -200,6 +202,7 @@ export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
       {/* Level 2: Category — menu shows sections */}
       <Crumb
         label={categoryLabel}
+        activeLabel={sectionLabel ?? ''}
         options={sectionOptions}
         level="category"
         onNavigate={onNavigate}
@@ -209,6 +212,7 @@ export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
       {sectionLabel && (
         <Crumb
           label={sectionLabel}
+          activeLabel={current.registry?.display_name || current.name}
           options={rowOptions}
           level="section"
           onNavigate={onNavigate}
