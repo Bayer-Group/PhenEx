@@ -15,6 +15,7 @@ import booleanStyles from './BooleanRowModal.module.css';
 import categoricalStyles from './CategoricalRowModal.module.css';
 import styles from './HorizontalRowViewer.module.css';
 import ReactMarkdown from 'react-markdown';
+import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -226,18 +227,49 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
           </div>
 
           {/* Right: comment cards */}
-          {comments.length > 0 && (
-            <div className={styles.commentsWrapper}>
-              {comments.map((comment, i) => (
-                <CommentCard key={i} comment={comment} />
-              ))}
-            </div>
-          )}
+            <CommentsColumn comments={comments} />
         </div>
       </div>
     );
   },
 );
+
+/* ── CommentsColumn ──────────────────────────────────────────────────── */
+
+const DUMMY_COMMENTS: RegistryComment[] = [
+  { date: '2026-05-10', user: 'Rule Engine', status: 'accepted', text: '**Prevalence** looks reasonable across all cohorts. No outliers detected.' },
+  { date: '2026-05-10', user: 'AI Analyst', status: 'accepted', text: 'The distribution is **consistent** with published literature benchmarks. Consider reviewing the tail values for sensitivity.' },
+  { date: '2026-05-10', user: 'QC Bot', status: 'pinned', text: 'Missing data rate is below **2%** — within acceptable thresholds. No imputation required.' },
+  { date: '2026-05-10', user: 'Rule Engine', status: 'accepted', text: '**Prevalence** looks reasonable across all cohorts. No outliers detected.' },
+  { date: '2026-05-10', user: 'AI Analyst', status: 'accepted', text: 'The distribution is **consistent** with published literature benchmarks. Consider reviewing the tail values for sensitivity.' },
+  { date: '2026-05-10', user: 'QC Bot', status: 'pinned', text: 'Missing data rate is below **2%** — within acceptable thresholds. No imputation required.' },
+  { date: '2026-05-10', user: 'Rule Engine', status: 'accepted', text: '**Prevalence** looks reasonable across all cohorts. No outliers detected.' },
+  { date: '2026-05-10', user: 'AI Analyst', status: 'accepted', text: 'The distribution is **consistent** with published literature benchmarks. Consider reviewing the tail values for sensitivity.' },
+  { date: '2026-05-10', user: 'QC Bot', status: 'pinned', text: 'Missing data rate is below **2%** — within acceptable thresholds. No imputation required.' },
+];
+
+const CommentsColumn: FC<{ comments: RegistryComment[] }> = ({ comments }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const display = comments.length > 0 ? comments : DUMMY_COMMENTS;
+
+  return (
+    <div className={styles.commentsColumn}>
+      <div ref={scrollRef} className={styles.commentsScroll}>
+        {display.map((comment, i) => (
+          <CommentCard key={i} comment={comment} />
+        ))}
+        <div style={{ minHeight: 30, flexShrink: 0 }} />
+      </div>
+      <SimpleCustomScrollbar
+        targetRef={scrollRef}
+        orientation="vertical"
+        marginTop={8}
+        marginBottom={8}
+        marginToEnd={2}
+      />
+    </div>
+  );
+};
 
 /* ── CommentCard ─────────────────────────────────────────────────────── */
 

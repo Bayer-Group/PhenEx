@@ -20,7 +20,7 @@
   flex: 1;
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: stretch;
   overflow-x: auto;
   overflow-y: hidden;
   padding: 0 24px;
@@ -42,8 +42,11 @@
 
 }
 .verticalWrapper {
-  margin-left: 300px;
+  margin-left: 10%;
   width: fit-content;
+  height:100%;
+  padding-top: var(--desired-top, 20vh);
+
 }
 
 
@@ -94,11 +97,11 @@
 
 /* Horizontal layout: card on the left, comments on the right */
 .cellInner {
+  flex: 1;
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   gap: 16px;
-  padding-top: var(--desired-top, 20vh);
 }
 
 .cardTitle {
@@ -114,13 +117,34 @@
 
 /* ── Comment sidebar ─────────────────────────────────────────────────── */
 
-.commentsWrapper {
+/* Outer column: stretches to full height of the cell */
+.commentsColumn {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  min-width: 260px;
+  max-width: 340px;
+  flex-shrink: 0;
+  background-color: violet;
+}
+
+/* Inner scrollable area */
+.commentsScroll {
+  background-color: aliceblue;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-width: 260px;
-  max-width: 340px;
-  padding-top: 22px; /* align with card top (breadcrumb height offset) */
+  padding-top: var(--desired-top, 20vh);
+  padding-right: 10px;
+}
+
+.commentsScroll::-webkit-scrollbar {
+  display: none;
 }
 
 .commentCard {
