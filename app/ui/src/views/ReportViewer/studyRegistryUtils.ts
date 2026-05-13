@@ -12,9 +12,10 @@ import type { CohortEntry, Table2Row, TimeToEventRow, CharacteristicType } from 
 // ── Study registry types ────────────────────────────────────────────────
 
 export interface RegistryComment {
-  date: string;
-  user: string;
-  status: 'accepted' | 'resolved' | 'pinned' | string;
+  type?: string;
+  date?: string;
+  user?: string;
+  status?: 'accepted' | 'resolved' | 'pinned' | string;
   text: string;
 }
 
@@ -22,7 +23,7 @@ export interface RegistryRowEntry {
   name: string;
   display_name: string;
   description: string;
-  comments: number[];
+  comments: RegistryComment[];
 }
 
 export interface RegistryReporter {

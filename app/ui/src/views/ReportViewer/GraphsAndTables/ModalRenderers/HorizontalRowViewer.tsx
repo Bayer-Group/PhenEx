@@ -54,7 +54,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   onClose,
   onNavigate,
   onScrollToRow,
-  registryComments,
 }) => {
   const [closing, setClosing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -159,7 +158,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 desiredTop={desiredTop}
                 cohortData={cohortData}
                 kdeData={kdeData}
-                registryComments={registryComments}
                 onNavigate={navigate}
               />
             );
@@ -179,12 +177,11 @@ interface HorizontalCellProps {
   desiredTop: string;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
-  registryComments?: RegistryComment[];
   onNavigate: (index: number) => void;
 }
 
 const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, isFocused, nearby, desiredTop, cohortData, kdeData, registryComments, onNavigate }, ref) => {
+  ({ row, isFocused, nearby, desiredTop, cohortData, kdeData, onNavigate }, ref) => {
     const rowBc = useMemo(
       () => [row.category, row.reporter, row.section, row.name]
         .filter(Boolean)
@@ -192,13 +189,10 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
       [row],
     );
 
-    // Resolve comment IDs to actual comment objects
+    // Comments are stored inline on the registry row
     const comments = useMemo(() => {
-      if (!registryComments?.length || !row.registry?.comments?.length) return [];
-      return row.registry.comments
-        .map((id) => registryComments[id])
-        .filter(Boolean);
-    }, [registryComments, row.registry]);
+      return row.registry?.comments?.filter((c) => c.text) ?? [];
+    }, [row.registry]);
 
     return (
       <div
@@ -240,26 +234,13 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
 
 /* ── CommentsColumn ──────────────────────────────────────────────────── */
 
-const DUMMY_COMMENTS: RegistryComment[] = [
-  { date: '2026-05-10', user: 'Rule Engine', status: 'accepted', text: '**Prevalence** looks reasonable across all cohorts. No outliers detected.' },
-  { date: '2026-05-10', user: 'AI Analyst', status: 'accepted', text: 'The distribution is **consistent** with published literature benchmarks. Consider reviewing the tail values for sensitivity.' },
-  { date: '2026-05-10', user: 'QC Bot', status: 'pinned', text: 'Missing data rate is below **2%** — within acceptable thresholds. No imputation required.' },
-//   { date: '2026-05-10', user: 'Rule Engine', status: 'accepted', text: '**Prevalence** looks reasonable across all cohorts. No outliers detected.' },
-//   { date: '2026-05-10', user: 'AI Analyst', status: 'accepted', text: 'The distribution is **consistent** with published literature benchmarks. Consider reviewing the tail values for sensitivity.' },
-//   { date: '2026-05-10', user: 'QC Bot', status: 'pinned', text: 'Missing data rate is below **2%** — within acceptable thresholds. No imputation required.' },
-//   { date: '2026-05-10', user: 'Rule Engine', status: 'accepted', text: '**Prevalence** looks reasonable across all cohorts. No outliers detected.' },
-//   { date: '2026-05-10', user: 'AI Analyst', status: 'accepted', text: 'The distribution is **consistent** with published literature benchmarks. Consider reviewing the tail values for sensitivity.' },
-//   { date: '2026-05-10', user: 'QC Bot', status: 'pinned', text: 'Missing data rate is below **2%** — within acceptable thresholds. No imputation required.' },
-];
-
 const CommentsColumn: FC<{ comments: RegistryComment[] }> = ({ comments }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const display = comments.length > 0 ? comments : DUMMY_COMMENTS;
 
   return (
     <div className={styles.commentsColumn}>
       <div ref={scrollRef} className={styles.commentsScroll}>
-        {display.map((comment, i) => (
+        {comments.map((comment, i) => (
           <CommentCard key={i} comment={comment} />
         ))}
         <div style={{ minHeight: 30, flexShrink: 0 }} />
@@ -278,14 +259,15 @@ const CommentsColumn: FC<{ comments: RegistryComment[] }> = ({ comments }) => {
 /* ── CommentCard ─────────────────────────────────────────────────────── */
 
 const CommentCard: FC<{ comment: RegistryComment }> = ({ comment }) => {
+  const label = comment.type ?? comment.user ?? '';
   const statusLabel = comment.status === 'pinned' ? '📌' : comment.status === 'resolved' ? '✓' : '';
 
   return (
     <div className={styles.commentCard} onClick={(e) => e.stopPropagation()}>
       <div className={styles.commentHeader}>
-        <span className={styles.commentUser}>{comment.user}</span>
+        <span className={styles.commentUser}>{label}</span>
         {statusLabel && <span className={styles.commentStatus}>{statusLabel}</span>}
-        <span className={styles.commentDate}>{comment.date}</span>
+        {comment.date && <span className={styles.commentDate}>{comment.date}</span>}
       </div>
       <div className={styles.commentBody}>
         <ReactMarkdown>{comment.text}</ReactMarkdown>
