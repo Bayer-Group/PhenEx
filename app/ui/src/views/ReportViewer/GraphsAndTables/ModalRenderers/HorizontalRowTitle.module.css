@@ -73,8 +73,17 @@
   z-index: 10002;
   animation: titleMenuFadeIn 0.12s ease-out;
   max-height: 60vh;
+  position: relative;
+}
+
+.menuScroll {
+  max-height: 60vh;
   overflow-y: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+
+.menuScroll::-webkit-scrollbar {
+  display: none;
 }
 
 .menuItem {

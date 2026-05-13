@@ -1,5 +1,6 @@
 import { FC, useCallback, useMemo, useRef, useState } from 'react';
 import { Portal } from '../../../../components/Portal/Portal';
+import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { type SequentialRow } from '../../studyRegistryUtils';
 import styles from './HorizontalRowTitle.module.css';
 
@@ -98,23 +99,23 @@ const CrumbMenu: FC<CrumbMenuProps> = ({
   anchorEl, menuRef, options, currentLabel, onSelect, onMouseEnter, onMouseLeave,
 }) => {
   const rect = anchorEl.getBoundingClientRect();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Scroll active item into view when menu opens
-  const setMenuRef = useCallback((el: HTMLDivElement | null) => {
-    (menuRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+  const setScrollRef = useCallback((el: HTMLDivElement | null) => {
+    (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
     if (el) {
       const active = el.querySelector(`.${styles.menuItemActive}`) as HTMLElement | null;
       if (active) {
-        // Delay so layout is settled
         requestAnimationFrame(() => active.scrollIntoView({ block: 'nearest' }));
       }
     }
-  }, [menuRef]);
+  }, []);
 
   return (
     <Portal>
       <div
-        ref={setMenuRef}
+        ref={menuRef}
         className={styles.menu}
         style={{
           position: 'fixed',
@@ -124,15 +125,24 @@ const CrumbMenu: FC<CrumbMenuProps> = ({
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
       >
-        {options.map((opt) => (
-          <button
-            key={opt.index}
-            className={`${styles.menuItem} ${opt.label === currentLabel ? styles.menuItemActive : ''}`}
-            onClick={(e) => { e.stopPropagation(); onSelect(opt.index); }}
-          >
-            {opt.label}
-          </button>
-        ))}
+        <div ref={setScrollRef} className={styles.menuScroll}>
+          {options.map((opt) => (
+            <button
+              key={opt.index}
+              className={`${styles.menuItem} ${opt.label === currentLabel ? styles.menuItemActive : ''}`}
+              onClick={(e) => { e.stopPropagation(); onSelect(opt.index); }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <SimpleCustomScrollbar
+          targetRef={scrollRef}
+          orientation="vertical"
+          marginTop={10}
+          marginBottom={0}
+          marginToEnd={8}
+        />
       </div>
     </Portal>
   );
