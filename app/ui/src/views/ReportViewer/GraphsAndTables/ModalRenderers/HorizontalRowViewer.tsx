@@ -59,6 +59,8 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
   const hasNavigated = useRef(false);
+  const holdDir = useRef<-1 | 0 | 1>(0);
+  const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mountY = useRef(lastClickY);
 
   const current = rows[currentIndex];
@@ -73,30 +75,83 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 
   // ── Scroll management ─────────────────────────────────────────────────
 
-  const centerFocused = useCallback((instant: boolean) => {
+  const centerOnCard = useCallback((idx: number, mode: 'instant' | 'smooth' | 'fast') => {
     const scroller = scrollRef.current;
-    const card = focusedRef.current;
-    if (!scroller || !card) return;
-    const target = Math.max(0, card.offsetLeft - (scroller.clientWidth - card.offsetWidth) / 2);
-    if (instant) {
+    if (!scroller) return;
+    const child = scroller.children[idx] as HTMLElement | undefined;
+    if (!child) return;
+    const target = Math.max(0, child.offsetLeft - (scroller.clientWidth - child.offsetWidth) / 2);
+    if (mode === 'instant') {
       scroller.scrollLeft = target;
-    } else {
+    } else if (mode === 'smooth') {
       scroller.scrollTo({ left: target, behavior: 'smooth' });
+    } else {
+      // Fast ease-out animation (~150ms)
+      const start = scroller.scrollLeft;
+      const dist = target - start;
+      if (Math.abs(dist) < 1) { scroller.scrollLeft = target; return; }
+      const duration = 150;
+      const t0 = performance.now();
+      const step = (now: number) => {
+        const p = Math.min((now - t0) / duration, 1);
+        scroller.scrollLeft = start + dist * (1 - (1 - p) * (1 - p));
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
     }
   }, []);
 
-  // Smooth scroll on navigate (rAF so the new ref is painted first)
+  // Smooth scroll on single-press navigate
   useEffect(() => {
     if (!didInitialScroll.current) return;
-    requestAnimationFrame(() => centerFocused(false));
-  }, [currentIndex, centerFocused]);
+    if (holdDir.current !== 0) return;
+    requestAnimationFrame(() => centerOnCard(currentIndex, 'smooth'));
+  }, [currentIndex, centerOnCard]);
 
   // Instant scroll on mount
   useEffect(() => {
     if (didInitialScroll.current) return;
     didInitialScroll.current = true;
-    centerFocused(true);
-  }, [centerFocused]);
+    centerOnCard(currentIndex, 'instant');
+  }, [centerOnCard, currentIndex]);
+
+  // ── Step-and-pause while holding arrow key ────────────────────────────
+
+  /** Scroll animation duration + pause duration at each card while holding */
+  const HOLD_SCROLL_MS = 150;
+  const HOLD_PAUSE_MS = 300;
+
+  const stepHold = useCallback(() => {
+    const dir = holdDir.current;
+    if (dir === 0) return;
+    const next = currentIndex + dir;
+    if (next < 0 || next >= rows.length) { holdDir.current = 0; return; }
+    hasNavigated.current = true;
+    onNavigate(next);
+  }, [currentIndex, rows.length, onNavigate]);
+
+  // When currentIndex changes while holding, animate to card then schedule next step
+  useEffect(() => {
+    if (holdDir.current === 0) return;
+    centerOnCard(currentIndex, 'fast');
+    holdTimer.current = setTimeout(stepHold, HOLD_SCROLL_MS + HOLD_PAUSE_MS);
+    return () => clearTimeout(holdTimer.current);
+  }, [currentIndex, centerOnCard, stepHold]);
+
+  const startHold = useCallback((dir: -1 | 1) => {
+    holdDir.current = dir;
+    stepHold();
+  }, [stepHold]);
+
+  const stopHold = useCallback(() => {
+    holdDir.current = 0;
+    clearTimeout(holdTimer.current);
+    // Smooth-settle on whichever card is current
+    requestAnimationFrame(() => centerOnCard(currentIndex, 'smooth'));
+  }, [centerOnCard, currentIndex]);
+
+  // Clean up on unmount
+  useEffect(() => () => clearTimeout(holdTimer.current), []);
 
   // Block trackpad / wheel scrolling (except inside comments scroll)
   useEffect(() => {
@@ -125,14 +180,37 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   }, [closing, onClose]);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') startClose();
-      if (e.key === 'ArrowLeft') { e.preventDefault(); if (currentIndex > 0) navigate(currentIndex - 1); }
-      if (e.key === 'ArrowRight') { e.preventDefault(); if (currentIndex < rows.length - 1) navigate(currentIndex + 1); }
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (e.repeat) {
+          if (holdDir.current === 0) startHold(-1);
+        } else if (currentIndex > 0) {
+          navigate(currentIndex - 1);
+        }
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (e.repeat) {
+          if (holdDir.current === 0) startHold(1);
+        } else if (currentIndex < rows.length - 1) {
+          navigate(currentIndex + 1);
+        }
+      }
     };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [startClose, currentIndex, rows.length, navigate]);
+    const onKeyUp = (e: KeyboardEvent) => {
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && holdDir.current !== 0) {
+        stopHold();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onKeyUp);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('keyup', onKeyUp);
+    };
+  }, [startClose, currentIndex, rows.length, navigate, startHold, stopHold]);
 
   if (!current) return null;
 
