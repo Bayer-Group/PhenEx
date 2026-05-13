@@ -20,7 +20,8 @@ interface CharacteristicsChartProps {
   cohortData: CohortClassified[];
   sections: Record<string, string[]> | null;
   sectionRefs: Map<string, HTMLDivElement>;
-  groupTitle?: string;
+  /** Reporter key used to filter sequentialRows (e.g. 'table1', 'table1_outcomes') */
+  reporter: string;
   sequentialRows?: SequentialRow[];
   onScrollToRow?: (el: HTMLElement | null) => void;
 }
@@ -29,7 +30,7 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
   cohortData,
   sections,
   sectionRefs,
-  groupTitle,
+  reporter,
   sequentialRows,
   onScrollToRow,
 }) => {
@@ -38,6 +39,13 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
     () => groupCharacteristicsBySection(items, sections),
     [items, sections],
   );
+
+  // Filter sequential rows to only this reporter so the modal never crosses data boundaries
+  const filteredRows = useMemo(() => {
+    if (!sequentialRows) return undefined;
+    const rows = sequentialRows.filter((r) => r.reporter === reporter);
+    return rows.map((r, i) => ({ ...r, index: i }));
+  }, [sequentialRows, reporter]);
 
   // Derive KDE data from cohortData (already loaded with table1)
   const kdeData = useMemo(() => {
@@ -55,12 +63,12 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
   // Build a lookup: row name → sequential index for this reporter
   const nameToSeqIndex = useMemo(() => {
     const map = new Map<string, number>();
-    if (!sequentialRows) return map;
-    for (const sr of sequentialRows) {
+    if (!filteredRows) return map;
+    for (const sr of filteredRows) {
       if (!map.has(sr.name)) map.set(sr.name, sr.index);
     }
     return map;
-  }, [sequentialRows]);
+  }, [filteredRows]);
 
   const openRow = useCallback((name: string) => {
     const idx = nameToSeqIndex.get(name);
@@ -94,9 +102,9 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
           </SectionCard>
         );
       })}
-      {viewerIndex != null && sequentialRows && (
+      {viewerIndex != null && filteredRows && (
         <HorizontalRowViewer
-          rows={sequentialRows}
+          rows={filteredRows}
           currentIndex={viewerIndex}
           cohortData={cohortData}
           kdeData={kdeData}

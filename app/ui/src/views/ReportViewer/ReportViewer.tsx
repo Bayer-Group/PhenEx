@@ -462,7 +462,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                   cohortData={cohortData}
                   sections={sections}
                   sectionRefs={baselineSectionRefs.current}
-                  groupTitle="Baseline Characteristics"
+                  reporter="table1"
                   sequentialRows={sequentialRows}
                   onScrollToRow={scrollToElement}
                 />
@@ -476,7 +476,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                       cohortData={outcomesCohortData}
                       sections={outcomesSections}
                       sectionRefs={outcomesSectionRefs.current}
-                      groupTitle="Outcomes"
+                      reporter="table1_outcomes"
                       sequentialRows={sequentialRows}
                       onScrollToRow={scrollToElement}
                     />
