@@ -2,7 +2,6 @@ import { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } fro
 import { type CohortClassified, type KdeCurve } from '../../types';
 import { type SequentialRow, type RegistryComment } from '../../studyRegistryUtils';
 import { Portal } from '../../../../components/Portal/Portal';
-import { SmartBreadcrumbs } from '../../../../components/SmartBreadcrumbs';
 import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
 import { BarChartCellRenderer } from '../RowRenderers/BarChartCellRenderer';
 import { CategoricalBarChartCellRenderer } from '../RowRenderers/CategoricalBarChartCellRenderer';
@@ -14,6 +13,7 @@ import numericStyles from './NumericGraphModal.module.css';
 import booleanStyles from './BooleanRowModal.module.css';
 import categoricalStyles from './CategoricalRowModal.module.css';
 import styles from './HorizontalRowViewer.module.css';
+import { HorizontalRowTitle } from './HorizontalRowTitle';
 import ReactMarkdown from 'react-markdown';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
@@ -220,6 +220,14 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
         className={`${styles.overlay} ${closing ? styles.closing : ''}`}
         onClick={startClose}
       >
+        {/* Floating title above cards */}
+        <HorizontalRowTitle
+          rows={rows}
+          currentIndex={currentIndex}
+          desiredTop={desiredTop}
+          onNavigate={navigate}
+        />
+
         {/* Horizontal strip of cards — all cells in DOM, only nearby ones render content */}
         <div className={styles.scroller} ref={scrollRef} style={{ gap: CELL_GAP }}>
           {rows.map((row) => {
@@ -259,13 +267,6 @@ interface HorizontalCellProps {
 
 const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
   ({ row, isFocused, nearby, desiredTop, cohortData, kdeData, onNavigate }, ref) => {
-    const rowBc = useMemo(
-      () => [row.category, row.reporter, row.section, row.name]
-        .filter(Boolean)
-        .map((b) => ({ displayName: b as string, onClick: () => {} })),
-      [row],
-    );
-
     // Comments are stored inline on the registry row
     const comments = useMemo(() => {
       return row.registry?.comments?.filter((c) => c.text) ?? [];
@@ -279,15 +280,8 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
         onClick={isFocused ? undefined : () => onNavigate(row.index)}
       >
         <div className={styles.cellInner}>
-          {/* Left: breadcrumbs + card */}
+          {/* Left: card */}
           <div className={styles.verticalWrapper}>
-            <SmartBreadcrumbs
-              items={rowBc}
-              compact
-              classNameSmartBreadcrumbsContainer={styles.breadcrumbs}
-              classNameBreadcrumbItem={styles.crumb}
-              classNameBreadcrumbLastItem={styles.crumbLast}
-            />
             <div
               className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
               onClick={(e) => e.stopPropagation()}

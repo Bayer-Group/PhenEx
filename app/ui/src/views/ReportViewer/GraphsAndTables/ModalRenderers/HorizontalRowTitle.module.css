@@ -1,0 +1,95 @@
+/* ── Floating title container ─────────────────────────────────────────── */
+.container {
+  position: fixed;
+  left: 24px;
+  top: 0;
+  z-index: 10001;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: auto;
+}
+
+/* ── Individual crumb ────────────────────────────────────────────────── */
+.crumbWrapper {
+  position: relative;
+}
+
+.crumb {
+  display: block;
+  background: none;
+  border: none;
+  padding: 2px 8px;
+  font-size: var(--font_size_breadcrumb, 11px);
+  color: #888;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.crumb:hover,
+.crumbActive {
+  color: black;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.crumbLast {
+  font-size: var(--font_size_pagetitle, 18px);
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: black;
+  padding: 2px 8px;
+}
+
+.crumbLast:hover,
+.crumbLast.crumbActive {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* ── Popover menu ────────────────────────────────────────────────────── */
+.menu {
+  background: var(--background_color_focus, #1a1a2e);
+  border-radius: 12px;
+  padding: 6px 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  z-index: 10002;
+  animation: titleMenuFadeIn 0.12s ease-out;
+  max-height: 60vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 3px 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--font_size_items, 12px);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.menuItem:hover {
+  background: var(--color_accent_blue, #3b82f6);
+  color: white;
+}
+
+.menuItem:focus {
+  outline: none;
+}
+
+.menuItemActive {
+  color: white;
+  font-weight: 600;
+}
+
+@keyframes titleMenuFadeIn {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
