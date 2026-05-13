@@ -5,7 +5,7 @@ import { usePanZoom } from '../../hooks/usePanZoom';
 import { PanZoomScaleProvider } from '../../hooks/PanZoomScaleContext';
 import { CohortSelector } from './ReportFloatingControls/CohortSelector';
 import { CharacteristicsChart } from './GraphsAndTables/CharacteristicsChart';
-import { OutcomesChart, type OutcomesCohort } from './GraphsAndTables/OutcomesChart';
+import { Table2Chart, TimeToEventChart, type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { AttritionChart } from './GraphsAndTables/AttritionChart';
 import { ChartGroup } from './GraphsAndTables/ChartGroup';
 import { ReportNavPanel } from './ReportViewNavBar/ReportNavPanel';
@@ -202,18 +202,29 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     return null;
   }, [outcomesEntries]);
 
-  // ── Table2 + TimeToEvent (outcomes analysis) ──────────────────────────
-  const outcomesCohorts: OutcomesCohort[] = useMemo(
+  // ── Table2 + TimeToEvent ──────────────────────────────────────────────
+  const table2Cohorts: Table2Cohort[] = useMemo(
     () =>
       selections
         .map((sel) => ({
           name: sel.cohortName,
           color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
           table2: table2Data?.[sel.cohortName] ?? [],
+        }))
+        .filter((c) => c.table2.length > 0),
+    [selections, table2Data],
+  );
+
+  const tteCohorts: TimeToEventCohort[] = useMemo(
+    () =>
+      selections
+        .map((sel) => ({
+          name: sel.cohortName,
+          color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
           timeToEvent: timeToEventData?.[sel.cohortName] ?? [],
         }))
-        .filter((c) => c.table2.length > 0 || c.timeToEvent.length > 0),
-    [selections, table2Data, timeToEventData],
+        .filter((c) => c.timeToEvent.length > 0),
+    [selections, timeToEventData],
   );
 
   // ── Interaction handlers ──────────────────────────────────────────────
@@ -282,7 +293,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   const attritionRef = useRef<HTMLDivElement>(null);
   const baselineGroupRef = useRef<HTMLDivElement>(null);
   const outcomesGroupRef = useRef<HTMLDivElement>(null);
-  const outcomesAnalysisRef = useRef<HTMLDivElement>(null);
+  const table2GroupRef = useRef<HTMLDivElement>(null);
+  const tteGroupRef = useRef<HTMLDivElement>(null);
 
   const pz = usePanZoom({
     minScale: 0.1,
@@ -339,7 +351,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     for (const [name, el] of outcomesSectionRefs.current) {
       entries.push({ name, element: el });
     }
-    if (outcomesAnalysisRef.current) entries.push({ name: 'Outcomes Analysis', element: outcomesAnalysisRef.current });
+    if (table2GroupRef.current) entries.push({ name: 'Incidence Rates', element: table2GroupRef.current });
+    if (tteGroupRef.current) entries.push({ name: 'Time to Event', element: tteGroupRef.current });
     return entries;
   }, []);
 
@@ -359,11 +372,14 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         entries.push({ name, level: 1, onClick: () => scrollToSection(name, outcomesSectionRefs.current) });
       }
     }
-    if (outcomesCohorts.length > 0) {
-      entries.push({ name: 'Outcomes Analysis', level: 0, onClick: () => scrollToElement(outcomesAnalysisRef.current) });
+    if (table2Cohorts.length > 0) {
+      entries.push({ name: 'Incidence Rates', level: 0, onClick: () => scrollToElement(table2GroupRef.current) });
+    }
+    if (tteCohorts.length > 0) {
+      entries.push({ name: 'Time to Event', level: 0, onClick: () => scrollToElement(tteGroupRef.current) });
     }
     return entries;
-  }, [baselineSectionNames, outcomesSectionNames, outcomesCohorts.length, scrollToElement, scrollToSection]);
+  }, [baselineSectionNames, outcomesSectionNames, table2Cohorts.length, tteCohorts.length, scrollToElement, scrollToSection]);
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
@@ -465,10 +481,18 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                 </div>
               )}
 
-              {outcomesCohorts.length > 0 && (
-                <div ref={outcomesAnalysisRef}>
-                  <ChartGroup title="Outcomes Analysis">
-                    <OutcomesChart cohorts={outcomesCohorts} />
+              {table2Cohorts.length > 0 && (
+                <div ref={table2GroupRef}>
+                  <ChartGroup title="Incidence Rates">
+                    <Table2Chart cohorts={table2Cohorts} />
+                  </ChartGroup>
+                </div>
+              )}
+
+              {tteCohorts.length > 0 && (
+                <div ref={tteGroupRef}>
+                  <ChartGroup title="Time to Event">
+                    <TimeToEventChart cohorts={tteCohorts} />
                   </ChartGroup>
                 </div>
               )}
