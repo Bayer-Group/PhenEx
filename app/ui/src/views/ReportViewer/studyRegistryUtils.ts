@@ -99,6 +99,9 @@ function extractRowNames(
             } else {
               rowTypes.set(baseName, 'boolean');
             }
+          } else if (rowTypes.get(baseName) === 'boolean' && eqIdx === -1 && row.Mean != null && !isNaN(row.Mean)) {
+            // Upgrade: a later cohort reveals this is actually numeric
+            rowTypes.set(baseName, 'numeric');
           }
         }
       }

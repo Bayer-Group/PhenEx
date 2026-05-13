@@ -234,6 +234,9 @@ export function collectCharacteristics(cohortData: CohortClassified[]): Characte
         }
         seen.set(baseName, type);
         order.push(baseName);
+      } else if (seen.get(baseName) === 'boolean' && eqIdx === -1 && row.Mean != null && !isNaN(row.Mean)) {
+        // Upgrade: a later cohort reveals this is actually numeric
+        seen.set(baseName, 'numeric');
       }
     }
   }
