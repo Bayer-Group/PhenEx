@@ -86,6 +86,8 @@ export const StaticReportViewer: FC = () => {
     return <div style={{ padding: 40, color: '#999' }}>No report data embedded.</div>;
   }
 
+  const studyTitle = reportData.info?.['Study Name'] ?? 'PhenEx Report';
+
   return (
     <ReportViewer
       allCohortEntries={allCohortEntries}
@@ -95,7 +97,7 @@ export const StaticReportViewer: FC = () => {
       timeToEventData={timeToEventData}
       studyRegistry={studyRegistry}
       runId={reportData.runId ?? null}
-      title="PhenEx Report"
+      title={studyTitle}
     />
   );
 };
