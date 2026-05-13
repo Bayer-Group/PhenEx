@@ -46,7 +46,7 @@
   margin-left: 10%;
   width: fit-content;
   height:100%;
-  padding-top: var(--desired-top, 20vh);
+  padding-top: 20vh;
 
 }
 

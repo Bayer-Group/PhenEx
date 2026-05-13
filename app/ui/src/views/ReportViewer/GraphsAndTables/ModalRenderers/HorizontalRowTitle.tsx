@@ -3,12 +3,21 @@ import { Portal } from '../../../../components/Portal/Portal';
 import { type SequentialRow } from '../../studyRegistryUtils';
 import styles from './HorizontalRowTitle.module.css';
 
+/* ── Display names for raw category keys ─────────────────────────────── */
+
+const CATEGORY_LABELS: Record<string, string> = {
+  attrition: 'Attrition',
+  baseline_characteristics: 'Baseline Characteristics',
+  outcomes: 'Outcomes',
+};
+
 /* ── Props ───────────────────────────────────────────────────────────── */
 
 interface HorizontalRowTitleProps {
   rows: SequentialRow[];
   currentIndex: number;
   desiredTop: string;
+  studyTitle?: string;
   onNavigate: (index: number) => void;
 }
 
@@ -17,11 +26,11 @@ interface HorizontalRowTitleProps {
 interface CrumbProps {
   label: string;
   options: { label: string; index: number }[];
-  isLast: boolean;
+  level: 'study' | 'category' | 'section';
   onNavigate: (index: number) => void;
 }
 
-const Crumb: FC<CrumbProps> = ({ label, options, isLast, onNavigate }) => {
+const Crumb: FC<CrumbProps> = ({ label, options, level, onNavigate }) => {
   const ref = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -42,14 +51,13 @@ const Crumb: FC<CrumbProps> = ({ label, options, isLast, onNavigate }) => {
     onNavigate(idx);
   }, [onNavigate]);
 
-  // Only show menu if there are alternative options
-  const hasMenu = options.length > 1;
+  const hasMenu = options.length > 0;
 
   return (
     <div className={styles.crumbWrapper}>
       <button
         ref={ref}
-        className={`${styles.crumb} ${isLast ? styles.crumbLast : ''} ${open ? styles.crumbActive : ''}`}
+        className={`${styles.crumb} ${styles[`crumb_${level}`]} ${open ? styles.crumbActive : ''}`}
         onMouseEnter={() => { cancelClose(); if (hasMenu) setOpen(true); }}
         onMouseLeave={scheduleClose}
         onClick={() => { if (hasMenu) setOpen((o) => !o); }}
@@ -118,56 +126,68 @@ const CrumbMenu: FC<CrumbMenuProps> = ({
 /* ── Main component ──────────────────────────────────────────────────── */
 
 export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
-  rows, currentIndex, desiredTop, onNavigate,
+  rows, currentIndex, desiredTop, studyTitle = 'LUMINOUS', onNavigate,
 }) => {
   const current = rows[currentIndex];
   if (!current) return null;
 
-  // Build option lists for each crumb level
+  const categoryLabel = CATEGORY_LABELS[current.category] ?? current.category;
+  const sectionLabel = current.section;
+
+  // Build option lists for each level
   const { sectionOptions, rowOptions } = useMemo(() => {
-    // Sections: unique sections, first row index for each
+    // Sections: unique sections → navigate to first row in that section
     const secMap = new Map<string, number>();
     for (const r of rows) {
-      const sec = r.section ?? '(ungrouped)';
-      if (!secMap.has(sec)) secMap.set(sec, r.index);
+      if (r.section && !secMap.has(r.section)) {
+        secMap.set(r.section, r.index);
+      }
     }
-    const sectionOpts = Array.from(secMap, ([label, index]) => ({ label, index }));
+    const secOpts = Array.from(secMap, ([label, index]) => ({ label, index }));
 
     // Rows within the current section
     const curSec = current.section;
-    const rowOpts = rows
+    const rOpts = rows
       .filter((r) => r.section === curSec)
       .map((r) => ({
         label: r.registry?.display_name || r.name,
         index: r.index,
       }));
 
-    return { sectionOptions: sectionOpts, rowOptions: rowOpts };
+    return { sectionOptions: secOpts, rowOptions: rOpts };
   }, [rows, currentIndex, current]);
-
-  const displayName = current.registry?.display_name || current.name;
-  const sectionLabel = current.section ?? '(ungrouped)';
 
   return (
     <div
       className={styles.container}
-      style={{ paddingTop: desiredTop }}
+    //   style={{ paddingTop: desiredTop }}
       onClick={(e) => e.stopPropagation()}
     >
-      {current.section && (
+      {/* Level 1: Study name (no menu) */}
+      <Crumb
+        label={studyTitle}
+        options={[]}
+        level="study"
+        onNavigate={onNavigate}
+      />
+
+      {/* Level 2: Category — menu shows sections */}
+      <Crumb
+        label={categoryLabel}
+        options={sectionOptions}
+        level="category"
+        onNavigate={onNavigate}
+      />
+
+      {/* Level 3: Section — menu shows rows in this section */}
+      {sectionLabel && (
         <Crumb
           label={sectionLabel}
-          options={sectionOptions}
-          isLast={false}
+          options={rowOptions}
+          level="section"
           onNavigate={onNavigate}
         />
       )}
-      <Crumb
-        label={displayName}
-        options={rowOptions}
-        isLast
-        onNavigate={onNavigate}
-      />
     </div>
   );
 };

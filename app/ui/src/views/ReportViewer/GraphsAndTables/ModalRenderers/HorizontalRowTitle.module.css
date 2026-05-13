@@ -1,12 +1,13 @@
 /* ── Floating title container ─────────────────────────────────────────── */
 .container {
   position: fixed;
-  left: 24px;
-  top: 0;
+  left: 10%;
+  top:50px;
+  height:10px;
   z-index: 10001;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0px;
   pointer-events: auto;
 }
 
@@ -19,10 +20,10 @@
   display: block;
   background: none;
   border: none;
-  padding: 2px 8px;
+  padding: 1px 8px;
   font-size: var(--font_size_breadcrumb, 11px);
   color: #888;
-  cursor: pointer;
+  cursor: default;
   text-align: left;
   border-radius: 4px;
   transition: color 0.15s, background 0.15s;
@@ -35,15 +36,31 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
-.crumbLast {
-  font-size: var(--font_size_pagetitle, 18px);
+/* Level: study name */
+.crumb_study {
+  font-size: var(--font_size_pagetitle, 11px);
+  color: #aaa;
+  cursor: default;
+}
+
+/* Level: category (Baseline Characteristics, Outcomes, etc.) */
+.crumb_category {
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+}
+
+/* Level: section (Demographics, etc.) */
+.crumb_section {
+  font-size: 22px;
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;
+  cursor: pointer;
   padding: 2px 8px;
 }
 
-.crumbLast:hover,
-.crumbLast.crumbActive {
+.crumb_section:hover,
+.crumb_section.crumbActive {
   background: rgba(0, 0, 0, 0.04);
 }
 
