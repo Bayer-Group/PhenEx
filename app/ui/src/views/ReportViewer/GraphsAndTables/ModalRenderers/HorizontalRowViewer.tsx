@@ -101,11 +101,11 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     }
   }, []);
 
-  // Smooth scroll on single-press navigate
+  // Fast scroll on single-press navigate
   useEffect(() => {
     if (!didInitialScroll.current) return;
     if (holdDir.current !== 0) return;
-    requestAnimationFrame(() => centerOnCard(currentIndex, 'smooth'));
+    requestAnimationFrame(() => centerOnCard(currentIndex, 'fast'));
   }, [currentIndex, centerOnCard]);
 
   // Instant scroll on mount
