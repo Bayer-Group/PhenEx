@@ -1,7 +1,10 @@
-import { FC, useMemo } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 import { type Table2Row, type TimeToEventRow } from '../types';
+import { type CohortClassified } from '../types';
+import { type SequentialRow } from '../studyRegistryUtils';
 import { KaplanMeierCellRenderer, type KMCurve } from './RowRenderers/KaplanMeierCellRenderer';
 import { useBarHoverStore } from './RowRenderers/useBarHoverStore';
+import { HorizontalRowViewer } from './ModalRenderers/HorizontalRowViewer';
 import styles from './OutcomesChart.module.css';
 
 /* ── Types ───────────────────────────────────────────────────────────── */
@@ -222,9 +225,19 @@ export interface TimeToEventCohort {
 
 interface TimeToEventChartProps {
   cohorts: TimeToEventCohort[];
+  sequentialRows?: SequentialRow[];
+  cohortDataMap?: Record<string, CohortClassified[]>;
+  studyTitle?: string;
+  onScrollToRow?: (el: HTMLElement | null) => void;
 }
 
-export const TimeToEventChart: FC<TimeToEventChartProps> = ({ cohorts }) => {
+export const TimeToEventChart: FC<TimeToEventChartProps> = ({
+  cohorts,
+  sequentialRows,
+  cohortDataMap,
+  studyTitle,
+  onScrollToRow,
+}) => {
   const outcomes = useMemo(() => {
     const seen = new Set<string>();
     const order: string[] = [];
@@ -236,18 +249,49 @@ export const TimeToEventChart: FC<TimeToEventChartProps> = ({ cohorts }) => {
     return order;
   }, [cohorts]);
 
+  // Map outcome name → sequential index for opening the viewer
+  const nameToSeqIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!sequentialRows) return map;
+    for (const sr of sequentialRows) {
+      if (sr.reporter === 'TimeToEvent' && !map.has(sr.name)) {
+        map.set(sr.name, sr.index);
+      }
+    }
+    return map;
+  }, [sequentialRows]);
+
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const closeViewer = useCallback(() => setViewerIndex(null), []);
+  const openRow = useCallback((name: string) => {
+    const idx = nameToSeqIndex.get(name);
+    if (idx != null) setViewerIndex(idx);
+  }, [nameToSeqIndex]);
+
   if (!outcomes.length) return null;
 
   return (
     <div className={styles.container}>
       {outcomes.map((outcome) => (
-        <TimeToEventRow key={outcome} outcome={outcome} cohorts={cohorts} />
+        <TimeToEventRow key={outcome} outcome={outcome} cohorts={cohorts} onClick={openRow} />
       ))}
+      {viewerIndex != null && sequentialRows && cohortDataMap && (
+        <HorizontalRowViewer
+          rows={sequentialRows}
+          currentIndex={viewerIndex}
+          cohortDataMap={cohortDataMap}
+          tteCohorts={cohorts}
+          studyTitle={studyTitle}
+          onClose={closeViewer}
+          onNavigate={setViewerIndex}
+          onScrollToRow={onScrollToRow}
+        />
+      )}
     </div>
   );
 };
 
-const TimeToEventRow: FC<{ outcome: string; cohorts: TimeToEventCohort[] }> = ({ outcome, cohorts }) => {
+const TimeToEventRow: FC<{ outcome: string; cohorts: TimeToEventCohort[]; onClick?: (name: string) => void }> = ({ outcome, cohorts, onClick }) => {
   const kmCurves: KMCurve[] = useMemo(
     () => cohorts
       .map((c) => ({
@@ -259,10 +303,12 @@ const TimeToEventRow: FC<{ outcome: string; cohorts: TimeToEventCohort[] }> = ({
     [cohorts, outcome],
   );
 
+  const handleClick = useCallback(() => onClick?.(outcome), [onClick, outcome]);
+
   if (!kmCurves.length) return null;
 
   return (
-    <div className={styles.row}>
+    <div className={styles.row} onClick={handleClick} style={{ cursor: onClick ? 'pointer' : undefined }}>
       <div className={styles.nameCell}>{outcome}</div>
       <div className={styles.kmCell}>
         <KaplanMeierCellRenderer curves={kmCurves} />

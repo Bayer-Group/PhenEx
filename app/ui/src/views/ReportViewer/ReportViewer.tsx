@@ -508,7 +508,13 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               {tteCohorts.length > 0 && (
                 <div ref={tteGroupRef}>
                   <ChartGroup title="Time to Event">
-                    <TimeToEventChart cohorts={tteCohorts} />
+                    <TimeToEventChart
+                      cohorts={tteCohorts}
+                      sequentialRows={sequentialRows}
+                      cohortDataMap={cohortDataMap}
+                      studyTitle={displayTitle}
+                      onScrollToRow={scrollToElement}
+                    />
                   </ChartGroup>
                 </div>
               )}

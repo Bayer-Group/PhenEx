@@ -6,6 +6,8 @@ import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
 import { BarChartCellRenderer } from '../RowRenderers/BarChartCellRenderer';
 import { CategoricalBarChartCellRenderer } from '../RowRenderers/CategoricalBarChartCellRenderer';
 import { NumericContent } from './NumericContent';
+import { TimeToEventContent } from './TimeToEventContent';
+import { type TimeToEventCohort } from '../OutcomesChart';
 import booleanStyles from './BooleanRowModal.module.css';
 import categoricalStyles from './CategoricalRowModal.module.css';
 import styles from './HorizontalRowViewer.module.css';
@@ -34,6 +36,7 @@ interface HorizontalRowViewerProps {
   rows: SequentialRow[];
   currentIndex: number;
   cohortDataMap: Record<string, CohortClassified[]>;
+  tteCohorts?: TimeToEventCohort[];
   studyTitle?: string;
   onClose: () => void;
   onNavigate: (index: number) => void;
@@ -46,6 +49,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   rows,
   currentIndex,
   cohortDataMap,
+  tteCohorts,
   studyTitle,
   onClose,
   onNavigate,
@@ -240,6 +244,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 nearby={nearby}
                 desiredTop={desiredTop}
                 cohortDataMap={cohortDataMap}
+                tteCohorts={tteCohorts}
                 onNavigate={navigate}
               />
             );
@@ -258,11 +263,12 @@ interface HorizontalCellProps {
   nearby: boolean;
   desiredTop: string;
   cohortDataMap: Record<string, CohortClassified[]>;
+  tteCohorts?: TimeToEventCohort[];
   onNavigate: (index: number) => void;
 }
 
 const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, isFocused, nearby, desiredTop, cohortDataMap, onNavigate }, ref) => {
+  ({ row, isFocused, nearby, desiredTop, cohortDataMap, tteCohorts, onNavigate }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const kdeData = useMemo(() => {
       const result: Record<string, Record<string, KdeCurve>> = {};
@@ -295,7 +301,7 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
                 {row.registry?.display_name || row.name}
               </div>
               <div className={styles.cardContent}>
-                {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} /> : null}
+                {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} tteCohorts={tteCohorts} /> : null}
               </div>
             </div>
           </div>
@@ -358,7 +364,8 @@ const RowContent: FC<{
   row: SequentialRow;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
-}> = ({ row, cohortData, kdeData }) => {
+  tteCohorts?: TimeToEventCohort[];
+}> = ({ row, cohortData, kdeData, tteCohorts }) => {
   switch (row.rowType) {
     case 'boolean':
       return <BooleanContent name={row.name} cohortData={cohortData} />;
@@ -366,6 +373,8 @@ const RowContent: FC<{
       return <CategoricalContent baseName={row.name} cohortData={cohortData} />;
     case 'numeric':
       return <NumericContent name={row.name} cohortData={cohortData} kdeData={kdeData} />;
+    case 'time_to_event':
+      return <TimeToEventContent outcome={row.name} cohorts={tteCohorts ?? []} />;
     default:
       return <div style={{ padding: 20, color: '#999' }}>No detail view for {row.rowType} rows yet.</div>;
   }

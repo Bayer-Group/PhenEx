@@ -1,0 +1,19 @@
+.container {
+  width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chartCard {
+  background: var(--background_color_card, rgba(255, 255, 255, 0.06));
+  border-radius: 8px;
+  padding: 12px 20px;
+  height: 300px;
+}
+
+.empty {
+  padding: 20px;
+  color: #999;
+  font-size: 13px;
+}
