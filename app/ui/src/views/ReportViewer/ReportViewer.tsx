@@ -380,17 +380,17 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     for (const name of baselineSectionNames) {
       entries.push({ name, level: 1, onClick: () => scrollToSection(name, baselineSectionRefs.current) });
     }
-    if (outcomesSectionNames.length > 0) {
+    if (outcomesSectionNames.length > 0 || table2Cohorts.length > 0 || tteCohorts.length > 0) {
       entries.push({ name: 'Outcomes', level: 0, onClick: () => scrollToElement(outcomesGroupRef.current) });
       for (const name of outcomesSectionNames) {
         entries.push({ name, level: 1, onClick: () => scrollToSection(name, outcomesSectionRefs.current) });
       }
-    }
-    if (table2Cohorts.length > 0) {
-      entries.push({ name: 'Incidence Rates', level: 0, onClick: () => scrollToElement(table2GroupRef.current) });
-    }
-    if (tteCohorts.length > 0) {
-      entries.push({ name: 'Time to Event', level: 0, onClick: () => scrollToElement(tteGroupRef.current) });
+      if (table2Cohorts.length > 0) {
+        entries.push({ name: 'Incidence Rates', level: 1, onClick: () => scrollToElement(table2GroupRef.current) });
+      }
+      if (tteCohorts.length > 0) {
+        entries.push({ name: 'Time to Event', level: 1, onClick: () => scrollToElement(tteGroupRef.current) });
+      }
     }
     return entries;
   }, [baselineSectionNames, outcomesSectionNames, table2Cohorts.length, tteCohorts.length, scrollToElement, scrollToSection]);
@@ -500,7 +500,14 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               {table2Cohorts.length > 0 && (
                 <div ref={table2GroupRef}>
                   <ChartGroup title="Incidence Rates">
-                    <Table2Chart cohorts={table2Cohorts} />
+                    <Table2Chart
+                      cohorts={table2Cohorts}
+                      sequentialRows={sequentialRows}
+                      cohortDataMap={cohortDataMap}
+                      tteCohorts={tteCohorts}
+                      studyTitle={displayTitle}
+                      onScrollToRow={scrollToElement}
+                    />
                   </ChartGroup>
                 </div>
               )}
@@ -512,6 +519,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                       cohorts={tteCohorts}
                       sequentialRows={sequentialRows}
                       cohortDataMap={cohortDataMap}
+                      table2Cohorts={table2Cohorts}
                       studyTitle={displayTitle}
                       onScrollToRow={scrollToElement}
                     />

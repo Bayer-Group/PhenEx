@@ -64,6 +64,12 @@ const CATEGORY_REPORTERS: { category: string; reporters: string[] }[] = [
   { category: 'outcomes', reporters: ['table1_outcomes', 'Table2', 'TimeToEvent'] },
 ];
 
+/** Reporters that should appear as named sections within their category. */
+const REPORTER_SECTION_NAMES: Record<string, string> = {
+  Table2: 'Incidence Rates',
+  TimeToEvent: 'Time to Event',
+};
+
 // ── Row name keys per reporter type ─────────────────────────────────────
 
 function extractRowNames(
@@ -253,13 +259,14 @@ export function buildSequentialRowList(
           }
         }
       } else {
-        // No sections — flat list
+        // No sections — flat list (use reporter section name if defined)
+        const sectionName = REPORTER_SECTION_NAMES[reporter] ?? null;
         for (const name of names) {
           rows.push({
             index: index++,
             category,
             reporter,
-            section: null,
+            section: sectionName,
             name,
             rowType: rowTypes.get(name) ?? 'boolean',
             registry: reporterRegistry?.get(name) ?? null,

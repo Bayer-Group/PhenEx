@@ -149,9 +149,21 @@ export interface Table2Cohort {
 
 interface Table2ChartProps {
   cohorts: Table2Cohort[];
+  sequentialRows?: SequentialRow[];
+  cohortDataMap?: Record<string, CohortClassified[]>;
+  tteCohorts?: TimeToEventCohort[];
+  studyTitle?: string;
+  onScrollToRow?: (el: HTMLElement | null) => void;
 }
 
-export const Table2Chart: FC<Table2ChartProps> = ({ cohorts }) => {
+export const Table2Chart: FC<Table2ChartProps> = ({
+  cohorts,
+  sequentialRows,
+  cohortDataMap,
+  tteCohorts,
+  studyTitle,
+  onScrollToRow,
+}) => {
   const outcomes = useMemo(() => {
     const seen = new Set<string>();
     const order: string[] = [];
@@ -163,6 +175,24 @@ export const Table2Chart: FC<Table2ChartProps> = ({ cohorts }) => {
     return order;
   }, [cohorts]);
 
+  const nameToSeqIndex = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!sequentialRows) return map;
+    for (const sr of sequentialRows) {
+      if (sr.reporter === 'Table2' && !map.has(sr.name)) {
+        map.set(sr.name, sr.index);
+      }
+    }
+    return map;
+  }, [sequentialRows]);
+
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const closeViewer = useCallback(() => setViewerIndex(null), []);
+  const openRow = useCallback((name: string) => {
+    const idx = nameToSeqIndex.get(name);
+    if (idx != null) setViewerIndex(idx);
+  }, [nameToSeqIndex]);
+
   if (!outcomes.length) return null;
 
   return (
@@ -173,8 +203,21 @@ export const Table2Chart: FC<Table2ChartProps> = ({ cohorts }) => {
           row: c.table2.find((r) => r.Outcome === outcome),
         }));
         if (!rows.some((t) => t.row)) return null;
-        return <Table2Row key={outcome} outcome={outcome} rows={rows} />;
+        return <Table2Row key={outcome} outcome={outcome} rows={rows} onClick={openRow} />;
       })}
+      {viewerIndex != null && sequentialRows && cohortDataMap && (
+        <HorizontalRowViewer
+          rows={sequentialRows}
+          currentIndex={viewerIndex}
+          cohortDataMap={cohortDataMap}
+          tteCohorts={tteCohorts}
+          table2Cohorts={cohorts}
+          studyTitle={studyTitle}
+          onClose={closeViewer}
+          onNavigate={setViewerIndex}
+          onScrollToRow={onScrollToRow}
+        />
+      )}
     </div>
   );
 };
@@ -182,10 +225,12 @@ export const Table2Chart: FC<Table2ChartProps> = ({ cohorts }) => {
 const Table2Row: FC<{
   outcome: string;
   rows: { cohort: Table2Cohort; row: Table2Row | undefined }[];
-}> = ({ outcome, rows }) => {
-  const { activeIndex, onClick } = useBarHoverStore();
+  onClick?: (name: string) => void;
+}> = ({ outcome, rows, onClick }) => {
+  const { activeIndex, onClick: onBarClick } = useBarHoverStore();
+  const handleClick = useCallback(() => onClick?.(outcome), [onClick, outcome]);
   return (
-    <div className={styles.row}>
+    <div className={styles.row} onClick={handleClick} style={{ cursor: onClick ? 'pointer' : undefined }} data-row-name={outcome}>
       <div className={styles.nameCell}>{outcome}</div>
       <div className={styles.statsGrid}>
         <div className={styles.statsHeaderRow}>
@@ -199,7 +244,7 @@ const Table2Row: FC<{
           const dimmed = activeIndex !== null && activeIndex !== i;
           return (
             <div key={cohort.name} className={styles.statsRow}
-              onClick={() => onClick(i)}
+              onClick={(e) => { e.stopPropagation(); onBarClick(i); }}
               style={{ opacity: dimmed ? 0.25 : 1, cursor: 'pointer' }}>
               <div className={styles.statsCohortCell}>
                 <span className={styles.statDot} style={{ backgroundColor: cohort.color }} />
@@ -227,6 +272,7 @@ interface TimeToEventChartProps {
   cohorts: TimeToEventCohort[];
   sequentialRows?: SequentialRow[];
   cohortDataMap?: Record<string, CohortClassified[]>;
+  table2Cohorts?: Table2Cohort[];
   studyTitle?: string;
   onScrollToRow?: (el: HTMLElement | null) => void;
 }
@@ -235,6 +281,7 @@ export const TimeToEventChart: FC<TimeToEventChartProps> = ({
   cohorts,
   sequentialRows,
   cohortDataMap,
+  table2Cohorts,
   studyTitle,
   onScrollToRow,
 }) => {
@@ -281,6 +328,7 @@ export const TimeToEventChart: FC<TimeToEventChartProps> = ({
           currentIndex={viewerIndex}
           cohortDataMap={cohortDataMap}
           tteCohorts={cohorts}
+          table2Cohorts={table2Cohorts}
           studyTitle={studyTitle}
           onClose={closeViewer}
           onNavigate={setViewerIndex}
@@ -308,7 +356,7 @@ const TimeToEventRow: FC<{ outcome: string; cohorts: TimeToEventCohort[]; onClic
   if (!kmCurves.length) return null;
 
   return (
-    <div className={styles.row} onClick={handleClick} style={{ cursor: onClick ? 'pointer' : undefined }}>
+    <div className={styles.row} onClick={handleClick} style={{ cursor: onClick ? 'pointer' : undefined }} data-row-name={outcome}>
       <div className={styles.nameCell}>{outcome}</div>
       <div className={styles.kmCell}>
         <KaplanMeierCellRenderer curves={kmCurves} />
