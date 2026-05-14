@@ -60,3 +60,44 @@
   color: #bbb;
   font-style: italic;
 }
+
+/* ── Risk table ──────────────────────────────────────────────────────── */
+.riskTable {
+  position: relative;
+  margin-top: 2px;
+  border-top: 1px solid rgba(200, 200, 200, 0.4);
+  padding-top: 2px;
+}
+
+.riskRow {
+  position: relative;
+  height: 13px;
+}
+
+.riskLabel {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 52px;
+  font-size: 7px;
+  color: #999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 13px;
+}
+
+.riskValue {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 7px;
+  color: #999;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 13px;
+}
+
+.riskCohortBlock {
+  transition: opacity 0.15s ease;
+}
