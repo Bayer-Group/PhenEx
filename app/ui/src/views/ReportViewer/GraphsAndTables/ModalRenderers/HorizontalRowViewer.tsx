@@ -5,11 +5,7 @@ import { Portal } from '../../../../components/Portal/Portal';
 import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
 import { BarChartCellRenderer } from '../RowRenderers/BarChartCellRenderer';
 import { CategoricalBarChartCellRenderer } from '../RowRenderers/CategoricalBarChartCellRenderer';
-import { NumericChartFrame } from '../RowRenderers/NumericChartFrame';
-import { KDEChartCellRenderer } from '../RowRenderers/KDEChartCellRenderer';
-import { BoxPlotCellRenderer } from '../RowRenderers/BoxPlotCellRenderer';
-import { NumericTableCellRenderer } from '../RowRenderers/NumericTableCellRenderer';
-import numericStyles from './NumericGraphModal.module.css';
+import { NumericContent } from './NumericContent';
 import booleanStyles from './BooleanRowModal.module.css';
 import categoricalStyles from './CategoricalRowModal.module.css';
 import styles from './HorizontalRowViewer.module.css';
@@ -409,57 +405,4 @@ const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[] 
   );
 };
 
-/* ── Numeric ─────────────────────────────────────────────────────────── */
 
-const NumericContent: FC<{
-  name: string;
-  cohortData: CohortClassified[];
-  kdeData: Record<string, Record<string, KdeCurve>>;
-}> = ({ name, cohortData, kdeData }) => {
-  const { visible } = useCohortVisibility(cohortData.length);
-  const filtered = useFilteredCohortData(cohortData, visible);
-
-  const { xMin, xMax } = useMemo(() => {
-    let lo = Infinity;
-    let hi = -Infinity;
-    for (const cd of cohortData) {
-      const row = cd.data.rows.find((r) => r.Name === name);
-      if (!row) continue;
-      if (row.Min != null && row.Min < lo) lo = row.Min;
-      if (row.Max != null && row.Max > hi) hi = row.Max;
-    }
-    if (!isFinite(lo)) { lo = 0; hi = 1; }
-    return { xMin: lo, xMax: hi };
-  }, [name, cohortData]);
-
-  return (
-    <div className={numericStyles.container}>
-      <div className={numericStyles.distributionCard}>
-        <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
-          <div className={numericStyles.kdeSection}>
-            <KDEChartCellRenderer
-              name={name}
-              cohortData={filtered}
-              kdeData={kdeData}
-              xMin={xMin}
-              xMax={xMax}
-              showTicks={false}
-            />
-          </div>
-          <BoxPlotCellRenderer
-            name={name}
-            cohortData={filtered}
-            xMin={xMin}
-            xMax={xMax}
-            showLabels
-          />
-        </NumericChartFrame>
-      </div>
-      <div className={numericStyles.bottomRow}>
-        <div className={numericStyles.card}>
-          <NumericTableCellRenderer name={name} cohortData={filtered} showBar />
-        </div>
-      </div>
-    </div>
-  );
-};
