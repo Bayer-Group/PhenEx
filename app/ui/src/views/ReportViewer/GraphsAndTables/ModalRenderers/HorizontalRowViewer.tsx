@@ -7,7 +7,8 @@ import { BarChartCellRenderer } from '../RowRenderers/BarChartCellRenderer';
 import { CategoricalBarChartCellRenderer } from '../RowRenderers/CategoricalBarChartCellRenderer';
 import { NumericContent } from './NumericContent';
 import { TimeToEventContent } from './TimeToEventContent';
-import { type TimeToEventCohort } from '../OutcomesChart';
+import { Table2Content } from './Table2Content';
+import { type TimeToEventCohort, type Table2Cohort } from '../OutcomesChart';
 import booleanStyles from './BooleanRowModal.module.css';
 import categoricalStyles from './CategoricalRowModal.module.css';
 import styles from './HorizontalRowViewer.module.css';
@@ -37,6 +38,7 @@ interface HorizontalRowViewerProps {
   currentIndex: number;
   cohortDataMap: Record<string, CohortClassified[]>;
   tteCohorts?: TimeToEventCohort[];
+  table2Cohorts?: Table2Cohort[];
   studyTitle?: string;
   onClose: () => void;
   onNavigate: (index: number) => void;
@@ -50,6 +52,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   currentIndex,
   cohortDataMap,
   tteCohorts,
+  table2Cohorts,
   studyTitle,
   onClose,
   onNavigate,
@@ -245,6 +248,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 desiredTop={desiredTop}
                 cohortDataMap={cohortDataMap}
                 tteCohorts={tteCohorts}
+                table2Cohorts={table2Cohorts}
                 onNavigate={navigate}
               />
             );
@@ -264,11 +268,12 @@ interface HorizontalCellProps {
   desiredTop: string;
   cohortDataMap: Record<string, CohortClassified[]>;
   tteCohorts?: TimeToEventCohort[];
+  table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
 }
 
 const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, isFocused, nearby, desiredTop, cohortDataMap, tteCohorts, onNavigate }, ref) => {
+  ({ row, isFocused, nearby, desiredTop, cohortDataMap, tteCohorts, table2Cohorts, onNavigate }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const kdeData = useMemo(() => {
       const result: Record<string, Record<string, KdeCurve>> = {};
@@ -301,7 +306,7 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
                 {row.registry?.display_name || row.name}
               </div>
               <div className={styles.cardContent}>
-                {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} tteCohorts={tteCohorts} /> : null}
+                {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} /> : null}
               </div>
             </div>
           </div>
@@ -365,7 +370,8 @@ const RowContent: FC<{
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
   tteCohorts?: TimeToEventCohort[];
-}> = ({ row, cohortData, kdeData, tteCohorts }) => {
+  table2Cohorts?: Table2Cohort[];
+}> = ({ row, cohortData, kdeData, tteCohorts, table2Cohorts }) => {
   switch (row.rowType) {
     case 'boolean':
       return <BooleanContent name={row.name} cohortData={cohortData} />;
@@ -375,6 +381,8 @@ const RowContent: FC<{
       return <NumericContent name={row.name} cohortData={cohortData} kdeData={kdeData} />;
     case 'time_to_event':
       return <TimeToEventContent outcome={row.name} cohorts={tteCohorts ?? []} />;
+    case 'table2':
+      return <Table2Content outcome={row.name} cohorts={table2Cohorts ?? []} />;
     default:
       return <div style={{ padding: 20, color: '#999' }}>No detail view for {row.rowType} rows yet.</div>;
   }
