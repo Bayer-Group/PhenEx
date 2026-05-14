@@ -6,6 +6,7 @@ import { PanZoomScaleProvider } from '../../hooks/PanZoomScaleContext';
 import { CohortSelector } from './ReportFloatingControls/CohortSelector';
 import { CharacteristicsChart } from './GraphsAndTables/CharacteristicsChart';
 import { Table2Chart, TimeToEventChart, type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
+import { HorizontalRowViewer } from './GraphsAndTables/ModalRenderers/HorizontalRowViewer';
 import { AttritionChart } from './GraphsAndTables/AttritionChart';
 import { ChartGroup } from './GraphsAndTables/ChartGroup';
 import { ReportNavPanel } from './ReportViewNavBar/ReportNavPanel';
@@ -18,7 +19,6 @@ import {
   classifyRows,
   parseCohortGroups,
   getCohortColor,
-  mergeSections,
   type CohortEntry,
   type CohortClassified,
   type CohortGroup,
@@ -26,7 +26,7 @@ import {
   type Table2Row,
   type TimeToEventRow,
 } from './types';
-import { buildSequentialRowList, type StudyRegistry } from './studyRegistryUtils';
+import { buildSequentialRowList, getSectionNames, type StudyRegistry } from './studyRegistryUtils';
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -163,8 +163,6 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     [cohortEntries, selections],
   );
 
-  const sections = useMemo(() => mergeSections(cohortEntries), [cohortEntries]);
-
   // ── Outcomes ──────────────────────────────────────────────────────────
   const outcomesEntries = useMemo(
     () => allOutcomesEntries.filter((e) => selectedCohortNames.has(e.cohortName)),
@@ -188,8 +186,6 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         .filter((c): c is CohortClassified => c !== null),
     [outcomesEntries, selections],
   );
-
-  const outcomesSections = useMemo(() => mergeSections(outcomesEntries), [outcomesEntries]);
 
   // ── Sequential rows (built from selected data so navigable rows = displayed rows)
   const sequentialRows = useMemo(() => {
@@ -215,6 +211,16 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     if (outcomesCohortData.length > 0) map.table1_outcomes = outcomesCohortData;
     return map;
   }, [cohortData, outcomesCohortData]);
+
+  // ── Reporter rows (filtered from sequential rows, one source of truth) ──
+  const table1Rows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'table1'), [sequentialRows]);
+  const outcomesRows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'table1_outcomes'), [sequentialRows]);
+  const table2Rows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'Table2'), [sequentialRows]);
+  const tteRows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'TimeToEvent'), [sequentialRows]);
+
+  // ── HorizontalRowViewer state (single instance for all charts) ────────
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const closeViewer = useCallback(() => setViewerIndex(null), []);
 
   // ── Table2 + TimeToEvent ──────────────────────────────────────────────
   const table2Cohorts: Table2Cohort[] = useMemo(
@@ -319,8 +325,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     panTargetYOffset: PAN_Y_OFFSET,
   });
 
-  const baselineSectionNames = useMemo(() => (sections ? Object.keys(sections) : []), [sections]);
-  const outcomesSectionNames = useMemo(() => (outcomesSections ? Object.keys(outcomesSections) : []), [outcomesSections]);
+  const baselineSectionNames = useMemo(() => getSectionNames(sequentialRows, 'table1'), [sequentialRows]);
+  const outcomesSectionNames = useMemo(() => getSectionNames(sequentialRows, 'table1_outcomes'), [sequentialRows]);
 
   const scrollToSection = useCallback(
     (name: string, refs: Map<string, HTMLDivElement>) => {
@@ -380,20 +386,20 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     for (const name of baselineSectionNames) {
       entries.push({ name, level: 1, onClick: () => scrollToSection(name, baselineSectionRefs.current) });
     }
-    if (outcomesSectionNames.length > 0 || table2Cohorts.length > 0 || tteCohorts.length > 0) {
+    if (outcomesSectionNames.length > 0 || table2Rows.length > 0 || tteRows.length > 0) {
       entries.push({ name: 'Outcomes', level: 0, onClick: () => scrollToElement(outcomesGroupRef.current) });
       for (const name of outcomesSectionNames) {
         entries.push({ name, level: 1, onClick: () => scrollToSection(name, outcomesSectionRefs.current) });
       }
-      if (table2Cohorts.length > 0) {
+      if (table2Rows.length > 0) {
         entries.push({ name: 'Incidence Rates', level: 1, onClick: () => scrollToElement(table2GroupRef.current) });
       }
-      if (tteCohorts.length > 0) {
+      if (tteRows.length > 0) {
         entries.push({ name: 'Time to Event', level: 1, onClick: () => scrollToElement(tteGroupRef.current) });
       }
     }
     return entries;
-  }, [baselineSectionNames, outcomesSectionNames, table2Cohorts.length, tteCohorts.length, scrollToElement, scrollToSection]);
+  }, [baselineSectionNames, outcomesSectionNames, table2Rows.length, tteRows.length, scrollToElement, scrollToSection]);
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
@@ -469,59 +475,45 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                 <ChartGroup title="Baseline Characteristics">
                 <CharacteristicsChart
                   cohortData={cohortData}
-                  sections={sections}
+                  reporterRows={table1Rows}
                   sectionRefs={baselineSectionRefs.current}
-                  reporter="table1"
-                  sequentialRows={sequentialRows}
-                  cohortDataMap={cohortDataMap}
-                  studyTitle={displayTitle}
-                  onScrollToRow={scrollToElement}
+                  onOpen={setViewerIndex}
                 />
               </ChartGroup>
               </div>
 
-              {outcomesCohortData.length > 0 && (
+              {outcomesRows.length > 0 && (
                 <div ref={outcomesGroupRef}>
                   <ChartGroup title="Outcomes">
                     <CharacteristicsChart
                       cohortData={outcomesCohortData}
-                      sections={outcomesSections}
+                      reporterRows={outcomesRows}
                       sectionRefs={outcomesSectionRefs.current}
-                      reporter="table1_outcomes"
-                      sequentialRows={sequentialRows}
-                      cohortDataMap={cohortDataMap}
-                      studyTitle={displayTitle}
-                      onScrollToRow={scrollToElement}
+                      onOpen={setViewerIndex}
                     />
                   </ChartGroup>
                 </div>
               )}
 
-              {table2Cohorts.length > 0 && (
+              {table2Rows.length > 0 && (
                 <div ref={table2GroupRef}>
                   <ChartGroup title="Incidence Rates">
                     <Table2Chart
                       cohorts={table2Cohorts}
-                      sequentialRows={sequentialRows}
-                      cohortDataMap={cohortDataMap}
-                      tteCohorts={tteCohorts}
-                      studyTitle={displayTitle}
-                      onScrollToRow={scrollToElement}
+                      reporterRows={table2Rows}
+                      onOpen={setViewerIndex}
                     />
                   </ChartGroup>
                 </div>
               )}
 
-              {tteCohorts.length > 0 && (
+              {tteRows.length > 0 && (
                 <div ref={tteGroupRef}>
                   <ChartGroup title="Time to Event">
                     <TimeToEventChart
                       cohorts={tteCohorts}
-                      sequentialRows={sequentialRows}
-                      cohortDataMap={cohortDataMap}
-                      table2Cohorts={table2Cohorts}
-                      studyTitle={displayTitle}
-                      onScrollToRow={scrollToElement}
+                      reporterRows={tteRows}
+                      onOpen={setViewerIndex}
                     />
                   </ChartGroup>
                 </div>
@@ -529,6 +521,20 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
               <div className={styles.bottomSpacer} />
             </>
+          )}
+
+          {viewerIndex != null && (
+            <HorizontalRowViewer
+              rows={sequentialRows}
+              currentIndex={viewerIndex}
+              cohortDataMap={cohortDataMap}
+              tteCohorts={tteCohorts}
+              table2Cohorts={table2Cohorts}
+              studyTitle={displayTitle}
+              onClose={closeViewer}
+              onNavigate={setViewerIndex}
+              onScrollToRow={scrollToElement}
+            />
           )}
          </PanZoomScaleProvider>
         </div>

@@ -1,16 +1,12 @@
-import { FC, useCallback, useMemo, useState } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 import {
   type CohortClassified,
-  type CharacteristicItem,
   type KdeCurve,
-  collectCharacteristics,
-  groupCharacteristicsBySection,
 } from '../types';
-import { type SequentialRow } from '../studyRegistryUtils';
+import { type SequentialRow, groupRowsBySection } from '../studyRegistryUtils';
 import { BarChartCellRenderer } from './RowRenderers/BarChartCellRenderer';
 import { CategoricalBarChartCellRenderer } from './RowRenderers/CategoricalBarChartCellRenderer';
 import { NumericGraphCellRenderer } from './RowRenderers/NumericGraphCellRenderer';
-import { HorizontalRowViewer } from './ModalRenderers/HorizontalRowViewer';
 import { SectionCard } from './SectionCard';
 import styles from './CharacteristicsChart.module.css';
 
@@ -18,34 +14,23 @@ import styles from './CharacteristicsChart.module.css';
 
 interface CharacteristicsChartProps {
   cohortData: CohortClassified[];
-  sections: Record<string, string[]> | null;
+  /** Sequential rows for this reporter, already filtered from the global list */
+  reporterRows: SequentialRow[];
   sectionRefs: Map<string, HTMLDivElement>;
-  /** Reporter key used to filter sequentialRows (e.g. 'table1', 'table1_outcomes') */
-  reporter: string;
-  sequentialRows?: SequentialRow[];
-  /** Map of reporter → cohort data, so HorizontalRowViewer can render any reporter's rows */
-  cohortDataMap?: Record<string, CohortClassified[]>;
-  studyTitle?: string;
-  onScrollToRow?: (el: HTMLElement | null) => void;
+  /** Open the HorizontalRowViewer at the given sequential index */
+  onOpen: (index: number) => void;
 }
 
 export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
   cohortData,
-  sections,
+  reporterRows,
   sectionRefs,
-  reporter,
-  sequentialRows,
-  cohortDataMap,
-  studyTitle,
-  onScrollToRow,
+  onOpen,
 }) => {
-  const items = useMemo(() => collectCharacteristics(cohortData), [cohortData]);
-  const groups = useMemo(
-    () => groupCharacteristicsBySection(items, sections),
-    [items, sections],
-  );
+  // Group this reporter's rows by section
+  const groups = useMemo(() => groupRowsBySection(reporterRows), [reporterRows]);
 
-  // Derive KDE data from cohortData (already loaded with table1)
+  // Derive KDE data from cohortData
   const kdeData = useMemo(() => {
     const result: Record<string, Record<string, KdeCurve>> = {};
     for (const cd of cohortData) {
@@ -54,34 +39,7 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
     return result;
   }, [cohortData]);
 
-  // Modal state: index into sequentialRows, or null
-  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const closeViewer = useCallback(() => setViewerIndex(null), []);
-
-  // Build a lookup: row name → sequential index (matching this reporter in the global list)
-  const nameToSeqIndex = useMemo(() => {
-    const map = new Map<string, number>();
-    if (!sequentialRows) return map;
-    for (const sr of sequentialRows) {
-      if (sr.reporter === reporter && !map.has(sr.name)) {
-        map.set(sr.name, sr.index);
-      }
-    }
-    return map;
-  }, [sequentialRows, reporter]);
-
-  const openRow = useCallback((name: string) => {
-    const idx = nameToSeqIndex.get(name);
-    if (idx != null) setViewerIndex(idx);
-  }, [nameToSeqIndex]);
-
-  // Fallback cohortDataMap if not provided (single-reporter mode)
-  const resolvedMap = useMemo(
-    () => cohortDataMap ?? { [reporter]: cohortData },
-    [cohortDataMap, reporter, cohortData],
-  );
-
-  if (!items.length) return null;
+  if (!reporterRows.length) return null;
 
   return (
     <div className={styles.container}>
@@ -96,29 +54,18 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
               else sectionRefs.delete(key);
             }}
           >
-            {g.items.map((item) => (
+            {g.rows.map((row) => (
               <CharacteristicRow
-                key={item.baseName}
-                item={item}
+                key={row.name}
+                row={row}
                 cohortData={cohortData}
                 kdeData={kdeData}
-                onOpen={openRow}
+                onOpen={onOpen}
               />
             ))}
           </SectionCard>
         );
       })}
-      {viewerIndex != null && sequentialRows && (
-        <HorizontalRowViewer
-          rows={sequentialRows}
-          currentIndex={viewerIndex}
-          cohortDataMap={resolvedMap}
-          studyTitle={studyTitle}
-          onClose={closeViewer}
-          onNavigate={setViewerIndex}
-          onScrollToRow={onScrollToRow}
-        />
-      )}
     </div>
   );
 };
@@ -126,34 +73,34 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
 /* ── Row dispatcher ──────────────────────────────────────────────────── */
 
 const CharacteristicRow: FC<{
-  item: CharacteristicItem;
+  row: SequentialRow;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
-  onOpen: (name: string) => void;
-}> = ({ item, cohortData, kdeData, onOpen }) => {
-  if (item.type === 'categorical') {
-    return <CategoricalRow baseName={item.baseName} cohortData={cohortData} onOpen={onOpen} />;
+  onOpen: (index: number) => void;
+}> = ({ row, cohortData, kdeData, onOpen }) => {
+  if (row.rowType === 'categorical') {
+    return <CategoricalRow row={row} cohortData={cohortData} onOpen={onOpen} />;
   }
-  if (item.type === 'numeric') {
-    return <NumericRow name={item.baseName} cohortData={cohortData} kdeData={kdeData} onOpen={onOpen} />;
+  if (row.rowType === 'numeric') {
+    return <NumericRow row={row} cohortData={cohortData} kdeData={kdeData} onOpen={onOpen} />;
   }
-  return <BooleanRow name={item.baseName} cohortData={cohortData} onOpen={onOpen} />;
+  return <BooleanRow row={row} cohortData={cohortData} onOpen={onOpen} />;
 };
 
 /* ── Boolean row ─────────────────────────────────────────────────────── */
 
-const BooleanRow: FC<{ name: string; cohortData: CohortClassified[]; onOpen: (name: string) => void }> = ({
-  name,
+const BooleanRow: FC<{ row: SequentialRow; cohortData: CohortClassified[]; onOpen: (index: number) => void }> = ({
+  row,
   cohortData,
   onOpen,
 }) => {
-  const handleClick = useCallback(() => onOpen(name), [name, onOpen]);
+  const handleClick = useCallback(() => onOpen(row.index), [row.index, onOpen]);
 
   return (
-    <div className={styles.row} onClick={handleClick} style={{ cursor: 'pointer' }} data-row-name={name}>
-      <div className={styles.nameCell}>{name}</div>
+    <div className={styles.row} onClick={handleClick} style={{ cursor: 'pointer' }} data-row-name={row.name}>
+      <div className={styles.nameCell}>{row.name}</div>
       <div className={styles.booleanChartCell}>
-        <BarChartCellRenderer data={{ name, _meta: { cohortData } }} isModal />
+        <BarChartCellRenderer data={{ name: row.name, _meta: { cohortData } }} isModal />
       </div>
     </div>
   );
@@ -162,18 +109,18 @@ const BooleanRow: FC<{ name: string; cohortData: CohortClassified[]; onOpen: (na
 /* ── Categorical row (each category as a sub-row) ────────────────────── */
 
 const CategoricalRow: FC<{
-  baseName: string;
+  row: SequentialRow;
   cohortData: CohortClassified[];
-  onOpen: (name: string) => void;
-}> = ({ baseName, cohortData, onOpen }) => {
-  const handleClick = useCallback(() => onOpen(baseName), [baseName, onOpen]);
+  onOpen: (index: number) => void;
+}> = ({ row, cohortData, onOpen }) => {
+  const handleClick = useCallback(() => onOpen(row.index), [row.index, onOpen]);
 
   return (
-    <div className={styles.numericRow} onClick={handleClick} style={{ cursor: 'pointer' }} data-row-name={baseName}>
-      <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{baseName}</div>
+    <div className={styles.numericRow} onClick={handleClick} style={{ cursor: 'pointer' }} data-row-name={row.name}>
+      <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{row.name}</div>
       <div className={styles.kdeCell}>
         <CategoricalBarChartCellRenderer
-          baseName={baseName}
+          baseName={row.name}
           cohortData={cohortData}
           orientation="vertical"
         />
@@ -185,18 +132,18 @@ const CategoricalRow: FC<{
 /* ── Numeric row ─────────────────────────────────────────────────────── */
 
 const NumericRow: FC<{
-  name: string;
+  row: SequentialRow;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
-  onOpen: (name: string) => void;
-}> = ({ name, cohortData, kdeData, onOpen }) => {
-  const handleClick = useCallback(() => onOpen(name), [name, onOpen]);
+  onOpen: (index: number) => void;
+}> = ({ row, cohortData, kdeData, onOpen }) => {
+  const handleClick = useCallback(() => onOpen(row.index), [row.index, onOpen]);
 
   return (
-    <div className={styles.numericRow} onClick={handleClick} style={{ cursor: 'pointer' }} data-row-name={name}>
-      <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{name}</div>
+    <div className={styles.numericRow} onClick={handleClick} style={{ cursor: 'pointer' }} data-row-name={row.name}>
+      <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{row.name}</div>
       <div className={styles.kdeCell}>
-        <NumericGraphCellRenderer name={name} cohortData={cohortData} kdeData={kdeData} />
+        <NumericGraphCellRenderer name={row.name} cohortData={cohortData} kdeData={kdeData} />
       </div>
     </div>
   );

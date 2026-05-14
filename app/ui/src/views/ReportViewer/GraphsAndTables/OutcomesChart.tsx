@@ -1,10 +1,8 @@
-import { FC, useCallback, useMemo, useState } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 import { type Table2Row, type TimeToEventRow } from '../types';
-import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { KaplanMeierCellRenderer, type KMCurve } from './RowRenderers/KaplanMeierCellRenderer';
 import { useBarHoverStore } from './RowRenderers/useBarHoverStore';
-import { HorizontalRowViewer } from './ModalRenderers/HorizontalRowViewer';
 import styles from './OutcomesChart.module.css';
 
 /* ── Types ───────────────────────────────────────────────────────────── */
@@ -149,88 +147,41 @@ export interface Table2Cohort {
 
 interface Table2ChartProps {
   cohorts: Table2Cohort[];
-  sequentialRows?: SequentialRow[];
-  cohortDataMap?: Record<string, CohortClassified[]>;
-  tteCohorts?: TimeToEventCohort[];
-  studyTitle?: string;
-  onScrollToRow?: (el: HTMLElement | null) => void;
+  /** Sequential rows for the Table2 reporter, used for ordering */
+  reporterRows: SequentialRow[];
+  /** Open the HorizontalRowViewer at the given sequential index */
+  onOpen: (index: number) => void;
 }
 
 export const Table2Chart: FC<Table2ChartProps> = ({
   cohorts,
-  sequentialRows,
-  cohortDataMap,
-  tteCohorts,
-  studyTitle,
-  onScrollToRow,
+  reporterRows,
+  onOpen,
 }) => {
-  const outcomes = useMemo(() => {
-    const seen = new Set<string>();
-    const order: string[] = [];
-    for (const c of cohorts) {
-      for (const r of c.table2) {
-        if (!seen.has(r.Outcome)) { seen.add(r.Outcome); order.push(r.Outcome); }
-      }
-    }
-    return order;
-  }, [cohorts]);
-
-  const nameToSeqIndex = useMemo(() => {
-    const map = new Map<string, number>();
-    if (!sequentialRows) return map;
-    for (const sr of sequentialRows) {
-      if (sr.reporter === 'Table2' && !map.has(sr.name)) {
-        map.set(sr.name, sr.index);
-      }
-    }
-    return map;
-  }, [sequentialRows]);
-
-  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const closeViewer = useCallback(() => setViewerIndex(null), []);
-  const openRow = useCallback((name: string) => {
-    const idx = nameToSeqIndex.get(name);
-    if (idx != null) setViewerIndex(idx);
-  }, [nameToSeqIndex]);
-
-  if (!outcomes.length) return null;
+  if (!reporterRows.length) return null;
 
   return (
     <div className={styles.container}>
-      {outcomes.map((outcome) => {
+      {reporterRows.map((seqRow) => {
         const rows = cohorts.map((c) => ({
           cohort: c,
-          row: c.table2.find((r) => r.Outcome === outcome),
+          row: c.table2.find((r) => r.Outcome === seqRow.name),
         }));
         if (!rows.some((t) => t.row)) return null;
-        return <Table2Row key={outcome} outcome={outcome} rows={rows} onClick={openRow} />;
+        return <Table2RowComponent key={seqRow.name} outcome={seqRow.name} rows={rows} onClick={() => onOpen(seqRow.index)} />;
       })}
-      {viewerIndex != null && sequentialRows && cohortDataMap && (
-        <HorizontalRowViewer
-          rows={sequentialRows}
-          currentIndex={viewerIndex}
-          cohortDataMap={cohortDataMap}
-          tteCohorts={tteCohorts}
-          table2Cohorts={cohorts}
-          studyTitle={studyTitle}
-          onClose={closeViewer}
-          onNavigate={setViewerIndex}
-          onScrollToRow={onScrollToRow}
-        />
-      )}
     </div>
   );
 };
 
-const Table2Row: FC<{
+const Table2RowComponent: FC<{
   outcome: string;
   rows: { cohort: Table2Cohort; row: Table2Row | undefined }[];
-  onClick?: (name: string) => void;
+  onClick?: () => void;
 }> = ({ outcome, rows, onClick }) => {
   const { activeIndex, onClick: onBarClick } = useBarHoverStore();
-  const handleClick = useCallback(() => onClick?.(outcome), [onClick, outcome]);
   return (
-    <div className={styles.row} onClick={handleClick} style={{ cursor: onClick ? 'pointer' : undefined }} data-row-name={outcome}>
+    <div className={styles.row} onClick={onClick} style={{ cursor: onClick ? 'pointer' : undefined }} data-row-name={outcome}>
       <div className={styles.nameCell}>{outcome}</div>
       <div className={styles.statsGrid}>
         <div className={styles.statsHeaderRow}>
@@ -270,76 +221,29 @@ export interface TimeToEventCohort {
 
 interface TimeToEventChartProps {
   cohorts: TimeToEventCohort[];
-  sequentialRows?: SequentialRow[];
-  cohortDataMap?: Record<string, CohortClassified[]>;
-  table2Cohorts?: Table2Cohort[];
-  studyTitle?: string;
-  onScrollToRow?: (el: HTMLElement | null) => void;
+  /** Sequential rows for the TimeToEvent reporter, used for ordering */
+  reporterRows: SequentialRow[];
+  /** Open the HorizontalRowViewer at the given sequential index */
+  onOpen: (index: number) => void;
 }
 
 export const TimeToEventChart: FC<TimeToEventChartProps> = ({
   cohorts,
-  sequentialRows,
-  cohortDataMap,
-  table2Cohorts,
-  studyTitle,
-  onScrollToRow,
+  reporterRows,
+  onOpen,
 }) => {
-  const outcomes = useMemo(() => {
-    const seen = new Set<string>();
-    const order: string[] = [];
-    for (const c of cohorts) {
-      for (const r of c.timeToEvent) {
-        if (!seen.has(r.Outcome)) { seen.add(r.Outcome); order.push(r.Outcome); }
-      }
-    }
-    return order;
-  }, [cohorts]);
-
-  // Map outcome name → sequential index for opening the viewer
-  const nameToSeqIndex = useMemo(() => {
-    const map = new Map<string, number>();
-    if (!sequentialRows) return map;
-    for (const sr of sequentialRows) {
-      if (sr.reporter === 'TimeToEvent' && !map.has(sr.name)) {
-        map.set(sr.name, sr.index);
-      }
-    }
-    return map;
-  }, [sequentialRows]);
-
-  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const closeViewer = useCallback(() => setViewerIndex(null), []);
-  const openRow = useCallback((name: string) => {
-    const idx = nameToSeqIndex.get(name);
-    if (idx != null) setViewerIndex(idx);
-  }, [nameToSeqIndex]);
-
-  if (!outcomes.length) return null;
+  if (!reporterRows.length) return null;
 
   return (
     <div className={styles.container}>
-      {outcomes.map((outcome) => (
-        <TimeToEventRow key={outcome} outcome={outcome} cohorts={cohorts} onClick={openRow} />
+      {reporterRows.map((seqRow) => (
+        <TimeToEventRowComponent key={seqRow.name} outcome={seqRow.name} cohorts={cohorts} onClick={() => onOpen(seqRow.index)} />
       ))}
-      {viewerIndex != null && sequentialRows && cohortDataMap && (
-        <HorizontalRowViewer
-          rows={sequentialRows}
-          currentIndex={viewerIndex}
-          cohortDataMap={cohortDataMap}
-          tteCohorts={cohorts}
-          table2Cohorts={table2Cohorts}
-          studyTitle={studyTitle}
-          onClose={closeViewer}
-          onNavigate={setViewerIndex}
-          onScrollToRow={onScrollToRow}
-        />
-      )}
     </div>
   );
 };
 
-const TimeToEventRow: FC<{ outcome: string; cohorts: TimeToEventCohort[]; onClick?: (name: string) => void }> = ({ outcome, cohorts, onClick }) => {
+const TimeToEventRowComponent: FC<{ outcome: string; cohorts: TimeToEventCohort[]; onClick?: () => void }> = ({ outcome, cohorts, onClick }) => {
   const kmCurves: KMCurve[] = useMemo(
     () => cohorts
       .map((c) => ({
@@ -351,7 +255,7 @@ const TimeToEventRow: FC<{ outcome: string; cohorts: TimeToEventCohort[]; onClic
     [cohorts, outcome],
   );
 
-  const handleClick = useCallback(() => onClick?.(outcome), [onClick, outcome]);
+  const handleClick = useCallback(() => onClick?.(), [onClick]);
 
   if (!kmCurves.length) return null;
 

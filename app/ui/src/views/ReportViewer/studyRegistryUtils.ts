@@ -56,6 +56,45 @@ export interface SequentialRow {
   registry: RegistryRowEntry | null;
 }
 
+// ── Grouping helpers ────────────────────────────────────────────────────
+
+export interface SequentialSection {
+  section: string | null;
+  rows: SequentialRow[];
+}
+
+/** Group sequential rows by their `section` field, preserving order. */
+export function groupRowsBySection(rows: SequentialRow[]): SequentialSection[] {
+  const groups: SequentialSection[] = [];
+  let current: SequentialSection | null = null;
+  for (const row of rows) {
+    if (!current || current.section !== row.section) {
+      current = { section: row.section, rows: [] };
+      groups.push(current);
+    }
+    current.rows.push(row);
+  }
+  return groups;
+}
+
+/** Filter sequential rows by reporter and return them grouped by section. */
+export function getReporterSections(allRows: SequentialRow[], reporter: string): SequentialSection[] {
+  return groupRowsBySection(allRows.filter((r) => r.reporter === reporter));
+}
+
+/** Extract unique section names from sequential rows for a given reporter. */
+export function getSectionNames(allRows: SequentialRow[], reporter: string): string[] {
+  const names: string[] = [];
+  const seen = new Set<string>();
+  for (const row of allRows) {
+    if (row.reporter === reporter && row.section && !seen.has(row.section)) {
+      seen.add(row.section);
+      names.push(row.section);
+    }
+  }
+  return names;
+}
+
 // ── Category → reporter mapping ─────────────────────────────────────────
 
 const CATEGORY_REPORTERS: { category: string; reporters: string[] }[] = [
