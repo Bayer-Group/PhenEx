@@ -68,11 +68,13 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   studyRegistry,
   runId,
   loading = false,
-  title = 'LUMINOUS',
+  title = 'Loading study...',
   storageKey,
   initialSelections,
   onSelectionsChange,
 }) => {
+  const displayTitle = title.split('_').join(' ');
+
   // ── Cohort groups ─────────────────────────────────────────────────────
   const groups = useMemo(
     () => parseCohortGroups(allCohortEntries.map((e) => e.cohortName)),
@@ -310,7 +312,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
   const pz = usePanZoom({
     minScale: 0.1,
-    maxScale: 1.2,
+    maxScale: .7,
     initialTransform: { x: INITIAL_X, y: INITIAL_Y, scale: INITIAL_SCALE },
     storageKey,
     panTargetXOffset: PAN_X_OFFSET,
@@ -398,7 +400,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     <div className={styles.page}>
       <Portal>
         <div className={styles.titleContainer}>
-          <span className={styles.title}>{title}</span>
+          <span className={styles.title}>{displayTitle}</span>
           <span className={styles.subtitle}>
             {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
           </span>
@@ -472,6 +474,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                   reporter="table1"
                   sequentialRows={sequentialRows}
                   cohortDataMap={cohortDataMap}
+                  studyTitle={displayTitle}
                   onScrollToRow={scrollToElement}
                 />
               </ChartGroup>
@@ -487,6 +490,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                       reporter="table1_outcomes"
                       sequentialRows={sequentialRows}
                       cohortDataMap={cohortDataMap}
+                      studyTitle={displayTitle}
                       onScrollToRow={scrollToElement}
                     />
                   </ChartGroup>

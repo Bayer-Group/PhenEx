@@ -56,6 +56,7 @@ export const ServerReportViewer: FC = () => {
   const [timeToEventData, setTimeToEventData] = useState<Record<string, TimeToEventRow[]> | undefined>();
   const [loadingRun, setLoadingRun] = useState(false);
   const [initialSelections, setInitialSelections] = useState<LegendSelection[] | undefined>();
+  const [runInfo, setRunInfo] = useState<Record<string, string> | null>(null);
 
   // ── Resolve run from URL param or fall back to latest ─────────────────
   useEffect(() => {
@@ -101,6 +102,7 @@ export const ServerReportViewer: FC = () => {
     const cached = bypassCache ? null : getCached(runId);
 
     if (cached) {
+      if (cached.info) setRunInfo(cached.info);
       const cachedT2 = getCachedTable2(runId) ?? undefined;
       const cachedTte = getCachedTimeToEvent(runId) ?? undefined;
       fetchFrozenCohortsCombined(runId).catch(() => []).then(() => {
@@ -137,7 +139,8 @@ export const ServerReportViewer: FC = () => {
       fetchTable2Combined(runId).catch(() => ({})),
       fetchTimeToEventCombined(runId).catch(() => ({})),
     ])
-      .then(([entries, outcomesEntries, _frozenCohorts, _info, waterfall, kdes, outcomesKdes, table2, timeToEvent]) => {
+      .then(([entries, outcomesEntries, _frozenCohorts, info, waterfall, kdes, outcomesKdes, table2, timeToEvent]) => {
+        setRunInfo(info as Record<string, string>);
         mergeKdesIntoEntries(entries, kdes as Record<string, Record<string, KdeCurve>>);
         mergeKdesIntoEntries(outcomesEntries, outcomesKdes as Record<string, Record<string, KdeCurve>>);
         const t2 = Object.keys(table2 as Record<string, unknown>).length ? table2 as Record<string, Table2Row[]> : undefined;
@@ -145,7 +148,7 @@ export const ServerReportViewer: FC = () => {
         const runData: RunData = {
           entries: entries.map(e => ({ ...e, data: { rows: e.data.rows, sections: e.data.sections } })),
           outcomesEntries: outcomesEntries.map(e => ({ ...e, data: { rows: e.data.rows, sections: e.data.sections } })),
-          info: _info,
+          info: info as Record<string, string>,
           waterfall,
         };
         setCache(runId, runData);
@@ -254,6 +257,7 @@ export const ServerReportViewer: FC = () => {
       studyRegistry={studyRegistry}
       runId={selectedRun}
       loading={loadingRun}
+      title={runInfo?.['Study Name'] ?? undefined}
       storageKey={selectedRun ? `report-zoom-${selectedRun}` : undefined}
       initialSelections={initialSelections}
       onSelectionsChange={handleSelectionsChange}

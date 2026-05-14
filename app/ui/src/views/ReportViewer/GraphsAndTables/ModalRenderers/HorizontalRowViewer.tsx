@@ -38,6 +38,7 @@ interface HorizontalRowViewerProps {
   rows: SequentialRow[];
   currentIndex: number;
   cohortDataMap: Record<string, CohortClassified[]>;
+  studyTitle?: string;
   onClose: () => void;
   onNavigate: (index: number) => void;
   onScrollToRow?: (el: HTMLElement | null) => void;
@@ -49,6 +50,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   rows,
   currentIndex,
   cohortDataMap,
+  studyTitle,
   onClose,
   onNavigate,
   onScrollToRow,
@@ -224,6 +226,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
           rows={rows}
           currentIndex={currentIndex}
           desiredTop={desiredTop}
+          studyTitle={studyTitle}
           onNavigate={navigate}
         />
 

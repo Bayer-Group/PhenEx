@@ -25,6 +25,7 @@ interface CharacteristicsChartProps {
   sequentialRows?: SequentialRow[];
   /** Map of reporter → cohort data, so HorizontalRowViewer can render any reporter's rows */
   cohortDataMap?: Record<string, CohortClassified[]>;
+  studyTitle?: string;
   onScrollToRow?: (el: HTMLElement | null) => void;
 }
 
@@ -35,6 +36,7 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
   reporter,
   sequentialRows,
   cohortDataMap,
+  studyTitle,
   onScrollToRow,
 }) => {
   const items = useMemo(() => collectCharacteristics(cohortData), [cohortData]);
@@ -111,6 +113,7 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
           rows={sequentialRows}
           currentIndex={viewerIndex}
           cohortDataMap={resolvedMap}
+          studyTitle={studyTitle}
           onClose={closeViewer}
           onNavigate={setViewerIndex}
           onScrollToRow={onScrollToRow}

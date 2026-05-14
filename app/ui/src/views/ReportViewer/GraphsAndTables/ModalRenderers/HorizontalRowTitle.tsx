@@ -151,7 +151,7 @@ const CrumbMenu: FC<CrumbMenuProps> = ({
 /* ── Main component ──────────────────────────────────────────────────── */
 
 export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
-  rows, currentIndex, desiredTop, studyTitle = 'LUMINOUS', onNavigate,
+  rows, currentIndex, desiredTop, studyTitle = 'Loading study...', onNavigate,
 }) => {
   const current = rows[currentIndex];
   if (!current) return null;
