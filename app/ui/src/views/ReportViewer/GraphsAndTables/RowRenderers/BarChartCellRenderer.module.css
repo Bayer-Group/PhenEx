@@ -1,5 +1,9 @@
 :root {
   --HEIGHT_TABLE1_ROW_BOOLEAN_TOP: 30px;
+  --BOOLEAN_PRESENTATION_LABEL_COL: 140px;
+  --BOOLEAN_PRESENTATION_PCT_COL: 60px;
+  --BOOLEAN_PRESENTATION_N_COL: 80px;
+  --BOOLEAN_PRESENTATION_GAP: 10px;
 }
 
 .container {
@@ -12,7 +16,7 @@
 .containerPresentation {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 18px;
 }
 
 /* ── Grid lines overlay (absolute, spanning bar column) ───────────────── */
@@ -22,6 +26,21 @@
   bottom: 0;
   z-index: 0;
   pointer-events: none;
+}
+
+.gridOverlayPresentation {
+  left: calc(
+    var(--BOOLEAN_PRESENTATION_LABEL_COL)
+    + var(--BOOLEAN_PRESENTATION_PCT_COL)
+    + var(--BOOLEAN_PRESENTATION_GAP) * 2
+  );
+  width: calc(
+    100%
+    - var(--BOOLEAN_PRESENTATION_LABEL_COL)
+    - var(--BOOLEAN_PRESENTATION_PCT_COL)
+    - var(--BOOLEAN_PRESENTATION_N_COL)
+    - var(--BOOLEAN_PRESENTATION_GAP) * 3
+  );
 }
 
 .gridLine {
@@ -44,9 +63,9 @@
 
 .headerRowPresentation {
   display: grid;
-  grid-template-columns: 140px 60px minmax(0, 1fr) 80px;
+  grid-template-columns: var(--BOOLEAN_PRESENTATION_LABEL_COL) var(--BOOLEAN_PRESENTATION_PCT_COL) minmax(0, 1fr) var(--BOOLEAN_PRESENTATION_N_COL);
   align-items: center;
-  gap: 10px;
+  gap: var(--BOOLEAN_PRESENTATION_GAP);
 }
 
 .headerCohort {
@@ -98,6 +117,24 @@
   white-space: nowrap;
 }
 
+.headerRowPresentation .headerPct {
+  position: static;
+  right: auto;
+  top: auto;
+  padding: 0;
+  text-align: right;
+}
+
+.headerRowPresentation .headerBar {
+  width: auto;
+  min-width: 0;
+}
+
+.headerRowPresentation .headerN {
+  flex: initial;
+  padding-left: 0;
+}
+
 .rows {
   position: relative;
   z-index: 1;
@@ -106,18 +143,38 @@
 .groupSection {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  border-radius: 10px;
+  margin-bottom: 10px; /* THIS IS THE GAP BETWEEN (PARENT) COHORTS */
 }
 
 .groupTitle {
-  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 4px 10px;
+  /* border-radius: 999px; */
+  font-size: 12px;
   font-weight: 700;
-  color: #555;
+  color: white;
+  text-transform: none;
+}
+
+.groupTitleStandalone {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 4px 10px;
+  /* border-radius: 999px; */
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
   text-transform: none;
 }
 
 .groupRows {
   position: relative;
+  padding-top: 20px;
 }
 
 .cohortRow { /* This is a bar row*/
@@ -135,8 +192,8 @@
 
 .cohortRowPresentation {
   display: grid;
-  grid-template-columns: 140px 60px minmax(0, 1fr) 80px;
-  gap: 10px;
+  grid-template-columns: var(--BOOLEAN_PRESENTATION_LABEL_COL) var(--BOOLEAN_PRESENTATION_PCT_COL) minmax(0, 1fr) var(--BOOLEAN_PRESENTATION_N_COL);
+  gap: var(--BOOLEAN_PRESENTATION_GAP);
 }
 
 .cohortRow:hover{
@@ -144,11 +201,25 @@
 }
 
 .cohortLabelCell {
-  font-size: clamp(10px, calc(12px / var(--pz-scale, 1)), 20px);
+  font-size: clamp(12px, calc(14px / var(--pz-scale, 1)), 24px);
   color: #555;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: right;
+}
+
+.parentCohortLabelCell {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  max-width: fit-content;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: var(--font_size_items, 12px);
+  font-weight: 700;
+  color: white;
+  text-align: left;
 }
 
 

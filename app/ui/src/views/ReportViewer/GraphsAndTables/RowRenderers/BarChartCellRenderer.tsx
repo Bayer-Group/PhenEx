@@ -29,9 +29,24 @@ interface RenderRow {
   label: string;
 }
 
+interface RenderRowOptions {
+  label?: string;
+  labelClassName?: string;
+  labelStyle?: React.CSSProperties;
+}
+
 interface RenderGroup {
   name: string;
+  displayName: string;
+  color: string;
+  mainRow: RenderRow | null;
   rows: RenderRow[];
+}
+
+function formatCohortLabel(value: string): string {
+  const spaced = value.replace(/_/g, ' ').trim();
+  if (!spaced) return value;
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
 function splitCohortName(name: string): { parent: string; label: string } {
@@ -61,20 +76,33 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
     const { parent, label } = splitCohortName(cohort.name);
     let group = groups.find((entry) => entry.name === parent);
     if (!group) {
-      group = { name: parent, rows: [] };
+      group = {
+        name: parent,
+        displayName: formatCohortLabel(parent),
+        color: cohort.color,
+        mainRow: null,
+        rows: [],
+      };
       groups.push(group);
     }
-    group.rows.push({ cohort, originalIndex: index, label });
+    const entry = { cohort, originalIndex: index, label: formatCohortLabel(label) };
+    if (label === 'main') {
+      group.mainRow = entry;
+    } else {
+      group.rows.push(entry);
+    }
     return groups;
   }, []);
 
   const isPresentation = mode === 'presentation';
 
-  const renderRow = (entry: RenderRow) => {
+  const renderRow = (entry: RenderRow, options?: RenderRowOptions) => {
     const row = entry.cohort.data.rows.find((r) => r.Name === name);
     const pct = row?.Pct ?? 0;
     const n = row?.N ?? 0;
     const dimmed = activeIndex !== null && activeIndex !== entry.originalIndex;
+    const label = options?.label ?? entry.label;
+    const labelClassName = options?.labelClassName ?? '';
 
     return (
       <div
@@ -93,7 +121,14 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
         onMouseLeave={() => setHover(null)}
         style={{ cursor: 'pointer' }}
       >
-        {isPresentation && <div className={styles.cohortLabelCell}>{entry.label}</div>}
+        {isPresentation && (
+          <div
+            className={`${styles.cohortLabelCell} ${labelClassName}`.trim()}
+            style={options?.labelStyle}
+          >
+            {label}
+          </div>
+        )}
         <div className={styles.pctCell} style={{ opacity: dimmed ? 0.25 : 1 }}>
           <strong>{pct.toFixed(pctDecimals)}</strong>
         </div>
@@ -105,6 +140,37 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
         </div>
         <div className={styles.nCell} style={{ opacity: dimmed ? 0.25 : 1, color: activeIndex === entry.originalIndex ? '#000' : undefined }}>
           {n.toLocaleString()}
+        </div>
+      </div>
+    );
+  };
+
+  const renderPresentationGroup = (group: RenderGroup) => {
+    const mainRow = group.mainRow;
+    const hasSubrows = group.rows.length > 0;
+
+    return (
+      <div key={group.name} className={styles.groupSection}>
+        <div className={styles.groupRows}>
+          <div className={`${styles.gridOverlay} ${styles.gridOverlayPresentation}`}>
+            {allTicks.map((t) => (
+              <div key={t} className={styles.gridLine} style={{ left: `${t}%` }} />
+            ))}
+          </div>
+
+          {mainRow ? (
+            renderRow(mainRow, {
+              label: group.displayName,
+              labelClassName: styles.parentCohortLabelCell,
+              labelStyle: { backgroundColor: group.color },
+            })
+          ) : (
+            <div className={styles.groupTitleStandalone} style={{ backgroundColor: group.color }}>
+              {group.displayName}
+            </div>
+          )}
+
+          {hasSubrows && group.rows.map(renderRow)}
         </div>
       </div>
     );
@@ -126,19 +192,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
 
       <div className={styles.rows}>
         {isPresentation ? (
-          groupedRows.map((group) => (
-            <div key={group.name} className={styles.groupSection}>
-              <div className={styles.groupTitle}>{group.name}</div>
-              <div className={styles.groupRows}>
-                <div className={styles.gridOverlay} style={{ left: '0%', width: '100%' }}>
-                  {allTicks.map((t) => (
-                    <div key={t} className={styles.gridLine} style={{ left: `${t}%` }} />
-                  ))}
-                </div>
-                {group.rows.map(renderRow)}
-              </div>
-            </div>
-          ))
+          groupedRows.map(renderPresentationGroup)
         ) : (
           <>
             <div className={styles.gridOverlay} style={{ left: '0%', width: '100%' }}>

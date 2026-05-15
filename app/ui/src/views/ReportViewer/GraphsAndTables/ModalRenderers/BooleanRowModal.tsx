@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import { type CohortClassified } from '../../types';
 import { RowModal } from './RowModal';
-import { ModalLegend, useCohortVisibility, useFilteredCohortData } from './ModalLegend';
+import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
 import { BarChartCellRenderer } from '../RowRenderers/BarChartCellRenderer';
 import styles from './BooleanRowModal.module.css';
 
@@ -18,7 +18,7 @@ export const BooleanRowModal: FC<BooleanRowModalProps> = ({
   onClose,
   breadcrumbs,
 }) => {
-  const { visible, toggle } = useCohortVisibility(cohortData.length);
+  const { visible } = useCohortVisibility(cohortData.length);
   const filteredCohortData = useFilteredCohortData(cohortData, visible);
 
   return (
