@@ -28,6 +28,7 @@ export const BooleanRowModal: FC<BooleanRowModalProps> = ({
         <BarChartCellRenderer
           data={{ name, _meta: { cohortData: filteredCohortData } }}
           isModal
+          mode="presentation"
           pctDecimals={1}
         />
       </div>

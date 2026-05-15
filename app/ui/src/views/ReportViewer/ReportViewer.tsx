@@ -404,18 +404,31 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
-      <Portal>
-        <div className={`${styles.titleContainer} ${viewerIndex != null ? styles.titleContainerHidden : ''}`}>
-          <span className={styles.title}>{displayTitle}</span>
-          <span className={styles.subtitle}>
-            {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
-          </span>
-        </div>
-      </Portal>
-
       <OutlineBar entries={outlineEntries} activeSection={activeSection} />
 
       <ReportNavPanel
+        hidden={viewerIndex != null}
+        top={
+          <>
+            <ReportNavPanelCard title="Title" background={true}>
+              <div className={styles.navTitleCard}>
+                <span className={styles.title}>{displayTitle}</span>
+                <span className={styles.subtitle}>
+                  {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
+                </span>
+              </div>
+            </ReportNavPanelCard>
+            <ReportNavPanelCard title="Visible cohorts" background={true}>
+              <CohortSelector
+                groups={groups}
+                selections={selections}
+                onReplace={handleReplace}
+                onAdd={handleAdd}
+                onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
+              />
+            </ReportNavPanelCard>
+          </>
+        }
         bottom={
           <>
             <div style={{ fontSize: '14px', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -438,15 +451,6 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               </button>
             )}
           </div>
-          <ReportNavPanelCard title="Visible cohorts" background={true}>
-            <CohortSelector
-              groups={groups}
-              selections={selections}
-              onReplace={handleReplace}
-              onAdd={handleAdd}
-              onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
-            />
-          </ReportNavPanelCard>
         </>
         }
       />

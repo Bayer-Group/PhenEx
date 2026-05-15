@@ -3,13 +3,21 @@
   left: 40px;
   width: 330px;
   bottom:20px;
+  top : 30px;
   display: flex;
   flex-direction: column;
   background: transparent;
   overflow: visible;
   pointer-events: none;
   z-index: 10;
+  opacity: 1;
+  transition: opacity 1.4s ease;
 
+}
+
+.panelHidden {
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .panel > * {

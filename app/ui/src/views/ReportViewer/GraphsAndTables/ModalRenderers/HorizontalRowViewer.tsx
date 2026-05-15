@@ -408,6 +408,7 @@ const BooleanContent: FC<{ name: string; cohortData: CohortClassified[] }> = ({ 
       <BarChartCellRenderer
         data={{ name, _meta: { cohortData: filtered } }}
         isModal
+        mode="presentation"
         pctDecimals={1}
       />
     </div>

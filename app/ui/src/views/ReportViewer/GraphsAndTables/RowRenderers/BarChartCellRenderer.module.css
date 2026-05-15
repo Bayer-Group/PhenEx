@@ -9,6 +9,12 @@
   box-sizing: border-box;
 }
 
+.containerPresentation {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* ── Grid lines overlay (absolute, spanning bar column) ───────────────── */
 .gridOverlay {
   position: absolute;
@@ -34,6 +40,20 @@
   display: flex;
   position: relative;
   /* align-items: center; */
+}
+
+.headerRowPresentation {
+  display: grid;
+  grid-template-columns: 140px 60px minmax(0, 1fr) 80px;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerCohort {
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200, 200, 200, 0.8);
+  white-space: nowrap;
 }
 
 .headerPct {
@@ -83,6 +103,23 @@
   z-index: 1;
 }
 
+.groupSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.groupTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: #555;
+  text-transform: none;
+}
+
+.groupRows {
+  position: relative;
+}
+
 .cohortRow { /* This is a bar row*/
   display: flex;
   align-items: center;
@@ -96,8 +133,22 @@
 
 }
 
+.cohortRowPresentation {
+  display: grid;
+  grid-template-columns: 140px 60px minmax(0, 1fr) 80px;
+  gap: 10px;
+}
+
 .cohortRow:hover{
   background-color: rgba(232, 231, 231, 0.2);
+}
+
+.cohortLabelCell {
+  font-size: clamp(10px, calc(12px / var(--pz-scale, 1)), 20px);
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 
@@ -116,6 +167,16 @@
   text-align: right;
 }
 
+.cohortRowPresentation .pctCell {
+  position: static;
+  right: auto;
+  top: auto;
+  padding: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
 /* ── Bar cell (center) ────────────────────────────────────────────────── */
 .barCell {
   width: 100%;
@@ -124,6 +185,10 @@
   /* display: flex; */
   align-items: center;
   transition: opacity 0.15s ease;
+}
+
+.cohortRowPresentation .barCell {
+  position: relative;
 }
 
 .barFill {
@@ -153,6 +218,10 @@
   white-space: nowrap;
   line-height: 16px;
   transition: opacity 0.15s ease;
+}
+
+.cohortRowPresentation .nCell {
+  padding-left: 0;
 }
 
 /* ── Tooltip ──────────────────────────────────────────────────────────── */

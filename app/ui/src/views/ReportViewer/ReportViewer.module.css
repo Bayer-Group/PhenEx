@@ -10,35 +10,12 @@
   user-select: none;
 }
 
-/* ── Header card (bottom-right) ───────────────────────────────────────── */
-
-.titleContainer{
-  position: absolute;
-  top: 20px;
-  left: 30px;
+.navTitleCard {
   display: flex;
   flex-direction: column;
-  width: fit-content;
-  max-width: 350px;
-  z-index: 10;
-  padding: 6px 16px;
   gap: 2px;
   font-size: 0;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  border: var(--line-color) 1px solid;
   font-family: "IBMPlexSans-bold", sans-serif;
-  opacity: 1;
-  transition: opacity 1.4s ease;
-
-}
-
-.titleContainerHidden {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-
 }
 
 .title {

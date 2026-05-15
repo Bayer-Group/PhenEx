@@ -6,13 +6,14 @@ interface ReportNavPanelProps {
   top?: ReactNode;
   center?: ReactNode;
   bottom?: ReactNode;
+  hidden?: boolean;
 }
 
-export const ReportNavPanel: FC<ReportNavPanelProps> = ({ top, center, bottom }) => {
+export const ReportNavPanel: FC<ReportNavPanelProps> = ({ top, center, bottom, hidden = false }) => {
   const centerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className={styles.panel}>
+    <div className={`${styles.panel} ${hidden ? styles.panelHidden : ''}`}>
       <div className={styles.top}>{top}</div>
       <div className={styles.centerWrapper}>
         <div className={styles.center} ref={centerRef}>
