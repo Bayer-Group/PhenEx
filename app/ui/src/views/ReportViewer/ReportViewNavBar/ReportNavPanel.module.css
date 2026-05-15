@@ -1,6 +1,6 @@
 .panel {
   position: fixed;
-  right: 40px;
+  left: 40px;
   width: 330px;
   bottom:20px;
   display: flex;
