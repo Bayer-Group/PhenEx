@@ -13,10 +13,16 @@ export const DEFAULT_RISK_TIMEPOINTS = [30, 60, 90, 120, 180, 365];
 const PAD = 4;
 const STROKE_PAD = 2;
 const W = 300;
-const PLOT_W = W - PAD * 2;
+const Y_AXIS_W = 28;
+const PLOT_LEFT = Y_AXIS_W + PAD;
+const PLOT_RIGHT = PAD;
+const PLOT_W = W - PLOT_LEFT - PLOT_RIGHT;
 const MARGIN_BOTTOM = 4;
 const HEADER_H = 14;
 const RISK_ROW_H = 13;
+const COMPACT_MIN_PLOT_H = 96;
+const FULL_MIN_PLOT_H = 160;
+const Y_TICKS = [0, 0.25, 0.5, 0.75, 1] as const;
 
 /* ── Types ───────────────────────────────────────────────────────────── */
 
@@ -34,12 +40,12 @@ function buildStepPath(
   steps: TimeToEventRow[],
   plotW: number,
   plotH: number,
-  pad: number,
+  plotLeft: number,
   strokePad: number,
   xMax: number,
 ): string {
   if (!steps.length) return '';
-  const sx = (t: number) => pad + (t / xMax) * plotW;
+  const sx = (t: number) => plotLeft + (t / xMax) * plotW;
   const sy = (p: number) => strokePad + plotH - p * plotH;
 
   let d = `M${sx(steps[0].Timeline)},${sy(steps[0].Survival_Probability)}`;
@@ -56,12 +62,12 @@ function buildCIBand(
   steps: TimeToEventRow[],
   plotW: number,
   plotH: number,
-  pad: number,
+  plotLeft: number,
   strokePad: number,
   xMax: number,
 ): string {
   if (!steps.length || steps[0].CI_Lower == null) return '';
-  const sx = (t: number) => pad + (t / xMax) * plotW;
+  const sx = (t: number) => plotLeft + (t / xMax) * plotW;
   const sy = (p: number) => strokePad + plotH - p * plotH;
 
   // Upper path forward (step function)
@@ -137,6 +143,10 @@ function filterTimepoints(timepoints: number[], xMax: number): number[] {
   return timepoints.filter((t) => t <= xMax);
 }
 
+function formatPercentTick(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
 /* ── Risk table row definitions ──────────────────────────────────────── */
 
 interface RiskField {
@@ -201,14 +211,16 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
     ? RISK_ROW_H + curves.length * RISK_FIELDS.length * RISK_ROW_H
     : 0;
 
-  const plotH = Math.max(10, containerH - MARGIN_BOTTOM - HEADER_H - STROKE_PAD - riskTableH);
+  const minPlotH = isFull ? FULL_MIN_PLOT_H : COMPACT_MIN_PLOT_H;
+  const plotH = Math.max(minPlotH, containerH - MARGIN_BOTTOM - HEADER_H - STROKE_PAD - riskTableH);
   const svgH = STROKE_PAD + plotH;
 
   const ticks = niceTicks(xMax);
   // In full mode, gridlines align to risk timepoints; in compact mode, use auto ticks
   const gridTicks = isFull ? activeTimepoints : ticks;
-  const toPixel = (t: number) => PAD + (t / xMax) * PLOT_W;
-  const toTime = (px: number) => Math.max(0, Math.min(xMax, ((px - PAD) / PLOT_W) * xMax));
+  const toPixel = (t: number) => PLOT_LEFT + (t / xMax) * PLOT_W;
+  const toYPixel = (p: number) => STROKE_PAD + plotH - p * plotH;
+  const toTime = (px: number) => Math.max(0, Math.min(xMax, ((px - PLOT_LEFT) / PLOT_W) * xMax));
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const rect = plotAreaRef.current?.getBoundingClientRect();
@@ -253,27 +265,63 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
         ))}
       </div>
 
-      {/* Grid lines aligned to gridTicks */}
-      <div className={styles.gridOverlay} style={{ left: 0, width: W }}>
-        {gridTicks.map((t) => (
-          <div key={t} className={styles.gridLine} style={{ left: toPixel(t) }} />
-        ))}
-      </div>
-
       {/* KM step curves with CI bands */}
       <div className={styles.plotArea} ref={plotAreaRef} onMouseMove={isFull ? handleMouseMove : undefined} onMouseLeave={isFull ? handleMouseLeave : undefined}>
         {containerH > 0 && (
           <svg width={W} height={svgH} className={styles.kmSvg}>
+            {Y_TICKS.map((tick) => (
+              <g key={tick}>
+                <line
+                  x1={PLOT_LEFT}
+                  x2={PLOT_LEFT + PLOT_W}
+                  y1={toYPixel(tick)}
+                  y2={toYPixel(tick)}
+                  className={styles.gridLineHorizontal}
+                />
+                <text
+                  x={Y_AXIS_W - 2}
+                  y={toYPixel(tick) + 3}
+                  textAnchor="end"
+                  className={styles.yTickLabel}
+                >
+                  {formatPercentTick(tick)}
+                </text>
+              </g>
+            ))}
+            {gridTicks.map((tick) => (
+              <line
+                key={tick}
+                x1={toPixel(tick)}
+                x2={toPixel(tick)}
+                y1={STROKE_PAD}
+                y2={STROKE_PAD + plotH}
+                className={styles.gridLineVertical}
+              />
+            ))}
+            <line
+              x1={PLOT_LEFT}
+              x2={PLOT_LEFT}
+              y1={STROKE_PAD}
+              y2={STROKE_PAD + plotH}
+              className={styles.axisLine}
+            />
+            <line
+              x1={PLOT_LEFT}
+              x2={PLOT_LEFT + PLOT_W}
+              y1={STROKE_PAD + plotH}
+              y2={STROKE_PAD + plotH}
+              className={styles.axisLine}
+            />
             {curves.map((c, i) => {
               const dimmed = activeIndex !== null && activeIndex !== i;
-              const ciPath = hasCI ? buildCIBand(c.steps, PLOT_W, plotH, PAD, STROKE_PAD, xMax) : '';
+              const ciPath = hasCI ? buildCIBand(c.steps, PLOT_W, plotH, PLOT_LEFT, STROKE_PAD, xMax) : '';
               return (
                 <g key={c.cohortName} opacity={dimmed ? 0.15 : 1}>
                   {ciPath && (
                     <path d={ciPath} fill={c.color} fillOpacity={0.12} stroke="none" />
                   )}
                   <path
-                    d={buildStepPath(c.steps, PLOT_W, plotH, PAD, STROKE_PAD, xMax)}
+                    d={buildStepPath(c.steps, PLOT_W, plotH, PLOT_LEFT, STROKE_PAD, xMax)}
                     fill="none"
                     stroke={c.color}
                     strokeWidth={2}
