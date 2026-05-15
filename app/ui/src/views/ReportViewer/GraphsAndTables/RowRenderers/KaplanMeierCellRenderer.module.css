@@ -8,6 +8,10 @@
   justify-content: flex-end;
 }
 
+.container.full {
+  min-height: 200px;
+}
+
 /* ── Grid lines overlay ──────────────────────────────────────────────── */
 .gridOverlay {
   position: absolute;
@@ -100,4 +104,61 @@
 
 .riskCohortBlock {
   transition: opacity 0.15s ease;
+}
+
+/* ── Hover crosshair + tooltip ───────────────────────────────────────── */
+
+.crosshairLine {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  background-color: rgba(100, 100, 100, 0.5);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.tooltip {
+  position: absolute;
+  top: 4px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(180, 180, 180, 0.6);
+  border-radius: 4px;
+  padding: 4px 6px;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tooltipHeader {
+  font-size: 8px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 2px;
+}
+
+.tooltipRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.tooltipDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tooltipSurv {
+  font-weight: 600;
+  color: #333;
+  min-width: 32px;
+}
+
+.tooltipDetail {
+  color: #999;
+  font-size: 7px;
 }

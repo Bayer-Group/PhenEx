@@ -28,7 +28,7 @@ export const TimeToEventContent: FC<TimeToEventContentProps> = ({ outcome, cohor
   return (
     <div className={styles.container}>
       <div className={styles.chartCard}>
-        <KaplanMeierCellRenderer curves={curves} />
+        <KaplanMeierCellRenderer curves={curves} mode="full" />
       </div>
     </div>
   );

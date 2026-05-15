@@ -1,4 +1,4 @@
-import { FC, useRef, useState, useLayoutEffect, useMemo } from 'react';
+import { FC, useRef, useState, useCallback, useLayoutEffect, useMemo } from 'react';
 import { type TimeToEventRow } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import styles from './KaplanMeierCellRenderer.module.css';
@@ -102,6 +102,16 @@ function niceTicks(max: number): number[] {
   return ticks;
 }
 
+/** Look up the row at or just before a given time. */
+function rowAtTime(steps: TimeToEventRow[], t: number): TimeToEventRow | null {
+  let row: TimeToEventRow | null = null;
+  for (const r of steps) {
+    if (r.Timeline > t) break;
+    row = r;
+  }
+  return row;
+}
+
 /** Look up the last value at or before a given timepoint. */
 function lookupAtTime(steps: TimeToEventRow[], t: number, field: keyof TimeToEventRow): number | null {
   let val: number | null = null;
@@ -144,17 +154,24 @@ const RISK_FIELDS: RiskField[] = [
 
 interface KaplanMeierCellRendererProps {
   curves: KMCurve[];
-  /** Override the default risk table timepoints. */
+  /** 'compact' for row renderers (small, no risk table/hover); 'full' for modal view. */
+  mode?: 'compact' | 'full';
+  /** Override the default risk table timepoints (full mode only). */
   riskTimepoints?: number[];
 }
 
 export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
   curves,
+  mode = 'compact',
   riskTimepoints = DEFAULT_RISK_TIMEPOINTS,
 }) => {
+  const isFull = mode === 'full';
   const { activeIndex } = useBarHoverStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  const plotAreaRef = useRef<HTMLDivElement>(null);
   const [containerH, setContainerH] = useState(0);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [hoverPixelX, setHoverPixelX] = useState(0);
 
   useLayoutEffect(() => {
     const el = containerRef.current;
@@ -176,11 +193,11 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
   // Filter timepoints to data range
   const activeTimepoints = useMemo(() => filterTimepoints(riskTimepoints, xMax), [riskTimepoints, xMax]);
 
-  // Check if any curve has CI data
-  const hasCI = curves.some((c) => c.steps.length > 0 && c.steps[0].CI_Lower != null);
+  // Check if any curve has CI data (only rendered in full mode)
+  const hasCI = isFull && curves.some((c) => c.steps.length > 0 && c.steps[0].CI_Lower != null);
 
-  // Risk table height
-  const riskTableH = activeTimepoints.length > 0
+  // Risk table height (full mode only)
+  const riskTableH = isFull && activeTimepoints.length > 0
     ? RISK_ROW_H + curves.length * RISK_FIELDS.length * RISK_ROW_H
     : 0;
 
@@ -188,32 +205,63 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
   const svgH = STROKE_PAD + plotH;
 
   const ticks = niceTicks(xMax);
+  // In full mode, gridlines align to risk timepoints; in compact mode, use auto ticks
+  const gridTicks = isFull ? activeTimepoints : ticks;
   const toPixel = (t: number) => PAD + (t / xMax) * PLOT_W;
+  const toTime = (px: number) => Math.max(0, Math.min(xMax, ((px - PAD) / PLOT_W) * xMax));
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const rect = plotAreaRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const px = e.clientX - rect.left;
+    setHoverPixelX(px);
+    setHoverTime(toTime(px));
+  }, [xMax]);
+
+  const handleMouseLeave = useCallback(() => setHoverTime(null), []);
+
+  // Build tooltip data when hovering (full mode only)
+  const hoverData = useMemo(() => {
+    if (!isFull || hoverTime == null) return null;
+    return curves.map((c) => {
+      const row = rowAtTime(c.steps, hoverTime);
+      return {
+        color: c.color,
+        cohortName: c.cohortName,
+        survival: row?.Survival_Probability ?? null,
+        atRisk: row?.At_Risk ?? null,
+        events: cumFieldAtTime(c.steps, hoverTime, 'Events'),
+        censored: cumFieldAtTime(c.steps, hoverTime, 'Censored'),
+      };
+    });
+  }, [isFull, hoverTime, curves]);
 
   if (curves.length === 0) {
     return <div className={styles.kmEmpty}>no data</div>;
   }
 
+  const containerClass = isFull ? `${styles.container} ${styles.full}` : styles.container;
+
   return (
-    <div className={styles.container} ref={containerRef} style={{ paddingBottom: MARGIN_BOTTOM }}>
+    <div className={containerClass} ref={containerRef} style={{ paddingBottom: MARGIN_BOTTOM }}>
       {/* Tick labels header */}
       <div className={styles.headerRow}>
-        {ticks.map((t) => (
+        {gridTicks.map((t) => (
           <span key={t} className={styles.headerTick} style={{ left: toPixel(t) }}>
             {t}
           </span>
         ))}
       </div>
 
-      {/* Grid lines */}
+      {/* Grid lines aligned to gridTicks */}
       <div className={styles.gridOverlay} style={{ left: 0, width: W }}>
-        {ticks.map((t) => (
+        {gridTicks.map((t) => (
           <div key={t} className={styles.gridLine} style={{ left: toPixel(t) }} />
         ))}
       </div>
 
       {/* KM step curves with CI bands */}
-      <div className={styles.plotArea}>
+      <div className={styles.plotArea} ref={plotAreaRef} onMouseMove={isFull ? handleMouseMove : undefined} onMouseLeave={isFull ? handleMouseLeave : undefined}>
         {containerH > 0 && (
           <svg width={W} height={svgH} className={styles.kmSvg}>
             {curves.map((c, i) => {
@@ -238,10 +286,30 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
             })}
           </svg>
         )}
+
+        {/* Hover crosshair + tooltip (full mode only) */}
+        {isFull && hoverTime != null && hoverData && containerH > 0 && (
+          <>
+            <div className={styles.crosshairLine} style={{ left: hoverPixelX, height: svgH }} />
+            <div
+              className={styles.tooltip}
+              style={{ left: hoverPixelX > W / 2 ? hoverPixelX - 4 : hoverPixelX + 4, transform: hoverPixelX > W / 2 ? 'translateX(-100%)' : undefined }}
+            >
+              <div className={styles.tooltipHeader}>Day {Math.round(hoverTime)}</div>
+              {hoverData.map((d) => (
+                <div key={d.cohortName} className={styles.tooltipRow}>
+                  <span className={styles.tooltipDot} style={{ backgroundColor: d.color }} />
+                  <span className={styles.tooltipSurv}>{d.survival != null ? (d.survival * 100).toFixed(1) + '%' : '–'}</span>
+                  <span className={styles.tooltipDetail}>n={d.atRisk ?? '–'} e={d.events} c={d.censored}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Risk table */}
-      {activeTimepoints.length > 0 && (
+      {/* Risk table (full mode only) */}
+      {isFull && activeTimepoints.length > 0 && (
         <div className={styles.riskTable}>
           {/* Timepoint header row */}
           <div className={styles.riskRow}>
