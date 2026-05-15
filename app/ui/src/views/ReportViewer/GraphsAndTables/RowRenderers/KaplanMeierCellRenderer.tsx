@@ -17,13 +17,13 @@ const PLOT_W = W - PAD * 2;
 const MARGIN_BOTTOM = 4;
 const HEADER_H = 14;
 const RISK_ROW_H = 13;
-const RISK_LABEL_W = 52;
 
 /* ── Types ───────────────────────────────────────────────────────────── */
 
 interface KMCurve {
   color: string;
   cohortName: string;
+  dashArray?: string;
   steps: TimeToEventRow[];
 }
 
@@ -279,6 +279,7 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
                     strokeWidth={2}
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    strokeDasharray={c.dashArray}
                     opacity={0.85}
                   />
                 </g>
@@ -300,7 +301,7 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
                 <div key={d.cohortName} className={styles.tooltipRow}>
                   <span className={styles.tooltipDot} style={{ backgroundColor: d.color }} />
                   <span className={styles.tooltipSurv}>{d.survival != null ? (d.survival * 100).toFixed(1) + '%' : '–'}</span>
-                  <span className={styles.tooltipDetail}>n={d.atRisk ?? '–'} e={d.events} c={d.censored}</span>
+                  <span className={styles.tooltipDetail}>{d.cohortName}: n={d.atRisk ?? '–'} e={d.events} c={d.censored}</span>
                 </div>
               ))}
             </div>

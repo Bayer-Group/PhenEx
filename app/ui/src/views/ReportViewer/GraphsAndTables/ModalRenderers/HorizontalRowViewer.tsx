@@ -243,6 +243,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 key={row.index}
                 ref={isFocused ? focusedRef : null}
                 row={row}
+                rows={rows}
                 isFocused={isFocused}
                 nearby={nearby}
                 desiredTop={desiredTop}
@@ -263,6 +264,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 
 interface HorizontalCellProps {
   row: SequentialRow;
+  rows: SequentialRow[];
   isFocused: boolean;
   nearby: boolean;
   desiredTop: string;
@@ -273,8 +275,14 @@ interface HorizontalCellProps {
 }
 
 const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, isFocused, nearby, desiredTop, cohortDataMap, tteCohorts, table2Cohorts, onNavigate }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, tteCohorts, table2Cohorts, onNavigate }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
+    const availableTteOutcomes = useMemo(
+      () => rows
+        .filter((candidate) => candidate.reporter === row.reporter && candidate.rowType === 'time_to_event')
+        .map((candidate) => candidate.name),
+      [rows, row.reporter],
+    );
     const kdeData = useMemo(() => {
       const result: Record<string, Record<string, KdeCurve>> = {};
       for (const cd of cohortData) {
@@ -306,7 +314,7 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
                 {row.registry?.display_name || row.name}
               </div>
               <div className={styles.cardContent}>
-                {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} /> : null}
+                {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} /> : null}
               </div>
             </div>
           </div>
@@ -371,7 +379,8 @@ const RowContent: FC<{
   kdeData: Record<string, Record<string, KdeCurve>>;
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
-}> = ({ row, cohortData, kdeData, tteCohorts, table2Cohorts }) => {
+  availableTteOutcomes?: string[];
+}> = ({ row, cohortData, kdeData, tteCohorts, table2Cohorts, availableTteOutcomes }) => {
   switch (row.rowType) {
     case 'boolean':
       return <BooleanContent name={row.name} cohortData={cohortData} />;
@@ -380,7 +389,7 @@ const RowContent: FC<{
     case 'numeric':
       return <NumericContent name={row.name} cohortData={cohortData} kdeData={kdeData} />;
     case 'time_to_event':
-      return <TimeToEventContent outcome={row.name} cohorts={tteCohorts ?? []} />;
+      return <TimeToEventContent outcome={row.name} cohorts={tteCohorts ?? []} availableOutcomes={availableTteOutcomes} />;
     case 'table2':
       return <Table2Content outcome={row.name} cohorts={table2Cohorts ?? []} />;
     default:
