@@ -1,4 +1,4 @@
-import { FC, useRef, useState, useCallback, useLayoutEffect, useMemo } from 'react';
+import { FC, useRef, useState, useCallback, useMemo } from 'react';
 import { type TimeToEventRow } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import styles from './KaplanMeierCellRenderer.module.css';
@@ -177,19 +177,9 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
 }) => {
   const isFull = mode === 'full';
   const { activeIndex } = useBarHoverStore();
-  const containerRef = useRef<HTMLDivElement>(null);
   const plotAreaRef = useRef<HTMLDivElement>(null);
-  const [containerH, setContainerH] = useState(0);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverPixelX, setHoverPixelX] = useState(0);
-
-  useLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => setContainerH(entry.contentRect.height));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
 
   // Global max timeline across all curves
   let xMax = 0;
@@ -212,7 +202,7 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
     : 0;
 
   const minPlotH = isFull ? FULL_MIN_PLOT_H : COMPACT_MIN_PLOT_H;
-  const plotH = Math.max(minPlotH, containerH - MARGIN_BOTTOM - HEADER_H - STROKE_PAD - riskTableH);
+  const plotH = minPlotH;
   const svgH = STROKE_PAD + plotH;
 
   const ticks = niceTicks(xMax);
@@ -253,9 +243,13 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
   }
 
   const containerClass = isFull ? `${styles.container} ${styles.full}` : styles.container;
+  const containerStyle = {
+    paddingBottom: MARGIN_BOTTOM,
+    minHeight: HEADER_H + svgH + riskTableH + MARGIN_BOTTOM,
+  };
 
   return (
-    <div className={containerClass} ref={containerRef} style={{ paddingBottom: MARGIN_BOTTOM }}>
+    <div className={containerClass} style={containerStyle}>
       {/* Tick labels header */}
       <div className={styles.headerRow}>
         {gridTicks.map((t) => (
@@ -267,77 +261,75 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
 
       {/* KM step curves with CI bands */}
       <div className={styles.plotArea} ref={plotAreaRef} onMouseMove={isFull ? handleMouseMove : undefined} onMouseLeave={isFull ? handleMouseLeave : undefined}>
-        {containerH > 0 && (
-          <svg width={W} height={svgH} className={styles.kmSvg}>
-            {Y_TICKS.map((tick) => (
-              <g key={tick}>
-                <line
-                  x1={PLOT_LEFT}
-                  x2={PLOT_LEFT + PLOT_W}
-                  y1={toYPixel(tick)}
-                  y2={toYPixel(tick)}
-                  className={styles.gridLineHorizontal}
-                />
-                <text
-                  x={Y_AXIS_W - 2}
-                  y={toYPixel(tick) + 3}
-                  textAnchor="end"
-                  className={styles.yTickLabel}
-                >
-                  {formatPercentTick(tick)}
-                </text>
-              </g>
-            ))}
-            {gridTicks.map((tick) => (
+        <svg width={W} height={svgH} className={styles.kmSvg}>
+          {Y_TICKS.map((tick) => (
+            <g key={tick}>
               <line
-                key={tick}
-                x1={toPixel(tick)}
-                x2={toPixel(tick)}
-                y1={STROKE_PAD}
-                y2={STROKE_PAD + plotH}
-                className={styles.gridLineVertical}
+                x1={PLOT_LEFT}
+                x2={PLOT_LEFT + PLOT_W}
+                y1={toYPixel(tick)}
+                y2={toYPixel(tick)}
+                className={styles.gridLineHorizontal}
               />
-            ))}
+              <text
+                x={Y_AXIS_W - 2}
+                y={toYPixel(tick) + 3}
+                textAnchor="end"
+                className={styles.yTickLabel}
+              >
+                {formatPercentTick(tick)}
+              </text>
+            </g>
+          ))}
+          {gridTicks.map((tick) => (
             <line
-              x1={PLOT_LEFT}
-              x2={PLOT_LEFT}
+              key={tick}
+              x1={toPixel(tick)}
+              x2={toPixel(tick)}
               y1={STROKE_PAD}
               y2={STROKE_PAD + plotH}
-              className={styles.axisLine}
+              className={styles.gridLineVertical}
             />
-            <line
-              x1={PLOT_LEFT}
-              x2={PLOT_LEFT + PLOT_W}
-              y1={STROKE_PAD + plotH}
-              y2={STROKE_PAD + plotH}
-              className={styles.axisLine}
-            />
-            {curves.map((c, i) => {
-              const dimmed = activeIndex !== null && activeIndex !== i;
-              const ciPath = hasCI ? buildCIBand(c.steps, PLOT_W, plotH, PLOT_LEFT, STROKE_PAD, xMax) : '';
-              return (
-                <g key={c.cohortName} opacity={dimmed ? 0.15 : 1}>
-                  {ciPath && (
-                    <path d={ciPath} fill={c.color} fillOpacity={0.12} stroke="none" />
-                  )}
-                  <path
-                    d={buildStepPath(c.steps, PLOT_W, plotH, PLOT_LEFT, STROKE_PAD, xMax)}
-                    fill="none"
-                    stroke={c.color}
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeDasharray={c.dashArray}
-                    opacity={0.85}
-                  />
-                </g>
-              );
-            })}
-          </svg>
-        )}
+          ))}
+          <line
+            x1={PLOT_LEFT}
+            x2={PLOT_LEFT}
+            y1={STROKE_PAD}
+            y2={STROKE_PAD + plotH}
+            className={styles.axisLine}
+          />
+          <line
+            x1={PLOT_LEFT}
+            x2={PLOT_LEFT + PLOT_W}
+            y1={STROKE_PAD + plotH}
+            y2={STROKE_PAD + plotH}
+            className={styles.axisLine}
+          />
+          {curves.map((c, i) => {
+            const dimmed = activeIndex !== null && activeIndex !== i;
+            const ciPath = hasCI ? buildCIBand(c.steps, PLOT_W, plotH, PLOT_LEFT, STROKE_PAD, xMax) : '';
+            return (
+              <g key={c.cohortName} opacity={dimmed ? 0.15 : 1}>
+                {ciPath && (
+                  <path d={ciPath} fill={c.color} fillOpacity={0.12} stroke="none" />
+                )}
+                <path
+                  d={buildStepPath(c.steps, PLOT_W, plotH, PLOT_LEFT, STROKE_PAD, xMax)}
+                  fill="none"
+                  stroke={c.color}
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeDasharray={c.dashArray}
+                  opacity={0.85}
+                />
+              </g>
+            );
+          })}
+        </svg>
 
         {/* Hover crosshair + tooltip (full mode only) */}
-        {isFull && hoverTime != null && hoverData && containerH > 0 && (
+        {isFull && hoverTime != null && hoverData && (
           <>
             <div className={styles.crosshairLine} style={{ left: hoverPixelX, height: svgH }} />
             <div

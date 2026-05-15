@@ -1,8 +1,8 @@
 /* ── Floating title container ─────────────────────────────────────────── */
 .container {
   position: fixed;
-  left: 10%;
-  top:50px;
+  left: 5%;
+  top:10px;
   height:10px;
   z-index: 10001;
   display: flex;
@@ -22,7 +22,7 @@
   border: none;
   padding: 1px 8px;
   font-size: var(--font_size_breadcrumb, 11px);
-  color: #888;
+  color: black;
   cursor: default;
   text-align: left;
   border-radius: 4px;
@@ -38,8 +38,8 @@
 
 /* Level: study name */
 .crumb_study {
-  font-size: var(--font_size_pagetitle, 11px);
-  color: #aaa;
+  font-size: 22px;
+  color: #666;
   cursor: default;
 }
 
@@ -48,6 +48,7 @@
   font-size: 22px;
   color: #666;
   cursor: pointer;
+  margin-left:30px;
 }
 
 /* Level: section (Demographics, etc.) */
@@ -57,6 +58,7 @@
   color: black;
   cursor: pointer;
   padding: 2px 8px;
+  margin-left:60px;
 }
 
 .crumb_section:hover,
