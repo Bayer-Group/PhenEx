@@ -1,4 +1,4 @@
-import { FC, useRef, useState, useCallback, useMemo } from 'react';
+import { FC, useRef, useState, useCallback, useMemo, useLayoutEffect } from 'react';
 import { type TimeToEventRow } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import styles from './KaplanMeierCellRenderer.module.css';
@@ -12,16 +12,14 @@ export const DEFAULT_RISK_TIMEPOINTS = [30, 60, 90, 120, 180, 365];
 
 const PAD = 4;
 const STROKE_PAD = 2;
-const W = 300;
+const COMPACT_W = 300;
 const Y_AXIS_W = 28;
-const PLOT_LEFT = Y_AXIS_W + PAD;
 const PLOT_RIGHT = PAD;
-const PLOT_W = W - PLOT_LEFT - PLOT_RIGHT;
 const MARGIN_BOTTOM = 4;
 const HEADER_H = 14;
 const RISK_ROW_H = 13;
-const COMPACT_MIN_PLOT_H = 96;
-const FULL_MIN_PLOT_H = 160;
+const COMPACT_PLOT_H = 96;
+const FULL_PLOT_H = 320;
 const Y_TICKS = [0, 0.25, 0.5, 0.75, 1] as const;
 
 /* ── Types ───────────────────────────────────────────────────────────── */
@@ -177,9 +175,25 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
 }) => {
   const isFull = mode === 'full';
   const { activeIndex } = useBarHoverStore();
+  const containerRef = useRef<HTMLDivElement>(null);
   const plotAreaRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverPixelX, setHoverPixelX] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const updateWidth = (width: number) => {
+      setContainerWidth((prev) => (prev === width ? prev : width));
+    };
+    updateWidth(el.clientWidth);
+    const ro = new ResizeObserver(([entry]) => {
+      updateWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Global max timeline across all curves
   let xMax = 0;
@@ -201,16 +215,18 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
     ? RISK_ROW_H + curves.length * RISK_FIELDS.length * RISK_ROW_H
     : 0;
 
-  const minPlotH = isFull ? FULL_MIN_PLOT_H : COMPACT_MIN_PLOT_H;
-  const plotH = minPlotH;
+  const width = isFull ? Math.max(COMPACT_W, Math.round(containerWidth) || COMPACT_W) : COMPACT_W;
+  const plotLeft = Y_AXIS_W + PAD;
+  const plotW = Math.max(120, width - plotLeft - PLOT_RIGHT);
+  const plotH = isFull ? FULL_PLOT_H : COMPACT_PLOT_H;
   const svgH = STROKE_PAD + plotH;
 
   const ticks = niceTicks(xMax);
   // In full mode, gridlines align to risk timepoints; in compact mode, use auto ticks
   const gridTicks = isFull ? activeTimepoints : ticks;
-  const toPixel = (t: number) => PLOT_LEFT + (t / xMax) * PLOT_W;
+  const toPixel = (t: number) => plotLeft + (t / xMax) * plotW;
   const toYPixel = (p: number) => STROKE_PAD + plotH - p * plotH;
-  const toTime = (px: number) => Math.max(0, Math.min(xMax, ((px - PLOT_LEFT) / PLOT_W) * xMax));
+  const toTime = (px: number) => Math.max(0, Math.min(xMax, ((px - plotLeft) / plotW) * xMax));
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     const rect = plotAreaRef.current?.getBoundingClientRect();
@@ -249,7 +265,7 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
   };
 
   return (
-    <div className={containerClass} style={containerStyle}>
+    <div className={containerClass} style={containerStyle} ref={containerRef}>
       {/* Tick labels header */}
       <div className={styles.headerRow}>
         {gridTicks.map((t) => (
@@ -261,12 +277,12 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
 
       {/* KM step curves with CI bands */}
       <div className={styles.plotArea} ref={plotAreaRef} onMouseMove={isFull ? handleMouseMove : undefined} onMouseLeave={isFull ? handleMouseLeave : undefined}>
-        <svg width={W} height={svgH} className={styles.kmSvg}>
+        <svg width={width} height={svgH} className={styles.kmSvg}>
           {Y_TICKS.map((tick) => (
             <g key={tick}>
               <line
-                x1={PLOT_LEFT}
-                x2={PLOT_LEFT + PLOT_W}
+                x1={plotLeft}
+                x2={plotLeft + plotW}
                 y1={toYPixel(tick)}
                 y2={toYPixel(tick)}
                 className={styles.gridLineHorizontal}
@@ -292,29 +308,29 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
             />
           ))}
           <line
-            x1={PLOT_LEFT}
-            x2={PLOT_LEFT}
+            x1={plotLeft}
+            x2={plotLeft}
             y1={STROKE_PAD}
             y2={STROKE_PAD + plotH}
             className={styles.axisLine}
           />
           <line
-            x1={PLOT_LEFT}
-            x2={PLOT_LEFT + PLOT_W}
+            x1={plotLeft}
+            x2={plotLeft + plotW}
             y1={STROKE_PAD + plotH}
             y2={STROKE_PAD + plotH}
             className={styles.axisLine}
           />
           {curves.map((c, i) => {
             const dimmed = activeIndex !== null && activeIndex !== i;
-            const ciPath = hasCI ? buildCIBand(c.steps, PLOT_W, plotH, PLOT_LEFT, STROKE_PAD, xMax) : '';
+            const ciPath = hasCI ? buildCIBand(c.steps, plotW, plotH, plotLeft, STROKE_PAD, xMax) : '';
             return (
               <g key={c.cohortName} opacity={dimmed ? 0.15 : 1}>
                 {ciPath && (
                   <path d={ciPath} fill={c.color} fillOpacity={0.12} stroke="none" />
                 )}
                 <path
-                  d={buildStepPath(c.steps, PLOT_W, plotH, PLOT_LEFT, STROKE_PAD, xMax)}
+                  d={buildStepPath(c.steps, plotW, plotH, plotLeft, STROKE_PAD, xMax)}
                   fill="none"
                   stroke={c.color}
                   strokeWidth={2}
@@ -334,7 +350,7 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
             <div className={styles.crosshairLine} style={{ left: hoverPixelX, height: svgH }} />
             <div
               className={styles.tooltip}
-              style={{ left: hoverPixelX > W / 2 ? hoverPixelX - 4 : hoverPixelX + 4, transform: hoverPixelX > W / 2 ? 'translateX(-100%)' : undefined }}
+              style={{ left: hoverPixelX > width / 2 ? hoverPixelX - 4 : hoverPixelX + 4, transform: hoverPixelX > width / 2 ? 'translateX(-100%)' : undefined }}
             >
               <div className={styles.tooltipHeader}>Day {Math.round(hoverTime)}</div>
               {hoverData.map((d) => (

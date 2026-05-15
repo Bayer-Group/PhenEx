@@ -405,7 +405,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   return (
     <div className={styles.page}>
       <Portal>
-        <div className={styles.titleContainer}>
+        <div className={`${styles.titleContainer} ${viewerIndex != null ? styles.titleContainerHidden : ''}`}>
           <span className={styles.title}>{displayTitle}</span>
           <span className={styles.subtitle}>
             {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}

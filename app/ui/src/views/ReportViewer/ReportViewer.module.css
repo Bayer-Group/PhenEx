@@ -28,6 +28,16 @@
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   border: var(--line-color) 1px solid;
   font-family: "IBMPlexSans-bold", sans-serif;
+  opacity: 1;
+  transition: opacity 1.4s ease;
+
+}
+
+.titleContainerHidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+
 }
 
 .title {
