@@ -12,7 +12,7 @@
 
 .vTrack {
   position: absolute;
-  right: 6px;
+  right: 18px;
   top: 6px;
   bottom: 18px; /* avoid overlap with horizontal track */
   width: 8px;
