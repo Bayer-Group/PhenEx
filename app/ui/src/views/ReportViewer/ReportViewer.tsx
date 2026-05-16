@@ -28,6 +28,15 @@ import {
 } from './types';
 import { buildSequentialRowList, getSectionNames, type StudyRegistry } from './studyRegistryUtils';
 
+interface WaterfallInfoRow {
+  Name: string;
+  Remaining: number | null;
+}
+
+interface WaterfallPayload {
+  rows: WaterfallInfoRow[];
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -211,6 +220,16 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     if (outcomesCohortData.length > 0) map.table1_outcomes = outcomesCohortData;
     return map;
   }, [cohortData, outcomesCohortData]);
+
+  const finalCohortSizes = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(waterfallData).map(([cohortName, raw]) => {
+        const rows: WaterfallInfoRow[] = Array.isArray(raw) ? raw as WaterfallInfoRow[] : (raw as WaterfallPayload)?.rows ?? [];
+        const finalRow = rows.find((row) => row.Name === 'Final Cohort Size');
+        return [cohortName, finalRow?.Remaining ?? null];
+      }),
+    ) as Record<string, number | null>;
+  }, [waterfallData]);
 
   // ── Reporter rows (filtered from sequential rows, one source of truth) ──
   const table1Rows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'table1'), [sequentialRows]);
@@ -480,6 +499,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                   reporterRows={table1Rows}
                   sectionRefs={baselineSectionRefs.current}
                   onOpen={setViewerIndex}
+                  finalCohortSizes={finalCohortSizes}
                 />
               </ChartGroup>
               </div>
@@ -492,6 +512,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                       reporterRows={outcomesRows}
                       sectionRefs={outcomesSectionRefs.current}
                       onOpen={setViewerIndex}
+                      finalCohortSizes={finalCohortSizes}
                     />
                   </ChartGroup>
                 </div>
@@ -530,6 +551,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               rows={sequentialRows}
               currentIndex={viewerIndex}
               cohortDataMap={cohortDataMap}
+              finalCohortSizes={finalCohortSizes}
               tteCohorts={tteCohorts}
               table2Cohorts={table2Cohorts}
               studyTitle={displayTitle}

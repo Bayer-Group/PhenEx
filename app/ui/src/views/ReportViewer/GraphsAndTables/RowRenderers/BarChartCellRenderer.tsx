@@ -13,6 +13,7 @@ interface BarChartCellRendererProps {
     _meta: {
       cohortData: CohortClassified[];
       ticks?: number[];
+      finalCohortSizes?: Record<string, number | null>;
     };
   };
   /** When true, suppress click-to-open-modal (used inside BooleanRowModal). */
@@ -59,7 +60,7 @@ function splitCohortName(name: string): { parent: string; label: string } {
 }
 
 export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isModal, breadcrumbs, pctDecimals = 0, mode = 'compact' }) => {
-  const { cohortData, ticks = DEFAULT_TICKS } = data._meta;
+  const { cohortData, ticks = DEFAULT_TICKS, finalCohortSizes = {} } = data._meta;
   const { name } = data;
   const { activeIndex } = useBarHoverStore();
   const [hover, setHover] = useState<{ index: number; x: number; top: number } | null>(null);
@@ -109,6 +110,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
     const row = entry.cohort.data.rows.find((r) => r.Name === name);
     const pct = row?.Pct ?? 0;
     const n = row?.N ?? 0;
+    const finalCohortSize = finalCohortSizes[entry.cohort.name];
     const dimmed = activeIndex !== null && activeIndex !== entry.originalIndex;
     const label = options?.label ?? entry.label;
     const labelClassName = options?.labelClassName ?? '';
@@ -148,7 +150,15 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
           />
         </div>
         <div className={styles.nCell} style={{ opacity: dimmed ? 0.25 : 1, color: activeIndex === entry.originalIndex ? '#000' : undefined }}>
-          {n.toLocaleString()}
+          {isPresentation && finalCohortSize != null ? (
+            <>
+              <span className={styles.nValuePrimary}>{n.toLocaleString()}</span>
+              <span className={styles.nValueSlash}>/</span>
+              <span className={styles.nValueSecondary}>{finalCohortSize.toLocaleString()}</span>
+            </>
+          ) : (
+            n.toLocaleString()
+          )}
         </div>
       </div>
     );

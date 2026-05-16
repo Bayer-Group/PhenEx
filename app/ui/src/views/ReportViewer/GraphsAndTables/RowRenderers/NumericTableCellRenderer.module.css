@@ -113,6 +113,20 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.statsNPrimary {
+  color: inherit;
+}
+
+.statsNSlash {
+  color: #8a8a8a;
+}
+
+.statsNSecondary {
+  color: #a8a8a8;
 }
 
 .statsNHeaderCell {

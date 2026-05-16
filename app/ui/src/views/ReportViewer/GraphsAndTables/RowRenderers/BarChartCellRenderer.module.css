@@ -297,7 +297,25 @@
 }
 
 .cohortRowPresentation .nCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
   padding-left: 0;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.nValuePrimary {
+  color: inherit;
+}
+
+.nValueSlash {
+  color: #bebebe;
+}
+
+.nValueSecondary {
+  color: #a8a8a8;
 }
 
 /* ── Tooltip ──────────────────────────────────────────────────────────── */

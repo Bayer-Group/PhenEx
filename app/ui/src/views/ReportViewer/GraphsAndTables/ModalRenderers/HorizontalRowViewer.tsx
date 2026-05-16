@@ -37,6 +37,7 @@ interface HorizontalRowViewerProps {
   rows: SequentialRow[];
   currentIndex: number;
   cohortDataMap: Record<string, CohortClassified[]>;
+  finalCohortSizes?: Record<string, number | null>;
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   studyTitle?: string;
@@ -51,6 +52,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   rows,
   currentIndex,
   cohortDataMap,
+  finalCohortSizes,
   tteCohorts,
   table2Cohorts,
   studyTitle,
@@ -248,6 +250,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 nearby={nearby}
                 desiredTop={desiredTop}
                 cohortDataMap={cohortDataMap}
+                finalCohortSizes={finalCohortSizes}
                 tteCohorts={tteCohorts}
                 table2Cohorts={table2Cohorts}
                 onNavigate={navigate}
@@ -269,13 +272,14 @@ interface HorizontalCellProps {
   nearby: boolean;
   desiredTop: string;
   cohortDataMap: Record<string, CohortClassified[]>;
+  finalCohortSizes?: Record<string, number | null>;
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
 }
 
 const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, tteCohorts, table2Cohorts, onNavigate }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const availableTteOutcomes = useMemo(
       () => rows
@@ -314,7 +318,7 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
                 {row.registry?.display_name || row.name}
               </div>
               <div className={styles.cardContent}>
-                {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} /> : null}
+                {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} /> : null}
               </div>
             </div>
           </div>
@@ -377,17 +381,18 @@ const RowContent: FC<{
   row: SequentialRow;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
+  finalCohortSizes?: Record<string, number | null>;
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   availableTteOutcomes?: string[];
-}> = ({ row, cohortData, kdeData, tteCohorts, table2Cohorts, availableTteOutcomes }) => {
+}> = ({ row, cohortData, kdeData, finalCohortSizes, tteCohorts, table2Cohorts, availableTteOutcomes }) => {
   switch (row.rowType) {
     case 'boolean':
-      return <BooleanContent name={row.name} cohortData={cohortData} />;
+      return <BooleanContent name={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
     case 'categorical':
-      return <CategoricalContent baseName={row.name} cohortData={cohortData} />;
+      return <CategoricalContent baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
     case 'numeric':
-      return <NumericContent name={row.name} cohortData={cohortData} kdeData={kdeData} />;
+      return <NumericContent name={row.name} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} />;
     case 'time_to_event':
       return <TimeToEventContent outcome={row.name} cohorts={tteCohorts ?? []} availableOutcomes={availableTteOutcomes} />;
     case 'table2':
@@ -399,14 +404,14 @@ const RowContent: FC<{
 
 /* ── Boolean ─────────────────────────────────────────────────────────── */
 
-const BooleanContent: FC<{ name: string; cohortData: CohortClassified[] }> = ({ name, cohortData }) => {
+const BooleanContent: FC<{ name: string; cohortData: CohortClassified[]; finalCohortSizes?: Record<string, number | null> }> = ({ name, cohortData, finalCohortSizes }) => {
   const { visible } = useCohortVisibility(cohortData.length);
   const filtered = useFilteredCohortData(cohortData, visible);
 
   return (
     <div className={booleanStyles.container}>
       <BarChartCellRenderer
-        data={{ name, _meta: { cohortData: filtered } }}
+        data={{ name, _meta: { cohortData: filtered, finalCohortSizes } }}
         isModal
         mode="presentation"
         pctDecimals={1}
@@ -417,7 +422,7 @@ const BooleanContent: FC<{ name: string; cohortData: CohortClassified[] }> = ({ 
 
 /* ── Categorical ─────────────────────────────────────────────────────── */
 
-const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[] }> = ({ baseName, cohortData }) => {
+const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[]; finalCohortSizes?: Record<string, number | null> }> = ({ baseName, cohortData, finalCohortSizes }) => {
   const { visible } = useCohortVisibility(cohortData.length);
   const filtered = useFilteredCohortData(cohortData, visible);
 
@@ -426,6 +431,7 @@ const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[] 
       <CategoricalBarChartCellRenderer
         baseName={baseName}
         cohortData={filtered}
+        finalCohortSizes={finalCohortSizes}
         orientation="vertical"
       />
     </div>

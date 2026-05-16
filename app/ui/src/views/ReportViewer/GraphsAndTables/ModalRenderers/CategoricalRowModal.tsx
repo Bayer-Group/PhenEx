@@ -8,6 +8,7 @@ import styles from './CategoricalRowModal.module.css';
 interface CategoricalRowModalProps {
   baseName: string;
   cohortData: CohortClassified[];
+  finalCohortSizes?: Record<string, number | null>;
   onClose: () => void;
   breadcrumbs?: string[];
 }
@@ -15,6 +16,7 @@ interface CategoricalRowModalProps {
 export const CategoricalRowModal: FC<CategoricalRowModalProps> = ({
   baseName,
   cohortData,
+  finalCohortSizes,
   onClose,
   breadcrumbs,
 }) => {
@@ -28,6 +30,7 @@ export const CategoricalRowModal: FC<CategoricalRowModalProps> = ({
         <CategoricalBarChartCellRenderer
           baseName={baseName}
           cohortData={filteredCohortData}
+          finalCohortSizes={finalCohortSizes}
           orientation="vertical"
         />
       </div>

@@ -8,18 +8,20 @@ type Orientation = 'horizontal' | 'vertical';
 interface CategoricalBarChartCellRendererProps {
   baseName: string;
   cohortData: CohortClassified[];
+  finalCohortSizes?: Record<string, number | null>;
   orientation?: Orientation;
   breadcrumbs?: string[];
 }
 
 interface CategoryData {
   category: string;
-  values: { pct: number; n: number; color: string; cohortIndex: number }[];
+  values: { pct: number; n: number; color: string; cohortIndex: number; cohortName: string; finalCohortSize: number | null }[];
 }
 
 export const CategoricalBarChartCellRenderer: FC<CategoricalBarChartCellRendererProps> = ({
   baseName,
   cohortData,
+  finalCohortSizes = {},
   orientation = 'horizontal',
 }) => {
   const { activeIndex } = useBarHoverStore();
@@ -43,10 +45,17 @@ export const CategoricalBarChartCellRenderer: FC<CategoricalBarChartCellRenderer
       category: cat,
       values: cohortData.map((cd, ci) => {
         const item = cd.classified.categoricals[baseName]?.find((c) => c.category === cat);
-        return { pct: item?.Pct ?? 0, n: item?.N ?? 0, color: cd.color, cohortIndex: ci };
+        return {
+          pct: item?.Pct ?? 0,
+          n: item?.N ?? 0,
+          color: cd.color,
+          cohortIndex: ci,
+          cohortName: cd.name,
+          finalCohortSize: finalCohortSizes[cd.name] ?? null,
+        };
       }),
     }));
-  }, [baseName, cohortData]);
+  }, [baseName, cohortData, finalCohortSizes]);
 
   if (categories.length === 0) return null;
 

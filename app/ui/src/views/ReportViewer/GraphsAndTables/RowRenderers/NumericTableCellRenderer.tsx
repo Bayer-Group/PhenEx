@@ -14,6 +14,7 @@ const fmt = (v: number | null | undefined) => {
 interface NumericTableCellRendererProps {
   name: string;
   cohortData: CohortClassified[];
+  finalCohortSizes?: Record<string, number | null>;
   hideNPct?: boolean;
   showBar?: boolean;
   pctDecimals?: number;
@@ -22,6 +23,7 @@ interface NumericTableCellRendererProps {
 export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
   name,
   cohortData,
+  finalCohortSizes = {},
   hideNPct,
   showBar,
   pctDecimals = 1,
@@ -46,6 +48,7 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
           const row = cd.data.rows.find((r) => r.Name === name);
           if (!row) return null;
           const pct = row.Pct ?? 0;
+          const finalCohortSize = finalCohortSizes[cd.name];
           const dimmed = activeIndex !== null && activeIndex !== i;
           return (
             <div
@@ -82,7 +85,15 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
               )}
               {!hideNPct && (
                 <div className={styles.statsNCell}>
-                  {row.N != null ? row.N.toLocaleString() : '–'}
+                  {row.N != null ? (
+                    finalCohortSize != null ? (
+                      <>
+                        <span className={styles.statsNPrimary}>{row.N.toLocaleString()}</span>
+                        <span className={styles.statsNSlash}>/</span>
+                        <span className={styles.statsNSecondary}>{finalCohortSize.toLocaleString()}</span>
+                      </>
+                    ) : row.N.toLocaleString()
+                  ) : '–'}
                 </div>
               )}
               {STAT_KEYS.map((k) => (

@@ -10,6 +10,7 @@ interface BooleanRowModalProps {
   cohortData: CohortClassified[];
   onClose: () => void;
   breadcrumbs?: string[];
+  finalCohortSizes?: Record<string, number | null>;
 }
 
 export const BooleanRowModal: FC<BooleanRowModalProps> = ({
@@ -17,6 +18,7 @@ export const BooleanRowModal: FC<BooleanRowModalProps> = ({
   cohortData,
   onClose,
   breadcrumbs,
+  finalCohortSizes,
 }) => {
   const { visible } = useCohortVisibility(cohortData.length);
   const filteredCohortData = useFilteredCohortData(cohortData, visible);
@@ -26,7 +28,7 @@ export const BooleanRowModal: FC<BooleanRowModalProps> = ({
       <div className={styles.container}>
         {/* <ModalLegend cohortData={cohortData} visible={visible} onToggle={toggle} /> */}
         <BarChartCellRenderer
-          data={{ name, _meta: { cohortData: filteredCohortData } }}
+          data={{ name, _meta: { cohortData: filteredCohortData, finalCohortSizes } }}
           isModal
           mode="presentation"
           pctDecimals={1}

@@ -11,9 +11,10 @@ interface NumericContentProps {
   name: string;
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
+  finalCohortSizes?: Record<string, number | null>;
 }
 
-export const NumericContent: FC<NumericContentProps> = ({ name, cohortData, kdeData }) => {
+export const NumericContent: FC<NumericContentProps> = ({ name, cohortData, kdeData, finalCohortSizes }) => {
   const { visible } = useCohortVisibility(cohortData.length);
   const filtered = useFilteredCohortData(cohortData, visible);
 
@@ -55,7 +56,7 @@ export const NumericContent: FC<NumericContentProps> = ({ name, cohortData, kdeD
       </div>
       <div className={styles.bottomRow}>
         <div className={styles.card}>
-          <NumericTableCellRenderer name={name} cohortData={filtered} showBar />
+          <NumericTableCellRenderer name={name} cohortData={filtered} finalCohortSizes={finalCohortSizes} showBar />
         </div>
       </div>
     </div>

@@ -19,6 +19,7 @@ interface CharacteristicsChartProps {
   sectionRefs: Map<string, HTMLDivElement>;
   /** Open the HorizontalRowViewer at the given sequential index */
   onOpen: (index: number) => void;
+  finalCohortSizes?: Record<string, number | null>;
 }
 
 export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
@@ -26,6 +27,7 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
   reporterRows,
   sectionRefs,
   onOpen,
+  finalCohortSizes,
 }) => {
   // Group this reporter's rows by section
   const groups = useMemo(() => groupRowsBySection(reporterRows), [reporterRows]);
@@ -61,6 +63,7 @@ export const CharacteristicsChart: FC<CharacteristicsChartProps> = ({
                 cohortData={cohortData}
                 kdeData={kdeData}
                 onOpen={onOpen}
+                finalCohortSizes={finalCohortSizes}
               />
             ))}
           </SectionCard>
@@ -77,22 +80,24 @@ const CharacteristicRow: FC<{
   cohortData: CohortClassified[];
   kdeData: Record<string, Record<string, KdeCurve>>;
   onOpen: (index: number) => void;
-}> = ({ row, cohortData, kdeData, onOpen }) => {
+  finalCohortSizes?: Record<string, number | null>;
+}> = ({ row, cohortData, kdeData, onOpen, finalCohortSizes }) => {
   if (row.rowType === 'categorical') {
-    return <CategoricalRow row={row} cohortData={cohortData} onOpen={onOpen} />;
+    return <CategoricalRow row={row} cohortData={cohortData} onOpen={onOpen} finalCohortSizes={finalCohortSizes} />;
   }
   if (row.rowType === 'numeric') {
     return <NumericRow row={row} cohortData={cohortData} kdeData={kdeData} onOpen={onOpen} />;
   }
-  return <BooleanRow row={row} cohortData={cohortData} onOpen={onOpen} />;
+  return <BooleanRow row={row} cohortData={cohortData} onOpen={onOpen} finalCohortSizes={finalCohortSizes} />;
 };
 
 /* ── Boolean row ─────────────────────────────────────────────────────── */
 
-const BooleanRow: FC<{ row: SequentialRow; cohortData: CohortClassified[]; onOpen: (index: number) => void }> = ({
+const BooleanRow: FC<{ row: SequentialRow; cohortData: CohortClassified[]; onOpen: (index: number) => void; finalCohortSizes?: Record<string, number | null> }> = ({
   row,
   cohortData,
   onOpen,
+  finalCohortSizes,
 }) => {
   const handleClick = useCallback(() => onOpen(row.index), [row.index, onOpen]);
 
@@ -100,7 +105,7 @@ const BooleanRow: FC<{ row: SequentialRow; cohortData: CohortClassified[]; onOpe
     <div className={styles.row} onClick={handleClick} style={{ cursor: 'pointer' }} data-row-name={row.name}>
       <div className={styles.nameCell}>{row.name}</div>
       <div className={styles.booleanChartCell}>
-        <BarChartCellRenderer data={{ name: row.name, _meta: { cohortData } }} isModal />
+        <BarChartCellRenderer data={{ name: row.name, _meta: { cohortData, finalCohortSizes } }} isModal />
       </div>
     </div>
   );
@@ -112,7 +117,8 @@ const CategoricalRow: FC<{
   row: SequentialRow;
   cohortData: CohortClassified[];
   onOpen: (index: number) => void;
-}> = ({ row, cohortData, onOpen }) => {
+  finalCohortSizes?: Record<string, number | null>;
+}> = ({ row, cohortData, onOpen, finalCohortSizes }) => {
   const handleClick = useCallback(() => onOpen(row.index), [row.index, onOpen]);
 
   return (
@@ -122,6 +128,7 @@ const CategoricalRow: FC<{
         <CategoricalBarChartCellRenderer
           baseName={row.name}
           cohortData={cohortData}
+          finalCohortSizes={finalCohortSizes}
           orientation="vertical"
         />
       </div>
