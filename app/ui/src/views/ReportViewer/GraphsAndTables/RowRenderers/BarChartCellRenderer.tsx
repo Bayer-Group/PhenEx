@@ -94,6 +94,15 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
     return groups;
   }, []);
 
+  const flatRows: RenderRow[] = cohortData.map((cohort, index) => {
+    const { label } = splitCohortName(cohort.name);
+    return {
+      cohort,
+      originalIndex: index,
+      label: formatCohortLabel(label),
+    };
+  });
+
   const isPresentation = mode === 'presentation';
 
   const renderRow = (entry: RenderRow, options?: RenderRowOptions) => {
@@ -170,7 +179,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
             </div>
           )}
 
-          {hasSubrows && group.rows.map(renderRow)}
+          {hasSubrows && group.rows.map((entry) => renderRow(entry))}
         </div>
       </div>
     );
@@ -200,7 +209,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
                 <div key={t} className={styles.gridLine} style={{ left: `${t}%` }} />
               ))}
             </div>
-            {groupedRows.flatMap((group) => group.rows.map(renderRow))}
+            {flatRows.map((entry) => renderRow(entry))}
           </>
         )}
       </div>

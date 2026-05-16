@@ -410,14 +410,12 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         hidden={viewerIndex != null}
         top={
           <>
-            <ReportNavPanelCard title="Title" background={true}>
               <div className={styles.navTitleCard}>
                 <span className={styles.title}>{displayTitle}</span>
                 <span className={styles.subtitle}>
                   {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
                 </span>
               </div>
-            </ReportNavPanelCard>
             <ReportNavPanelCard title="Visible cohorts" background={true}>
               <CohortSelector
                 groups={groups}

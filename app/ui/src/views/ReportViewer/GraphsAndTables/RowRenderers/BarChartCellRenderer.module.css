@@ -1,9 +1,10 @@
 :root {
   --HEIGHT_TABLE1_ROW_BOOLEAN_TOP: 30px;
-  --BOOLEAN_PRESENTATION_LABEL_COL: 140px;
+  --BOOLEAN_PRESENTATION_LABEL_COL: 200px;
   --BOOLEAN_PRESENTATION_PCT_COL: 60px;
   --BOOLEAN_PRESENTATION_N_COL: 80px;
   --BOOLEAN_PRESENTATION_GAP: 10px;
+  --BOOLEAN_PRESENTATION_ROW_HEIGHT: clamp(30px, calc(24px / var(--pz-scale, 1)), 44px);
 }
 
 .container {
@@ -166,6 +167,7 @@
   align-self: flex-start;
   padding: 4px 10px;
   /* border-radius: 999px; */
+  border-radius: 100px;
   font-size: 12px;
   font-weight: 700;
   color: white;
@@ -194,6 +196,7 @@
   display: grid;
   grid-template-columns: var(--BOOLEAN_PRESENTATION_LABEL_COL) var(--BOOLEAN_PRESENTATION_PCT_COL) minmax(0, 1fr) var(--BOOLEAN_PRESENTATION_N_COL);
   gap: var(--BOOLEAN_PRESENTATION_GAP);
+  height: var(--BOOLEAN_PRESENTATION_ROW_HEIGHT);
 }
 
 .cohortRow:hover{
@@ -209,7 +212,7 @@
   text-align: right;
 }
 
-.parentCohortLabelCell {
+.parentCohortLabelCell, .groupTitleStandalone {
   display: inline-flex;
   align-items: center;
   justify-self: start;
@@ -219,7 +222,8 @@
   font-size: var(--font_size_items, 12px);
   font-weight: 700;
   color: white;
-  text-align: left;
+  text-align: right;
+  width: 100%;
 }
 
 
@@ -260,6 +264,7 @@
 
 .cohortRowPresentation .barCell {
   position: relative;
+  height: calc(var(--BOOLEAN_PRESENTATION_ROW_HEIGHT) - 4px);
 }
 
 .barFill {

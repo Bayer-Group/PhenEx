@@ -1,7 +1,7 @@
 .panel {
   position: fixed;
-  left: 40px;
-  width: 330px;
+  left: 20px;
+  width: 280px;
   bottom:20px;
   top : 30px;
   display: flex;

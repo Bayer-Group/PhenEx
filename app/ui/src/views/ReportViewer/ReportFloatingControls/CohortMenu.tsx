@@ -1,4 +1,4 @@
-import { FC, useEffect, useRef, useCallback } from 'react';
+import { FC, useEffect, useRef } from 'react';
 import { Portal } from '@/components/Portal/Portal';
 import { getCohortColor, type CohortGroup, type LegendSelection } from '../types';
 import styles from './CohortSelector.module.css';
@@ -40,17 +40,7 @@ export const CohortMenu: FC<CohortMenuProps> = ({
     return () => document.removeEventListener('mousedown', handle);
   }, [onClose]);
 
-  // Compute position: above anchor, anchored to right
-  const computeStyle = useCallback((): React.CSSProperties => {
-    const bottom = window.innerHeight - anchorRect.top + 4;
-    const right = window.innerWidth - anchorRect.right;
-    return {
-      position: 'fixed',
-      bottom: Math.max(bottom, 8),
-      right: Math.max(right, 8),
-      maxHeight: anchorRect.top - 12,
-    };
-  }, [anchorRect]);
+  void anchorRect;
 
   const activeSet = new Set(activeSelections.map((s) => s.cohortName));
   const activeColorMap = new Map(
@@ -71,37 +61,39 @@ export const CohortMenu: FC<CohortMenuProps> = ({
 
   return (
     <Portal>
-      <div
-        ref={menuRef}
-        className={styles.menu}
-        style={computeStyle()}
-        onMouseLeave={onClose}
-      >
-        <div className={styles.menuGrid}>
-          {groups.map((group) => (
-            <div key={group.parent} className={styles.menuGroup}>
-              <div className={styles.menuGroupTitle}>{group.parent}</div>
-              {group.subcohorts.map((sub) => {
-                const isActive = activeSet.has(sub.fullName);
-                const dotColor = activeColorMap.get(sub.fullName);
-                return (
-                  <div
-                    key={sub.fullName}
-                    className={`${styles.menuItem} ${isActive ? styles.menuItemDisabled : ''}`}
-                    onClick={() => handleClick(sub.fullName)}
-                  >
-                    {isActive && dotColor && (
-                      <span
-                        className={styles.menuItemDot}
-                        style={{ background: dotColor }}
-                      />
-                    )}
-                    <span className={styles.menuItemLabel}>{sub.label}</span>
-                  </div>
-                );
-              })}
+      <div className={styles.menuOverlay} onClick={onClose}>
+        <div className={styles.menuFrame} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.menuTitleBar}>
+            <div className={styles.menuTitle}>Cohorts</div>
+          </div>
+          <div ref={menuRef} className={styles.menu}>
+            <div className={styles.menuGrid}>
+              {groups.map((group) => (
+                <div key={group.parent} className={styles.menuGroup}>
+                  <div className={styles.menuGroupTitle}>{group.parent}</div>
+                  {group.subcohorts.map((sub) => {
+                    const isActive = activeSet.has(sub.fullName);
+                    const dotColor = activeColorMap.get(sub.fullName);
+                    return (
+                      <div
+                        key={sub.fullName}
+                        className={`${styles.menuItem} ${isActive ? styles.menuItemDisabled : ''}`}
+                        onClick={() => handleClick(sub.fullName)}
+                      >
+                        {isActive && dotColor && (
+                          <span
+                            className={styles.menuItemDot}
+                            style={{ background: dotColor }}
+                          />
+                        )}
+                        <span className={styles.menuItemLabel}>{sub.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </Portal>
