@@ -159,13 +159,22 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   // Clean up on unmount
   useEffect(() => () => clearTimeout(holdTimer.current), []);
 
-  // Block trackpad / wheel scrolling (except inside comments scroll)
+  // Block horizontal wheel scrolling in the viewer while still allowing
+  // vertical wheel scrolling inside the card and comments columns.
   useEffect(() => {
     const scroller = scrollRef.current;
     if (!scroller) return;
     const onWheel = (e: WheelEvent) => {
       const target = e.target as HTMLElement | null;
       if (target?.closest(`.${styles.commentsScroll}`)) return;
+      const verticalWrapper = target?.closest(`.${styles.verticalWrapper}`) as HTMLElement | null;
+      if (verticalWrapper) {
+        if (e.deltaY !== 0) {
+          verticalWrapper.scrollTop += e.deltaY;
+        }
+        e.preventDefault();
+        return;
+      }
       e.preventDefault();
     };
     scroller.addEventListener('wheel', onWheel, { passive: false });
@@ -281,6 +290,7 @@ interface HorizontalCellProps {
 const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
   ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
+    const verticalScrollRef = useRef<HTMLDivElement>(null);
     const availableTteOutcomes = useMemo(
       () => rows
         .filter((candidate) => candidate.reporter === row.reporter && candidate.rowType === 'time_to_event')
@@ -309,18 +319,27 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
       >
         <div className={styles.cellInner}>
           {/* Left: card */}
-          <div className={styles.verticalWrapper}>
-            <div
-              className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className={styles.cardTitle}>
-                {row.registry?.display_name || row.name}
-              </div>
-              <div className={styles.cardContent}>
-                {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} /> : null}
+          <div className={styles.cardColumn}>
+            <div ref={verticalScrollRef} className={styles.verticalWrapper}>
+              <div
+                className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className={styles.cardTitle}>
+                  {row.registry?.display_name || row.name}
+                </div>
+                <div className={styles.cardContent}>
+                  {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} /> : null}
+                </div>
               </div>
             </div>
+            <SimpleCustomScrollbar
+              targetRef={verticalScrollRef}
+              orientation="vertical"
+              marginTop={100}
+              marginBottom={100}
+              marginToEnd={20}
+            />
           </div>
 
           {/* Right: comment cards */}

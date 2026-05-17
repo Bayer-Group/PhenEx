@@ -39,15 +39,31 @@
   width: fit-content;
   min-width: 100vw;
   transition: opacity 0.2s;
-
 }
 
-.verticalWrapper {
-  margin-left: 10%;
-  width: fit-content;
-  height:100%;
-  padding-top: 15vh;
+.cardColumn {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  height: 100vh;
+  overflow: visible;
+  margin-right: 20px;
 
+}
+ 
+.verticalWrapper {
+  flex: 1;
+  width: fit-content;
+  height: 100%;
+  margin-left: 10%;
+  padding: 15vh 48px 32px 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.verticalWrapper::-webkit-scrollbar {
+  display: none;
 }
 
 
@@ -76,15 +92,10 @@
   width: fit-content;
   min-width: 500px;
   max-width: calc(90vw - 330px);
-  overflow-y: auto;
   overflow-x: hidden;
   transition: opacity 0.2s, border-color 0.2s;
   opacity: 1;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-}
-
-.cardFocused {
-
 }
 
 /* .cardNeighbour {
@@ -105,6 +116,7 @@
   gap: 16px;
 }
 
+
 .cardTitle {
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;
@@ -112,14 +124,11 @@
   margin-bottom: 12px;
 }
 
-.cardContent {
-  /* Content takes its natural height */
-}
-
 /* ── Comment sidebar ─────────────────────────────────────────────────── */
 
 /* Outer column: stretches to full height of the cell */
 .commentsColumn {
+  position: relative;
   display: flex;
   /* flex-direction: column;
   align-self: stretch; */

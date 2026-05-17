@@ -4,7 +4,7 @@ import { useBarHoverStore } from './useBarHoverStore';
 import { CohortNameTooltip } from './CohortNameTooltip';
 import styles from './NumericTableCellRenderer.module.css';
 
-const STAT_KEYS = ['Min', 'Mean', 'STD', 'Median', 'Max'] as const;
+const STAT_KEYS = ['Min','Max', 'Median', 'Mean', 'STD'] as const;
 
 const fmt = (v: number | null | undefined) => {
   if (v == null || isNaN(v)) return '–';
@@ -85,6 +85,7 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
               )}
               {!hideNPct && (
                 <div className={styles.statsNCell}>
+                  {/* If final cohort size is available, show N as "X / FinalSize". Otherwise just show N. */}
                   {row.N != null ? (
                     finalCohortSize != null ? (
                       <>
