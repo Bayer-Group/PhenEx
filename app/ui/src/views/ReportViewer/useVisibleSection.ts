@@ -57,7 +57,7 @@ export function useVisibleSection(
       best = sections[0].name;
     }
 
-    setActive(best);
+    setActive((prev) => prev === best ? prev : best);
   }, [viewportRef, contentRef, getSections]);
 
   useEffect(() => {

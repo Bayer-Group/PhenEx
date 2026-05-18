@@ -74,7 +74,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   table2Data,
   timeToEventData,
   studyRegistry,
-  runId,
+  runId: _runId,
   loading = false,
   title = 'Loading study...',
   storageKey,
@@ -433,10 +433,10 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           {/* Left panel: navigation */}
           <LeftPanel
             title={displayTitle}
-            runId={runId}
-            loading={loading}
             groups={groups}
             selections={selections}
+            entries={outlineEntries}
+            activeSection={activeSection}
             onReplace={handleReplace}
             onAdd={handleAdd}
             onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}

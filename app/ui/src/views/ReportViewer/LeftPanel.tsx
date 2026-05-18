@@ -1,16 +1,17 @@
 import { FC, useRef } from 'react';
 import { CohortSelector } from './ReportFloatingControls/CohortSelector';
-import { formatRunTimestamp } from './ReportViewer';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { LeftPanelTitleNavigation } from './LeftPanelTitleNavigation';
+import { type OutlineEntry } from './OutlineBar';
 import type { CohortGroup, LegendSelection } from './types';
 import styles from './LeftPanel.module.css';
 
 interface LeftPanelProps {
   title: string;
-  runId: string | null;
-  loading: boolean;
   groups: CohortGroup[];
   selections: LegendSelection[];
+  entries: OutlineEntry[];
+  activeSection?: string | null;
   onReplace: (index: number, fullName: string) => void;
   onAdd: (fullName: string) => void;
   onRemove: (index: number) => void;
@@ -18,10 +19,10 @@ interface LeftPanelProps {
 
 export const LeftPanel: FC<LeftPanelProps> = ({
   title,
-  runId,
-  loading,
   groups,
   selections,
+  entries,
+  activeSection,
   onReplace,
   onAdd,
   onRemove,
@@ -30,12 +31,11 @@ export const LeftPanel: FC<LeftPanelProps> = ({
 
   return (
     <div className={styles.container}>
-      <div className={styles.navTitleCard}>
-        <span className={styles.title}>{title}</span>
-        <span className={styles.subtitle}>
-          {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
-        </span>
-      </div>
+      <LeftPanelTitleNavigation
+        studyTitle={title}
+        entries={entries}
+        activeSection={activeSection}
+      />
       <div className={styles.scrollRegion}>
         <div ref={scrollRef} className={styles.scrollContent}>
           <CohortSelector
