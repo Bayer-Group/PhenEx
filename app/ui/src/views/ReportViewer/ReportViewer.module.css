@@ -9,39 +9,6 @@
   background-color: var(--background-color);
 }
 
-.leftPanel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 80px 20px 20px 20px;
-  box-sizing: border-box;
-}
-
-.navTitleCard {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 0;
-  font-family: "IBMPlexSans-bold", sans-serif;
-  margin-bottom: 30px;
-}
-
-.title {
-  margin: 0;
-  font-weight: bold;
-  color: #222;
-  font-size: var(--font_size_pagetitle, 18px);
-  line-height: 1.2;
-}
-
-.subtitle {
-  margin: 0;
-  font-size: var(--font_size_breadcrumbs, 11px);
-  font-weight: 400;
-  color: #555;
-  line-height: 1.2;
-}
-
 .runSelector {
   display: flex;
   align-items: center;

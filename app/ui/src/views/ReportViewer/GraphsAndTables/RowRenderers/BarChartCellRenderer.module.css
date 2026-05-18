@@ -220,7 +220,7 @@
   max-width: fit-content;
   padding: 0px 4px;
   border-radius: 4px;
-  font-size: var(--font_size_items, 12px);
+  font-size: clamp(12px, calc(14px / var(--pz-scale, 1)), 24px);
   font-weight: 700;
   color: white;
   text-align: right;

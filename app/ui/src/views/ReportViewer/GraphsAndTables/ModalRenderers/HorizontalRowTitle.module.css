@@ -1,14 +1,16 @@
 /* ── Floating title container ─────────────────────────────────────────── */
 .container {
   position: fixed;
-  left: 9%;
+  left: 20px;
   top:10px;
-  height:10px;
+  width: fit-content;
+  height:fit-content;
   z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 0px;
   pointer-events: auto;
+  overflow: hidden;
 }
 
 /* ── Individual crumb ────────────────────────────────────────────────── */
@@ -27,7 +29,8 @@
   text-align: left;
   border-radius: 4px;
   transition: color 0.15s, background 0.15s;
-  white-space: nowrap;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .crumb:hover,

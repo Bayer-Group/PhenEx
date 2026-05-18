@@ -3,7 +3,7 @@ import styles from './ReportViewer.module.css';
 import { PanZoomScrollbar } from '../../components/CustomScrollbar/PanZoomScrollbar';
 import { usePanZoom } from '../../hooks/usePanZoom';
 import { PanZoomScaleProvider } from '../../hooks/PanZoomScaleContext';
-import { CohortSelector } from './ReportFloatingControls/CohortSelector';
+import { LeftPanel } from './LeftPanel';
 import { CharacteristicsChart } from './GraphsAndTables/CharacteristicsChart';
 import { Table2Chart, TimeToEventChart, type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './GraphsAndTables/ModalRenderers/HorizontalRowViewer';
@@ -431,21 +431,16 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           minSizeRight={200}
         >
           {/* Left panel: navigation */}
-          <div className={styles.leftPanel}>
-                <div className={styles.navTitleCard}>
-                  <span className={styles.title}>{displayTitle}</span>
-                  <span className={styles.subtitle}>
-                    {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
-                  </span>
-                </div>
-                <CohortSelector
-                  groups={groups}
-                  selections={selections}
-                  onReplace={handleReplace}
-                  onAdd={handleAdd}
-                  onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
-                />
-          </div>
+          <LeftPanel
+            title={displayTitle}
+            runId={runId}
+            loading={loading}
+            groups={groups}
+            selections={selections}
+            onReplace={handleReplace}
+            onAdd={handleAdd}
+            onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
+          />
 
           {/* Center panel: charts */}
           <div className={styles.centerPanel}>

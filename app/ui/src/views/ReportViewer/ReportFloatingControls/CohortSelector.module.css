@@ -84,18 +84,28 @@
   background: rgba(0, 0, 0, 0.08);
 }
 
+/* ── Action bar ──────────────────────────────────────────────────────── */
+.actionBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ── Plus button ─────────────────────────────────────────────────────── */
 .plusBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 14px;
+  gap: 6px;
+  padding: 6px 12px;
   border-radius: 8px;
   border: 2px dashed var(--line-color, #ddd);
   background: transparent;
   color: #999;
+  font-size: 12px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
 }
 
 .plusBtn:hover {
@@ -103,11 +113,42 @@
   color: #555;
 }
 
+/* ── Clear all button ────────────────────────────────────────────────── */
+.clearBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #999;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.clearBtn:hover {
+  color: #c00;
+  background: rgba(200, 0, 0, 0.05);
+}
+
+.clearBtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.clearBtn:disabled:hover {
+  color: #999;
+  background: transparent;
+}
+
 /* ── Dropdown menu (portal) ──────────────────────────────────────────── */
 .menuOverlay {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: 10005;
   display: flex;
   align-items: center;
   justify-content: center;

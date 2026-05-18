@@ -63,6 +63,17 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
   return (
     <div className={styles.legendBar}>
+        <div className={styles.actionBar}>
+          <PlusButton onClick={handlePlusClick} />
+          <button
+            className={styles.clearBtn}
+            onClick={() => { for (let i = selections.length - 1; i >= 0; i--) onRemove(i); }}
+            disabled={selections.length === 0}
+          >
+            Clear all
+          </button>
+        </div>
+
       {grouped.map((group) => (
         <div key={group.parent} className={styles.legendGroup}>
           <div className={styles.legendGroupTitle}>{group.parent}</div>
@@ -78,7 +89,6 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         </div>
       ))}
       <div style={{ height: 20 }} />
-      <PlusButton onClick={handlePlusClick} />
 
       {menuState && (
         <CohortMenu
@@ -144,12 +154,13 @@ const PlusButton: FC<PlusButtonProps> = ({ onClick }) => {
       ref={ref}
       className={styles.plusBtn}
       onClick={() => ref.current && onClick(ref.current)}
-      aria-label="Add cohort"
+      aria-label="Add a cohort"
       style={{ height: 30}}
     >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
         <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
+      <span>Add a cohort</span>
     </button>
   );
 };
