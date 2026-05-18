@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Portal } from '../../components/Portal/Portal';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { type OutlineEntry } from './OutlineBar';
@@ -212,6 +212,18 @@ const CrumbMenu: FC<CrumbMenuProps> = ({
 }) => {
   const rect = anchorEl.getBoundingClientRect();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [localActive, setLocalActive] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalActive(currentLabel || null);
+  }, [currentLabel]);
+
+  const activeLabel = localActive ?? currentLabel;
+
+  const handleClick = useCallback((opt: CrumbOption) => {
+    setLocalActive(opt.label);
+    onSelect(opt);
+  }, [onSelect]);
 
   const setScrollRef = useCallback((el: HTMLDivElement | null) => {
     (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
@@ -240,8 +252,8 @@ const CrumbMenu: FC<CrumbMenuProps> = ({
           {options.map((opt, i) => (
             <button
               key={i}
-              className={`${styles.menuItem} ${opt.label === currentLabel ? styles.menuItemActive : ''}`}
-              onClick={(e) => { e.stopPropagation(); onSelect(opt); }}
+              className={`${styles.menuItem} ${opt.label === activeLabel ? styles.menuItemActive : ''}`}
+              onClick={(e) => { e.stopPropagation(); handleClick(opt); }}
             >
               {opt.label}
             </button>
