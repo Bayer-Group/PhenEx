@@ -161,6 +161,13 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   // Clean up on unmount
   useEffect(() => () => clearTimeout(holdTimer.current), []);
 
+  // Re-center on the current card when the window is resized
+  useEffect(() => {
+    const onResize = () => centerOnCard(currentIndex, 'instant');
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [currentIndex, centerOnCard]);
+
   // Block horizontal wheel scrolling in the viewer while still allowing
   // vertical wheel scrolling inside the card and comments columns.
   useEffect(() => {
@@ -350,8 +357,8 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
             <SimpleCustomScrollbar
               targetRef={verticalScrollRef}
               orientation="vertical"
-              marginTop={100}
-              marginBottom={100}
+              marginTop={130}
+              marginBottom={35}
               marginToEnd={5}
               classNameThumb={styles.verticalScrollbarThumb}
             />

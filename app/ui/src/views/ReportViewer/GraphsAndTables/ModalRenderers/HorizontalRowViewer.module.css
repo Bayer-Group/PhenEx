@@ -99,6 +99,7 @@
   padding: 20px 30px;
   min-width: 500px;
   overflow-x: hidden;
+  max-width: 700px;
   transition: opacity 0.2s, border-color 0.2s;
   opacity: 1;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
