@@ -436,7 +436,9 @@ export const ReportViewer: FC<ReportViewerProps> = ({
             groups={groups}
             selections={selections}
             entries={outlineEntries}
+            rows={sequentialRows}
             activeSection={activeSection}
+            onOpenRow={setViewerIndex}
             onReplace={handleReplace}
             onAdd={handleAdd}
             onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}

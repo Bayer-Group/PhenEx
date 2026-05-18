@@ -3,6 +3,7 @@ import { CohortSelector } from './ReportFloatingControls/CohortSelector';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { LeftPanelTitleNavigation } from './LeftPanelTitleNavigation';
 import { type OutlineEntry } from './OutlineBar';
+import { type SequentialRow } from './studyRegistryUtils';
 import type { CohortGroup, LegendSelection } from './types';
 import styles from './LeftPanel.module.css';
 
@@ -11,7 +12,9 @@ interface LeftPanelProps {
   groups: CohortGroup[];
   selections: LegendSelection[];
   entries: OutlineEntry[];
+  rows: SequentialRow[];
   activeSection?: string | null;
+  onOpenRow?: (index: number) => void;
   onReplace: (index: number, fullName: string) => void;
   onAdd: (fullName: string) => void;
   onRemove: (index: number) => void;
@@ -22,7 +25,9 @@ export const LeftPanel: FC<LeftPanelProps> = ({
   groups,
   selections,
   entries,
+  rows,
   activeSection,
+  onOpenRow,
   onReplace,
   onAdd,
   onRemove,
@@ -34,7 +39,9 @@ export const LeftPanel: FC<LeftPanelProps> = ({
       <LeftPanelTitleNavigation
         studyTitle={title}
         entries={entries}
+        rows={rows}
         activeSection={activeSection}
+        onOpenRow={onOpenRow}
       />
       <div className={styles.scrollRegion}>
         <div ref={scrollRef} className={styles.scrollContent}>

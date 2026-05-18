@@ -2,21 +2,26 @@ import { FC, useCallback, useMemo, useRef, useState } from 'react';
 import { Portal } from '../../components/Portal/Portal';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { type OutlineEntry } from './OutlineBar';
+import { type SequentialRow } from './studyRegistryUtils';
 import styles from './LeftPanelTitleNavigation.module.css';
 
 interface LeftPanelTitleNavigationProps {
   studyTitle: string;
   entries: OutlineEntry[];
+  rows: SequentialRow[];
   activeSection?: string | null;
+  onOpenRow?: (index: number) => void;
 }
 
 export const LeftPanelTitleNavigation: FC<LeftPanelTitleNavigationProps> = ({
   studyTitle,
   entries,
+  rows,
   activeSection,
+  onOpenRow,
 }) => {
   // Derive current category and section from activeSection + entries
-  const { activeCategory, activeSectionName, categoryOptions, sectionOptions } = useMemo(() => {
+  const { activeCategory, activeSectionName, categoryOptions, sectionOptions, rowOptions } = useMemo(() => {
     // Find which category (level 0) the activeSection belongs to
     let category: string | null = null;
     let section: string | null = null;
@@ -35,10 +40,27 @@ export const LeftPanelTitleNavigation: FC<LeftPanelTitleNavigationProps> = ({
       }
     }
 
+    // Map from display name → category key for SequentialRow lookup
+    const CATEGORY_KEY_MAP: Record<string, string> = {
+      'Attrition': 'attrition',
+      'Baseline characteristics': 'baseline_characteristics',
+      'Outcomes': 'outcomes',
+    };
+
     // Category options: all level 0 entries
     const catOpts = entries
       .filter((e) => e.level === 0)
-      .map((e) => ({ label: e.name, onClick: e.onClick }));
+      .map((e) => {
+        const catKey = CATEGORY_KEY_MAP[e.name];
+        const firstRow = catKey ? rows.find((r) => r.category === catKey) : undefined;
+        return {
+          label: e.name,
+          onClick: () => {
+            e.onClick();
+            if (onOpenRow && firstRow) onOpenRow(firstRow.index);
+          },
+        };
+      });
 
     // Section options: level 1 entries under the active category
     const secOpts: { label: string; onClick: () => void }[] = [];
@@ -49,7 +71,28 @@ export const LeftPanelTitleNavigation: FC<LeftPanelTitleNavigationProps> = ({
         continue;
       }
       if (inCategory && entry.level === 1) {
-        secOpts.push({ label: entry.name, onClick: entry.onClick });
+        const firstRow = rows.find((r) => r.section === entry.name);
+        secOpts.push({
+          label: entry.name,
+          onClick: () => {
+            entry.onClick();
+            if (onOpenRow && firstRow) onOpenRow(firstRow.index);
+          },
+        });
+      }
+    }
+
+    // Row options: rows within the active section
+    const rowOpts: { label: string; onClick: () => void }[] = [];
+    if (section && onOpenRow) {
+      for (const row of rows) {
+        if (row.section === section) {
+          const idx = row.index;
+          rowOpts.push({
+            label: row.registry?.display_name || row.name,
+            onClick: () => onOpenRow(idx),
+          });
+        }
       }
     }
 
@@ -58,8 +101,9 @@ export const LeftPanelTitleNavigation: FC<LeftPanelTitleNavigationProps> = ({
       activeSectionName: section,
       categoryOptions: catOpts,
       sectionOptions: secOpts,
+      rowOptions: rowOpts,
     };
-  }, [entries, activeSection]);
+  }, [entries, rows, activeSection, onOpenRow]);
 
   return (
     <div className={styles.container}>
@@ -81,7 +125,7 @@ export const LeftPanelTitleNavigation: FC<LeftPanelTitleNavigationProps> = ({
         <Crumb
           label={activeSectionName}
           activeLabel=""
-          options={[]}
+          options={rowOptions}
           level="section"
         />
       )}
@@ -120,7 +164,6 @@ const Crumb: FC<CrumbProps> = ({ label, activeLabel, options, level }) => {
   }, []);
 
   const handleSelect = useCallback((opt: CrumbOption) => {
-    setOpen(false);
     opt.onClick();
   }, []);
 
