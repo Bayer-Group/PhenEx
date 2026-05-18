@@ -81,10 +81,23 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         </button>
         <button
           className={styles.clearBtn}
+          onClick={() => {
+            for (const group of groups) {
+              for (const sub of group.subcohorts) {
+                if (!activeSet.has(sub.fullName)) onAdd(sub.fullName);
+              }
+            }
+          }}
+          disabled={groups.every((g) => g.subcohorts.every((s) => activeSet.has(s.fullName)))}
+        >
+          All
+        </button>
+        <button
+          className={styles.clearBtn}
           onClick={() => { for (let i = selections.length - 1; i >= 0; i--) onRemove(i); }}
           disabled={selections.length === 0}
         >
-          Clear all
+          Clear
         </button>
       </div>
 

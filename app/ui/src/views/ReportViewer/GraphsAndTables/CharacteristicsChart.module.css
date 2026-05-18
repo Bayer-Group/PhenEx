@@ -23,11 +23,11 @@
 
 
 .nameCell {
-  width: clamp(200px, calc(700px / var(--pz-scale, 1)), 500px);
+  width: clamp(700px, calc(900px / var(--pz-scale, 1)), 900px);
+  font-size: clamp(50px, calc(18px / var(--pz-scale, 1)), 500px);
 
   flex-shrink: 0;
   font-family: 'IBMPlexSans-bold', sans-serif;
-  font-size: clamp(16px, calc(14px / var(--pz-scale, 1)), 40px);
   color: #333;
   line-height: 1.25;
   word-break: break-word;
