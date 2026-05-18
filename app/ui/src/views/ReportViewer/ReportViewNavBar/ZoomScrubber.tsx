@@ -14,7 +14,9 @@ export const ZoomScrubber: FC<ZoomScrubberProps> = ({ percentage, onChange }) =>
     const update = (ev: MouseEvent) => {
       if (!trackRef.current) return;
       const rect = trackRef.current.getBoundingClientRect();
-      const pct = Math.max(0, Math.min(100, ((ev.clientX - rect.left) / rect.width) * 100));
+      const pad = 10; // matches CSS horizontal padding
+      const usable = rect.width - pad * 2;
+      const pct = Math.max(0, Math.min(100, ((ev.clientX - rect.left - pad) / usable) * 100));
       onChange(pct);
     };
     update(e.nativeEvent);
@@ -27,9 +29,15 @@ export const ZoomScrubber: FC<ZoomScrubberProps> = ({ percentage, onChange }) =>
     document.addEventListener('mouseup', onUp);
   };
 
+  // Compute thumb left so it stays within the padded content area
+  const pad = 10;
+  const trackWidth = 80; // matches CSS width
+  const usable = trackWidth - pad * 2;
+  const thumbLeft = pad + (percentage / 100) * usable;
+
   return (
     <div ref={trackRef} className={styles.scrubber} onMouseDown={handleMouseDown}>
-      <div className={styles.thumb} style={{ left: `${percentage}%` }} />
+      <div className={styles.thumb} style={{ left: `${thumbLeft}px` }} />
     </div>
   );
 };

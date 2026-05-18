@@ -1,5 +1,5 @@
 .scrubber {
-  position: absolute;
+  position: relative;
   width: 80px;
   height: 24px;
   background: rgba(255, 255, 255, 0.9);
@@ -7,9 +7,7 @@
   border-radius: 10px;
   cursor: default;
   box-sizing: border-box;
-  padding: 4px 20px 4px 20px;
-  margin-top:-40px;
-  right: 10px;
+  padding: 4px 10px;
 }
 
 .thumb {
