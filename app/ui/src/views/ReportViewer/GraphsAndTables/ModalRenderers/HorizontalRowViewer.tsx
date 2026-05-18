@@ -329,7 +329,6 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
         ref={ref}
         className={styles.cell}
         style={{ '--desired-top': desiredTop } as React.CSSProperties}
-        onClick={isFocused ? undefined : () => onNavigate(row.index)}
       >
         <div className={styles.cellInner}>
           {/* Left: card */}
@@ -338,7 +337,7 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
             <div ref={verticalScrollRef} className={`${styles.verticalWrapper} ${shouldShowComments ? styles.verticalWrapperCommentsOpen : ''}`}>
               <div
                 className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(row.index); }}
               >
                 <div className={styles.cardTitle}>
                   {row.registry?.display_name || row.name}
