@@ -168,23 +168,14 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     requestAnimationFrame(() => centerOnCard(currentIndex, 'instant'));
   }, [isLeftPanelShown, centerOnCard, currentIndex]);
 
-  // Block horizontal wheel scrolling in the viewer while still allowing
-  // vertical wheel scrolling inside the card and comments columns.
+  // Block horizontal wheel scrolling of the scroller — vertical scroll
+  // is handled natively by the overflow-y:auto verticalWrapper elements.
   useEffect(() => {
     const scroller = scrollRef.current;
     if (!scroller) return;
     const onWheel = (e: WheelEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target?.closest(`.${styles.commentsScroll}`)) return;
-      const verticalWrapper = target?.closest(`.${styles.verticalWrapper}`) as HTMLElement | null;
-      if (verticalWrapper) {
-        if (e.deltaY !== 0) {
-          verticalWrapper.scrollTop += e.deltaY;
-        }
-        e.preventDefault();
-        return;
-      }
-      e.preventDefault();
+      // Only block if the wheel would scroll the scroller horizontally
+      if (e.deltaX !== 0) e.preventDefault();
     };
     scroller.addEventListener('wheel', onWheel, { passive: false });
     return () => scroller.removeEventListener('wheel', onWheel);

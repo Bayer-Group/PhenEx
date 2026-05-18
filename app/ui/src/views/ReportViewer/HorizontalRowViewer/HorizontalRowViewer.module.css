@@ -27,7 +27,6 @@
   scrollbar-width: none;
   position: relative;
   z-index: 2;
-  pointer-events: none;
 }
 
 .scroller::-webkit-scrollbar {
@@ -41,6 +40,7 @@
   flex-direction: column;
   width: fit-content;
   min-width: 100%;
+  overflow: hidden;
   transition: opacity 0.2s;
 }
 
@@ -50,7 +50,7 @@
   flex: 1;
   min-width: 0;
   height: 100%;
-  overflow: visible;
+  overflow: hidden;
 }
  
 .verticalWrapper {
@@ -75,7 +75,6 @@
 /* Breadcrumbs sit above the card */
 .breadcrumbs {
   margin-bottom: 6px;
-  pointer-events: all;
 }
 
 .crumb {
@@ -100,7 +99,6 @@
   transition: opacity 0.2s, border-color 0.2s;
   opacity: 1;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-  pointer-events: auto;
 }
 
 /* .cardNeighbour {
@@ -120,6 +118,7 @@
   align-items: stretch;
   gap: 0;
   position: relative;
+  overflow: hidden;
 }
 
 
@@ -263,7 +262,7 @@
   flex: 1;
   min-width: 0;
   height: 100%;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .verticalWrapperCompact {
