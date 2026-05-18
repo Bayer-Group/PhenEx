@@ -1,7 +1,8 @@
-import { FC, useState, useRef, useCallback, useMemo } from 'react';
+import { FC, useState, useCallback, useMemo } from 'react';
 import { getCohortColor, type CohortGroup, type LegendSelection } from '../types';
 import { useBarHoverStore } from '../GraphsAndTables/RowRenderers/useBarHoverStore';
-import { CohortMenu } from './CohortMenu';
+import EyeSolidIcon from '../../../assets/icons/eye-solid.svg';
+import EyeClosedIcon from '../../../assets/icons/eye-closed.svg';
 import styles from './CohortSelector.module.css';
 
 interface CohortSelectorProps {
@@ -20,33 +21,35 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   onRemove,
 }) => {
   const { activeIndex, onClick: toggleCohort } = useBarHoverStore();
-  const [menuState, setMenuState] = useState<{
-    rect: DOMRect;
-  } | null>(null);
+  const [showAll, setShowAll] = useState(true);
 
-  const handlePlusClick = useCallback((el: HTMLElement) => {
-    setMenuState({ rect: el.getBoundingClientRect() });
-  }, []);
+  const activeSet = useMemo(() => new Set(selections.map((s) => s.cohortName)), [selections]);
 
-  const handleMenuSelect = useCallback(
-    (fullName: string) => {
+  const activeColorMap = useMemo(
+    () => new Map(selections.map((s) => [s.cohortName, getCohortColor(s.groupIndex, s.subIndex, s.totalSubs)])),
+    [selections],
+  );
+
+  // Map fullName → selection index for quick lookup
+  const selectionIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (let i = 0; i < selections.length; i++) {
+      map.set(selections[i].cohortName, i);
+    }
+    return map;
+  }, [selections]);
+
+  const handleToggle = useCallback((fullName: string) => {
+    if (activeSet.has(fullName)) {
+      const idx = selectionIndexMap.get(fullName);
+      if (idx != null) onRemove(idx);
+    } else {
       onAdd(fullName);
-    },
-    [onAdd],
-  );
+    }
+  }, [activeSet, selectionIndexMap, onAdd, onRemove]);
 
-  const handleMenuDeselect = useCallback(
-    (fullName: string) => {
-      const index = selections.findIndex((s) => s.cohortName === fullName);
-      if (index >= 0) onRemove(index);
-    },
-    [selections, onRemove],
-  );
-
-  const handleClose = useCallback(() => setMenuState(null), []);
-
-  // Group selections by parent cohort, preserving original indices
-  const grouped = useMemo(() => {
+  // Group selections by parent for "hide" mode
+  const groupedSelections = useMemo(() => {
     const map = new Map<string, { parent: string; items: { sel: LegendSelection; originalIndex: number }[] }>();
     const order: string[] = [];
     for (let i = 0; i < selections.length; i++) {
@@ -63,68 +66,110 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
   return (
     <div className={styles.legendBar}>
-        <div className={styles.actionBar}>
-          <PlusButton onClick={handlePlusClick} />
-          <button
-            className={styles.clearBtn}
-            onClick={() => { for (let i = selections.length - 1; i >= 0; i--) onRemove(i); }}
-            disabled={selections.length === 0}
-          >
-            Clear all
-          </button>
-        </div>
+      <div className={styles.actionBar}>
+        <span className={styles.actionTitle}>Cohorts</span>
+        <button
+          className={styles.eyeToggle}
+          onClick={() => setShowAll((v) => !v)}
+          title={showAll ? 'Show selected only' : 'Show all cohorts'}
+        >
+          <img
+            src={showAll ? EyeSolidIcon : EyeClosedIcon}
+            alt={showAll ? 'Showing all' : 'Selected only'}
+            className={styles.eyeIcon}
+          />
+        </button>
+        <button
+          className={styles.clearBtn}
+          onClick={() => { for (let i = selections.length - 1; i >= 0; i--) onRemove(i); }}
+          disabled={selections.length === 0}
+        >
+          Clear all
+        </button>
+      </div>
 
-      {grouped.map((group) => (
-        <div key={group.parent} className={styles.legendGroup}>
-          <div className={styles.legendGroupTitle}>{group.parent}</div>
-          {group.items.map(({ sel, originalIndex }) => (
-            <LegendItem
-              key={`${sel.cohortName}-${sel.colorIndex}`}
-              selection={sel}
-              dimmed={activeIndex !== null && activeIndex !== originalIndex}
-              onClick={() => toggleCohort(originalIndex)}
-              onRemove={() => onRemove(originalIndex)}
-            />
-          ))}
-        </div>
-      ))}
-      <div style={{ height: 20 }} />
-
-      {menuState && (
-        <CohortMenu
-          anchorRect={menuState.rect}
-          groups={groups}
-          activeSelections={selections}
-          onSelect={handleMenuSelect}
-          onDeselect={handleMenuDeselect}
-          onClose={handleClose}
-          closeOnSelect={false}
-        />
+      {showAll ? (
+        /* ── Show All mode: all cohorts from groups ─────────────────────── */
+        groups.map((group) => (
+          <div key={group.parent} className={styles.legendGroup}>
+            <div className={styles.legendGroupTitle}>{group.parent}</div>
+            {group.subcohorts.map((sub) => {
+              const isActive = activeSet.has(sub.fullName);
+              const color = activeColorMap.get(sub.fullName);
+              const selIdx = selectionIndexMap.get(sub.fullName);
+              return (
+                <div
+                  key={sub.fullName}
+                  className={styles.legendItem}
+                  style={{
+                    opacity: isActive && activeIndex !== null && selIdx !== activeIndex ? 0.25 : 1,
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    if (isActive && selIdx != null) toggleCohort(selIdx);
+                    else handleToggle(sub.fullName);
+                  }}
+                >
+                  <div
+                    className={styles.legendDot}
+                    style={{ background: isActive && color ? color : 'transparent', border: isActive ? 'none' : '2px dashed #ccc' }}
+                  />
+                  <span className={`${styles.legendItemLabel} ${!isActive ? styles.legendItemLabelInactive : ''}`}>
+                    {sub.label}
+                  </span>
+                  {isActive && (
+                    <button
+                      className={styles.removeBtn}
+                      onClick={(e) => { e.stopPropagation(); handleToggle(sub.fullName); }}
+                      aria-label="Remove cohort"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))
+      ) : (
+        /* ── Hide mode: only selected cohorts ──────────────────────────── */
+        groupedSelections.map((group) => (
+          <div key={group.parent} className={styles.legendGroup}>
+            <div className={styles.legendGroupTitle}>{group.parent}</div>
+            {group.items.map(({ sel, originalIndex }) => (
+              <SelectedItem
+                key={`${sel.cohortName}-${sel.colorIndex}`}
+                selection={sel}
+                dimmed={activeIndex !== null && activeIndex !== originalIndex}
+                onClick={() => toggleCohort(originalIndex)}
+                onRemove={() => onRemove(originalIndex)}
+              />
+            ))}
+          </div>
+        ))
       )}
     </div>
   );
 };
 
-/* ── LegendItem ──────────────────────────────────────────────────────── */
+/* ── SelectedItem (used in hide mode) ────────────────────────────────── */
 
-interface LegendItemProps {
+interface SelectedItemProps {
   selection: LegendSelection;
   dimmed: boolean;
   onClick: () => void;
   onRemove: () => void;
 }
 
-const LegendItem: FC<LegendItemProps> = ({ selection, dimmed, onClick, onRemove }) => {
+const SelectedItem: FC<SelectedItemProps> = ({ selection, dimmed, onClick, onRemove }) => {
   const color = getCohortColor(selection.groupIndex, selection.subIndex, selection.totalSubs);
-
-  // Parse labels — only show the subcohort part
   const idx = selection.cohortName.indexOf('__');
   const label = idx === -1 ? 'main' : selection.cohortName.substring(idx + 2);
 
   return (
     <div
       className={styles.legendItem}
-      style={{ opacity: dimmed ? 0.25 : 1, transition: 'opacity 0.15s ease', cursor: 'pointer' }}
+      style={{ opacity: dimmed ? 0.25 : 1, cursor: 'pointer' }}
       onClick={onClick}
     >
       <div className={styles.legendDot} style={{ background: color }} />
@@ -137,29 +182,5 @@ const LegendItem: FC<LegendItemProps> = ({ selection, dimmed, onClick, onRemove 
         ×
       </button>
     </div>
-  );
-};
-
-/* ── Plus Button ─────────────────────────────────────────────────────── */
-
-interface PlusButtonProps {
-  onClick: (el: HTMLElement) => void;
-}
-
-const PlusButton: FC<PlusButtonProps> = ({ onClick }) => {
-  const ref = useRef<HTMLButtonElement>(null);
-
-  return (
-    <button
-      ref={ref}
-      className={styles.plusBtn}
-      onClick={() => ref.current && onClick(ref.current)}
-      aria-label="Add a cohort"
-    >
-      <span>Visible Cohorts</span>
-      <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-        <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    </button>
   );
 };

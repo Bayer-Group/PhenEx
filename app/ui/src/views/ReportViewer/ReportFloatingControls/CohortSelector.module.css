@@ -91,26 +91,40 @@
   gap: 8px;
 }
 
-/* ── Plus button (title bar) ─────────────────────────────────────────── */
-.plusBtn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: none;
-  background: #1a1a1a;
-  color: #fff;
+.actionTitle {
   font-size: 13px;
   font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-  white-space: nowrap;
+  color: #333;
 }
 
-.plusBtn:hover {
-  background: #333;
+/* ── Eye toggle button ───────────────────────────────────────────────── */
+.eyeToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  padding: 0;
+}
+
+.eyeToggle:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.eyeIcon {
+  width: 16px;
+  height: 16px;
+  filter: brightness(0) saturate(100%) invert(40%);
+}
+
+/* ── Inactive label (show-all mode, unselected) ──────────────────────── */
+.legendItemLabelInactive {
+  color: #aaa;
 }
 
 /* ── Clear all button ────────────────────────────────────────────────── */
