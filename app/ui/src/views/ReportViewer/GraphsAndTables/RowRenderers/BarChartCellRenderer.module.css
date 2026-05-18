@@ -2,9 +2,9 @@
   --HEIGHT_TABLE1_ROW_BOOLEAN_TOP: 30px;
   --BOOLEAN_PRESENTATION_LABEL_COL: 200px;
   --BOOLEAN_PRESENTATION_PCT_COL: 60px;
-  --BOOLEAN_PRESENTATION_N_COL: 80px;
+  --BOOLEAN_PRESENTATION_N_COL: 120px;
   --BOOLEAN_PRESENTATION_GAP: 10px;
-  --BOOLEAN_PRESENTATION_ROW_HEIGHT: clamp(30px, calc(24px / var(--pz-scale, 1)), 44px);
+  --BOOLEAN_PRESENTATION_ROW_HEIGHT: 20px;
 }
 
 .container {
@@ -18,6 +18,7 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  padding-right: 20px;
 }
 
 /* ── Grid lines overlay (absolute, spanning bar column) ───────────────── */
@@ -217,7 +218,7 @@
   align-items: center;
   justify-self: start;
   max-width: fit-content;
-  padding: 4px 10px;
+  padding: 0px 4px;
   border-radius: 4px;
   font-size: var(--font_size_items, 12px);
   font-weight: 700;
