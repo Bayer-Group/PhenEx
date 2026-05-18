@@ -362,10 +362,9 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
               marginToEnd={5}
               classNameThumb={styles.verticalScrollbarThumb}
             />
+            {/* Comments: positioned at card's right edge */}
+            <CommentsColumn comments={comments} isOpen={shouldShowComments} />
           </div>
-
-          {/* Right: comment cards */}
-          <CommentsColumn comments={comments} isOpen={shouldShowComments} />
         </div>
       </div>
     );
