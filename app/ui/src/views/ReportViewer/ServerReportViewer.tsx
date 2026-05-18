@@ -84,12 +84,9 @@ export const ServerReportViewer: FC = () => {
         }
         return { groupIndex: 0, subIndex: 0, totalSubs: 1 };
       };
-      const used = new Set<number>();
       return names.map((name) => {
-        let ci = 0;
-        while (used.has(ci)) ci++;
-        used.add(ci);
-        return { cohortName: name, colorIndex: ci, ...findInfo(name) };
+        const info = findInfo(name);
+        return { cohortName: name, colorIndex: info.groupIndex, ...info };
       });
     },
     [],

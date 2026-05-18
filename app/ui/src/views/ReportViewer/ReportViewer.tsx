@@ -103,12 +103,9 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         }
         return { groupIndex: 0, subIndex: 0, totalSubs: 1 };
       };
-      const used = new Set<number>();
       return names.map((name) => {
-        let ci = 0;
-        while (used.has(ci)) ci++;
-        used.add(ci);
-        return { cohortName: name, colorIndex: ci, ...findInfo(name) };
+        const info = findInfo(name);
+        return { cohortName: name, colorIndex: info.groupIndex, ...info };
       });
     },
     [],
@@ -131,15 +128,22 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     }
   }, [initialSelections]);
 
+  const sortSelections = useCallback(
+    (arr: LegendSelection[]) =>
+      [...arr].sort((a, b) => a.groupIndex - b.groupIndex || a.subIndex - b.subIndex),
+    [],
+  );
+
   const updateSelections = useCallback(
     (updater: LegendSelection[] | ((prev: LegendSelection[]) => LegendSelection[])) => {
       setSelections((prev) => {
-        const next = typeof updater === 'function' ? updater(prev) : updater;
+        const raw = typeof updater === 'function' ? updater(prev) : updater;
+        const next = sortSelections(raw);
         onSelectionsChange?.(next);
         return next;
       });
     },
-    [onSelectionsChange],
+    [onSelectionsChange, sortSelections],
   );
 
   // ── Derived data ──────────────────────────────────────────────────────
@@ -293,30 +297,15 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     [findGroupInfo, updateSelections],
   );
 
-  const nextColorIndex = useCallback(() => {
-    const used = new Set(selections.map((s) => s.colorIndex));
-    for (let i = 0; i < 10; i++) {
-      if (!used.has(i)) return i;
-    }
-    return selections.length;
-  }, [selections]);
-
   const handleAdd = useCallback(
     (fullName: string) => {
       const info = findGroupInfo(fullName);
-      updateSelections((prev) => {
-        const newSel = { cohortName: fullName, colorIndex: nextColorIndex(), ...info };
-        // Insert next to siblings from the same parent group
-        const lastSiblingIdx = prev.findLastIndex((s) => s.groupIndex === info.groupIndex);
-        if (lastSiblingIdx >= 0) {
-          const next = [...prev];
-          next.splice(lastSiblingIdx + 1, 0, newSel);
-          return next;
-        }
-        return [...prev, newSel];
-      });
+      updateSelections((prev) => [
+        ...prev,
+        { cohortName: fullName, colorIndex: info.groupIndex, ...info },
+      ]);
     },
-    [nextColorIndex, findGroupInfo, updateSelections],
+    [findGroupInfo, updateSelections],
   );
 
   // ── Pan & zoom ────────────────────────────────────────────────────────
