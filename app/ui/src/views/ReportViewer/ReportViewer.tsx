@@ -9,7 +9,7 @@ import { Table2Chart, TimeToEventChart, type Table2Cohort, type TimeToEventCohor
 import { HorizontalRowViewer } from './GraphsAndTables/ModalRenderers/HorizontalRowViewer';
 import { AttritionChart } from './GraphsAndTables/AttritionChart';
 import { ChartGroup } from './GraphsAndTables/ChartGroup';
-import { ZoomScrubber } from './ReportViewNavBar/ZoomScrubber';
+import { ZoomScrubber } from './ReportFloatingControls/ZoomScrubber';
 import { OutlineBar, type OutlineEntry } from './OutlineBar';
 import { useVisibleSection } from './useVisibleSection';
 import { ThreePanelView } from '../MainView/ThreePanelView/ThreePanelView';
@@ -320,7 +320,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   );
 
   // ── Pan & zoom ────────────────────────────────────────────────────────
-  const INITIAL_X = 300;
+  const INITIAL_X = 0;
   const INITIAL_Y = 0;
   const INITIAL_SCALE = .5;
   const PAN_X_OFFSET = 20;
