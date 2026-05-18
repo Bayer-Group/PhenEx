@@ -8,24 +8,13 @@
 
 .row {
   display: flex;
-  /* width:100%; */
-  /* background-color: blue; */
-    /* border-bottom: calc(1px / var(--pz-scale, 1)) solid var(--line-color); */
   padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 20px);
   padding-right: min(calc(max(200px * var(--pz-scale, 1), 10px) + 40px), 200px);
-
-  /* padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 100px); */
 }
-
-.row:hover {
-  /* background: rgba(211, 213, 215, 0.04); */
-}
-
 
 .nameCell {
-  width: clamp(700px, calc(900px / var(--pz-scale, 1)), 900px);
+  width: clamp(350px, calc(450px / var(--pz-scale, 1)), 4000px);
   font-size: clamp(50px, calc(18px / var(--pz-scale, 1)), 500px);
-
   flex-shrink: 0;
   font-family: 'IBMPlexSans-bold', sans-serif;
   color: #333;
@@ -44,32 +33,22 @@
   justify-content: top;
   background-color: transparent;
 }
-/* 
-.numericNameCell{
-  width: clamp(100px, calc(700px / var(--pz-scale, 1)), 200px);
-  padding-left: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 30px);
-  padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 10px);
-  padding-top: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 10px);
-  padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 10px);
 
-} */
-
-.numericNameCell{
-  width: clamp(200px, calc(500px / var(--pz-scale, 1)), 350px);
+.numericNameCell {
+  width: clamp(100px, calc(250px / var(--pz-scale, 1)), 1500px);
   padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 10px);
   text-align: left;
   padding-left: min(calc(max(40px * var(--pz-scale, 1), 10px) + 20px), 40px);
-
 }
+
 .chartCell {
-  width: clamp(100px, calc(350px / var(--pz-scale, 1)), 600px);
+  width: clamp(50px, calc(175px / var(--pz-scale, 1)), 2000px);
   flex-shrink: 0;
   box-sizing: border-box;
 }
 
-.booleanChartCell{
-  width: clamp(200px, calc(400px / var(--pz-scale, 1)), 400px);
-
+.booleanChartCell {
+  width: clamp(100px, calc(200px / var(--pz-scale, 1)), 1500px);
 }
 /* ── Categorical group ───────────────────────────────────────────────── */
 
@@ -103,17 +82,11 @@
 .numericRow {
   display: flex;
   align-items: stretch;
-  /* border-bottom: 1px solid var(--line-color, #e0e0e0); */
   min-height: clamp(200px, calc(300px / var(--pz-scale, 1)), 130px);
-
-}
-
-.numericRow:hover {
-  /* background: rgba(211, 213, 215, 0.04); */
 }
 
 .kdeCell {
-  width: clamp(400px, calc(800px / var(--pz-scale, 1)), 800px);
+  width: clamp(200px, calc(400px / var(--pz-scale, 1)), 3000px);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -139,16 +112,13 @@
 .statsGrid {
   display: flex;
   flex-direction: column;
-  /* border: 1px solid var(--line-color, #e0e0e0); */
   width: fit-content;
   align-self: center;
-  margin: 0px 0;
 }
 
 .statsHeaderRow {
   display: flex;
   align-items: stretch;
-  /* border-bottom: 1px solid var(--line-color, #e0e0e0); */
 }
 
 .statsHeaderCell {
@@ -162,11 +132,6 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  /* border-right: 1px solid var(--line-color, #e0e0e0); */
-}
-
-.statsHeaderCell:last-child {
-  border-right: none;
 }
 
 .statsRow {
@@ -189,7 +154,6 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  /* border-right: 1px solid var(--line-color, #e0e0e0); */
 }
 
 .statDot {
@@ -210,11 +174,6 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  /* border-right: 1px solid var(--line-color, #e0e0e0); */
-}
-
-.statsValueCell:last-child {
-  border-right: none;
 }
 
 .statsPctCell {
