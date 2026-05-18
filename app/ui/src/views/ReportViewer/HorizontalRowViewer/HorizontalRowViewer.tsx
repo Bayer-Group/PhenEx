@@ -252,7 +252,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
         </button>
 
         {/* Horizontal strip of cards — all cells in DOM, only nearby ones render content */}
-        <div className={styles.scroller} ref={scrollRef} style={{ gap: CELL_GAP }}>
+        <div className={styles.scroller} ref={scrollRef}>
           {rows.map((row) => {
             const isFocused = row.index === currentIndex;
             const nearby = Math.abs(row.index - currentIndex) <= PRERENDER_NEIGHBOURS;
