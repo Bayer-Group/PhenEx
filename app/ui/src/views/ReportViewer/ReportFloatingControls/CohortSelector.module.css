@@ -91,26 +91,26 @@
   gap: 8px;
 }
 
-/* ── Plus button ─────────────────────────────────────────────────────── */
+/* ── Plus button (title bar) ─────────────────────────────────────────── */
 .plusBtn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 2px dashed var(--line-color, #ddd);
-  background: transparent;
-  color: #999;
-  font-size: 12px;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition: background 0.15s;
   white-space: nowrap;
 }
 
 .plusBtn:hover {
-  border-color: #888;
-  color: #555;
+  background: #333;
 }
 
 /* ── Clear all button ────────────────────────────────────────────────── */

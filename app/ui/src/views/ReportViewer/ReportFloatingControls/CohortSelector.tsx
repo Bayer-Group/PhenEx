@@ -155,12 +155,11 @@ const PlusButton: FC<PlusButtonProps> = ({ onClick }) => {
       className={styles.plusBtn}
       onClick={() => ref.current && onClick(ref.current)}
       aria-label="Add a cohort"
-      style={{ height: 30}}
     >
+      <span>Visible Cohorts</span>
       <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
         <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
-      <span>Add a cohort</span>
     </button>
   );
 };
