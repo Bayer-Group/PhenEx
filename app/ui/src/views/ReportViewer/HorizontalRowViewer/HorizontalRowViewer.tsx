@@ -154,12 +154,19 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   // Clean up on unmount
   useEffect(() => () => clearTimeout(holdTimer.current), []);
 
-  // Re-center on the current card when the window is resized
+  // Re-center when the scroller (center panel) resizes or window resizes
   useEffect(() => {
-    const onResize = () => centerOnCard(currentIndex, 'instant');
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    const ro = new ResizeObserver(() => centerOnCard(currentIndex, 'instant'));
+    ro.observe(scroller);
+    return () => ro.disconnect();
   }, [currentIndex, centerOnCard]);
+
+  // Re-center when switching between Focus/Compact (left panel toggle)
+  useEffect(() => {
+    requestAnimationFrame(() => centerOnCard(currentIndex, 'instant'));
+  }, [isLeftPanelShown, centerOnCard, currentIndex]);
 
   // Block horizontal wheel scrolling in the viewer while still allowing
   // vertical wheel scrolling inside the card and comments columns.
