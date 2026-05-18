@@ -19,6 +19,7 @@
   flex-direction: column;
   gap: 18px;
   padding-right: 20px;
+  height: auto;
 }
 
 /* ── Grid lines overlay (absolute, spanning bar column) ───────────────── */

@@ -54,7 +54,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 }) => {
   const { isLeftPanelShown } = useThreePanelCollapse();
   const [closing, setClosing] = useState(false);
-  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(true);
   const toggleComments = useCallback(() => setCommentsOpen((o) => !o), []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef<HTMLDivElement>(null);

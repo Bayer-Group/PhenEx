@@ -1,4 +1,4 @@
-import { FC, useState, useMemo, useCallback } from 'react';
+import { FC, useState, useMemo, useCallback, useEffect } from 'react';
 import { type CohortClassified } from '../../types';
 import styles from './ModalLegend.module.css';
 
@@ -30,6 +30,18 @@ export const ModalLegend: FC<ModalLegendProps> = ({ cohortData, visible, onToggl
 /** Hook that pairs with ModalLegend for cohort visibility toggling. */
 export function useCohortVisibility(count: number) {
   const [visible, setVisible] = useState<Set<number>>(() => new Set(Array.from({ length: count }, (_, i) => i)));
+
+  // When count grows, add new indices so newly added cohorts are visible
+  useEffect(() => {
+    setVisible((prev) => {
+      if (count <= prev.size && [...prev].every((i) => i < count)) return prev;
+      const next = new Set(prev);
+      for (let i = 0; i < count; i++) {
+        if (!next.has(i)) next.add(i);
+      }
+      return next;
+    });
+  }, [count]);
 
   const toggle = useCallback((i: number) => {
     setVisible((prev) => {
