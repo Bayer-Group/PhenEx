@@ -438,6 +438,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
             entries={outlineEntries}
             rows={sequentialRows}
             activeSection={activeSection}
+            activeRowIndex={viewerIndex}
             onOpenRow={setViewerIndex}
             onReplace={handleReplace}
             onAdd={handleAdd}

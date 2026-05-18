@@ -14,6 +14,7 @@ interface LeftPanelProps {
   entries: OutlineEntry[];
   rows: SequentialRow[];
   activeSection?: string | null;
+  activeRowIndex?: number | null;
   onOpenRow?: (index: number) => void;
   onReplace: (index: number, fullName: string) => void;
   onAdd: (fullName: string) => void;
@@ -27,6 +28,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
   entries,
   rows,
   activeSection,
+  activeRowIndex,
   onOpenRow,
   onReplace,
   onAdd,
@@ -41,6 +43,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
         entries={entries}
         rows={rows}
         activeSection={activeSection}
+        activeRowIndex={activeRowIndex}
         onOpenRow={onOpenRow}
       />
       <div className={styles.scrollRegion}>

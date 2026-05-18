@@ -1,7 +1,7 @@
 /* ── Floating title container ─────────────────────────────────────────── */
 .container {
   position: absolute;
-  left: 20px;
+  left: 80px;
   top:10px;
   width: fit-content;
   height:fit-content;

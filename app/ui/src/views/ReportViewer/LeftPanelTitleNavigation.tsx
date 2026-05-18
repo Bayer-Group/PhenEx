@@ -10,6 +10,7 @@ interface LeftPanelTitleNavigationProps {
   entries: OutlineEntry[];
   rows: SequentialRow[];
   activeSection?: string | null;
+  activeRowIndex?: number | null;
   onOpenRow?: (index: number) => void;
 }
 
@@ -18,10 +19,11 @@ export const LeftPanelTitleNavigation: FC<LeftPanelTitleNavigationProps> = ({
   entries,
   rows,
   activeSection,
+  activeRowIndex,
   onOpenRow,
 }) => {
   // Derive current category and section from activeSection + entries
-  const { activeCategory, activeSectionName, categoryOptions, sectionOptions, rowOptions } = useMemo(() => {
+  const { activeCategory, activeSectionName, categoryOptions, sectionOptions, rowOptions, activeRowLabel } = useMemo(() => {
     // Find which category (level 0) the activeSection belongs to
     let category: string | null = null;
     let section: string | null = null;
@@ -96,14 +98,19 @@ export const LeftPanelTitleNavigation: FC<LeftPanelTitleNavigationProps> = ({
       }
     }
 
+    // Active row label from activeRowIndex
+    const activeRow = activeRowIndex != null ? rows.find((r) => r.index === activeRowIndex) : undefined;
+    const activeRowName = activeRow ? (activeRow.registry?.display_name || activeRow.name) : '';
+
     return {
       activeCategory: category,
       activeSectionName: section,
       categoryOptions: catOpts,
       sectionOptions: secOpts,
       rowOptions: rowOpts,
+      activeRowLabel: activeRowName,
     };
-  }, [entries, rows, activeSection, onOpenRow]);
+  }, [entries, rows, activeSection, activeRowIndex, onOpenRow]);
 
   return (
     <div className={styles.container}>
@@ -124,7 +131,7 @@ export const LeftPanelTitleNavigation: FC<LeftPanelTitleNavigationProps> = ({
       {activeSectionName && (
         <Crumb
           label={activeSectionName}
-          activeLabel=""
+          activeLabel={activeRowLabel}
           options={rowOptions}
           level="section"
         />
@@ -134,6 +141,9 @@ export const LeftPanelTitleNavigation: FC<LeftPanelTitleNavigationProps> = ({
 };
 
 /* ── Crumb with popover menu ─────────────────────────────────────────── */
+
+const MENU_OPEN_DELAY_MS = 800;
+const MENU_CLOSE_DELAY_MS = 120;
 
 interface CrumbOption {
   label: string;
@@ -151,13 +161,24 @@ const Crumb: FC<CrumbProps> = ({ label, activeLabel, options, level }) => {
   const ref = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  const openTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+  const scheduleOpen = useCallback(() => {
+    clearTimeout(closeTimer.current);
+    openTimer.current = setTimeout(() => setOpen(true), MENU_OPEN_DELAY_MS);
+  }, []);
+
+  const cancelOpen = useCallback(() => {
+    clearTimeout(openTimer.current);
+  }, []);
+
   const scheduleClose = useCallback(() => {
+    cancelOpen();
     closeTimer.current = setTimeout(() => {
       if (!menuRef.current?.matches(':hover')) setOpen(false);
-    }, 120);
-  }, []);
+    }, MENU_CLOSE_DELAY_MS);
+  }, [cancelOpen]);
 
   const cancelClose = useCallback(() => {
     clearTimeout(closeTimer.current);
@@ -174,9 +195,9 @@ const Crumb: FC<CrumbProps> = ({ label, activeLabel, options, level }) => {
       <button
         ref={ref}
         className={`${styles.crumb} ${styles[`crumb_${level}`]} ${open ? styles.crumbActive : ''}`}
-        onMouseEnter={() => { cancelClose(); if (hasMenu) setOpen(true); }}
+        onMouseEnter={() => { cancelClose(); if (hasMenu) { if (open) { /* already open, keep it */ } else { scheduleOpen(); } } }}
         onMouseLeave={scheduleClose}
-        onClick={() => { if (hasMenu) setOpen((o) => !o); }}
+        onClick={() => { if (hasMenu) { cancelOpen(); setOpen((o) => !o); } }}
       >
         {label}
       </button>
