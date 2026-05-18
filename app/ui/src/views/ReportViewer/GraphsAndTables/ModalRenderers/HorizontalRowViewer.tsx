@@ -61,6 +61,8 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   onScrollToRow,
 }) => {
   const [closing, setClosing] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const toggleComments = useCallback(() => setCommentsOpen((o) => !o), []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
@@ -263,6 +265,8 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 tteCohorts={tteCohorts}
                 table2Cohorts={table2Cohorts}
                 onNavigate={navigate}
+                commentsOpen={commentsOpen}
+                onToggleComments={toggleComments}
               />
             );
           })}
@@ -285,10 +289,12 @@ interface HorizontalCellProps {
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
+  commentsOpen: boolean;
+  onToggleComments: () => void;
 }
 
 const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, commentsOpen, onToggleComments }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const availableTteOutcomes = useMemo(
@@ -309,6 +315,8 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
     const comments = useMemo(() => {
       return row.registry?.comments?.filter((c) => c.text) ?? [];
     }, [row.registry]);
+    const hasComments = comments.length > 0;
+    const shouldShowComments = commentsOpen && hasComments;
 
     return (
       <div
@@ -320,7 +328,15 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
         <div className={styles.cellInner}>
           {/* Left: card */}
           <div className={styles.cardColumn}>
-            <div ref={verticalScrollRef} className={styles.verticalWrapper}>
+            {hasComments && (
+              <button
+                className={`${styles.commentsToggle} ${shouldShowComments ? styles.commentsToggleOpen : ''}`}
+                onClick={(e) => { e.stopPropagation(); onToggleComments(); }}
+              >
+                {commentsOpen ? 'Hide Comments' : 'Show Comments'}
+              </button>
+            )}
+            <div ref={verticalScrollRef} className={`${styles.verticalWrapper} ${shouldShowComments ? styles.verticalWrapperCommentsOpen : ''}`}>
               <div
                 className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
                 onClick={(e) => e.stopPropagation()}
@@ -343,7 +359,7 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
           </div>
 
           {/* Right: comment cards */}
-            <CommentsColumn comments={comments} />
+          <CommentsColumn comments={comments} isOpen={shouldShowComments} />
         </div>
       </div>
     );
@@ -352,11 +368,11 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
 
 /* ── CommentsColumn ──────────────────────────────────────────────────── */
 
-const CommentsColumn: FC<{ comments: RegistryComment[] }> = ({ comments }) => {
+const CommentsColumn: FC<{ comments: RegistryComment[]; isOpen: boolean }> = ({ comments, isOpen }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className={styles.commentsColumn}>
+    <div className={`${styles.commentsColumn} ${isOpen ? styles.commentsColumnOpen : ''}`}>
       <div ref={scrollRef} className={styles.commentsScroll}>
         {comments.map((comment, i) => (
           <CommentCard key={i} comment={comment} />
