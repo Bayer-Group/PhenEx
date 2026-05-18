@@ -45,7 +45,7 @@ export const HorizontalCellCompact = forwardRef<HTMLDivElement, HorizontalCellPr
                 </div>
                 <CardInfoSection row={row} isOpen={commentsOpen} />
                 <div className={styles.cardContent}>
-                  {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo={false} /> : null}
+                  {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo /> : null}
                 </div>
               </div>
             </div>
