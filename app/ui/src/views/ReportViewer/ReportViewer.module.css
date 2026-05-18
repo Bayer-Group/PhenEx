@@ -6,6 +6,7 @@
   font-family: Arial, Helvetica, sans-serif;
   background-color:white; /* BACKGROUND COLOR */
   user-select: none;
+  background-color: var(--background-color);
 }
 
 .leftPanel {

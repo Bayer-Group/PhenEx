@@ -67,7 +67,7 @@
 }
 
 .collapseButton {
-  z-index: 999999999;
+  z-index: 10002;
   position: fixed;
   pointer-events: all;
   margin-left: 0px;
