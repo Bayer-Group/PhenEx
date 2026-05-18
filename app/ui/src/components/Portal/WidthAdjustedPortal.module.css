@@ -2,7 +2,7 @@
 
 .portalContainer {
   position: absolute;
-  z-index: 500; /* Just above the left panel (which has z-index: 10000) */
+  z-index: 10001; /* Above the left panel (which has z-index: 10000 as a flex item) */
   pointer-events: none; /* Allow clicks to pass through to the left panel */
   overflow: hidden;
   
