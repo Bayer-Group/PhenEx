@@ -1,7 +1,7 @@
 .page {
   position: relative;
   height: 100vh;
-  width: 100%;
+  width: 100vw;
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
   background-color:white; /* BACKGROUND COLOR */
@@ -13,7 +13,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 30px 20px 20px 20px;
+  padding: 80px 20px 20px 20px;
   box-sizing: border-box;
 }
 

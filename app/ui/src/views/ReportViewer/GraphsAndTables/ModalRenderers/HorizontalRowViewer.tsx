@@ -307,7 +307,7 @@ interface HorizontalCellProps {
 }
 
 const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, commentsOpen }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, commentsOpen = true }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const availableTteOutcomes = useMemo(
