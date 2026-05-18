@@ -9,12 +9,11 @@ import { Table2Chart, TimeToEventChart, type Table2Cohort, type TimeToEventCohor
 import { HorizontalRowViewer } from './GraphsAndTables/ModalRenderers/HorizontalRowViewer';
 import { AttritionChart } from './GraphsAndTables/AttritionChart';
 import { ChartGroup } from './GraphsAndTables/ChartGroup';
-import { ReportNavPanel } from './ReportViewNavBar/ReportNavPanel';
-import { ReportNavPanelCard } from './ReportViewNavBar/ReportNavPanelCard';
 import { ZoomScrubber } from './ReportViewNavBar/ZoomScrubber';
 import { OutlineBar, type OutlineEntry } from './OutlineBar';
 import { useVisibleSection } from './useVisibleSection';
-import { Portal } from '../../components/Portal/Portal';
+import { ThreePanelView } from '../MainView/ThreePanelView/ThreePanelView';
+import { ThreePanelCollapseProvider } from '../../contexts/ThreePanelCollapseContext';
 import {
   classifyRows,
   parseCohortGroups,
@@ -423,141 +422,147 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
-      <OutlineBar entries={outlineEntries} activeSection={activeSection} />
-
-      <ReportNavPanel
-        hidden={viewerIndex != null}
-        top={
-          <>
-              <div className={styles.navTitleCard}>
-                <span className={styles.title}>{displayTitle}</span>
-                <span className={styles.subtitle}>
-                  {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
-                </span>
-              </div>
-            <ReportNavPanelCard title="Visible cohorts" background={true}>
-              <CohortSelector
-                groups={groups}
-                selections={selections}
-                onReplace={handleReplace}
-                onAdd={handleAdd}
-                onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
-              />
-            </ReportNavPanelCard>
-          </>
-        }
-        bottom={
-          <>
-          </>
-        }
-      />
-
-      {/* Zoom controls — top right */}
-      <div className={styles.zoomControls}>
-        {!pz.isAtHome && (
-          <button
-            onClick={pz.resetView}
-            title="Reset view"
-            className={styles.resetViewButton}
-          >
-            reset view
-          </button>
-        )}
-        <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
-      </div>
-
-      <div className={styles.content} ref={pz.viewportRef}>
-        <div className={styles.bottomGradient} />
-        <div className={styles.topGradient} />
-
-        <div className={styles.contentInner} ref={pz.contentRef}>
-         <PanZoomScaleProvider value={pz.scale}>
-          {loading && <div className={styles.loading}>Loading…</div>}
-
-          {!loading && !cohortData.length && (
-            <div className={styles.empty}>Select one or more cohorts to view data.</div>
-          )}
-
-          {cohortData.length > 0 && (
-            <>
-              <div ref={attritionRef}>
-                <ChartGroup title="Attrition">
-                  <AttritionChart cohortData={cohortData} waterfall={waterfallData} />
-                </ChartGroup>
-              </div>
-
-              <div ref={baselineGroupRef}>
-                <ChartGroup title="Baseline Characteristics">
-                <CharacteristicsChart
-                  cohortData={cohortData}
-                  reporterRows={table1Rows}
-                  sectionRefs={baselineSectionRefs.current}
-                  onOpen={setViewerIndex}
-                  finalCohortSizes={finalCohortSizes}
+      <ThreePanelCollapseProvider storageKey="phenex_report_left_shown">
+        <ThreePanelView
+          split="vertical"
+          initalSizeLeft={280}
+          initalSizeRight={300}
+          minSizeLeft={200}
+          minSizeRight={200}
+        >
+          {/* Left panel: navigation */}
+          <div className={styles.leftPanel}>
+                <div className={styles.navTitleCard}>
+                  <span className={styles.title}>{displayTitle}</span>
+                  <span className={styles.subtitle}>
+                    {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
+                  </span>
+                </div>
+                <CohortSelector
+                  groups={groups}
+                  selections={selections}
+                  onReplace={handleReplace}
+                  onAdd={handleAdd}
+                  onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
                 />
-              </ChartGroup>
-              </div>
+          </div>
 
-              {outcomesRows.length > 0 && (
-                <div ref={outcomesGroupRef}>
-                  <ChartGroup title="Outcomes">
-                    <CharacteristicsChart
-                      cohortData={outcomesCohortData}
-                      reporterRows={outcomesRows}
-                      sectionRefs={outcomesSectionRefs.current}
-                      onOpen={setViewerIndex}
+          {/* Center panel: charts */}
+          <div className={styles.centerPanel}>
+            <OutlineBar entries={outlineEntries} activeSection={activeSection} />
+
+            {/* Zoom controls — bottom right */}
+            <div className={styles.zoomControls}>
+              {!pz.isAtHome && (
+                <button
+                  onClick={pz.resetView}
+                  title="Reset view"
+                  className={styles.resetViewButton}
+                >
+                  reset view
+                </button>
+              )}
+              <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
+            </div>
+
+            <div className={styles.content} ref={pz.viewportRef}>
+              <div className={styles.bottomGradient} />
+              <div className={styles.topGradient} />
+
+              <div className={styles.contentInner} ref={pz.contentRef}>
+                <PanZoomScaleProvider value={pz.scale}>
+                  {loading && <div className={styles.loading}>Loading…</div>}
+
+                  {!loading && !cohortData.length && (
+                    <div className={styles.empty}>Select one or more cohorts to view data.</div>
+                  )}
+
+                  {cohortData.length > 0 && (
+                    <>
+                      <div ref={attritionRef}>
+                        <ChartGroup title="Attrition">
+                          <AttritionChart cohortData={cohortData} waterfall={waterfallData} />
+                        </ChartGroup>
+                      </div>
+
+                      <div ref={baselineGroupRef}>
+                        <ChartGroup title="Baseline Characteristics">
+                          <CharacteristicsChart
+                            cohortData={cohortData}
+                            reporterRows={table1Rows}
+                            sectionRefs={baselineSectionRefs.current}
+                            onOpen={setViewerIndex}
+                            finalCohortSizes={finalCohortSizes}
+                          />
+                        </ChartGroup>
+                      </div>
+
+                      {outcomesRows.length > 0 && (
+                        <div ref={outcomesGroupRef}>
+                          <ChartGroup title="Outcomes">
+                            <CharacteristicsChart
+                              cohortData={outcomesCohortData}
+                              reporterRows={outcomesRows}
+                              sectionRefs={outcomesSectionRefs.current}
+                              onOpen={setViewerIndex}
+                              finalCohortSizes={finalCohortSizes}
+                            />
+                          </ChartGroup>
+                        </div>
+                      )}
+
+                      {table2Rows.length > 0 && (
+                        <div ref={table2GroupRef}>
+                          <ChartGroup title="Incidence Rates">
+                            <Table2Chart
+                              cohorts={table2Cohorts}
+                              reporterRows={table2Rows}
+                              onOpen={setViewerIndex}
+                            />
+                          </ChartGroup>
+                        </div>
+                      )}
+
+                      {tteRows.length > 0 && (
+                        <div ref={tteGroupRef}>
+                          <ChartGroup title="Time to Event">
+                            <TimeToEventChart
+                              cohorts={tteCohorts}
+                              reporterRows={tteRows}
+                              onOpen={setViewerIndex}
+                            />
+                          </ChartGroup>
+                        </div>
+                      )}
+
+                      <div className={styles.bottomSpacer} />
+                    </>
+                  )}
+
+                  {viewerIndex != null && (
+                    <HorizontalRowViewer
+                      rows={sequentialRows}
+                      currentIndex={viewerIndex}
+                      cohortDataMap={cohortDataMap}
                       finalCohortSizes={finalCohortSizes}
+                      tteCohorts={tteCohorts}
+                      table2Cohorts={table2Cohorts}
+                      studyTitle={displayTitle}
+                      onClose={closeViewer}
+                      onNavigate={setViewerIndex}
+                      onScrollToRow={scrollToElement}
                     />
-                  </ChartGroup>
-                </div>
-              )}
+                  )}
+                </PanZoomScaleProvider>
+              </div>
+              <PanZoomScrollbar {...pz.scrollbar} />
+            </div>
+          </div>
 
-              {table2Rows.length > 0 && (
-                <div ref={table2GroupRef}>
-                  <ChartGroup title="Incidence Rates">
-                    <Table2Chart
-                      cohorts={table2Cohorts}
-                      reporterRows={table2Rows}
-                      onOpen={setViewerIndex}
-                    />
-                  </ChartGroup>
-                </div>
-              )}
-
-              {tteRows.length > 0 && (
-                <div ref={tteGroupRef}>
-                  <ChartGroup title="Time to Event">
-                    <TimeToEventChart
-                      cohorts={tteCohorts}
-                      reporterRows={tteRows}
-                      onOpen={setViewerIndex}
-                    />
-                  </ChartGroup>
-                </div>
-              )}
-
-              <div className={styles.bottomSpacer} />
-            </>
-          )}
-
-          {viewerIndex != null && (
-            <HorizontalRowViewer
-              rows={sequentialRows}
-              currentIndex={viewerIndex}
-              cohortDataMap={cohortDataMap}
-              finalCohortSizes={finalCohortSizes}
-              tteCohorts={tteCohorts}
-              table2Cohorts={table2Cohorts}
-              studyTitle={displayTitle}
-              onClose={closeViewer}
-              onNavigate={setViewerIndex}
-              onScrollToRow={scrollToElement}
-            />
-          )}
-         </PanZoomScaleProvider>
-        </div>
-        <PanZoomScrollbar {...pz.scrollbar} />
-      </div>
+          {/* Right panel: empty for future use */}
+          <div className={styles.rightPanel} />
+        </ThreePanelView>
+      </ThreePanelCollapseProvider>
     </div>
   );
 };

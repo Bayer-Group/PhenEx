@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const STORAGE_KEY = 'phenex_three_panel_left_shown';
+const DEFAULT_STORAGE_KEY = 'phenex_three_panel_left_shown';
 
 interface ThreePanelCollapseContextType {
   /** True = left panel shown, false = hidden */
@@ -17,9 +17,9 @@ const ThreePanelCollapseContext = createContext<ThreePanelCollapseContextType>({
 
 export const useThreePanelCollapse = () => useContext(ThreePanelCollapseContext);
 
-const getInitialShown = (): boolean => {
+const getInitialShown = (key: string): boolean => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(key);
     if (stored !== null) return stored === 'true';
   } catch {
     // ignore
@@ -27,16 +27,21 @@ const getInitialShown = (): boolean => {
   return true;
 };
 
-export const ThreePanelCollapseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isLeftPanelShown, setLeftPanelShown] = useState(getInitialShown);
+interface ThreePanelCollapseProviderProps {
+  children: React.ReactNode;
+  storageKey?: string;
+}
+
+export const ThreePanelCollapseProvider: React.FC<ThreePanelCollapseProviderProps> = ({ children, storageKey = DEFAULT_STORAGE_KEY }) => {
+  const [isLeftPanelShown, setLeftPanelShown] = useState(() => getInitialShown(storageKey));
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, String(isLeftPanelShown));
+      localStorage.setItem(storageKey, String(isLeftPanelShown));
     } catch (error) {
       console.warn('Failed to save three-panel collapse state to localStorage:', error);
     }
-  }, [isLeftPanelShown]);
+  }, [isLeftPanelShown, storageKey]);
 
   const toggleLeftPanel = () => setLeftPanelShown(prev => !prev);
 
