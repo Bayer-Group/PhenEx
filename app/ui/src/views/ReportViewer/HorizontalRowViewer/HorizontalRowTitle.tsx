@@ -1,7 +1,7 @@
 import { FC, useCallback, useMemo, useRef, useState } from 'react';
-import { Portal } from '../../../../components/Portal/Portal';
-import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import { type SequentialRow } from '../../studyRegistryUtils';
+import { Portal } from '../../../components/Portal/Portal';
+import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { type SequentialRow } from '../studyRegistryUtils';
 import styles from './HorizontalRowTitle.module.css';
 
 /* ── Display names for raw category keys ─────────────────────────────── */

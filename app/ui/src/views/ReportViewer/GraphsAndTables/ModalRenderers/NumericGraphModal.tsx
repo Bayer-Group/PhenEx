@@ -1,0 +1,70 @@
+import { FC } from 'react';
+import { type CohortClassified, type KdeCurve } from '../../types';
+import { RowModal } from './RowModal';
+import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
+import { NumericChartFrame } from '../RowRenderers/NumericChartFrame';
+import { KDEChartCellRenderer } from '../RowRenderers/KDEChartCellRenderer';
+import { BoxPlotCellRenderer } from '../RowRenderers/BoxPlotCellRenderer';
+import { NumericTableCellRenderer } from '../RowRenderers/NumericTableCellRenderer';
+import styles from './NumericGraphModal.module.css';
+
+interface NumericGraphModalProps {
+  name: string;
+  cohortData: CohortClassified[];
+  kdeData: Record<string, Record<string, KdeCurve>>;
+  finalCohortSizes?: Record<string, number | null>;
+  xMin: number;
+  xMax: number;
+  onClose: () => void;
+  breadcrumbs?: string[];
+}
+
+export const NumericGraphModal: FC<NumericGraphModalProps> = ({
+  name,
+  cohortData,
+  kdeData,
+  finalCohortSizes,
+  xMin,
+  xMax,
+  onClose,
+  breadcrumbs,
+}) => {
+  const { visible } = useCohortVisibility(cohortData.length);
+  const filteredCohortData = useFilteredCohortData(cohortData, visible);
+
+  return (
+    <RowModal onClose={onClose} breadcrumbs={breadcrumbs}>
+      <div className={styles.container}>
+        {/* <ModalLegend cohortData={cohortData} visible={visible} onToggle={toggle} /> */}
+
+        <div className={styles.distributionCard}>
+          <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
+            <div className={styles.kdeSection}>
+              <KDEChartCellRenderer
+                name={name}
+                cohortData={filteredCohortData}
+                kdeData={kdeData}
+                xMin={xMin}
+                xMax={xMax}
+                showTicks={false}
+              />
+            </div>
+            <BoxPlotCellRenderer
+              name={name}
+              cohortData={filteredCohortData}
+              xMin={xMin}
+              xMax={xMax}
+              showLabels
+            />
+          </NumericChartFrame>
+        </div>
+
+        <div className={styles.bottomRow}>
+          <div className={styles.card}>
+            <NumericTableCellRenderer name={name} cohortData={filteredCohortData} finalCohortSizes={finalCohortSizes} showBar />
+          </div>
+        </div>
+      </div>
+    </RowModal>
+  );
+};

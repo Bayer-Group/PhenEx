@@ -1,20 +1,20 @@
 import { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type CohortClassified, type KdeCurve } from '../../types';
-import { type SequentialRow, type RegistryComment } from '../../studyRegistryUtils';
-import { Portal } from '../../../../components/Portal/Portal';
-import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
-import { BarChartCellRenderer } from '../RowRenderers/BarChartCellRenderer';
-import { CategoricalBarChartCellRenderer } from '../RowRenderers/CategoricalBarChartCellRenderer';
-import { NumericContent } from './NumericContent';
-import { TimeToEventContent } from './TimeToEventContent';
-import { Table2Content } from './Table2Content';
-import { type TimeToEventCohort, type Table2Cohort } from '../OutcomesChart';
-import booleanStyles from './BooleanRowModal.module.css';
-import categoricalStyles from './CategoricalRowModal.module.css';
+import { type CohortClassified, type KdeCurve } from '../types';
+import { type SequentialRow, type RegistryComment } from '../studyRegistryUtils';
+import { Portal } from '../../../components/Portal/Portal';
+import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
+import { BarChartCellRenderer } from '../GraphsAndTables/RowRenderers/BarChartCellRenderer';
+import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
+import { NumericContent } from '../GraphsAndTables/ModalRenderers/NumericContent';
+import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEventContent';
+import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
+import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
+import booleanStyles from '../GraphsAndTables/ModalRenderers/BooleanRowModal.module.css';
+import categoricalStyles from '../GraphsAndTables/ModalRenderers/CategoricalRowModal.module.css';
 import styles from './HorizontalRowViewer.module.css';
-import { HorizontalRowTitle } from '../../HorizontalRowViewer/HorizontalRowTitle';
+import { HorizontalRowTitle } from './HorizontalRowTitle';
 import ReactMarkdown from 'react-markdown';
-import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
 // ── Constants ───────────────────────────────────────────────────────────
 

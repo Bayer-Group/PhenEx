@@ -1,0 +1,41 @@
+.container {
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.leftPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 80px 20px 20px 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.navTitleCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  margin-bottom: 30px;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-weight: bold;
+  color: #222;
+  font-size: var(--font_size_pagetitle, 18px);
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--font_size_breadcrumbs, 11px);
+  font-weight: 400;
+  color: #555;
+  line-height: 1.2;
+}

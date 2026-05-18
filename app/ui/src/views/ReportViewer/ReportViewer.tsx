@@ -6,7 +6,7 @@ import { PanZoomScaleProvider } from '../../hooks/PanZoomScaleContext';
 import { LeftPanel } from './LeftPanel';
 import { CharacteristicsChart } from './GraphsAndTables/CharacteristicsChart';
 import { Table2Chart, TimeToEventChart, type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
-import { HorizontalRowViewer } from './GraphsAndTables/ModalRenderers/HorizontalRowViewer';
+import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { AttritionChart } from './GraphsAndTables/AttritionChart';
 import { ChartGroup } from './GraphsAndTables/ChartGroup';
 import { ZoomScrubber } from './ReportFloatingControls/ZoomScrubber';
