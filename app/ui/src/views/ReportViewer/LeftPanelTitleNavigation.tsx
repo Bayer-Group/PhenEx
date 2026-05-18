@@ -142,7 +142,7 @@ export const LeftPanelTitleNavigation: FC<LeftPanelTitleNavigationProps> = ({
 
 /* ── Crumb with popover menu ─────────────────────────────────────────── */
 
-const MENU_OPEN_DELAY_MS = 800;
+const MENU_OPEN_DELAY_MS = 300;
 const MENU_CLOSE_DELAY_MS = 120;
 
 interface CrumbOption {

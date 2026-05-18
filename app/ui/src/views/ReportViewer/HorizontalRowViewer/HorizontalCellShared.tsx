@@ -1,4 +1,4 @@
-import { FC, useRef } from 'react';
+import { FC, useMemo, useRef } from 'react';
 import { type CohortClassified, type KdeCurve } from '../types';
 import { type SequentialRow, type RegistryComment } from '../studyRegistryUtils';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
@@ -69,6 +69,25 @@ export const CommentCard: FC<{ comment: RegistryComment }> = ({ comment }) => {
       </div>
       <div className={styles.commentBody}>
         <ReactMarkdown>{comment.text}</ReactMarkdown>
+      </div>
+    </div>
+  );
+};
+
+// ── CardInfoSection (accordion below title, inside card) ────────────────
+
+export const CardInfoSection: FC<{ row: SequentialRow; isOpen: boolean }> = ({ row, isOpen }) => {
+  const aiComment = useMemo(() => {
+    const comments = row.registry?.comments ?? [];
+    return comments.find((c) => c.type === 'ai' || c.user === 'ai') ?? null;
+  }, [row.registry]);
+
+  if (!aiComment) return null;
+
+  return (
+    <div className={`${styles.cardInfoSection} ${isOpen ? styles.cardInfoSectionOpen : ''}`}>
+      <div className={styles.cardInfoContent}>
+        <ReactMarkdown>{aiComment.text}</ReactMarkdown>
       </div>
     </div>
   );

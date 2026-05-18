@@ -234,14 +234,16 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
         className={`${styles.overlay} ${closing ? styles.closing : ''}`}
         onClick={startClose}
       >
-        {/* Floating title above cards */}
-        <HorizontalRowTitle
-          rows={rows}
-          currentIndex={currentIndex}
-          desiredTop={desiredTop}
-          studyTitle={studyTitle}
-          onNavigate={navigate}
-        />
+        {/* Floating title above cards — only in focus mode */}
+        {!isLeftPanelShown && (
+          <HorizontalRowTitle
+            rows={rows}
+            currentIndex={currentIndex}
+            desiredTop={desiredTop}
+            studyTitle={studyTitle}
+            onNavigate={navigate}
+          />
+        )}
 
         {/* Single comments toggle — fixed top-right, parallel to title */}
         <button

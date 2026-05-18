@@ -1,6 +1,6 @@
 import { forwardRef, useMemo, useRef } from 'react';
 import { type KdeCurve } from '../types';
-import { type HorizontalCellProps, CommentCard, RowContent } from './HorizontalCellShared';
+import { type HorizontalCellProps, CardInfoSection, RowContent } from './HorizontalCellShared';
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import styles from './HorizontalRowViewer.module.css';
 
@@ -27,10 +27,6 @@ export const HorizontalCellCompact = forwardRef<HTMLDivElement, HorizontalCellPr
       return result;
     }, [cohortData]);
 
-    const comments = useMemo(() => row.registry?.comments?.filter((c) => c.text) ?? [], [row.registry]);
-    const hasComments = comments.length > 0;
-    const shouldShowComments = commentsOpen && hasComments;
-
     return (
       <div
         ref={ref}
@@ -40,13 +36,6 @@ export const HorizontalCellCompact = forwardRef<HTMLDivElement, HorizontalCellPr
         <div className={styles.cellInner}>
           <div className={styles.cardColumnCompact}>
             <div ref={verticalScrollRef} className={styles.verticalWrapperCompact}>
-              {shouldShowComments && (
-                <div className={styles.commentsAbove}>
-                  {comments.map((comment, i) => (
-                    <CommentCard key={i} comment={comment} />
-                  ))}
-                </div>
-              )}
               <div
                 className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
                 onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(row.index); }}
@@ -54,6 +43,7 @@ export const HorizontalCellCompact = forwardRef<HTMLDivElement, HorizontalCellPr
                 <div className={styles.cardTitle}>
                   {row.registry?.display_name || row.name}
                 </div>
+                <CardInfoSection row={row} isOpen={commentsOpen} />
                 <div className={styles.cardContent}>
                   {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo={false} /> : null}
                 </div>

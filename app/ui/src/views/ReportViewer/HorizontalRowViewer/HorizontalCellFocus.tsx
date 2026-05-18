@@ -1,6 +1,6 @@
 import { forwardRef, useMemo, useRef } from 'react';
 import { type KdeCurve } from '../types';
-import { type HorizontalCellProps, CommentsColumn, RowContent } from './HorizontalCellShared';
+import { type HorizontalCellProps, CardInfoSection, CommentsColumn, RowContent } from './HorizontalCellShared';
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import styles from './HorizontalRowViewer.module.css';
 
@@ -27,7 +27,7 @@ export const HorizontalCellFocus = forwardRef<HTMLDivElement, HorizontalCellProp
       return result;
     }, [cohortData]);
 
-    const comments = useMemo(() => row.registry?.comments?.filter((c) => c.text) ?? [], [row.registry]);
+    const comments = useMemo(() => (row.registry?.comments ?? []).filter((c) => c.text && c.type !== 'ai' && c.type !== 'rule_based'), [row.registry]);
     const hasComments = comments.length > 0;
     const shouldShowComments = commentsOpen && hasComments;
 
@@ -47,6 +47,7 @@ export const HorizontalCellFocus = forwardRef<HTMLDivElement, HorizontalCellProp
                 <div className={styles.cardTitle}>
                   {row.registry?.display_name || row.name}
                 </div>
+                <CardInfoSection row={row} isOpen={commentsOpen} />
                 <div className={styles.cardContent}>
                   {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo /> : null}
                 </div>
