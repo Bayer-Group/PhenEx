@@ -30,28 +30,30 @@ export const LeftPanel: FC<LeftPanelProps> = ({
 
   return (
     <div className={styles.container}>
-      <div ref={scrollRef} className={styles.leftPanel}>
-        <div className={styles.navTitleCard}>
-          <span className={styles.title}>{title}</span>
-          <span className={styles.subtitle}>
-            {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
-          </span>
+      <div className={styles.navTitleCard}>
+        <span className={styles.title}>{title}</span>
+        <span className={styles.subtitle}>
+          {runId ? `Executed ${formatRunTimestamp(runId)}` : loading ? 'Loading runs...' : ''}
+        </span>
+      </div>
+      <div className={styles.scrollRegion}>
+        <div ref={scrollRef} className={styles.scrollContent}>
+          <CohortSelector
+            groups={groups}
+            selections={selections}
+            onReplace={onReplace}
+            onAdd={onAdd}
+            onRemove={onRemove}
+          />
         </div>
-        <CohortSelector
-          groups={groups}
-          selections={selections}
-          onReplace={onReplace}
-          onAdd={onAdd}
-          onRemove={onRemove}
+        <SimpleCustomScrollbar
+          targetRef={scrollRef}
+          orientation="vertical"
+          marginTop={10}
+          marginBottom={10}
+          marginToEnd={5}
         />
       </div>
-      <SimpleCustomScrollbar
-        targetRef={scrollRef}
-        orientation="vertical"
-        marginTop={20}
-        marginBottom={20}
-        marginToEnd={5}
-      />
     </div>
   );
 };

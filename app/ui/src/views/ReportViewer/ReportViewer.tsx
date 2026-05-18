@@ -533,25 +533,25 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                       <div className={styles.bottomSpacer} />
                     </>
                   )}
-
-                  {viewerIndex != null && (
-                    <HorizontalRowViewer
-                      rows={sequentialRows}
-                      currentIndex={viewerIndex}
-                      cohortDataMap={cohortDataMap}
-                      finalCohortSizes={finalCohortSizes}
-                      tteCohorts={tteCohorts}
-                      table2Cohorts={table2Cohorts}
-                      studyTitle={displayTitle}
-                      onClose={closeViewer}
-                      onNavigate={setViewerIndex}
-                      onScrollToRow={scrollToElement}
-                    />
-                  )}
                 </PanZoomScaleProvider>
               </div>
               <PanZoomScrollbar {...pz.scrollbar} />
             </div>
+
+            {viewerIndex != null && (
+              <HorizontalRowViewer
+                rows={sequentialRows}
+                currentIndex={viewerIndex}
+                cohortDataMap={cohortDataMap}
+                finalCohortSizes={finalCohortSizes}
+                tteCohorts={tteCohorts}
+                table2Cohorts={table2Cohorts}
+                studyTitle={displayTitle}
+                onClose={closeViewer}
+                onNavigate={setViewerIndex}
+                onScrollToRow={scrollToElement}
+              />
+            )}
           </div>
 
           {/* Right panel: empty for future use */}

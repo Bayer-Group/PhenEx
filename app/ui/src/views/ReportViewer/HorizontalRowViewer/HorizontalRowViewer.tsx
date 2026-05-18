@@ -1,20 +1,12 @@
-import { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type CohortClassified, type KdeCurve } from '../types';
-import { type SequentialRow, type RegistryComment } from '../studyRegistryUtils';
-import { Portal } from '../../../components/Portal/Portal';
-import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
-import { BarChartCellRenderer } from '../GraphsAndTables/RowRenderers/BarChartCellRenderer';
-import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
-import { NumericContent } from '../GraphsAndTables/ModalRenderers/NumericContent';
-import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEventContent';
-import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { type CohortClassified } from '../types';
+import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
-import booleanStyles from '../GraphsAndTables/ModalRenderers/BooleanRowModal.module.css';
-import categoricalStyles from '../GraphsAndTables/ModalRenderers/CategoricalRowModal.module.css';
 import styles from './HorizontalRowViewer.module.css';
 import { HorizontalRowTitle } from './HorizontalRowTitle';
-import ReactMarkdown from 'react-markdown';
-import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
+import { HorizontalCellFocus } from './HorizontalCellFocus';
+import { HorizontalCellCompact } from './HorizontalCellCompact';
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -60,6 +52,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   onNavigate,
   onScrollToRow,
 }) => {
+  const { isLeftPanelShown } = useThreePanelCollapse();
   const [closing, setClosing] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const toggleComments = useCallback(() => setCommentsOpen((o) => !o), []);
@@ -239,7 +232,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   if (!current) return null;
 
   return (
-    <Portal>
       <div
         className={`${styles.overlay} ${closing ? styles.closing : ''}`}
         onClick={startClose}
@@ -266,8 +258,9 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
           {rows.map((row) => {
             const isFocused = row.index === currentIndex;
             const nearby = Math.abs(row.index - currentIndex) <= PRERENDER_NEIGHBOURS;
+            const CellComponent = isLeftPanelShown ? HorizontalCellCompact : HorizontalCellFocus;
             return (
-              <HorizontalCell
+              <CellComponent
                 key={row.index}
                 ref={isFocused ? focusedRef : null}
                 row={row}
@@ -286,196 +279,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
           })}
         </div>
       </div>
-    </Portal>
   );
 };
-
-/* ── HorizontalCell ──────────────────────────────────────────────────── */
-
-interface HorizontalCellProps {
-  row: SequentialRow;
-  rows: SequentialRow[];
-  isFocused: boolean;
-  nearby: boolean;
-  desiredTop: string;
-  cohortDataMap: Record<string, CohortClassified[]>;
-  finalCohortSizes?: Record<string, number | null>;
-  tteCohorts?: TimeToEventCohort[];
-  table2Cohorts?: Table2Cohort[];
-  onNavigate: (index: number) => void;
-  commentsOpen: boolean;
-}
-
-const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, commentsOpen = true }, ref) => {
-    const cohortData = cohortDataMap[row.reporter] ?? [];
-    const verticalScrollRef = useRef<HTMLDivElement>(null);
-    const availableTteOutcomes = useMemo(
-      () => rows
-        .filter((candidate) => candidate.reporter === row.reporter && candidate.rowType === 'time_to_event')
-        .map((candidate) => candidate.name),
-      [rows, row.reporter],
-    );
-    const kdeData = useMemo(() => {
-      const result: Record<string, Record<string, KdeCurve>> = {};
-      for (const cd of cohortData) {
-        if (cd.data.kdes) result[cd.name] = cd.data.kdes;
-      }
-      return result;
-    }, [cohortData]);
-
-    // Comments are stored inline on the registry row
-    const comments = useMemo(() => {
-      return row.registry?.comments?.filter((c) => c.text) ?? [];
-    }, [row.registry]);
-    const hasComments = comments.length > 0;
-    const shouldShowComments = commentsOpen && hasComments;
-
-    return (
-      <div
-        ref={ref}
-        className={styles.cell}
-        style={{ '--desired-top': desiredTop } as React.CSSProperties}
-      >
-        <div className={styles.cellInner}>
-          {/* Left: card */}
-          <div className={styles.cardColumn}>
-          
-            <div ref={verticalScrollRef} className={`${styles.verticalWrapper} ${shouldShowComments ? styles.verticalWrapperCommentsOpen : ''}`}>
-              <div
-                className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
-                onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(row.index); }}
-              >
-                <div className={styles.cardTitle}>
-                  {row.registry?.display_name || row.name}
-                </div>
-                <div className={styles.cardContent}>
-                  {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} /> : null}
-                </div>
-              </div>
-            </div>
-            <SimpleCustomScrollbar
-              targetRef={verticalScrollRef}
-              orientation="vertical"
-              marginTop={130}
-              marginBottom={35}
-              marginToEnd={5}
-              classNameThumb={styles.verticalScrollbarThumb}
-            />
-            {/* Comments: positioned at card's right edge */}
-            <CommentsColumn comments={comments} isOpen={shouldShowComments} />
-          </div>
-        </div>
-      </div>
-    );
-  },
-);
-
-/* ── CommentsColumn ──────────────────────────────────────────────────── */
-
-const CommentsColumn: FC<{ comments: RegistryComment[]; isOpen: boolean }> = ({ comments, isOpen }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  return (
-    <div className={`${styles.commentsColumn} ${isOpen ? styles.commentsColumnOpen : ''}`}>
-      <div ref={scrollRef} className={styles.commentsScroll}>
-        {comments.map((comment, i) => (
-          <CommentCard key={i} comment={comment} />
-        ))}
-        <div style={{ minHeight: 30, flexShrink: 0 }} />
-      </div>
-      <SimpleCustomScrollbar
-        targetRef={scrollRef}
-        orientation="vertical"
-        marginTop={8}
-        marginBottom={8}
-        marginToEnd={2}
-      />
-    </div>
-  );
-};
-
-/* ── CommentCard ─────────────────────────────────────────────────────── */
-
-const CommentCard: FC<{ comment: RegistryComment }> = ({ comment }) => {
-  const label = comment.type ?? comment.user ?? '';
-  const statusLabel = comment.status === 'pinned' ? '📌' : comment.status === 'resolved' ? '✓' : '';
-
-  return (
-    <div className={styles.commentCard} onClick={(e) => e.stopPropagation()}>
-      <div className={styles.commentHeader}>
-        <span className={styles.commentUser}>{label}</span>
-        {statusLabel && <span className={styles.commentStatus}>{statusLabel}</span>}
-        {comment.date && <span className={styles.commentDate}>{comment.date}</span>}
-      </div>
-      <div className={styles.commentBody}>
-        <ReactMarkdown>{comment.text}</ReactMarkdown>
-      </div>
-    </div>
-  );
-};
-
-/* ── Content dispatcher ──────────────────────────────────────────────── */
-
-const RowContent: FC<{
-  row: SequentialRow;
-  cohortData: CohortClassified[];
-  kdeData: Record<string, Record<string, KdeCurve>>;
-  finalCohortSizes?: Record<string, number | null>;
-  tteCohorts?: TimeToEventCohort[];
-  table2Cohorts?: Table2Cohort[];
-  availableTteOutcomes?: string[];
-}> = ({ row, cohortData, kdeData, finalCohortSizes, tteCohorts, table2Cohorts, availableTteOutcomes }) => {
-  switch (row.rowType) {
-    case 'boolean':
-      return <BooleanContent name={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
-    case 'categorical':
-      return <CategoricalContent baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
-    case 'numeric':
-      return <NumericContent name={row.name} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} />;
-    case 'time_to_event':
-      return <TimeToEventContent outcome={row.name} cohorts={tteCohorts ?? []} availableOutcomes={availableTteOutcomes} />;
-    case 'table2':
-      return <Table2Content outcome={row.name} cohorts={table2Cohorts ?? []} />;
-    default:
-      return <div style={{ padding: 20, color: '#999' }}>No detail view for {row.rowType} rows yet.</div>;
-  }
-};
-
-/* ── Boolean ─────────────────────────────────────────────────────────── */
-
-const BooleanContent: FC<{ name: string; cohortData: CohortClassified[]; finalCohortSizes?: Record<string, number | null> }> = ({ name, cohortData, finalCohortSizes }) => {
-  const { visible } = useCohortVisibility(cohortData.length);
-  const filtered = useFilteredCohortData(cohortData, visible);
-
-  return (
-    <div className={booleanStyles.container}>
-      <BarChartCellRenderer
-        data={{ name, _meta: { cohortData: filtered, finalCohortSizes } }}
-        isModal
-        mode="presentation"
-        pctDecimals={1}
-      />
-    </div>
-  );
-};
-
-/* ── Categorical ─────────────────────────────────────────────────────── */
-
-const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[]; finalCohortSizes?: Record<string, number | null> }> = ({ baseName, cohortData, finalCohortSizes }) => {
-  const { visible } = useCohortVisibility(cohortData.length);
-  const filtered = useFilteredCohortData(cohortData, visible);
-
-  return (
-    <div className={categoricalStyles.container}>
-      <CategoricalBarChartCellRenderer
-        baseName={baseName}
-        cohortData={filtered}
-        finalCohortSizes={finalCohortSizes}
-        orientation="vertical"
-      />
-    </div>
-  );
-};
-
 

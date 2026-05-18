@@ -1,6 +1,6 @@
 /* ── Floating title container ─────────────────────────────────────────── */
 .container {
-  position: fixed;
+  position: absolute;
   left: 20px;
   top:10px;
   width: fit-content;
