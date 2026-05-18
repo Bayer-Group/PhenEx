@@ -56,9 +56,9 @@
   flex: 1;
   min-width: 0;
   height: 100%;
-  margin-left: calc(9% + 8px);
-  margin-right: calc(9% + 8px);
-  padding: 15vh 0 32px 0;
+  margin-left: calc(9% + 8px - 40px);
+  margin-right: calc(9% + 8px - 40px);
+  padding: 15vh 40px 32px 40px;
   box-sizing: border-box;
   overflow-y: auto;
   scrollbar-width: none;
@@ -66,7 +66,7 @@
 }
 
 .verticalWrapperCommentsOpen {
-  margin-right: 24px;
+  margin-right: calc(24px - 40px);
   transition: margin-right 0.25s ease;
 }
 
@@ -129,6 +129,10 @@
   margin-bottom: 12px;
 }
 
+.verticalScrollbarThumb{
+  background-color: black;
+}
+
 /* ── Comment sidebar ─────────────────────────────────────────────────── */
 
 /* Outer column: stretches to full height of the cell */
@@ -150,6 +154,7 @@
     opacity 0.15s ease;
 }
 
+
 .commentsColumnOpen {
   width: 280px;
   min-width: 280px;
@@ -162,12 +167,12 @@
     opacity 0.2s ease 0.15s;
 }
 
-/* Toggle button – floats above the card's top-right corner */
+/* Toggle button – fixed top-right, parallel to the title */
 .commentsToggle {
-  position: absolute;
-  top: calc(15vh - 4px);
-  right: calc(9% + 8px);
-  z-index: 1;
+  position: fixed;
+  top: 10px;
+  right: 24px;
+  z-index: 3;
   background: none;
   border: none;
   cursor: pointer;
@@ -175,14 +180,12 @@
   color: #999;
   padding: 4px 10px;
   border-radius: 4px;
-  transform: translateY(-100%);
-  transition: right 0.25s ease 0.1s, color 0.15s, background 0.15s;
+  transition: color 0.15s, background 0.15s;
   white-space: nowrap;
 }
 
 .commentsToggleOpen {
-  right: 24px;
-  transition: right 0.25s ease, color 0.15s, background 0.15s;
+  color: #666;
 }
 
 .commentsToggle:hover {

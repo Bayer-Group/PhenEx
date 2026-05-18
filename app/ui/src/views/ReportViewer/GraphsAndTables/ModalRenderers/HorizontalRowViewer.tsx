@@ -246,6 +246,14 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
           onNavigate={navigate}
         />
 
+        {/* Single comments toggle — fixed top-right, parallel to title */}
+        <button
+          className={`${styles.commentsToggle} ${commentsOpen ? styles.commentsToggleOpen : ''}`}
+          onClick={(e) => { e.stopPropagation(); toggleComments(); }}
+        >
+          {commentsOpen ? 'Hide Comments' : 'Comments'}
+        </button>
+
         {/* Horizontal strip of cards — all cells in DOM, only nearby ones render content */}
         <div className={styles.scroller} ref={scrollRef} style={{ gap: CELL_GAP }}>
           {rows.map((row) => {
@@ -266,7 +274,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 table2Cohorts={table2Cohorts}
                 onNavigate={navigate}
                 commentsOpen={commentsOpen}
-                onToggleComments={toggleComments}
               />
             );
           })}
@@ -290,11 +297,10 @@ interface HorizontalCellProps {
   table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
   commentsOpen: boolean;
-  onToggleComments: () => void;
 }
 
 const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, commentsOpen, onToggleComments }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, commentsOpen }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const availableTteOutcomes = useMemo(
@@ -328,14 +334,7 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
         <div className={styles.cellInner}>
           {/* Left: card */}
           <div className={styles.cardColumn}>
-            {hasComments && (
-              <button
-                className={`${styles.commentsToggle} ${shouldShowComments ? styles.commentsToggleOpen : ''}`}
-                onClick={(e) => { e.stopPropagation(); onToggleComments(); }}
-              >
-                {commentsOpen ? 'Hide Comments' : 'Show Comments'}
-              </button>
-            )}
+          
             <div ref={verticalScrollRef} className={`${styles.verticalWrapper} ${shouldShowComments ? styles.verticalWrapperCommentsOpen : ''}`}>
               <div
                 className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
@@ -354,7 +353,8 @@ const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
               orientation="vertical"
               marginTop={100}
               marginBottom={100}
-              marginToEnd={20}
+              marginToEnd={5}
+              classNameThumb={styles.verticalScrollbarThumb}
             />
           </div>
 
