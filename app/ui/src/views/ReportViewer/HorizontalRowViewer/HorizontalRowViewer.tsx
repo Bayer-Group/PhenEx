@@ -7,8 +7,6 @@ import { HorizontalRowTitle } from './HorizontalRowTitle';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 import { HorizontalCellFocus } from './HorizontalCellFocus';
 import { HorizontalCellCompact } from './HorizontalCellCompact';
-import { TwoPanelView } from '../../MainView/TwoPanelView/TwoPanelView';
-import { CommentCard } from './HorizontalCellShared';
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -229,10 +227,11 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 
   if (!current) return null;
 
-  const comments = (current.registry?.comments ?? []).filter((c) => c.text && c.type !== 'rule_based');
-
-  const leftContent = (
-    <div className={styles.leftContentWrapper}>
+  return (
+    <div
+      className={`${styles.overlay} ${closing ? styles.closing : ''}`}
+      onClick={startClose}
+    >
       {!isLeftPanelShown && (
         <HorizontalRowTitle
           rows={rows}
@@ -264,33 +263,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
             />
           );
         })}
-      </div>
-    </div>
-  );
-
-  const commentsContent = (
-    <div className={styles.commentsPanel}>
-      {comments.map((comment, i) => (
-        <CommentCard key={i} comment={comment} />
-      ))}
-    </div>
-  );
-
-  return (
-    <div
-      className={`${styles.overlay} ${closing ? styles.closing : ''}`}
-      onClick={startClose}
-    >
-      <div style={{ '--background-color': 'transparent' } as React.CSSProperties} className={styles.twoPanelWrapper}>
-        <TwoPanelView
-          initialSizeLeft={600}
-          minSizeLeft={500}
-          minSizeRight={250}
-          maxSizeRight={500}
-          leftContent={leftContent}
-          slideoverContent={commentsContent}
-          slideoverCollapsed={comments.length === 0}
-        />
       </div>
     </div>
   );

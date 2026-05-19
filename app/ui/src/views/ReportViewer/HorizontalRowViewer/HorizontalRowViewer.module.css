@@ -15,21 +15,15 @@
   animation: fadeOut 0.15s ease-in forwards;
 }
 
-/* Horizontal scroller fills the overlay */
-.twoPanelWrapper {
-  flex: 1;
-  min-height: 0;
-}
-
-/* Override TwoPanelView's border inside the overlay */
-.twoPanelWrapper :global(.leftPanelContent) {
+/* Override TwoPanelView's border inside each cell */
+.cell :global(.leftPanelContent) {
   border-left: none;
 }
 
-.leftContentWrapper {
+.cardColumnInner {
   display: flex;
-  flex-direction: column;
   height: 100%;
+  position: relative;
 }
 
 .scroller {
