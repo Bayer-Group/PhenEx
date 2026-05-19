@@ -125,7 +125,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                 >
                   <div
                     className={styles.legendDot}
-                    style={{ background: isActive && color ? color : 'transparent', border: isActive ? 'none' : '2px dashed #ccc' }}
+                    style={{ background: isActive && color ? color : 'transparent', border: isActive ? '2px solid transparent' : '2px dashed #ccc' }}
                   />
                   <span className={`${styles.legendItemLabel} ${!isActive ? styles.legendItemLabelInactive : ''}`}>
                     {sub.label}

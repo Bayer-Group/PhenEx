@@ -13,6 +13,8 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-left:20px;
+
 }
 
 .legendGroupTitle {
@@ -89,15 +91,18 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: white;
   display: flex;
   align-items: center;
   gap: 8px;
   padding-bottom: 4px;
+  border-bottom: var(--border);
+  padding-left:20px;
+  background-color: var(--background-color);
 }
 
 .actionTitle {
-  font-size: 13px;
+  margin-right: auto;
+  font-size: 18px;
   font-weight: 600;
   color: #333;
 }

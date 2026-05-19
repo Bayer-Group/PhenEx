@@ -3,10 +3,12 @@
   display: flex;
   flex-direction: column;
   gap: 0px;
-  margin-bottom: 20px;
+  margin-bottom: 0px;
   container-type: inline-size;
   height: 130px;
-  border-bottom: var(--border);
+  /* border-bottom: var(--border); */
+  padding-top:50px;
+  padding-left:20px;
 }
 
 /* ── Crumb levels ────────────────────────────────────────────────────── */
