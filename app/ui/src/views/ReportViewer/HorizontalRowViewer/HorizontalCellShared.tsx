@@ -27,7 +27,6 @@ export interface HorizontalCellProps {
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
-  commentsOpen: boolean;
 }
 
 // ── CommentsColumn (used by Focus mode) ─────────────────────────────────
@@ -76,9 +75,9 @@ export const CommentCard: FC<{ comment: RegistryComment }> = ({ comment }) => {
 
 // ── CardInfoSection (accordion below title, inside card) ────────────────
 
-export const CardInfoSection: FC<{ row: SequentialRow; isOpen: boolean }> = ({ isOpen }) => {
+export const CardInfoSection: FC<{ row: SequentialRow }> = () => {
   return (
-    <div className={`${styles.cardInfoSection} ${isOpen ? styles.cardInfoSectionOpen : ''}`}>
+    <div className={styles.cardInfoSection}>
     </div>
   );
 };

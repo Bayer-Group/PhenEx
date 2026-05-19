@@ -89,7 +89,7 @@
   height: 100%;
   z-index: 0;
   border-radius: var(--border_radius_right_panel);
-  background-color: red !important;
+  background-color: transparent;
   /* overflow: hidden; */
 }
 .divider.collapsed {

@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
@@ -7,6 +7,8 @@ import { HorizontalRowTitle } from './HorizontalRowTitle';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 import { HorizontalCellFocus } from './HorizontalCellFocus';
 import { HorizontalCellCompact } from './HorizontalCellCompact';
+import { TwoPanelView } from '../../MainView/TwoPanelView/TwoPanelView';
+import { CommentCard } from './HorizontalCellShared';
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -54,8 +56,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 }) => {
   const { isLeftPanelShown } = useThreePanelCollapse();
   const [closing, setClosing] = useState(false);
-  const [commentsOpen, setCommentsOpen] = useState(true);
-  const toggleComments = useCallback(() => setCommentsOpen((o) => !o), []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
@@ -229,56 +229,70 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 
   if (!current) return null;
 
-  return (
-      <div
-        className={`${styles.overlay} ${closing ? styles.closing : ''}`}
-        onClick={startClose}
-      >
-        {/* Floating title above cards — only in focus mode */}
-        {!isLeftPanelShown && (
-          <HorizontalRowTitle
-            rows={rows}
-            currentIndex={currentIndex}
-            desiredTop={desiredTop}
-            studyTitle={studyTitle}
-            onNavigate={navigate}
-          />
-        )}
+  const comments = (current.registry?.comments ?? []).filter((c) => c.text && c.type !== 'rule_based');
 
-        {/* Single comments toggle — fixed top-right, parallel to title */}
-        <button
-          className={`${styles.commentsToggle} ${commentsOpen ? styles.commentsToggleOpen : ''}`}
-          onClick={(e) => { e.stopPropagation(); toggleComments(); }}
-        >
-          {commentsOpen ? 'Hide Comments' : 'Comments'}
-        </button>
-
-        {/* Horizontal strip of cards — all cells in DOM, only nearby ones render content */}
-        <div className={styles.scroller} ref={scrollRef}>
-          {rows.map((row) => {
-            const isFocused = row.index === currentIndex;
-            const nearby = Math.abs(row.index - currentIndex) <= PRERENDER_NEIGHBOURS;
-            const CellComponent = isLeftPanelShown ? HorizontalCellCompact : HorizontalCellFocus;
-            return (
-              <CellComponent
-                key={row.index}
-                ref={isFocused ? focusedRef : null}
-                row={row}
-                rows={rows}
-                isFocused={isFocused}
-                nearby={nearby}
-                desiredTop={desiredTop}
-                cohortDataMap={cohortDataMap}
-                finalCohortSizes={finalCohortSizes}
-                tteCohorts={tteCohorts}
-                table2Cohorts={table2Cohorts}
-                onNavigate={navigate}
-                commentsOpen={commentsOpen}
-              />
-            );
-          })}
-        </div>
+  const leftContent = (
+    <div className={styles.leftContentWrapper}>
+      {!isLeftPanelShown && (
+        <HorizontalRowTitle
+          rows={rows}
+          currentIndex={currentIndex}
+          desiredTop={desiredTop}
+          studyTitle={studyTitle}
+          onNavigate={navigate}
+        />
+      )}
+      <div className={styles.scroller} ref={scrollRef}>
+        {rows.map((row) => {
+          const isFocused = row.index === currentIndex;
+          const nearby = Math.abs(row.index - currentIndex) <= PRERENDER_NEIGHBOURS;
+          const CellComponent = isLeftPanelShown ? HorizontalCellCompact : HorizontalCellFocus;
+          return (
+            <CellComponent
+              key={row.index}
+              ref={isFocused ? focusedRef : null}
+              row={row}
+              rows={rows}
+              isFocused={isFocused}
+              nearby={nearby}
+              desiredTop={desiredTop}
+              cohortDataMap={cohortDataMap}
+              finalCohortSizes={finalCohortSizes}
+              tteCohorts={tteCohorts}
+              table2Cohorts={table2Cohorts}
+              onNavigate={navigate}
+            />
+          );
+        })}
       </div>
+    </div>
+  );
+
+  const commentsContent = (
+    <div className={styles.commentsPanel}>
+      {comments.map((comment, i) => (
+        <CommentCard key={i} comment={comment} />
+      ))}
+    </div>
+  );
+
+  return (
+    <div
+      className={`${styles.overlay} ${closing ? styles.closing : ''}`}
+      onClick={startClose}
+    >
+      <div style={{ '--background-color': 'transparent' } as React.CSSProperties} className={styles.twoPanelWrapper}>
+        <TwoPanelView
+          initialSizeLeft={600}
+          minSizeLeft={500}
+          minSizeRight={250}
+          maxSizeRight={500}
+          leftContent={leftContent}
+          slideoverContent={commentsContent}
+          slideoverCollapsed={comments.length === 0}
+        />
+      </div>
+    </div>
   );
 };
 

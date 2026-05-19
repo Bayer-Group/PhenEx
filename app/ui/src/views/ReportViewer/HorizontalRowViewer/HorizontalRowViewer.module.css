@@ -16,6 +16,22 @@
 }
 
 /* Horizontal scroller fills the overlay */
+.twoPanelWrapper {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Override TwoPanelView's border inside the overlay */
+.twoPanelWrapper :global(.leftPanelContent) {
+  border-left: none;
+}
+
+.leftContentWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .scroller {
   flex: 1;
   display: flex;
@@ -50,15 +66,13 @@
   min-width: 0;
   height: 100%;
   overflow: hidden;
-  --comments-top-padding: 15vh;
 }
  
 .verticalWrapper {
   flex: 1;
   min-width: 0;
   height: 100%;
-  margin-left: calc(250px + 8px - 40px);
-  padding: 15vh 40px 32px 40px;
+  padding: 12vh 40px 32px 40px;
   box-sizing: border-box;
   overflow-y: auto;
   scrollbar-width: none;
@@ -96,6 +110,7 @@
   min-width: 500px;
   overflow-x: hidden;
   max-width: 600px;
+  margin: 0 auto;
   transition: opacity 0.2s, border-color 0.2s;
   opacity: 1;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
@@ -175,71 +190,15 @@
   background-color: black;
 }
 
-/* ── Comment sidebar ─────────────────────────────────────────────────── */
+/* ── Comment sidebar (inside TwoPanelView right panel) ────────────────── */
 
-/* Outer column: flex child sitting to the right of the card */
-.commentsColumn {
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  width: 0;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease, width 0.2s ease;
-  height:100%;
-}
-
-
-.commentsColumnOpen {
-  width: 380px;
-  opacity: 1;
-  pointer-events: auto;
-  transition: opacity 0.2s ease 0.1s, width 0.2s ease;
-}
-
-/* Toggle button – top-right of center panel */
-.commentsToggle {
-  position: absolute;
-  top: 10px;
-  right: 24px;
-  z-index: 3;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  color: #999;
-  padding: 4px 10px;
-  border-radius: 4px;
-  transition: color 0.15s, background 0.15s;
-  white-space: nowrap;
-}
-
-.commentsToggleOpen {
-  color: #666;
-}
-
-.commentsToggle:hover {
-  color: #333;
-  background: rgba(0, 0, 0, 0.04);
-}
-
-/* Inner scrollable area */
-.commentsScroll {
-  flex: 1;
-  /* height: 100vh; */
-  overflow: auto !important;
-  scrollbar-width: none;
+.commentsPanel {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-top: var(--comments-top-padding, 15vh);
-  padding-right: 10px;
-  padding-left:10px;
-}
-
-.commentsScroll::-webkit-scrollbar {
-  display: none;
+  padding: 12vh 40px 32px 40px;
+  box-sizing: border-box;
+  font-family: "IBMPlexSans-regular", sans-serif;
 }
 
 .commentCard {
@@ -247,8 +206,8 @@
   /* border: 1px solid var(--line-color, #e0e0e0); */
   border-radius: 5px;
   /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); */
-  padding: 12px 16px;
-  font-size: 100px;
+  padding: 12px 30px;
+  font-size: 10px;
   background-color: white;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
   border: var(--border);
@@ -310,15 +269,13 @@
   min-width: 0;
   height: 100%;
   overflow: hidden;
-  --comments-top-padding: 10vh;
 }
 
 .verticalWrapperCompact {
   flex: 1;
   min-width: 0;
   height: 100%;
-  margin-left: 40px;
-  padding: 10vh 40px 32px 40px;
+  padding: 12vh 40px 32px 40px;
   box-sizing: border-box;
   overflow-y: auto;
   scrollbar-width: none;
