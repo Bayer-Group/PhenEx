@@ -22,6 +22,13 @@
   height: auto;
 }
 
+.dismissOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  cursor: default;
+}
+
 /* ── Grid lines overlay (absolute, spanning bar column) ───────────────── */
 .gridOverlay {
   position: absolute;
@@ -199,6 +206,7 @@
   grid-template-columns: var(--BOOLEAN_PRESENTATION_LABEL_COL) minmax(0, 1fr);
   gap: var(--BOOLEAN_PRESENTATION_GAP);
   height: var(--BOOLEAN_PRESENTATION_ROW_HEIGHT);
+  z-index: 2;
 }
 
 .cohortRow:hover{

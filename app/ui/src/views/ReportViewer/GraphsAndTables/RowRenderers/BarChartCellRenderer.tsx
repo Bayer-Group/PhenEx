@@ -1,4 +1,4 @@
-import { FC, useState, useRef, useCallback } from 'react';
+import { FC, useState, useRef, useCallback, useEffect } from 'react';
 import { type CohortClassified } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { CohortNameTooltip } from './CohortNameTooltip';
@@ -70,6 +70,20 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
   const openModal = useCallback(() => { if (!isModal) setModalOpen(true); }, [isModal]);
   const closeModal = useCallback(() => setModalOpen(false), []);
 
+  const isPresentation = mode === 'presentation';
+
+  // Clear selection on any user scroll (delayed to skip programmatic scroll-into-view)
+  useEffect(() => {
+    if (!isPresentation || activeIndex === null) return;
+    let cleanup: (() => void) | undefined;
+    const timer = setTimeout(() => {
+      const onScroll = () => onHover(null);
+      window.addEventListener('scroll', onScroll, true);
+      cleanup = () => window.removeEventListener('scroll', onScroll, true);
+    }, 500);
+    return () => { clearTimeout(timer); cleanup?.(); };
+  }, [isPresentation, activeIndex, onHover]);
+
   // Always include the 100 line
   const allTicks = ticks.includes(100) ? ticks : [...ticks, 100];
 
@@ -104,7 +118,6 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
     };
   });
 
-  const isPresentation = mode === 'presentation';
 
   const renderRow = (entry: RenderRow, options?: RenderRowOptions) => {
     const row = entry.cohort.data.rows.find((r) => r.Name === name);
@@ -207,6 +220,11 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
 
   return (
     <div className={`${styles.container} ${isPresentation ? styles.containerPresentation : ''}`}>
+      {/* Dismiss overlay — any click exits cohort-select state */}
+      {isPresentation && activeIndex !== null && (
+        <div className={styles.dismissOverlay} onClick={(e) => { e.stopPropagation(); onHover(null); }} />
+      )}
+
       {/* Header row */}
       <div className={`${styles.headerRow} ${isPresentation ? styles.headerRowPresentation : ''}`}>
         {isPresentation && <div className={styles.headerCohort}>Cohort</div>}
