@@ -10,22 +10,29 @@
   display: flex;
   padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 20px);
   padding-right: min(calc(max(200px * var(--pz-scale, 1), 10px) + 40px), 200px);
+  border: calc(1px / var(--pz-scale, 1)) solid transparent;
+  border-radius: calc(5px / var(--pz-scale, 1));
+
+}
+
+.row:hover{
+  border: calc(1px / var(--pz-scale, 1)) solid black;
 }
 
 .nameCell {
-  width: clamp(350px, calc(450px / var(--pz-scale, 1)), 4000px);
+  width: clamp(350px, calc(450px / var(--pz-scale, 1)), 2500px);
   font-size: clamp(50px, calc(18px / var(--pz-scale, 1)), 500px);
   flex-shrink: 0;
-  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-family: 'IBMPlexSans-regular', sans-serif;
   color: #333;
   line-height: 1.25;
   word-break: break-word;
   white-space: normal;
   padding: 5px 20px 0px 20px;
-  padding-left: min(calc(max(30px * var(--pz-scale, 1), 10px) + 20px), 30px);
+  padding-left: clamp(200px, calc(100px / var(--pz-scale, 1)), 200px);
+  padding-right: clamp(200px, calc(100px / var(--pz-scale, 1)), 200px);
   padding-bottom: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 20px);
   padding-top: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 20px);
-  padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 20px);
   text-align: right;
   box-sizing: border-box;
   display: flex;
@@ -50,7 +57,7 @@
 
 .booleanChartCell {
   width: clamp(100px, calc(200px / var(--pz-scale, 1)), 1500px);
-  padding-right: clamp(200px, calc(250px / var(--pz-scale, 1)), 1000px);
+  padding-right: clamp(200px, calc(100px / var(--pz-scale, 1)), 1000px);
 
 }
 /* ── Categorical group ───────────────────────────────────────────────── */

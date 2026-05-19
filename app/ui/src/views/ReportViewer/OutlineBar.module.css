@@ -1,18 +1,18 @@
 .bar {
   position: absolute;
   right: 40px;
-  top: 100px;
+  top: 20px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 14px; /* match to outline bar GAP */
+  gap: 8px; /* match to outline bar GAP */
   z-index: 10;
   cursor: pointer;
   padding: 4px 2px;
 }
 
 .tick {
-  border-radius: 1px;
+  border-radius: 5px;
   background: rgba(0, 0, 0, 0.15);
   transition: background 0.15s;
 }

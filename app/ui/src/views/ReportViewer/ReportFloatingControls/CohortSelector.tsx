@@ -68,6 +68,9 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
     <div className={styles.legendBar}>
       <div className={styles.actionBar}>
         <span className={styles.actionTitle}>Cohorts</span>
+        <span className={styles.actionCount}>
+          {selections.length}/{groups.reduce((n, g) => n + g.subcohorts.length, 0)}
+        </span>
         <button
           className={styles.eyeToggle}
           onClick={() => setShowAll((v) => !v)}

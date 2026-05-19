@@ -1,20 +1,25 @@
 .card {
   border: none;
-  border-top:none;
   overflow: hidden;
     background-color: white; /* SECTION CARD BACKGROUND COLOR includes all rows or characteristics chart */
-  padding-bottom: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 100px);
+  padding-bottom: clamp(50px, calc(50px / var(--pz-scale, 1)), 50px);
+  padding-left: clamp(50px, calc(50px / var(--pz-scale, 1)), 50px);
+  padding-right: clamp(50px, calc(50px / var(--pz-scale, 1)), 50px);
+  margin-bottom: clamp(50px, calc(50px / var(--pz-scale, 1)), 50px);
+
+  border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+  border-radius: calc(5px / var(--pz-scale, 1));
+
 }
 
 .title { /* each section within baseline characteristics i.e. 'hcru'*/
-  font-size: clamp(22px, calc(14px / var(--pz-scale, 1)), 80px);
+  font-size: clamp(50px, calc(18px / var(--pz-scale, 1)), 500px);
   color: #333;
   padding: 16px 20px 12px;
   font-family: 'IBMPlexSans-bold', sans-serif;
-  border-top: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
-  padding-left: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 30px);
-  padding-top: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 20px);
-  padding-bottom: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 100px);
+  padding-top: clamp(100px, calc(100px / var(--pz-scale, 1)), 100px);
+  padding-bottom: clamp(100px, calc(100px / var(--pz-scale, 1)), 100px);
+
 letter-spacing: 0.05em;
   text-transform: uppercase;
 }
