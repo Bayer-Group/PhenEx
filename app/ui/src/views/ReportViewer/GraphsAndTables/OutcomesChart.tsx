@@ -3,6 +3,7 @@ import { type Table2Row, type TimeToEventRow } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { KaplanMeierCellRenderer, type KMCurve } from './RowRenderers/KaplanMeierCellRenderer';
 import { useBarHoverStore } from './RowRenderers/useBarHoverStore';
+import { useClickGuard } from './useClickGuard';
 import styles from './OutcomesChart.module.css';
 
 /* ── Types ───────────────────────────────────────────────────────────── */
@@ -180,8 +181,9 @@ const Table2RowComponent: FC<{
   onClick?: () => void;
 }> = ({ outcome, rows, onClick }) => {
   const { activeIndex, onClick: onBarClick } = useBarHoverStore();
+  const guard = useClickGuard(onClick ?? (() => {}));
   return (
-    <div className={styles.row} onClick={onClick} style={{ cursor: onClick ? 'pointer' : undefined }} data-row-name={outcome}>
+    <div className={styles.row} onMouseDown={guard.onMouseDown} onClick={guard.onClick} style={{ cursor: onClick ? 'pointer' : undefined }} data-row-name={outcome}>
       <div className={styles.nameCell}>{outcome}</div>
       <div className={styles.statsGrid}>
         <div className={styles.statsHeaderRow}>
@@ -255,12 +257,12 @@ const TimeToEventRowComponent: FC<{ outcome: string; cohorts: TimeToEventCohort[
     [cohorts, outcome],
   );
 
-  const handleClick = useCallback(() => onClick?.(), [onClick]);
+  const guard = useClickGuard(onClick ?? (() => {}));
 
   if (!kmCurves.length) return null;
 
   return (
-    <div className={styles.row} onClick={handleClick} style={{ cursor: onClick ? 'pointer' : undefined }} data-row-name={outcome}>
+    <div className={styles.row} onMouseDown={guard.onMouseDown} onClick={guard.onClick} style={{ cursor: onClick ? 'pointer' : undefined }} data-row-name={outcome}>
       <div className={styles.nameCell}>{outcome}</div>
       <div className={styles.kmCell}>
         <KaplanMeierCellRenderer curves={kmCurves} />
