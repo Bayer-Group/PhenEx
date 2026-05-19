@@ -9,7 +9,7 @@ import styles from './HorizontalRowViewer.module.css';
  * Focus mode cell: card on left, comments on right via TwoPanelView.
  */
 export const HorizontalCellFocus = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, commentsCollapsed }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const availableTteOutcomes = useMemo(
@@ -76,7 +76,7 @@ export const HorizontalCellFocus = forwardRef<HTMLDivElement, HorizontalCellProp
           maxSizeRight={450}
           leftContent={cardContent}
           slideoverContent={commentsContent}
-          slideoverCollapsed={comments.length === 0}
+          slideoverCollapsed={commentsCollapsed || comments.length === 0}
         />
       </div>
     );

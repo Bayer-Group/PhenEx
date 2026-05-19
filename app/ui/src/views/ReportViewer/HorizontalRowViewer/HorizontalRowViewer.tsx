@@ -54,6 +54,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 }) => {
   const { isLeftPanelShown } = useThreePanelCollapse();
   const [closing, setClosing] = useState(false);
+  const [commentsCollapsed, setCommentsCollapsed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
@@ -260,10 +261,18 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
               tteCohorts={tteCohorts}
               table2Cohorts={table2Cohorts}
               onNavigate={navigate}
+              commentsCollapsed={commentsCollapsed}
             />
           );
         })}
       </div>
+      <button
+        className={styles.commentsToggle}
+        onClick={(e) => { e.stopPropagation(); setCommentsCollapsed((v) => !v); }}
+        title={commentsCollapsed ? 'Show comments' : 'Hide comments'}
+      >
+        {commentsCollapsed ? '◀' : '▶'}
+      </button>
     </div>
   );
 };

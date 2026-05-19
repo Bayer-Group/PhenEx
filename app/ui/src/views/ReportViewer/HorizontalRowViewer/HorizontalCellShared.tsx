@@ -27,6 +27,7 @@ export interface HorizontalCellProps {
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
+  commentsCollapsed?: boolean;
 }
 
 // ── CommentsColumn (used by Focus mode) ─────────────────────────────────

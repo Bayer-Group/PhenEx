@@ -78,6 +78,11 @@ export const TwoPanelView = React.forwardRef<
     }
   }, [rightWidth]);
   const [isSlideoverCollapsed, setIsSlideoverCollapsed] = useState(slideoverCollapsed ?? false);
+
+  React.useEffect(() => {
+    if (slideoverCollapsed !== undefined) setIsSlideoverCollapsed(slideoverCollapsed);
+  }, [slideoverCollapsed]);
+
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [popoverContentState, setPopoverContentState] = useState<React.ReactNode>(null);
   const [isDragging, setIsDragging] = useState(false);
