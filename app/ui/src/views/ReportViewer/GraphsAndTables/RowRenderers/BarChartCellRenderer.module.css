@@ -196,13 +196,30 @@
 
 .cohortRowPresentation {
   display: grid;
-  grid-template-columns: var(--BOOLEAN_PRESENTATION_LABEL_COL) var(--BOOLEAN_PRESENTATION_PCT_COL) minmax(0, 1fr) var(--BOOLEAN_PRESENTATION_N_COL);
+  grid-template-columns: var(--BOOLEAN_PRESENTATION_LABEL_COL) minmax(0, 1fr);
   gap: var(--BOOLEAN_PRESENTATION_GAP);
   height: var(--BOOLEAN_PRESENTATION_ROW_HEIGHT);
 }
 
 .cohortRow:hover{
   background-color: rgba(232, 231, 231, 0.2);
+}
+
+.cohortRowPresentation:hover {
+  background-color: transparent;
+}
+
+.dataCells {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.cohortRowPresentation .dataCells {
+  display: grid;
+  grid-template-columns: var(--BOOLEAN_PRESENTATION_PCT_COL) minmax(0, 1fr) var(--BOOLEAN_PRESENTATION_N_COL);
+  gap: var(--BOOLEAN_PRESENTATION_GAP);
+  align-items: center;
 }
 
 .cohortLabelCell {
@@ -280,6 +297,10 @@
 }
 
 .cohortRow:hover .barFill {
+  border-color: black;
+}
+
+.dataCells:hover .barFill {
   border-color: black;
 }
 

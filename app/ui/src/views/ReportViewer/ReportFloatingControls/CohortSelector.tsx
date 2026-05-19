@@ -1,4 +1,4 @@
-import { FC, useState, useCallback, useMemo } from 'react';
+import React, { FC, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { getCohortColor, type CohortGroup, type LegendSelection } from '../types';
 import { useBarHoverStore } from '../GraphsAndTables/RowRenderers/useBarHoverStore';
 import EyeSolidIcon from '../../../assets/icons/eye-solid.svg';
@@ -22,6 +22,26 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 }) => {
   const { activeIndex, onClick: toggleCohort } = useBarHoverStore();
   const [showAll, setShowAll] = useState(false);
+  const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+
+  // Scroll the active cohort into view, centered with padding
+  useEffect(() => {
+    if (activeIndex == null) return;
+    const el = itemRefs.current.get(activeIndex);
+    if (!el) return;
+    const scrollParent = el.closest('[style*="overflow"], [class]');
+    // Walk up to find the actual scrollable ancestor
+    let container: HTMLElement | null = el.parentElement;
+    while (container && container.scrollHeight <= container.clientHeight) {
+      container = container.parentElement;
+    }
+    if (!container) return;
+    const containerRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const elCenter = elRect.top + elRect.height / 2 - containerRect.top + container.scrollTop;
+    const target = elCenter - container.clientHeight / 2;
+    container.scrollTo({ top: target, behavior: 'smooth' });
+  }, [activeIndex]);
 
   const activeSet = useMemo(() => new Set(selections.map((s) => s.cohortName)), [selections]);
 
@@ -116,6 +136,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
               return (
                 <div
                   key={sub.fullName}
+                  ref={(el) => { if (el && selIdx != null) itemRefs.current.set(selIdx, el); }}
                   className={styles.legendItem}
                   style={{
                     opacity: isActive && activeIndex !== null && selIdx !== activeIndex ? 0.25 : 1,
@@ -155,6 +176,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
             {group.items.map(({ sel, originalIndex }) => (
               <SelectedItem
                 key={`${sel.cohortName}-${sel.colorIndex}`}
+                ref={(el) => { if (el) itemRefs.current.set(originalIndex, el); }}
                 selection={sel}
                 dimmed={activeIndex !== null && activeIndex !== originalIndex}
                 onClick={() => toggleCohort(originalIndex)}
@@ -177,13 +199,14 @@ interface SelectedItemProps {
   onRemove: () => void;
 }
 
-const SelectedItem: FC<SelectedItemProps> = ({ selection, dimmed, onClick, onRemove }) => {
+const SelectedItem = React.forwardRef<HTMLDivElement, SelectedItemProps>(({ selection, dimmed, onClick, onRemove }, ref) => {
   const color = getCohortColor(selection.groupIndex, selection.subIndex, selection.totalSubs);
   const idx = selection.cohortName.indexOf('__');
   const label = idx === -1 ? 'main' : selection.cohortName.substring(idx + 2);
 
   return (
     <div
+      ref={ref}
       className={styles.legendItem}
       style={{ opacity: dimmed ? 0.25 : 1, cursor: 'pointer' }}
       onClick={onClick}
@@ -199,4 +222,4 @@ const SelectedItem: FC<SelectedItemProps> = ({ selection, dimmed, onClick, onRem
       </button>
     </div>
   );
-};
+});

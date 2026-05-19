@@ -24,13 +24,21 @@ function toggle(index: number) {
   listeners.forEach((l) => l());
 }
 
+function setActive(index: number | null) {
+  if (state.index === index) return;
+  state = { index };
+  listeners.forEach((l) => l());
+}
+
 export function useBarHoverStore() {
   const current = useSyncExternalStore(subscribe, getSnapshot);
 
   const onClick = useCallback((i: number) => toggle(i), []);
+  const onHover = useCallback((i: number | null) => setActive(i), []);
 
   return {
     activeIndex: current.index,
     onClick,
+    onHover,
   };
 }

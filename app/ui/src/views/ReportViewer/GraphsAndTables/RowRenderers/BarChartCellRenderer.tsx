@@ -62,7 +62,7 @@ function splitCohortName(name: string): { parent: string; label: string } {
 export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isModal, breadcrumbs, pctDecimals = 0, mode = 'compact' }) => {
   const { cohortData, ticks = DEFAULT_TICKS, finalCohortSizes = {} } = data._meta;
   const { name } = data;
-  const { activeIndex } = useBarHoverStore();
+  const { activeIndex, onHover } = useBarHoverStore();
   const [hover, setHover] = useState<{ index: number; x: number; top: number } | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const barRefs = useRef<Record<number, HTMLDivElement>>({});
@@ -120,16 +120,16 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
         key={entry.cohort.name}
         ref={(el) => { if (el) barRefs.current[entry.originalIndex] = el; }}
         className={`${styles.cohortRow} ${isPresentation ? styles.cohortRowPresentation : ''}`}
-        onClick={openModal}
-        onMouseEnter={(e) => {
+        onClick={isPresentation ? (e) => { e.stopPropagation(); onHover(activeIndex === entry.originalIndex ? null : entry.originalIndex); } : openModal}
+        onMouseEnter={!isPresentation ? (e) => {
           const rect = barRefs.current[entry.originalIndex]?.getBoundingClientRect();
           if (rect) setHover({ index: entry.originalIndex, x: e.clientX, top: rect.top });
-        }}
-        onMouseMove={(e) => {
+        } : undefined}
+        onMouseMove={!isPresentation ? (e) => {
           const rect = barRefs.current[entry.originalIndex]?.getBoundingClientRect();
           if (rect) setHover({ index: entry.originalIndex, x: e.clientX, top: rect.top });
-        }}
-        onMouseLeave={() => setHover(null)}
+        } : undefined}
+        onMouseLeave={!isPresentation ? () => setHover(null) : undefined}
         style={{ cursor: 'pointer' }}
       >
         {isPresentation && (
@@ -140,25 +140,35 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
             {label}
           </div>
         )}
-        <div className={styles.pctCell} style={{ opacity: dimmed ? 0.25 : 1 }}>
-          <strong>{pct.toFixed(pctDecimals)}</strong>
-        </div>
-        <div className={styles.barCell} style={{ opacity: dimmed ? 0.25 : 1 }}>
+        <div
+          className={styles.dataCells}
+        >
           <div
-            className={styles.barFill}
-            style={{ width: `${Math.max(0, pct)}%`, backgroundColor: entry.cohort.color }}
-          />
-        </div>
-        <div className={styles.nCell} style={{ opacity: dimmed ? 0.25 : 1, color: activeIndex === entry.originalIndex ? '#000' : undefined }}>
-          {isPresentation && finalCohortSize != null ? (
-            <>
-              <span className={styles.nValuePrimary}>{n.toLocaleString()}</span>
-              <span className={styles.nValueSlash}>/</span>
-              <span className={styles.nValueSecondary}>{finalCohortSize.toLocaleString()}</span>
-            </>
-          ) : (
-            n.toLocaleString()
-          )}
+            className={styles.pctCell}
+            style={{ opacity: dimmed ? 0.25 : 1 }}
+          >
+            <strong>{pct.toFixed(pctDecimals)}</strong>
+          </div>
+          <div
+            className={styles.barCell}
+            style={{ opacity: dimmed ? 0.25 : 1 }}
+          >
+            <div
+              className={styles.barFill}
+              style={{ width: `${Math.max(0, pct)}%`, backgroundColor: entry.cohort.color }}
+            />
+          </div>
+          <div className={styles.nCell} style={{ opacity: dimmed ? 0.25 : 1, color: activeIndex === entry.originalIndex ? '#000' : undefined }}>
+            {isPresentation && finalCohortSize != null ? (
+              <>
+                <span className={styles.nValuePrimary}>{n.toLocaleString()}</span>
+                <span className={styles.nValueSlash}>/</span>
+                <span className={styles.nValueSecondary}>{finalCohortSize.toLocaleString()}</span>
+              </>
+            ) : (
+              n.toLocaleString()
+            )}
+          </div>
         </div>
       </div>
     );
@@ -224,7 +234,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
         )}
       </div>
 
-      {hover && (
+      {hover && !isPresentation && (
         <CohortNameTooltip
           name={cohortData[hover.index]?.name ?? ''}
           x={hover.x}
