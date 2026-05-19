@@ -309,7 +309,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   );
 
   // ── Pan & zoom ────────────────────────────────────────────────────────
-  const INITIAL_X = 0;
+  const INITIAL_X = -50;
   const INITIAL_Y = 0;
   const INITIAL_SCALE = .5;
   const PAN_X_OFFSET = 20;
@@ -325,7 +325,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
   const pz = usePanZoom({
     minScale: 0.1,
-    maxScale: .7,
+    maxScale: .5,
     initialTransform: { x: INITIAL_X, y: INITIAL_Y, scale: INITIAL_SCALE },
     storageKey,
     panTargetXOffset: PAN_X_OFFSET,

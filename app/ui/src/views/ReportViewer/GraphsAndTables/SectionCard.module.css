@@ -8,7 +8,7 @@
   margin-bottom: clamp(50px, calc(50px / var(--pz-scale, 1)), 50px);
 
   border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
-  border-radius: calc(5px / var(--pz-scale, 1));
+  border-radius: calc(10px / var(--pz-scale, 1));
 
 }
 
@@ -19,6 +19,7 @@
   font-family: 'IBMPlexSans-bold', sans-serif;
   padding-top: clamp(100px, calc(100px / var(--pz-scale, 1)), 100px);
   padding-bottom: clamp(100px, calc(100px / var(--pz-scale, 1)), 100px);
+  padding-left: clamp(50px, calc(50px / var(--pz-scale, 1)), 50px);
 
 letter-spacing: 0.05em;
   text-transform: uppercase;
