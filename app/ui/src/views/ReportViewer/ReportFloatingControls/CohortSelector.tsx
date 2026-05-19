@@ -21,7 +21,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   onRemove,
 }) => {
   const { activeIndex, onClick: toggleCohort } = useBarHoverStore();
-  const [showAll, setShowAll] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   const activeSet = useMemo(() => new Set(selections.map((s) => s.cohortName)), [selections]);
 

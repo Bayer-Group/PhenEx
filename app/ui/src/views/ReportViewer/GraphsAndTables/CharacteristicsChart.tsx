@@ -105,6 +105,7 @@ const BooleanRow: FC<{ row: SequentialRow; cohortData: CohortClassified[]; onOpe
 
   return (
     <div className={styles.row} onMouseDown={onMouseDown} onClick={onClick} style={{ cursor: 'pointer' }} data-row-name={row.name}>
+      <span className={styles.rowTooltip}>click to open</span>
       <div className={styles.nameCell}>{row.name}</div>
       <div className={styles.booleanChartCell}>
         <BarChartCellRenderer data={{ name: row.name, _meta: { cohortData, finalCohortSizes } }} isModal />
@@ -126,6 +127,7 @@ const CategoricalRow: FC<{
 
   return (
     <div className={styles.numericRow} onMouseDown={onMouseDown} onClick={onClick} style={{ cursor: 'pointer' }} data-row-name={row.name}>
+      <span className={styles.rowTooltip}>click to open</span>
       <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{row.name}</div>
       <div className={styles.kdeCell}>
         <CategoricalBarChartCellRenderer
@@ -152,6 +154,7 @@ const NumericRow: FC<{
 
   return (
     <div className={styles.numericRow} onMouseDown={onMouseDown} onClick={onClick} style={{ cursor: 'pointer' }} data-row-name={row.name}>
+      <span className={styles.rowTooltip}>click to open</span>
       <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{row.name}</div>
       <div className={styles.kdeCell}>
         <NumericGraphCellRenderer name={row.name} cohortData={cohortData} kdeData={kdeData} />

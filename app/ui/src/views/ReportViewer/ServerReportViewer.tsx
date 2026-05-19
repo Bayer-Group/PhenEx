@@ -102,8 +102,12 @@ export const ServerReportViewer: FC = () => {
       if (cached.info) setRunInfo(cached.info);
       const cachedT2 = getCachedTable2(runId) ?? undefined;
       const cachedTte = getCachedTimeToEvent(runId) ?? undefined;
-      fetchFrozenCohortsCombined(runId).catch(() => []).then(() => {
-        applyLoadedData(runId, cached.entries, cached.outcomesEntries, cached.waterfall, cachedT2, cachedTte);
+      Promise.all([
+        fetchFrozenCohortsCombined(runId).catch(() => []),
+        fetchStudyRegistry(runId).catch(() => null),
+      ]).then(([, registry]) => {
+        if (registry) setStudyRegistry(registry as unknown as StudyRegistry);
+        applyLoadedData(runId, cached.entries, cached.outcomesEntries, cached.waterfall, cachedT2, cachedTte, registry as StudyRegistry | null);
       });
       Promise.all([
         fetchKdeCombined(runId).catch(() => ({})),
@@ -135,8 +139,9 @@ export const ServerReportViewer: FC = () => {
       fetchKdeCombined(runId, 'table1_outcomes').catch(() => ({})),
       fetchTable2Combined(runId).catch(() => ({})),
       fetchTimeToEventCombined(runId).catch(() => ({})),
+      fetchStudyRegistry(runId).catch(() => null),
     ])
-      .then(([entries, outcomesEntries, _frozenCohorts, info, waterfall, kdes, outcomesKdes, table2, timeToEvent]) => {
+      .then(([entries, outcomesEntries, _frozenCohorts, info, waterfall, kdes, outcomesKdes, table2, timeToEvent, registry]) => {
         setRunInfo(info as Record<string, string>);
         mergeKdesIntoEntries(entries, kdes as Record<string, Record<string, KdeCurve>>);
         mergeKdesIntoEntries(outcomesEntries, outcomesKdes as Record<string, Record<string, KdeCurve>>);
@@ -151,7 +156,8 @@ export const ServerReportViewer: FC = () => {
         setCache(runId, runData);
         if (t2) setCachedTable2(runId, t2);
         if (tte) setCachedTimeToEvent(runId, tte);
-        applyLoadedData(runId, entries, outcomesEntries, waterfall, t2, tte);
+        if (registry) setStudyRegistry(registry as unknown as StudyRegistry);
+        applyLoadedData(runId, entries, outcomesEntries, waterfall, t2, tte, registry as StudyRegistry | null);
       })
       .catch((err) => {
         console.error('[ServerReportViewer] failed to load run data:', err);
@@ -167,6 +173,7 @@ export const ServerReportViewer: FC = () => {
       waterfall: Record<string, unknown>,
       table2?: Record<string, Table2Row[]>,
       timeToEvent?: Record<string, TimeToEventRow[]>,
+      registry?: StudyRegistry | null,
     ) => {
       const names = entries.map((e) => e.cohortName);
       setAllCohortEntries(entries);
@@ -198,6 +205,19 @@ export const ServerReportViewer: FC = () => {
         }
       }
 
+      // Use initial_load_cohorts from study registry if available
+      const initialCohorts = (registry as Record<string, unknown> | null)?.initial_load_cohorts;
+      console.log('[ServerReportViewer] initial_load_cohorts:', initialCohorts);
+      if (Array.isArray(initialCohorts) && initialCohorts.length) {
+        const available = new Set(names);
+        const valid = (initialCohorts as string[]).filter((n) => available.has(n));
+        if (valid.length) {
+          setInitialSelections(buildSelections(valid));
+          setLoadingRun(false);
+          return;
+        }
+      }
+
       const parsed = parseCohortGroups(names);
       if (parsed.length && parsed[0].subcohorts.length) {
         setInitialSelections(buildSelections([parsed[0].subcohorts[0].fullName]));
@@ -215,15 +235,6 @@ export const ServerReportViewer: FC = () => {
 
   // ── Study registry ────────────────────────────────────────────────────
   const [studyRegistry, setStudyRegistry] = useState<StudyRegistry | null>(null);
-
-  useEffect(() => {
-    if (!selectedRun) return;
-    fetchStudyRegistry(selectedRun)
-      .then((registry) => {
-        setStudyRegistry(registry as unknown as StudyRegistry);
-      })
-      .catch(() => {});
-  }, [selectedRun]);
 
 
 

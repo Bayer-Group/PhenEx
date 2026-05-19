@@ -1,6 +1,6 @@
 import { forwardRef, useMemo, useRef } from 'react';
 import { type KdeCurve } from '../types';
-import { type HorizontalCellProps, CardInfoSection, RowContent } from './HorizontalCellShared';
+import { type HorizontalCellProps, CardInfoSection, CommentsColumn, RowContent } from './HorizontalCellShared';
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import styles from './HorizontalRowViewer.module.css';
 
@@ -27,6 +27,10 @@ export const HorizontalCellCompact = forwardRef<HTMLDivElement, HorizontalCellPr
       return result;
     }, [cohortData]);
 
+    const comments = useMemo(() => (row.registry?.comments ?? []).filter((c) => c.text && c.type !== 'rule_based'), [row.registry]);
+    const hasComments = comments.length > 0;
+    const shouldShowComments = commentsOpen && hasComments;
+
     return (
       <div
         ref={ref}
@@ -35,7 +39,7 @@ export const HorizontalCellCompact = forwardRef<HTMLDivElement, HorizontalCellPr
       >
         <div className={styles.cellInner}>
           <div className={styles.cardColumnCompact}>
-            <div ref={verticalScrollRef} className={styles.verticalWrapperCompact}>
+            <div ref={verticalScrollRef} className={`${styles.verticalWrapperCompact} ${shouldShowComments ? styles.verticalWrapperCommentsOpen : ''}`}>
               <div
                 className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
                 onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(row.index); }}
@@ -57,6 +61,7 @@ export const HorizontalCellCompact = forwardRef<HTMLDivElement, HorizontalCellPr
               marginToEnd={5}
               classNameThumb={styles.verticalScrollbarThumb}
             />
+            <CommentsColumn comments={comments} isOpen={shouldShowComments} />
           </div>
         </div>
       </div>

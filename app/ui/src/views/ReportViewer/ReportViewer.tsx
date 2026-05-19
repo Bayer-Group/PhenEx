@@ -115,6 +115,16 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     if (initialSelections?.length) return initialSelections;
     if (!allCohortEntries.length) return [];
     const parsed = parseCohortGroups(allCohortEntries.map((e) => e.cohortName));
+    const names = allCohortEntries.map((e) => e.cohortName);
+    const available = new Set(names);
+
+    // Use initial_load_cohorts from study registry if available
+    const initialCohorts = (studyRegistry as Record<string, unknown> | null)?.initial_load_cohorts;
+    if (Array.isArray(initialCohorts) && initialCohorts.length) {
+      const valid = (initialCohorts as string[]).filter((n) => available.has(n));
+      if (valid.length) return buildSelections(valid, parsed);
+    }
+
     if (parsed.length && parsed[0].subcohorts.length) {
       return buildSelections([parsed[0].subcohorts[0].fullName], parsed);
     }

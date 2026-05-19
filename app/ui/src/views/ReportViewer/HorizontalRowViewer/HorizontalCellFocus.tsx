@@ -27,7 +27,7 @@ export const HorizontalCellFocus = forwardRef<HTMLDivElement, HorizontalCellProp
       return result;
     }, [cohortData]);
 
-    const comments = useMemo(() => (row.registry?.comments ?? []).filter((c) => c.text && c.type !== 'ai' && c.type !== 'rule_based'), [row.registry]);
+    const comments = useMemo(() => (row.registry?.comments ?? []).filter((c) => c.text && c.type !== 'rule_based'), [row.registry]);
     const hasComments = comments.length > 0;
     const shouldShowComments = commentsOpen && hasComments;
 

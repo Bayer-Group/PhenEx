@@ -76,19 +76,9 @@ export const CommentCard: FC<{ comment: RegistryComment }> = ({ comment }) => {
 
 // ── CardInfoSection (accordion below title, inside card) ────────────────
 
-export const CardInfoSection: FC<{ row: SequentialRow; isOpen: boolean }> = ({ row, isOpen }) => {
-  const aiComment = useMemo(() => {
-    const comments = row.registry?.comments ?? [];
-    return comments.find((c) => c.type === 'ai' || c.user === 'ai') ?? null;
-  }, [row.registry]);
-
-  if (!aiComment) return null;
-
+export const CardInfoSection: FC<{ row: SequentialRow; isOpen: boolean }> = ({ isOpen }) => {
   return (
     <div className={`${styles.cardInfoSection} ${isOpen ? styles.cardInfoSectionOpen : ''}`}>
-      <div className={styles.cardInfoContent}>
-        <ReactMarkdown>{aiComment.text}</ReactMarkdown>
-      </div>
     </div>
   );
 };

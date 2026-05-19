@@ -8,15 +8,51 @@
 
 .row {
   display: flex;
+  position: relative;
   padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 20px);
   padding-right: min(calc(max(200px * var(--pz-scale, 1), 10px) + 40px), 200px);
   border: calc(1px / var(--pz-scale, 1)) solid transparent;
   border-radius: calc(8px / var(--pz-scale, 1));
+}
 
+.numericRow {
+  position: relative;
+  border-radius: calc(8px / var(--pz-scale, 1));
+  display: flex;
+  align-items: stretch;
+  min-height: clamp(200px, calc(300px / var(--pz-scale, 1)), 130px);
+  border: calc(1px / var(--pz-scale, 1)) solid transparent;
+}
+
+.rowTooltip {
+  position: absolute;
+  top: calc(8px / var(--pz-scale, 1));
+  right: 0px;
+  font-size: calc(20px / var(--pz-scale, 1)) ;
+  background-color: black;
+  color: white;
+  pointer-events: none;
+  padding: calc(1px / var(--pz-scale, 1)) calc(20px / var(--pz-scale, 1));
+  border-radius: calc(5px / var(--pz-scale, 1));
+
+  font-family: "IBMPlexSans-regular", sans-serif;
+  opacity: 0;
+  transition: opacity 0.15s;
+  transform: translateY(-150%);
+}
+
+.row:hover .rowTooltip,
+.numericRow:hover .rowTooltip {
+  opacity: 1;
 }
 
 .row:hover{
   border: calc(1px / var(--pz-scale, 1)) solid black;
+}
+
+.numericRow:hover{
+    border: calc(1px / var(--pz-scale, 1)) solid black;
+
 }
 
 .nameCell {
@@ -42,7 +78,9 @@
 }
 
 .numericNameCell {
-  width: clamp(100px, calc(250px / var(--pz-scale, 1)), 1500px);
+  width: clamp(350px, calc(450px / var(--pz-scale, 1)), 2000px);
+  height: clamp(350px, calc(200px / var(--pz-scale, 1)), 1000px);
+
   padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 10px);
   text-align: left;
   padding-left: min(calc(max(40px * var(--pz-scale, 1), 10px) + 20px), 40px);
@@ -53,6 +91,11 @@
   padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 20px);
   flex-shrink: 0;
   box-sizing: border-box;
+}
+
+
+.chartCell:hover{
+  border: calc(1px / var(--pz-scale, 1)) solid black;
 }
 
 .booleanChartCell {
@@ -89,11 +132,7 @@
 
 /* ── Numeric row ─────────────────────────────────────────────────────── */
 
-.numericRow {
-  display: flex;
-  align-items: stretch;
-  min-height: clamp(200px, calc(300px / var(--pz-scale, 1)), 130px);
-}
+
 
 .kdeCell {
   width: clamp(200px, calc(400px / var(--pz-scale, 1)), 3000px);
