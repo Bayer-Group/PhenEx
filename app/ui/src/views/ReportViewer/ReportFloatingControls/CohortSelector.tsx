@@ -3,6 +3,7 @@ import { getCohortColor, type CohortGroup, type LegendSelection } from '../types
 import { useBarHoverStore } from '../GraphsAndTables/RowRenderers/useBarHoverStore';
 import EyeSolidIcon from '../../../assets/icons/eye-solid.svg';
 import EyeClosedIcon from '../../../assets/icons/eye-closed.svg';
+import { PhenExNavBarTooltip } from '../../../components/PhenExNavBar/PhenExNavBarTooltip';
 import styles from './CohortSelector.module.css';
 
 interface CohortSelectorProps {
@@ -23,6 +24,10 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   const { activeIndex, onClick: toggleCohort } = useBarHoverStore();
   const [showAll, setShowAll] = useState(false);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const eyeRef = useRef<HTMLButtonElement>(null);
+  const allRef = useRef<HTMLButtonElement>(null);
+  const clearRef = useRef<HTMLButtonElement>(null);
+  const [hoveredBtn, setHoveredBtn] = useState<'eye' | 'all' | 'clear' | null>(null);
 
   // Scroll the active cohort into view, centered with padding
   useEffect(() => {
@@ -87,41 +92,56 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   return (
     <div className={styles.legendBar}>
       <div className={styles.actionBar}>
-        <span className={styles.actionTitle}>Cohorts</span>
-        <span className={styles.actionCount}>
-          {selections.length}/{groups.reduce((n, g) => n + g.subcohorts.length, 0)}
+        <span className={styles.actionInfo}>
+          <span className={styles.actionTitle}>Cohorts</span>
+          <span className={styles.actionCount}>
+            {selections.length}/{groups.reduce((n, g) => n + g.subcohorts.length, 0)}
+          </span>
         </span>
-        <button
-          className={styles.eyeToggle}
-          onClick={() => setShowAll((v) => !v)}
-          title={showAll ? 'Show selected only' : 'Show all cohorts'}
-        >
-          <img
-            src={showAll ? EyeSolidIcon : EyeClosedIcon}
-            alt={showAll ? 'Showing all' : 'Selected only'}
-            className={styles.eyeIcon}
-          />
-        </button>
-        <button
-          className={styles.clearBtn}
-          onClick={() => {
-            for (const group of groups) {
-              for (const sub of group.subcohorts) {
-                if (!activeSet.has(sub.fullName)) onAdd(sub.fullName);
+        <span className={styles.actionButtons}>
+          <button
+            ref={eyeRef}
+            className={styles.eyeToggle}
+            onClick={() => setShowAll((v) => !v)}
+            onMouseEnter={() => setHoveredBtn('eye')}
+            onMouseLeave={() => setHoveredBtn(null)}
+          >
+            <img
+              src={showAll ? EyeSolidIcon : EyeClosedIcon}
+              alt={showAll ? 'Showing all' : 'Selected only'}
+              className={styles.eyeIcon}
+            />
+          </button>
+          <button
+            ref={allRef}
+            className={styles.clearBtn}
+            onClick={() => {
+              for (const group of groups) {
+                for (const sub of group.subcohorts) {
+                  if (!activeSet.has(sub.fullName)) onAdd(sub.fullName);
+                }
               }
-            }
-          }}
-          disabled={groups.every((g) => g.subcohorts.every((s) => activeSet.has(s.fullName)))}
-        >
-          All
-        </button>
-        <button
-          className={styles.clearBtn}
-          onClick={() => { for (let i = selections.length - 1; i >= 0; i--) onRemove(i); }}
-          disabled={selections.length === 0}
-        >
-          Clear
-        </button>
+            }}
+            disabled={groups.every((g) => g.subcohorts.every((s) => activeSet.has(s.fullName)))}
+            onMouseEnter={() => setHoveredBtn('all')}
+            onMouseLeave={() => setHoveredBtn(null)}
+          >
+            All
+          </button>
+          <button
+            ref={clearRef}
+            className={styles.clearBtn}
+            onClick={() => { for (let i = selections.length - 1; i >= 0; i--) onRemove(i); }}
+            disabled={selections.length === 0}
+            onMouseEnter={() => setHoveredBtn('clear')}
+            onMouseLeave={() => setHoveredBtn(null)}
+          >
+            Clear
+          </button>
+        </span>
+        <PhenExNavBarTooltip isVisible={hoveredBtn === 'eye'} anchorElement={eyeRef.current} label={showAll ? 'Show selected only' : 'Show all cohorts'} />
+        <PhenExNavBarTooltip isVisible={hoveredBtn === 'all'} anchorElement={allRef.current} label="Select all cohorts" />
+        <PhenExNavBarTooltip isVisible={hoveredBtn === 'clear'} anchorElement={clearRef.current} label="Deselect all cohorts" />
       </div>
 
       {showAll ? (
