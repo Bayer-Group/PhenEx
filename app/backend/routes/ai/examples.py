@@ -1,6 +1,6 @@
-
 from phenex import *
 from phenex.util.serialization.to_dict import to_dict
+
 
 def diabetes_cohort():
     """

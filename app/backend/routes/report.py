@@ -43,30 +43,29 @@ def _nan_to_none(obj: Any) -> Any:
 
 # ── List available runs ──────────────────────────────────────────────────
 
+
 @router.get("/report/runs")
 async def list_runs() -> List[str]:
     """Return the names of available run directories (timestamp folders)."""
     if not DATA_DIR.is_dir():
         return []
     return sorted(
-        d.name for d in DATA_DIR.iterdir()
-        if d.is_dir() and not d.name.startswith(".")
+        d.name for d in DATA_DIR.iterdir() if d.is_dir() and not d.name.startswith(".")
     )
 
 
 # ── List cohorts inside a run ────────────────────────────────────────────
 
+
 @router.get("/report/runs/{run_id}/cohorts")
 async def list_cohorts(run_id: str) -> List[str]:
     """Return cohort directory names within a run."""
     run_dir = _resolve_run_dir(run_id)
-    return sorted(
-        d.name for d in run_dir.iterdir()
-        if d.is_dir()
-    )
+    return sorted(d.name for d in run_dir.iterdir() if d.is_dir())
 
 
 # ── Run metadata ─────────────────────────────────────────────────────────
+
 
 @router.get("/report/runs/{run_id}/info")
 async def get_run_info(run_id: str) -> Dict[str, str]:
@@ -88,6 +87,7 @@ async def get_run_info(run_id: str) -> Dict[str, str]:
 
 # ── Table1 data (rows + sections, no distributions) ─────────────────────
 
+
 @router.get("/report/runs/{run_id}/cohorts/{cohort_name}/table1")
 async def get_table1(
     run_id: str,
@@ -106,7 +106,9 @@ async def get_table1(
 
     json_file = cohort_dir / f"{report}.json"
     if not json_file.is_file():
-        raise HTTPException(status_code=404, detail=f"'{report}.json' not found in cohort")
+        raise HTTPException(
+            status_code=404, detail=f"'{report}.json' not found in cohort"
+        )
 
     try:
         with json_file.open() as f:
@@ -114,13 +116,16 @@ async def get_table1(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading report: {e}")
 
-    return _nan_to_none({
-        "rows": data.get("rows", []),
-        "sections": data.get("sections", {}),
-    })
+    return _nan_to_none(
+        {
+            "rows": data.get("rows", []),
+            "sections": data.get("sections", {}),
+        }
+    )
 
 
 # ── Value distributions (lazy-loaded per variable) ───────────────────────
+
 
 @router.get("/report/runs/{run_id}/cohorts/{cohort_name}/table1/distributions")
 async def get_distributions(
@@ -153,7 +158,9 @@ async def get_distributions(
 
     if variable is not None:
         if variable not in distributions:
-            raise HTTPException(status_code=404, detail=f"Variable '{variable}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Variable '{variable}' not found"
+            )
         return _nan_to_none({variable: distributions[variable]})
 
     return _nan_to_none(distributions)

@@ -33,6 +33,7 @@ except ImportError:
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
+
 def _strip_codelists(obj: Any) -> Any:
     """Recursively remove 'codelist' and 'value_distributions' keys."""
     if isinstance(obj, dict):
@@ -110,6 +111,7 @@ def _get_openai_client():
 
 
 # ── Request / Response models ────────────────────────────────────────────
+
 
 class AnalyzeRequest(BaseModel):
     run_id: str

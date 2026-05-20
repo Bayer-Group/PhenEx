@@ -116,7 +116,9 @@ async def global_exception_handler(request: Request, exc: Exception):
     if isinstance(exc, HTTPException):
         return JSONResponse(
             status_code=exc.status_code,
-            content={"detail": exc.detail if isinstance(exc.detail, str) else exc.detail},
+            content={
+                "detail": exc.detail if isinstance(exc.detail, str) else exc.detail
+            },
             headers=headers,
         )
     logger.exception("Unhandled exception: %s", exc)
