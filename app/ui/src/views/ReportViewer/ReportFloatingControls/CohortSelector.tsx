@@ -28,6 +28,19 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   const allRef = useRef<HTMLButtonElement>(null);
   const clearRef = useRef<HTMLButtonElement>(null);
   const [hoveredBtn, setHoveredBtn] = useState<'eye' | 'all' | 'clear' | null>(null);
+  const [hoveredItem, setHoveredItem] = useState<{ el: HTMLElement; isActive: boolean } | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const startItemHover = useCallback((el: HTMLElement, isActive: boolean) => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => setHoveredItem({ el, isActive }), 300);
+  }, []);
+
+  const stopItemHover = useCallback(() => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = null;
+    setHoveredItem(null);
+  }, []);
 
   // Scroll the active cohort into view, centered with padding
   useEffect(() => {
@@ -142,12 +155,13 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         <PhenExNavBarTooltip isVisible={hoveredBtn === 'eye'} anchorElement={eyeRef.current} label={showAll ? 'Show selected only' : 'Show all cohorts'} />
         <PhenExNavBarTooltip isVisible={hoveredBtn === 'all'} anchorElement={allRef.current} label="Select all cohorts" />
         <PhenExNavBarTooltip isVisible={hoveredBtn === 'clear'} anchorElement={clearRef.current} label="Deselect all cohorts" />
+        <PhenExNavBarTooltip isVisible={hoveredItem !== null} anchorElement={hoveredItem?.el ?? null} label={hoveredItem?.isActive ? 'Click to hide results' : 'Click to view results'} />
       </div>
 
       {showAll ? (
         /* ── Show All mode: all cohorts from groups ─────────────────────── */
         groups.map((group, gi) => (
-          <div key={group.parent} className={styles.legendGroup}>
+          <div key={group.parent} className={styles.legendGroup} style={{ borderColor: getCohortColor(gi, 0, group.subcohorts.length) }}>
             <div className={styles.legendGroupTitle}>
               <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: getCohortColor(gi, 0, group.subcohorts.length) }}>{group.parent}</span>
             </div>
@@ -164,7 +178,9 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                   style={{
                     cursor: 'pointer',
                   }}
-                  onClick={() => handleToggle(sub.fullName)}
+                  onClick={() => { stopItemHover(); handleToggle(sub.fullName); }}
+                  onMouseEnter={(e) => startItemHover(e.currentTarget, isActive)}
+                  onMouseLeave={stopItemHover}
                 >
                   <div
                     className={styles.legendDot}
@@ -173,15 +189,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                   <span className={`${styles.legendItemLabel} ${!isActive ? styles.legendItemLabelInactive : ''}`}>
                     {sub.label}
                   </span>
-                  {isActive && (
-                    <button
-                      className={styles.removeBtn}
-                      onClick={(e) => { e.stopPropagation(); handleToggle(sub.fullName); }}
-                      aria-label="Remove cohort"
-                    >
-                      ×
-                    </button>
-                  )}
+
                 </div>
               );
             })}
@@ -200,7 +208,9 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                 key={`${sel.cohortName}-${sel.colorIndex}`}
                 ref={(el) => { if (el) itemRefs.current.set(originalIndex, el); }}
                 selection={sel}
-                onClick={() => onRemove(originalIndex)}
+                onClick={() => { stopItemHover(); onRemove(originalIndex); }}
+                onMouseEnter={(el) => startItemHover(el, true)}
+                onMouseLeave={stopItemHover}
               />
             ))}
           </div>
@@ -216,9 +226,11 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 interface SelectedItemProps {
   selection: LegendSelection;
   onClick: () => void;
+  onMouseEnter: (el: HTMLElement) => void;
+  onMouseLeave: () => void;
 }
 
-const SelectedItem = React.forwardRef<HTMLDivElement, SelectedItemProps>(({ selection, onClick }, ref) => {
+const SelectedItem = React.forwardRef<HTMLDivElement, SelectedItemProps>(({ selection, onClick, onMouseEnter, onMouseLeave }, ref) => {
   const color = getCohortColor(selection.groupIndex, selection.subIndex, selection.totalSubs);
   const idx = selection.cohortName.indexOf('__');
   const label = idx === -1 ? 'main' : selection.cohortName.substring(idx + 2);
@@ -229,16 +241,12 @@ const SelectedItem = React.forwardRef<HTMLDivElement, SelectedItemProps>(({ sele
       className={styles.legendItem}
       style={{ cursor: 'pointer' }}
       onClick={onClick}
+      onMouseEnter={(e) => onMouseEnter(e.currentTarget)}
+      onMouseLeave={onMouseLeave}
     >
       <div className={styles.legendDot} style={{ background: color }} />
       <span className={styles.legendItemLabel}>{label}</span>
-      <button
-        className={styles.removeBtn}
-        onClick={(e) => { e.stopPropagation(); onClick(); }}
-        aria-label="Remove cohort"
-      >
-        ×
-      </button>
+
     </div>
   );
 });

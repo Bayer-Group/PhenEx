@@ -60,7 +60,8 @@
 }
 
 .legendItem:hover {
-  background: rgba(0, 0, 0, 0.05);
+  font-family: "IBMPlexSans-bold";
+  /* background: rgba(0, 0, 0, 0.05); */
 }
 
 .legendDot {
