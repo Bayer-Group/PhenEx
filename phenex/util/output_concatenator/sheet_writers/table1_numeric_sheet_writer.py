@@ -42,6 +42,11 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
     ]
     _GRAYED_STATS = {"STD", "N", "Pct"}
 
+    _FONT_SIZE_CONTENT = 10
+    _FONT_SIZE_SECTION_HEADER = 14
+    _FONT_SIZE_TITLE1 = 16
+    _FONT_SIZE_TITLE2 = 14
+
     _SPACER_COL = 1
     _NAME_COL = 2
     _DATA_START_COL = 3
@@ -103,7 +108,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                 row,
                 self._NAME_COL,
                 entry["display_name"],
-                size=14,
+                size=self._FONT_SIZE_CONTENT,
                 horizontal="right",
                 indent=6 if entry["is_subcohort"] else 4,
                 fill_color=entry["group_color"],
@@ -216,7 +221,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             start_col,
             name,
             bold=True,
-            size=16,
+            size=self._FONT_SIZE_TITLE1,
             horizontal="center",
         )
         if num_cols > 1:
@@ -239,13 +244,13 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                 start_col + i,
                 display,
                 bold=not grayed,
-                size=14,
+                size=self._FONT_SIZE_TITLE2,
                 horizontal="center",
                 font_color=self._GRAY_TEXT if grayed else None,
             )
 
         # Data rows + track max content length for widths
-        font_scale = 14 / 11
+        font_scale = self._FONT_SIZE_CONTENT / 11
         col_max_lens = {c: len(self._COLUMN_DISPLAY_NAMES.get(c, c)) for c in stat_cols}
 
         for ri, entry in enumerate(cohort_entries):
@@ -271,7 +276,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                     row,
                     start_col + i,
                     value,
-                    size=14,
+                    size=self._FONT_SIZE_CONTENT,
                     horizontal="center",
                     fill_color=alt_fill,
                     number_format=fmt,
@@ -314,7 +319,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             start_col,
             name,
             bold=True,
-            size=16,
+            size=self._FONT_SIZE_TITLE1,
             horizontal="center",
         )
         if num_cols > 1:
@@ -337,7 +342,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                 n_col,
                 cat_name,
                 bold=True,
-                size=14,
+                size=self._FONT_SIZE_TITLE2,
                 horizontal="center",
             )
             cell.alignment = Alignment(
@@ -353,7 +358,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
             )
 
         # Adjust row 3 height for wrapped category names
-        font_scale = 14 / 11
+        font_scale = self._FONT_SIZE_CONTENT / 11
         chars_per_col = int(14 / font_scale)
         max_lines = 1
         for cat in categories:
@@ -372,7 +377,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                 self._HEADER_ROW,
                 n_col,
                 "N",
-                size=14,
+                size=self._FONT_SIZE_SECTION_HEADER,
                 horizontal="right",
                 font_color=self._GRAY_TEXT,
             )
@@ -382,7 +387,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                 pct_col,
                 "%",
                 bold=True,
-                size=14,
+                size=self._FONT_SIZE_SECTION_HEADER,
                 horizontal="left",
             )
 
@@ -403,7 +408,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                     row,
                     n_col,
                     n_val,
-                    size=14,
+                    size=self._FONT_SIZE_CONTENT,
                     horizontal="right",
                     fill_color=alt_fill,
                     number_format=self._number_format_for_value(n_val),
@@ -415,7 +420,7 @@ class Table1NumericSheetWriter(_BaseSheetWriter):
                     pct_col,
                     pct_val,
                     bold=True,
-                    size=14,
+                    size=self._FONT_SIZE_CONTENT,
                     horizontal="left",
                     fill_color=alt_fill,
                     number_format=self._number_format_for_value(pct_val),
