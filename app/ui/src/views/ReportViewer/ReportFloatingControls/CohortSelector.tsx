@@ -1,5 +1,5 @@
 import React, { FC, useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { getCohortColor, type CohortGroup, type LegendSelection } from '../types';
+import { getCohortColor, type CohortGroup, type LegendSelection, type CohortDescriptions } from '../types';
 import { useBarHoverStore } from '../GraphsAndTables/RowRenderers/useBarHoverStore';
 import EyeSolidIcon from '../../../assets/icons/eye-solid.svg';
 import EyeClosedIcon from '../../../assets/icons/eye-closed.svg';
@@ -12,6 +12,7 @@ interface CohortSelectorProps {
   onReplace: (index: number, fullName: string) => void;
   onAdd: (fullName: string) => void;
   onRemove: (index: number) => void;
+  cohortDescriptions?: CohortDescriptions;
 }
 
 export const CohortSelector: FC<CohortSelectorProps> = ({
@@ -20,6 +21,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   onReplace,
   onAdd,
   onRemove,
+  cohortDescriptions,
 }) => {
   const { activeIndex } = useBarHoverStore();
   const [showAll, setShowAll] = useState(false);
@@ -33,7 +35,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
   const startItemHover = useCallback((el: HTMLElement, isActive: boolean) => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
-    hoverTimerRef.current = setTimeout(() => setHoveredItem({ el, isActive }), 300);
+    hoverTimerRef.current = setTimeout(() => setHoveredItem({ el, isActive }), 0);
   }, []);
 
   const stopItemHover = useCallback(() => {
@@ -85,22 +87,6 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
       onAdd(fullName);
     }
   }, [activeSet, selectionIndexMap, onAdd, onRemove]);
-
-  // Group selections by parent for "hide" mode
-  const groupedSelections = useMemo(() => {
-    const map = new Map<string, { parent: string; items: { sel: LegendSelection; originalIndex: number }[] }>();
-    const order: string[] = [];
-    for (let i = 0; i < selections.length; i++) {
-      const sel = selections[i];
-      const parent = groups[sel.groupIndex]?.parent ?? sel.cohortName;
-      if (!map.has(parent)) {
-        map.set(parent, { parent, items: [] });
-        order.push(parent);
-      }
-      map.get(parent)!.items.push({ sel, originalIndex: i });
-    }
-    return order.map((p) => map.get(p)!);
-  }, [selections, groups]);
 
   return (
     <div className={styles.legendBar}>
@@ -158,15 +144,21 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         <PhenExNavBarTooltip isVisible={hoveredItem !== null} anchorElement={hoveredItem?.el ?? null} label={hoveredItem?.isActive ? 'Click to hide results' : 'Click to view results'} />
       </div>
 
-      {showAll ? (
-        /* ── Show All mode: all cohorts from groups ─────────────────────── */
-        groups.map((group, gi) => (
-          <div key={group.parent} className={styles.legendGroup} style={{ borderColor: getCohortColor(gi, 0, group.subcohorts.length) }}>
+      {groups.map((group, gi) => {
+        const groupColor = getCohortColor(gi, 0, group.subcohorts.length);
+        const visibleSubs = showAll
+          ? group.subcohorts
+          : group.subcohorts.filter((sub) => activeSet.has(sub.fullName));
+        if (!showAll && visibleSubs.length === 0) return null;
+        return (
+          <div key={group.parent} className={styles.legendGroup} style={{ borderColor: groupColor }}>
             <div className={styles.legendGroupTitle}>
-              <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: getCohortColor(gi, 0, group.subcohorts.length) }}>{group.parent}</span>
+              <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: groupColor }}>{cohortDescriptions?.[group.parent]?.display_name || group.parent}</span>
             </div>
-            <div className={styles.legendGroupDescription}>{"this is a long text describing this cohort. It is defined as any menopausal diagnosis between june 2024 and march 2025"}</div>
-            {group.subcohorts.map((sub) => {
+            {cohortDescriptions?.[group.parent]?.description && (
+              <div className={styles.legendGroupDescription}>{cohortDescriptions[group.parent].description}</div>
+            )}
+            {visibleSubs.map((sub) => {
               const isActive = activeSet.has(sub.fullName);
               const color = activeColorMap.get(sub.fullName);
               const selIdx = selectionIndexMap.get(sub.fullName);
@@ -175,48 +167,26 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                   key={sub.fullName}
                   ref={(el) => { if (el && selIdx != null) itemRefs.current.set(selIdx, el); }}
                   className={styles.legendItem}
-                  style={{
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => { stopItemHover(); handleToggle(sub.fullName); }}
-                  onMouseEnter={(e) => startItemHover(e.currentTarget, isActive)}
                   onMouseLeave={stopItemHover}
                 >
                   <div
                     className={styles.legendDot}
                     style={{ background: isActive && color ? color : 'transparent', border: isActive ? '2px solid transparent' : '2px dashed #ccc' }}
+                    onClick={() => { stopItemHover(); handleToggle(sub.fullName); }}
                   />
-                  <span className={`${styles.legendItemLabel} ${!isActive ? styles.legendItemLabelInactive : ''}`}>
-                    {sub.label}
+                  <span
+                    className={`${styles.legendItemLabel} ${!isActive ? styles.legendItemLabelInactive : ''}`}
+                    onMouseEnter={(e) => startItemHover(e.currentTarget, isActive)}
+                    onClick={() => { stopItemHover(); handleToggle(sub.fullName); }}
+                  >
+                    {cohortDescriptions?.[sub.fullName]?.display_name || sub.label}
                   </span>
-
                 </div>
               );
             })}
           </div>
-        ))
-      ) : (
-        /* ── Hide mode: only selected cohorts ──────────────────────────── */
-        groupedSelections.map((group) => {
-          const gi = group.items[0]?.sel.groupIndex ?? 0;
-          const totalSubs = groups[gi]?.subcohorts.length ?? 1;
-          return (
-          <div key={group.parent} className={styles.legendGroup} style={{ borderColor: getCohortColor(gi, 0, totalSubs) }}>
-            <div className={styles.legendGroupTitle}>{group.parent}</div>
-            {group.items.map(({ sel, originalIndex }) => (
-              <SelectedItem
-                key={`${sel.cohortName}-${sel.colorIndex}`}
-                ref={(el) => { if (el) itemRefs.current.set(originalIndex, el); }}
-                selection={sel}
-                onClick={() => { stopItemHover(); onRemove(originalIndex); }}
-                onMouseEnter={(el) => startItemHover(el, true)}
-                onMouseLeave={stopItemHover}
-              />
-            ))}
-          </div>
-          );
-        })
-      )}
+        );
+      })}
     </div>
   );
 };
@@ -239,14 +209,20 @@ const SelectedItem = React.forwardRef<HTMLDivElement, SelectedItemProps>(({ sele
     <div
       ref={ref}
       className={styles.legendItem}
-      style={{ cursor: 'pointer' }}
-      onClick={onClick}
-      onMouseEnter={(e) => onMouseEnter(e.currentTarget)}
       onMouseLeave={onMouseLeave}
     >
-      <div className={styles.legendDot} style={{ background: color }} />
-      <span className={styles.legendItemLabel}>{label}</span>
-
+      <div
+        className={styles.legendDot}
+        style={{ background: color }}
+        onClick={onClick}
+      />
+      <span
+        className={styles.legendItemLabel}
+        onMouseEnter={(e) => onMouseEnter(e.currentTarget)}
+        onClick={onClick}
+      >
+        {label}
+      </span>
     </div>
   );
 });

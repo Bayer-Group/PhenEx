@@ -12,8 +12,9 @@ import {
   fetchTable2Combined,
   fetchTimeToEventCombined,
   fetchStudyRegistry,
+  fetchCohortDescriptions,
 } from './ReportViewerDataService';
-import type { KdeCurve, Table2Row, TimeToEventRow } from './types';
+import type { KdeCurve, Table2Row, TimeToEventRow, CohortDescriptions } from './types';
 import { getCached, setCache, getCachedTable2, setCachedTable2, getCachedTimeToEvent, setCachedTimeToEvent, saveSelections, loadSelections, type RunData } from './reportCache';
 import {
   parseCohortGroups,
@@ -105,8 +106,10 @@ export const ServerReportViewer: FC = () => {
       Promise.all([
         fetchFrozenCohortsCombined(runId).catch(() => []),
         fetchStudyRegistry(runId).catch(() => null),
-      ]).then(([, registry]) => {
+        fetchCohortDescriptions(runId).catch(() => ({})),
+      ]).then(([, registry, descriptions]) => {
         if (registry) setStudyRegistry(registry as unknown as StudyRegistry);
+        setCohortDescriptions(descriptions as CohortDescriptions);
         applyLoadedData(runId, cached.entries, cached.outcomesEntries, cached.waterfall, cachedT2, cachedTte, registry as StudyRegistry | null);
       });
       Promise.all([
@@ -140,8 +143,9 @@ export const ServerReportViewer: FC = () => {
       fetchTable2Combined(runId).catch(() => ({})),
       fetchTimeToEventCombined(runId).catch(() => ({})),
       fetchStudyRegistry(runId).catch(() => null),
+      fetchCohortDescriptions(runId).catch(() => ({})),
     ])
-      .then(([entries, outcomesEntries, _frozenCohorts, info, waterfall, kdes, outcomesKdes, table2, timeToEvent, registry]) => {
+      .then(([entries, outcomesEntries, _frozenCohorts, info, waterfall, kdes, outcomesKdes, table2, timeToEvent, registry, descriptions]) => {
         setRunInfo(info as Record<string, string>);
         mergeKdesIntoEntries(entries, kdes as Record<string, Record<string, KdeCurve>>);
         mergeKdesIntoEntries(outcomesEntries, outcomesKdes as Record<string, Record<string, KdeCurve>>);
@@ -157,6 +161,7 @@ export const ServerReportViewer: FC = () => {
         if (t2) setCachedTable2(runId, t2);
         if (tte) setCachedTimeToEvent(runId, tte);
         if (registry) setStudyRegistry(registry as unknown as StudyRegistry);
+        setCohortDescriptions(descriptions as CohortDescriptions);
         applyLoadedData(runId, entries, outcomesEntries, waterfall, t2, tte, registry as StudyRegistry | null);
       })
       .catch((err) => {
@@ -235,6 +240,7 @@ export const ServerReportViewer: FC = () => {
 
   // ── Study registry ────────────────────────────────────────────────────
   const [studyRegistry, setStudyRegistry] = useState<StudyRegistry | null>(null);
+  const [cohortDescriptions, setCohortDescriptions] = useState<CohortDescriptions | undefined>();
 
 
 
@@ -263,6 +269,7 @@ export const ServerReportViewer: FC = () => {
       table2Data={table2Data}
       timeToEventData={timeToEventData}
       studyRegistry={studyRegistry}
+      cohortDescriptions={cohortDescriptions}
       runId={selectedRun}
       loading={loadingRun}
       title={runInfo?.['Study Name'] ?? undefined}

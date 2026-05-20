@@ -4,7 +4,7 @@ import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCu
 import { LeftPanelTitleNavigation } from './LeftPanelTitleNavigation';
 import { type OutlineEntry } from './OutlineBar';
 import { type SequentialRow } from './studyRegistryUtils';
-import type { CohortGroup, LegendSelection } from './types';
+import type { CohortGroup, LegendSelection, CohortDescriptions } from './types';
 import styles from './LeftPanel.module.css';
 
 interface LeftPanelProps {
@@ -19,6 +19,7 @@ interface LeftPanelProps {
   onReplace: (index: number, fullName: string) => void;
   onAdd: (fullName: string) => void;
   onRemove: (index: number) => void;
+  cohortDescriptions?: CohortDescriptions;
 }
 
 export const LeftPanel: FC<LeftPanelProps> = ({
@@ -33,6 +34,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
   onReplace,
   onAdd,
   onRemove,
+  cohortDescriptions,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -54,6 +56,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
             onReplace={onReplace}
             onAdd={onAdd}
             onRemove={onRemove}
+            cohortDescriptions={cohortDescriptions}
           />
         </div>
         <SimpleCustomScrollbar

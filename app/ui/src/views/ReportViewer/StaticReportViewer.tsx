@@ -8,7 +8,7 @@
  */
 import { FC, useMemo } from 'react';
 import { ReportViewer } from './ReportViewer';
-import type { KdeCurve, Table2Row, TimeToEventRow } from './types';
+import type { KdeCurve, Table2Row, TimeToEventRow, CohortDescriptions } from './types';
 import type { CohortEntry } from './types';
 import { type StudyRegistry } from './studyRegistryUtils';
 
@@ -23,6 +23,7 @@ interface EmbeddedReportData {
   table2?: Record<string, Table2Row[]>;
   timeToEvent?: Record<string, TimeToEventRow[]>;
   studyRegistry?: Record<string, unknown>;
+  cohortDescriptions?: CohortDescriptions;
   info?: Record<string, string>;
   runId?: string;
 }
@@ -96,6 +97,7 @@ export const StaticReportViewer: FC = () => {
       table2Data={table2Data}
       timeToEventData={timeToEventData}
       studyRegistry={studyRegistry}
+      cohortDescriptions={reportData.cohortDescriptions}
       runId={reportData.runId ?? null}
       title={studyTitle}
     />

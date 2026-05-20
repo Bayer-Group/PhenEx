@@ -47,11 +47,11 @@
 }
 
 .row:hover{
-  border: calc(1px / var(--pz-scale, 1)) solid black;
+  border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
 }
 
 .numericRow:hover{
-    border: calc(1px / var(--pz-scale, 1)) solid black;
+    border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
 
 }
 

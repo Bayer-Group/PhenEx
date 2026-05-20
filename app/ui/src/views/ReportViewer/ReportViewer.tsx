@@ -24,6 +24,7 @@ import {
   type LegendSelection,
   type Table2Row,
   type TimeToEventRow,
+  type CohortDescriptions,
 } from './types';
 import { buildSequentialRowList, getSectionNames, type StudyRegistry } from './studyRegistryUtils';
 
@@ -57,6 +58,7 @@ export interface ReportViewerProps {
   table2Data?: Record<string, Table2Row[]>;
   timeToEventData?: Record<string, TimeToEventRow[]>;
   studyRegistry?: StudyRegistry | null;
+  cohortDescriptions?: CohortDescriptions;
   runId: string | null;
   loading?: boolean;
   title?: string;
@@ -74,6 +76,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   table2Data,
   timeToEventData,
   studyRegistry,
+  cohortDescriptions,
   runId: _runId,
   loading = false,
   title = 'Loading study...',
@@ -442,6 +445,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
             onReplace={handleReplace}
             onAdd={handleAdd}
             onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
+            cohortDescriptions={cohortDescriptions}
           />
 
           {/* Center panel: charts */}

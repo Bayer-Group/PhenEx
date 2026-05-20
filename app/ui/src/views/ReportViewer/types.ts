@@ -127,6 +127,13 @@ export interface TimeToEventRow {
   Censored: number;
 }
 
+export interface CohortDescriptionEntry {
+  display_name?: string | null;
+  description?: string | null;
+}
+
+export type CohortDescriptions = Record<string, CohortDescriptionEntry>;
+
 export interface Table1Data {
   rows: Table1Row[];
   sections: Record<string, string[]>;
