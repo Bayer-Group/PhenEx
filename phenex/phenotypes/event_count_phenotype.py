@@ -84,10 +84,14 @@ class EventCountPhenotype(Phenotype):
 
     def _execute(self, tables) -> PhenotypeTable:
         # Execute the child phenotype to get the initial table to filter
-        if self.phenotype.return_date != "all":
-            raise ValueError(
-                "EventCountPhenotype requires that return_date is set to all on its component phenotype"
-            )
+        # if not a UserDefinedPhenotype, ensure that all dates are returned
+        if self.phenotype.__class__.__name__ != "UserDefinedPhenotype":
+
+            if self.phenotype.return_date != "all":
+                raise ValueError(
+                    "EventCountPhenotype requires that return_date is set to all on its component phenotype"
+                )
+
         table = self.phenotype.table
 
         # Select only distinct dates:
