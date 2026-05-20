@@ -4,6 +4,7 @@ import { useBarHoverStore } from '../GraphsAndTables/RowRenderers/useBarHoverSto
 import EyeSolidIcon from '../../../assets/icons/eye-solid.svg';
 import EyeClosedIcon from '../../../assets/icons/eye-closed.svg';
 import { PhenExNavBarTooltip } from '../../../components/PhenExNavBar/PhenExNavBarTooltip';
+import { RightClickMenu } from '../../../components/RightClickMenu/RightClickMenu';
 import styles from './CohortSelector.module.css';
 
 interface CohortSelectorProps {
@@ -88,6 +89,13 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
     }
   }, [activeSet, selectionIndexMap, onAdd, onRemove]);
 
+  const [groupMenu, setGroupMenu] = useState<{ position: { x: number; y: number }; groupIndex: number } | null>(null);
+
+  const handleGroupContextMenu = useCallback((e: React.MouseEvent, groupIndex: number) => {
+    e.preventDefault();
+    setGroupMenu({ position: { x: e.clientX, y: e.clientY }, groupIndex });
+  }, []);
+
   return (
     <div className={styles.legendBar}>
       <div className={styles.actionBar}>
@@ -151,7 +159,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
           : group.subcohorts.filter((sub) => activeSet.has(sub.fullName));
         if (!showAll && visibleSubs.length === 0) return null;
         return (
-          <div key={group.parent} className={styles.legendGroup} style={{ borderColor: groupColor }}>
+          <div key={group.parent} className={styles.legendGroup} onContextMenu={(e) => handleGroupContextMenu(e, gi)}>
             <div className={styles.legendGroupTitle}>
               <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: groupColor }}>{cohortDescriptions?.[group.parent]?.display_name || group.parent}</span>
             </div>
@@ -187,6 +195,43 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
           </div>
         );
       })}
+
+      {groupMenu && (
+        <RightClickMenu
+          position={groupMenu.position}
+          onClose={() => setGroupMenu(null)}
+          items={[
+            {
+              label: 'Select all',
+              onClick: () => {
+                const group = groups[groupMenu.groupIndex];
+                for (const sub of group.subcohorts) {
+                  if (!activeSet.has(sub.fullName)) onAdd(sub.fullName);
+                }
+                setGroupMenu(null);
+              },
+              disabled: groups[groupMenu.groupIndex]?.subcohorts.every((s) => activeSet.has(s.fullName)),
+            },
+            {
+              label: 'Clear all',
+              onClick: () => {
+                const group = groups[groupMenu.groupIndex];
+                const indicesToRemove: number[] = [];
+                for (const sub of group.subcohorts) {
+                  const idx = selectionIndexMap.get(sub.fullName);
+                  if (idx != null) indicesToRemove.push(idx);
+                }
+                indicesToRemove.sort((a, b) => b - a);
+                for (const idx of indicesToRemove) {
+                  onRemove(idx);
+                }
+                setGroupMenu(null);
+              },
+              disabled: groups[groupMenu.groupIndex]?.subcohorts.every((s) => !activeSet.has(s.fullName)),
+            },
+          ]}
+        />
+      )}
     </div>
   );
 };

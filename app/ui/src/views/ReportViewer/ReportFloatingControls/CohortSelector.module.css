@@ -17,10 +17,22 @@
   gap: 4px;
   margin-left:10px;
   margin-right:20px;
-  border: var(--border);
+  border: 1px solid var(--line-color, #ddd);
   border-radius: 8px;
   padding-bottom:10px;
   background-color: white;
+  transition: transform 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.legendBar:hover .legendGroup {
+  opacity: 0.4;
+}
+
+.legendBar:hover .legendGroup:hover {
+  opacity: 1;
+  transform: scale(1.02);
+  border-color: var(--color_accent_blue, #4a90d9);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
 }
 
 .legendGroupTitle {

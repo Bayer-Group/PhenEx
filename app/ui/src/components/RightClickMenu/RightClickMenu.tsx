@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './RightClickMenu.module.css';
+import { Portal } from '../Portal/Portal';
 
 export interface RightClickMenuItem {
   label: string;
@@ -138,7 +139,7 @@ export const RightClickMenu: React.FC<RightClickMenuProps> = ({
   };
 
   return (
-    <>
+    <Portal>
       {/* Transparent backdrop to capture clicks outside */}
       <div 
         className={styles.backdrop}
@@ -152,6 +153,8 @@ export const RightClickMenu: React.FC<RightClickMenuProps> = ({
           top: `${adjustedPosition.y}px`,
         }}
         onMouseLeave={handleMouseLeave}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {items.map((item, index) => (
           <React.Fragment key={index}>
@@ -193,6 +196,6 @@ export const RightClickMenu: React.FC<RightClickMenuProps> = ({
           />
         </div>
       )}
-    </>
+    </Portal>
   );
 };
