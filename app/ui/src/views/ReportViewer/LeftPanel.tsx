@@ -40,14 +40,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
 
   return (
     <div className={styles.container}>
-      <LeftPanelTitleNavigation
-        studyTitle={title}
-        entries={entries}
-        rows={rows}
-        activeSection={activeSection}
-        activeRowIndex={activeRowIndex}
-        onOpenRow={onOpenRow}
-      />
+      <div className={styles.tabRegion}></div>
       <div className={styles.scrollRegion}>
         <div ref={scrollRef} className={styles.scrollContent}>
           <CohortSelector

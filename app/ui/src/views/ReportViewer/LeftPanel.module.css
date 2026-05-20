@@ -8,6 +8,13 @@
   overflow: hidden;
 }
 
+.tabRegion{
+  height: 40px;
+  border-bottom: var(--border);
+  background-color: var(--background-color) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .scrollRegion {
   position: relative;
   flex: 1;
