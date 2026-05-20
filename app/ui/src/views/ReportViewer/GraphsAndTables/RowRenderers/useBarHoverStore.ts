@@ -1,7 +1,6 @@
 import { useSyncExternalStore, useCallback } from 'react';
 
 type Listener = () => void;
-
 interface ActiveState {
   index: number | null;
 }

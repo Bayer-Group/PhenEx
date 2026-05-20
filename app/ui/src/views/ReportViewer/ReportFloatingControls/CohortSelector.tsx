@@ -21,7 +21,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   onAdd,
   onRemove,
 }) => {
-  const { activeIndex, onClick: toggleCohort } = useBarHoverStore();
+  const { activeIndex } = useBarHoverStore();
   const [showAll, setShowAll] = useState(false);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const eyeRef = useRef<HTMLButtonElement>(null);
@@ -146,9 +146,12 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
       {showAll ? (
         /* ── Show All mode: all cohorts from groups ─────────────────────── */
-        groups.map((group) => (
+        groups.map((group, gi) => (
           <div key={group.parent} className={styles.legendGroup}>
-            <div className={styles.legendGroupTitle}>{group.parent}</div>
+            <div className={styles.legendGroupTitle}>
+              <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: getCohortColor(gi, 0, group.subcohorts.length) }}>{group.parent}</span>
+            </div>
+            <div className={styles.legendGroupDescription}>{"this is a long text describing this cohort. It is defined as any menopausal diagnosis between june 2024 and march 2025"}</div>
             {group.subcohorts.map((sub) => {
               const isActive = activeSet.has(sub.fullName);
               const color = activeColorMap.get(sub.fullName);
@@ -159,13 +162,9 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                   ref={(el) => { if (el && selIdx != null) itemRefs.current.set(selIdx, el); }}
                   className={styles.legendItem}
                   style={{
-                    opacity: isActive && activeIndex !== null && selIdx !== activeIndex ? 0.25 : 1,
                     cursor: 'pointer',
                   }}
-                  onClick={() => {
-                    if (isActive && selIdx != null) toggleCohort(selIdx);
-                    else handleToggle(sub.fullName);
-                  }}
+                  onClick={() => handleToggle(sub.fullName)}
                 >
                   <div
                     className={styles.legendDot}
@@ -190,21 +189,23 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         ))
       ) : (
         /* ── Hide mode: only selected cohorts ──────────────────────────── */
-        groupedSelections.map((group) => (
-          <div key={group.parent} className={styles.legendGroup}>
+        groupedSelections.map((group) => {
+          const gi = group.items[0]?.sel.groupIndex ?? 0;
+          const totalSubs = groups[gi]?.subcohorts.length ?? 1;
+          return (
+          <div key={group.parent} className={styles.legendGroup} style={{ borderColor: getCohortColor(gi, 0, totalSubs) }}>
             <div className={styles.legendGroupTitle}>{group.parent}</div>
             {group.items.map(({ sel, originalIndex }) => (
               <SelectedItem
                 key={`${sel.cohortName}-${sel.colorIndex}`}
                 ref={(el) => { if (el) itemRefs.current.set(originalIndex, el); }}
                 selection={sel}
-                dimmed={activeIndex !== null && activeIndex !== originalIndex}
-                onClick={() => toggleCohort(originalIndex)}
-                onRemove={() => onRemove(originalIndex)}
+                onClick={() => onRemove(originalIndex)}
               />
             ))}
           </div>
-        ))
+          );
+        })
       )}
     </div>
   );
@@ -214,12 +215,10 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
 interface SelectedItemProps {
   selection: LegendSelection;
-  dimmed: boolean;
   onClick: () => void;
-  onRemove: () => void;
 }
 
-const SelectedItem = React.forwardRef<HTMLDivElement, SelectedItemProps>(({ selection, dimmed, onClick, onRemove }, ref) => {
+const SelectedItem = React.forwardRef<HTMLDivElement, SelectedItemProps>(({ selection, onClick }, ref) => {
   const color = getCohortColor(selection.groupIndex, selection.subIndex, selection.totalSubs);
   const idx = selection.cohortName.indexOf('__');
   const label = idx === -1 ? 'main' : selection.cohortName.substring(idx + 2);
@@ -228,14 +227,14 @@ const SelectedItem = React.forwardRef<HTMLDivElement, SelectedItemProps>(({ sele
     <div
       ref={ref}
       className={styles.legendItem}
-      style={{ opacity: dimmed ? 0.25 : 1, cursor: 'pointer' }}
+      style={{ cursor: 'pointer' }}
       onClick={onClick}
     >
       <div className={styles.legendDot} style={{ background: color }} />
       <span className={styles.legendItemLabel}>{label}</span>
       <button
         className={styles.removeBtn}
-        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
         aria-label="Remove cohort"
       >
         ×
