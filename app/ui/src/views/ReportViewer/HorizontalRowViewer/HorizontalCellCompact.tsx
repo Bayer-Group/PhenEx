@@ -47,9 +47,9 @@ export const HorizontalCellCompact = forwardRef<HTMLDivElement, HorizontalCellPr
         <SimpleCustomScrollbar
           targetRef={verticalScrollRef}
           orientation="vertical"
-          marginTop={130}
+          marginTop={50}
           marginBottom={35}
-          marginToEnd={10}
+          marginToEnd={5}
           classNameThumb={styles.verticalScrollbarThumb}
         />
       </div>

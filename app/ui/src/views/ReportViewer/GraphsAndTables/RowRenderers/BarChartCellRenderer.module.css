@@ -192,8 +192,9 @@
   display: flex;
   align-items: center;
   position: relative;
-  height: clamp(18px, calc(14px / var(--pz-scale, 1)), 30px);
+  height: clamp(18px, calc(18px / var(--pz-scale, 1)), 30px);
   cursor: default;
+  width:100%;
   border-radius: 5px;
   background-color: transparent;
   transition: background-color 0.3s ease 0.3s;
@@ -221,6 +222,7 @@
   display: flex;
   align-items: center;
   flex: 1;
+  height:100%;
 }
 
 .cohortRowPresentation .dataCells {
