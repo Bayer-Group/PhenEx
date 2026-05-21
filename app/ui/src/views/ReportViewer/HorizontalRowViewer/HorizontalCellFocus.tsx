@@ -26,7 +26,7 @@ export const HorizontalCellFocus = forwardRef<HTMLDivElement, HorizontalCellProp
       return result;
     }, [cohortData]);
 
-    const comments = useMemo(() => (row.registry?.comments ?? []).filter((c) => c.text && c.type !== 'rule_based'), [row.registry]);
+    const comments = useMemo(() => (row.registry?.comments ?? []).filter((c) => c.text), [row.registry]);
 
     const cardContent = (
       <div className={styles.cardColumnInner}>

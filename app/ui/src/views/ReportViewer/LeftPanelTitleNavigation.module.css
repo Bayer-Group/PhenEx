@@ -4,11 +4,10 @@
   flex-direction: column;
   gap: 0px;
   margin-bottom: 0px;
-  container-type: inline-size;
-  height: 130px;
+  height: fit-content;
   /* border-bottom: var(--border); */
-  padding-top:50px;
-  padding-left:20px;
+  padding: 0px;
+  width: fit-content;
 }
 
 /* ── Crumb levels ────────────────────────────────────────────────────── */
@@ -20,7 +19,7 @@
   display: block;
   background: none;
   border: none;
-  padding: 1px 4px;
+  padding: 2px 5px;
   color: black;
   cursor: default;
   text-align: left;
@@ -28,7 +27,8 @@
   transition: color 0.15s, background 0.15s;
   white-space: normal;
   word-wrap: break-word;
-  font-size: 14px;
+  font-size: 18px;
+  background-color: rgba(255,255,255, .9);
 }
 
 .crumb:hover,
@@ -38,23 +38,29 @@
 }
 
 .crumb_study {
-  font-size: 14px;
-  color: #666;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: var(--font_size_breadcrumb, 14px);
+  color: black;
   cursor: default;
+  border-radius: 4px 4px 4px 0px;
+
 }
 
 .crumb_category {
-  font-size: 14px;
+  font-size: var(--font_size_breadcrumb, 14px);
   color: #666;
   cursor: pointer;
+  border-radius: 0px 4px 4px 0px;
+
 }
 
 .crumb_section {
-  font-size: 14px;
-  font-family: "IBMPlexSans-bold", sans-serif;
-  color: black;
+  font-size: var(--font_size_breadcrumb, 14px);
+  font-family: "IBMPlexSans-regular", sans-serif;
+  color: #666;
   cursor: pointer;
-  padding: 2px 4px;
+  border-radius: 0px 4px 4px 4px;
+
 }
 
 .crumb_section:hover,

@@ -120,7 +120,6 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
     <div className={styles.legendBar}>
       <div className={styles.actionBar}>
         <span className={styles.actionInfo}>
-          <span className={styles.actionTitle}>Cohorts</span>
           <span className={styles.actionCount}>
             {selections.length}/{groups.reduce((n, g) => n + g.subcohorts.length, 0)}
           </span>
@@ -200,14 +199,14 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                   <div
                     className={styles.legendDot}
                     style={{ background: isActive && color ? color : 'transparent', border: isActive ? '2px solid transparent' : '2px dashed #ccc' }}
-                    onClick={() => { stopItemHover(); handleToggle(sub.fullName); }}
+                    onClick={(e) => { e.stopPropagation(); stopItemHover(); handleToggle(sub.fullName); }}
                   />
                   <span
                     className={`${styles.legendItemLabel} ${!isActive ? styles.legendItemLabelInactive : ''}`}
                     onMouseEnter={(e) => startItemHover(e.currentTarget, isActive)}
-                    onClick={() => { stopItemHover(); handleToggle(sub.fullName); }}
+                    onClick={(e) => { e.stopPropagation(); stopItemHover(); handleToggle(sub.fullName); }}
                   >
-                    {cohortDescriptions?.[sub.fullName]?.display_name || sub.label}
+                    {sub.fullName === group.parent ? 'Main Cohort' : (cohortDescriptions?.[sub.fullName]?.display_name || sub.label)}
                   </span>
                 </div>
               );

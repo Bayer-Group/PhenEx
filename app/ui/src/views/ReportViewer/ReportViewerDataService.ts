@@ -1,5 +1,5 @@
 import { api } from '@/api/httpClient';
-import type { Table1Data, CohortEntry, Table2Row, TimeToEventRow, CohortDescriptions } from './types';
+import type { Table1Data, CohortEntry, Table2Row, TimeToEventRow, CohortDescriptions, ReportsPayload } from './types';
 
 const BASE = '/report';
 
@@ -168,5 +168,14 @@ export async function fetchCohortDescriptions(
 ): Promise<CohortDescriptions> {
   const url = `${BASE}/runs/${encodeURIComponent(runId)}/cohort_descriptions`;
   const { data } = await api.get<CohortDescriptions>(url);
+  return data;
+}
+
+/** Fetch reports definitions. */
+export async function fetchReports(
+  runId: string,
+): Promise<ReportsPayload> {
+  const url = `${BASE}/runs/${encodeURIComponent(runId)}/reports`;
+  const { data } = await api.get<ReportsPayload>(url);
   return data;
 }

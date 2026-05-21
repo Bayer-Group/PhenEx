@@ -25,7 +25,6 @@
 }
 
 .legendBar:hover .legendGroup {
-  opacity: 0.4;
 }
 
 .legendBar:hover .legendGroup:hover {

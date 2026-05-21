@@ -13,8 +13,9 @@ import {
   fetchTimeToEventCombined,
   fetchStudyRegistry,
   fetchCohortDescriptions,
+  fetchReports,
 } from './ReportViewerDataService';
-import type { KdeCurve, Table2Row, TimeToEventRow, CohortDescriptions } from './types';
+import type { KdeCurve, Table2Row, TimeToEventRow, CohortDescriptions, Report } from './types';
 import { getCached, setCache, getCachedTable2, setCachedTable2, getCachedTimeToEvent, setCachedTimeToEvent, saveSelections, loadSelections, type RunData } from './reportCache';
 import {
   parseCohortGroups,
@@ -107,9 +108,11 @@ export const ServerReportViewer: FC = () => {
         fetchFrozenCohortsCombined(runId).catch(() => []),
         fetchStudyRegistry(runId).catch(() => null),
         fetchCohortDescriptions(runId).catch(() => ({})),
-      ]).then(([, registry, descriptions]) => {
+        fetchReports(runId).catch(() => ({ reports: [] })),
+      ]).then(([, registry, descriptions, reportsPayload]) => {
         if (registry) setStudyRegistry(registry as unknown as StudyRegistry);
         setCohortDescriptions(descriptions as CohortDescriptions);
+        setReports((reportsPayload as { reports: Report[] }).reports ?? []);
         applyLoadedData(runId, cached.entries, cached.outcomesEntries, cached.waterfall, cachedT2, cachedTte, registry as StudyRegistry | null);
       });
       Promise.all([
@@ -144,8 +147,9 @@ export const ServerReportViewer: FC = () => {
       fetchTimeToEventCombined(runId).catch(() => ({})),
       fetchStudyRegistry(runId).catch(() => null),
       fetchCohortDescriptions(runId).catch(() => ({})),
+      fetchReports(runId).catch(() => ({ reports: [] })),
     ])
-      .then(([entries, outcomesEntries, _frozenCohorts, info, waterfall, kdes, outcomesKdes, table2, timeToEvent, registry, descriptions]) => {
+      .then(([entries, outcomesEntries, _frozenCohorts, info, waterfall, kdes, outcomesKdes, table2, timeToEvent, registry, descriptions, reportsPayload]) => {
         setRunInfo(info as Record<string, string>);
         mergeKdesIntoEntries(entries, kdes as Record<string, Record<string, KdeCurve>>);
         mergeKdesIntoEntries(outcomesEntries, outcomesKdes as Record<string, Record<string, KdeCurve>>);
@@ -162,6 +166,7 @@ export const ServerReportViewer: FC = () => {
         if (tte) setCachedTimeToEvent(runId, tte);
         if (registry) setStudyRegistry(registry as unknown as StudyRegistry);
         setCohortDescriptions(descriptions as CohortDescriptions);
+        setReports((reportsPayload as { reports: Report[] }).reports ?? []);
         applyLoadedData(runId, entries, outcomesEntries, waterfall, t2, tte, registry as StudyRegistry | null);
       })
       .catch((err) => {
@@ -241,6 +246,7 @@ export const ServerReportViewer: FC = () => {
   // ── Study registry ────────────────────────────────────────────────────
   const [studyRegistry, setStudyRegistry] = useState<StudyRegistry | null>(null);
   const [cohortDescriptions, setCohortDescriptions] = useState<CohortDescriptions | undefined>();
+  const [reports, setReports] = useState<Report[]>([]);
 
 
 
@@ -270,6 +276,7 @@ export const ServerReportViewer: FC = () => {
       timeToEventData={timeToEventData}
       studyRegistry={studyRegistry}
       cohortDescriptions={cohortDescriptions}
+      reports={reports}
       runId={selectedRun}
       loading={loadingRun}
       title={runInfo?.['Study Name'] ?? undefined}

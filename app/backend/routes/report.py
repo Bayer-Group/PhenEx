@@ -227,3 +227,29 @@ def get_study_registry(run_id: str) -> Dict[str, Any]:
     if data is None:
         return {}
     return data
+
+
+@router.get("/report/runs/{run_id}/cohort_descriptions")
+def get_cohort_descriptions(run_id: str) -> Dict[str, Any]:
+    """Return cohort descriptions (display names and descriptions).
+
+    Reads ``cohort_descriptions.json`` from the run directory.
+    Returns an empty dict if not found.
+    """
+    data = storage.read_run_file(run_id, "cohort_descriptions.json")
+    if data is None:
+        return {}
+    return data
+
+
+@router.get("/report/runs/{run_id}/reports")
+def get_reports(run_id: str) -> Dict[str, Any]:
+    """Return reports definitions.
+
+    Reads ``reports.json`` from the run directory.
+    Returns ``{"reports": []}`` if not found.
+    """
+    data = storage.read_run_file(run_id, "reports.json")
+    if data is None:
+        return {"reports": []}
+    return data

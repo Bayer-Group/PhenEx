@@ -25,8 +25,10 @@ import {
   type Table2Row,
   type TimeToEventRow,
   type CohortDescriptions,
+  type Report,
 } from './types';
 import { buildSequentialRowList, getSectionNames, type StudyRegistry } from './studyRegistryUtils';
+import { LeftPanelTitleNavigation } from './LeftPanelTitleNavigation';
 
 interface WaterfallInfoRow {
   Name: string;
@@ -59,6 +61,7 @@ export interface ReportViewerProps {
   timeToEventData?: Record<string, TimeToEventRow[]>;
   studyRegistry?: StudyRegistry | null;
   cohortDescriptions?: CohortDescriptions;
+  reports?: Report[];
   runId: string | null;
   loading?: boolean;
   title?: string;
@@ -77,6 +80,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   timeToEventData,
   studyRegistry,
   cohortDescriptions,
+  reports,
   runId: _runId,
   loading = false,
   title = 'Loading study...',
@@ -446,10 +450,21 @@ export const ReportViewer: FC<ReportViewerProps> = ({
             onAdd={handleAdd}
             onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
             cohortDescriptions={cohortDescriptions}
+            reports={reports}
           />
 
           {/* Center panel: charts */}
           <div className={styles.centerPanel}>
+            <div className={styles.floatingTitle}>
+              <LeftPanelTitleNavigation
+                studyTitle={title}
+                entries={outlineEntries}
+                rows={sequentialRows}
+                activeSection={activeSection}
+                activeRowIndex={viewerIndex}
+                onOpenRow={setViewerIndex}
+              />
+            </div>
             <OutlineBar entries={outlineEntries} activeSection={activeSection} />
 
             {/* Zoom controls — bottom right */}

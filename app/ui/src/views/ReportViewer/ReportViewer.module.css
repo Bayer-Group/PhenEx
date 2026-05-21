@@ -49,6 +49,15 @@
   overflow: hidden;
 }
 
+.floatingTitle {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  z-index: 10;
+  pointer-events: auto;
+  font-family: "IBMPlexSans-regular", sans-serif;
+}
+
 .rightPanel {
   height: 100%;
   overflow: hidden;

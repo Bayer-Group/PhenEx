@@ -51,7 +51,7 @@
 }
 
 .tab.active {
-  background-color: var(--button-background-color-selected) !important;
+  background-color: var(--button-background-color-selected) ;
   color: var(--dynamic-accent-color, var(--button-text-color-selected));
   border: 1px solid var(--dynamic-accent-color, var(--button-border-color-selected));
   font-family: var(--button-font-family-selected);

@@ -134,6 +134,26 @@ export interface CohortDescriptionEntry {
 
 export type CohortDescriptions = Record<string, CohortDescriptionEntry>;
 
+/* ── Reports ───────────────────────────────────────────────────────── */
+
+export interface ReportRow {
+  name: string;
+  reporter: string;
+  active_cohorts: string[];
+}
+
+export interface Report {
+  report_id: string;
+  display_name: string;
+  type: string;
+  description: string;
+  rows: ReportRow[];
+}
+
+export interface ReportsPayload {
+  reports: Report[];
+}
+
 export interface Table1Data {
   rows: Table1Row[];
   sections: Record<string, string[]>;

@@ -1,10 +1,11 @@
-import { FC, useRef } from 'react';
+import { FC, useRef, useState } from 'react';
 import { CohortSelector } from './ReportFloatingControls/CohortSelector';
+import { ReportSelector } from './ReportFloatingControls/ReportSelector';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import { LeftPanelTitleNavigation } from './LeftPanelTitleNavigation';
+import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 import { type OutlineEntry } from './OutlineBar';
 import { type SequentialRow } from './studyRegistryUtils';
-import type { CohortGroup, LegendSelection, CohortDescriptions } from './types';
+import type { CohortGroup, LegendSelection, CohortDescriptions, Report } from './types';
 import styles from './LeftPanel.module.css';
 
 interface LeftPanelProps {
@@ -20,6 +21,8 @@ interface LeftPanelProps {
   onAdd: (fullName: string) => void;
   onRemove: (index: number) => void;
   cohortDescriptions?: CohortDescriptions;
+  reports?: Report[];
+  onSelectReport?: (report: Report) => void;
 }
 
 export const LeftPanel: FC<LeftPanelProps> = ({
@@ -35,22 +38,42 @@ export const LeftPanel: FC<LeftPanelProps> = ({
   onAdd,
   onRemove,
   cohortDescriptions,
+  reports,
+  onSelectReport,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<'cohorts' | 'reports'>('cohorts');
 
   return (
     <div className={styles.container}>
-      <div className={styles.tabRegion}></div>
+      <div className={styles.tabRegion}>
+        <Tabs
+          tabs={['Cohorts', 'Reports']}
+          active_tab_index={activeTab === 'cohorts' ? 0 : 1}
+          onTabChange={(i) => setActiveTab(i === 0 ? 'cohorts' : 'reports')}
+          classNameTabsContainer={styles.tabsContainer}
+          classNameTabs={styles.tab}
+          classNameActiveTab={styles.tabActive}
+          classNameHoverTab={styles.tabHover}
+        />
+      </div>
       <div className={styles.scrollRegion}>
         <div ref={scrollRef} className={styles.scrollContent}>
-          <CohortSelector
-            groups={groups}
-            selections={selections}
-            onReplace={onReplace}
-            onAdd={onAdd}
-            onRemove={onRemove}
-            cohortDescriptions={cohortDescriptions}
-          />
+          {activeTab === 'cohorts' ? (
+            <CohortSelector
+              groups={groups}
+              selections={selections}
+              onReplace={onReplace}
+              onAdd={onAdd}
+              onRemove={onRemove}
+              cohortDescriptions={cohortDescriptions}
+            />
+          ) : (
+            <ReportSelector
+              reports={reports ?? []}
+              onSelect={onSelectReport ?? (() => {})}
+            />
+          )}
         </div>
         <SimpleCustomScrollbar
           targetRef={scrollRef}
