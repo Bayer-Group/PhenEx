@@ -159,6 +159,8 @@
   color: #999;
   margin-top: 1px;
   white-space: nowrap;
+  position: absolute;
+  right:100px;
 }
 
 @container actionbar (max-width: 200px) {

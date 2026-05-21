@@ -119,11 +119,6 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   return (
     <div className={styles.legendBar}>
       <div className={styles.actionBar}>
-        <span className={styles.actionInfo}>
-          <span className={styles.actionCount}>
-            {selections.length}/{groups.reduce((n, g) => n + g.subcohorts.length, 0)}
-          </span>
-        </span>
         <span className={styles.actionButtons}>
           <button
             ref={eyeRef}
@@ -164,6 +159,11 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
           >
             Clear
           </button>
+        </span>
+        <span className={styles.actionInfo}>
+          <span className={styles.actionCount}>
+            {selections.length}/{groups.reduce((n, g) => n + g.subcohorts.length, 0)} selected
+          </span>
         </span>
         <PhenExNavBarTooltip isVisible={hoveredBtn === 'eye'} anchorElement={eyeRef.current} label={showAll ? 'Show selected only' : 'Show all cohorts'} />
         <PhenExNavBarTooltip isVisible={hoveredBtn === 'all'} anchorElement={allRef.current} label="Select all cohorts" />
