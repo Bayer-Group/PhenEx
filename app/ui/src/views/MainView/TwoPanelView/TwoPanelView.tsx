@@ -246,6 +246,7 @@ export const TwoPanelView = React.forwardRef<
             <div
               className={`${styles.divider} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
               onMouseDown={handleMouseDown}
+              onClick={(e) => e.stopPropagation()}
             />
             <div className={styles.leftPanelContent}>{slideoverContent}</div>
           </div>

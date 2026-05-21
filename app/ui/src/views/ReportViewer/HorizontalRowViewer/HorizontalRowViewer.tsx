@@ -58,6 +58,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
+  const mouseDownOnOverlay = useRef(false);
   const hasNavigated = useRef(false);
   const holdDir = useRef<-1 | 0 | 1>(0);
   const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -228,10 +229,17 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 
   if (!current) return null;
 
+  const handleOverlayClick = useCallback(() => {
+    if (!mouseDownOnOverlay.current) return;
+    mouseDownOnOverlay.current = false;
+    startClose();
+  }, [startClose]);
+
   return (
     <div
       className={`${styles.overlay} ${closing ? styles.closing : ''}`}
-      onClick={startClose}
+      onMouseDown={() => { mouseDownOnOverlay.current = true; }}
+      onClick={handleOverlayClick}
     >
       {!isLeftPanelShown && (
         <HorizontalRowTitle

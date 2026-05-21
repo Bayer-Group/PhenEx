@@ -71,9 +71,9 @@ export const HorizontalCellCompact = forwardRef<HTMLDivElement, HorizontalCellPr
       >
         <TwoPanelView
           initialSizeLeft={600}
-          minSizeLeft={400}
+          minSizeLeft={200}
           minSizeRight={200}
-          maxSizeRight={450}
+          maxSizeRight={1000}
           leftContent={cardContent}
           slideoverContent={commentsContent}
           slideoverCollapsed={commentsCollapsed || comments.length === 0}
