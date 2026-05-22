@@ -17,6 +17,7 @@
   background-color: var(--background-color) !important;
   position: relative;
   height: 100%;
+  z-index: 1;
   transition:
     width 0.2s ease,
     opacity 0.2s ease;
