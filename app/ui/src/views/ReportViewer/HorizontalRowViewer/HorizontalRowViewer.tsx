@@ -25,52 +25,41 @@ if (typeof window !== 'undefined') {
 
 interface HorizontalRowViewerProps {
   rows: SequentialRow[];
-  currentIndex: number;
+  initialIndex: number;
   cohortDataMap: Record<string, CohortClassified[]>;
   finalCohortSizes?: Record<string, number | null>;
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   studyTitle?: string;
-  onClose: () => void;
-  onNavigate: (index: number) => void;
-  onScrollToRow?: (el: HTMLElement | null) => void;
+  onClose: (finalIndex: number) => void;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
 
 export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   rows,
-  currentIndex,
+  initialIndex,
   cohortDataMap,
   finalCohortSizes,
   tteCohorts,
   table2Cohorts,
   studyTitle,
   onClose,
-  onNavigate,
-  onScrollToRow,
 }) => {
   const { isLeftPanelShown } = useThreePanelCollapse();
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [closing, setClosing] = useState(false);
   const [commentsCollapsed, setCommentsCollapsed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
   const mouseDownOnOverlay = useRef(false);
-  const hasNavigated = useRef(false);
   const holdDir = useRef<-1 | 0 | 1>(0);
   const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mountY = useRef(lastClickY);
 
   const current = rows[currentIndex];
   const desiredTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;
-
-  // Scroll the background report to the current row (only after first nav)
-  useEffect(() => {
-    if (!hasNavigated.current || !onScrollToRow || !current) return;
-    const el = document.querySelector(`[data-row-name="${CSS.escape(current.name)}"]`) as HTMLElement | null;
-    onScrollToRow(el);
-  }, [currentIndex, current, onScrollToRow]);
 
   // ── Scroll management ─────────────────────────────────────────────────
 
@@ -125,9 +114,8 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     if (dir === 0) return;
     const next = currentIndex + dir;
     if (next < 0 || next >= rows.length) { holdDir.current = 0; return; }
-    hasNavigated.current = true;
-    onNavigate(next);
-  }, [currentIndex, rows.length, onNavigate]);
+    setCurrentIndex(next);
+  }, [currentIndex, rows.length]);
 
   // When currentIndex changes while holding, animate to card then schedule next step
   useEffect(() => {
@@ -182,15 +170,14 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   // ── Close / keyboard ─────────────────────────────────────────────────
 
   const navigate = useCallback((index: number) => {
-    hasNavigated.current = true;
-    onNavigate(index);
-  }, [onNavigate]);
+    setCurrentIndex(index);
+  }, []);
 
   const startClose = useCallback(() => {
     if (closing) return;
     setClosing(true);
-    setTimeout(onClose, ANIM_MS);
-  }, [closing, onClose]);
+    setTimeout(() => onClose(currentIndex), ANIM_MS);
+  }, [closing, onClose, currentIndex]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {

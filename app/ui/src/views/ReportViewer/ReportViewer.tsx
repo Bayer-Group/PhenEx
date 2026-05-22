@@ -259,7 +259,16 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
   // ── HorizontalRowViewer state (single instance for all charts) ────────
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const closeViewer = useCallback(() => setViewerIndex(null), []);
+  const scrollToElementRef = useRef<(el: HTMLElement | null) => void>(() => {});
+  const closeViewer = useCallback((finalIndex: number) => {
+    setViewerIndex(null);
+    // Scroll background report to the final row without animation
+    const row = sequentialRows[finalIndex];
+    if (row) {
+      const el = document.querySelector(`[data-row-name="${CSS.escape(row.name)}"]`) as HTMLElement | null;
+      if (el) scrollToElementRef.current(el);
+    }
+  }, [sequentialRows]);
 
   // ── Table2 + TimeToEvent ──────────────────────────────────────────────
   const table2Cohorts: Table2Cohort[] = useMemo(
@@ -382,6 +391,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     },
     [pz],
   );
+  scrollToElementRef.current = scrollToElement;
 
   // ── Visible section tracking ──────────────────────────────────────────
   const getVisibleSections = useCallback(() => {
@@ -562,15 +572,13 @@ export const ReportViewer: FC<ReportViewerProps> = ({
             {viewerIndex != null && (
               <HorizontalRowViewer
                 rows={sequentialRows}
-                currentIndex={viewerIndex}
+                initialIndex={viewerIndex}
                 cohortDataMap={cohortDataMap}
                 finalCohortSizes={finalCohortSizes}
                 tteCohorts={tteCohorts}
                 table2Cohorts={table2Cohorts}
                 studyTitle={displayTitle}
                 onClose={closeViewer}
-                onNavigate={setViewerIndex}
-                onScrollToRow={scrollToElement}
               />
             )}
           </div>
