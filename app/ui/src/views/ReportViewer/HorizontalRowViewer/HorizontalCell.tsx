@@ -9,7 +9,7 @@ import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEven
 import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { CommentCard } from './CommentCard';
-import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs/SmartBreadcrumbs';
+
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { CardWithCommentsPanel } from './CardWithCommentsPanel';
 import booleanStyles from '../GraphsAndTables/ModalRenderers/BooleanRowModal.module.css';
@@ -125,39 +125,6 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
 
     const comments = useMemo(() => (row.registry?.comments ?? []).filter((c) => c.text), [row.registry]);
 
-    const CATEGORY_LABELS: Record<string, string> = {
-      attrition: 'Attrition',
-      baseline_characteristics: 'Baseline Characteristics',
-      outcomes: 'Outcomes',
-    };
-    const CAT_KEYS = ['attrition', 'baseline_characteristics', 'outcomes'] as const;
-
-    const breadcrumbItems = useMemo(() => {
-      const items: { displayName: string; onClick: () => void }[] = [];
-
-      // Study name → navigate to first row of first category
-      const catMap = new Map<string, number>();
-      for (const r of rows) {
-        if (!catMap.has(r.category)) catMap.set(r.category, r.index);
-      }
-      if (studyTitle) {
-        items.push({ displayName: studyTitle, onClick: () => onNavigate(0) });
-      }
-
-      // Category
-      const categoryLabel = CATEGORY_LABELS[row.category] ?? row.category;
-      const catIdx = catMap.get(row.category);
-      items.push({ displayName: categoryLabel, onClick: () => onNavigate(catIdx ?? row.index) });
-
-      // Section
-      if (row.section) {
-        const secIdx = rows.find((r) => r.category === row.category && r.section === row.section)?.index ?? row.index;
-        items.push({ displayName: row.section, onClick: () => onNavigate(secIdx) });
-      }
-
-      return items;
-    }, [rows, row, studyTitle, onNavigate]);
-
     const mainContent = (
       <div className={styles.cardBody}>
         <div className={styles.contentCard}>
@@ -188,9 +155,6 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
       >
         <div className={styles.cardColumnInner}>
           <div ref={verticalScrollRef} className={styles.verticalWrapper}>
-            <div className={styles.breadcrumbs} onClick={(e) => e.stopPropagation()}>
-              <SmartBreadcrumbs items={breadcrumbItems} compact />
-            </div>
             <div
               className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
               onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(row.index); }}

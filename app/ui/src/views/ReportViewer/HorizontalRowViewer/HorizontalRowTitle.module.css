@@ -1,16 +1,12 @@
 /* ── Floating title container ─────────────────────────────────────────── */
 .container {
-  position: absolute;
-  left: 80px;
-  top:10px;
-  width: fit-content;
-  height:fit-content;
-  z-index: 1;
+  position:absolute;
   display: flex;
-  flex-direction: column;
-  gap: 0px;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
   pointer-events: auto;
-  overflow: hidden;
+
 }
 
 /* ── Individual crumb ────────────────────────────────────────────────── */
@@ -22,15 +18,21 @@
   display: block;
   background: none;
   border: none;
-  padding: 1px 8px;
+  padding: 1px 6px;
   font-size: var(--font_size_breadcrumb, 11px);
   color: black;
   cursor: default;
   text-align: left;
   border-radius: 4px;
   transition: color 0.15s, background 0.15s;
-  white-space: normal;
-  word-wrap: break-word;
+  white-space: nowrap;
+}
+
+.separator {
+  color: #999;
+  font-size: 13px;
+  padding: 0 2px;
+  user-select: none;
 }
 
 .crumb:hover,
@@ -41,27 +43,25 @@
 
 /* Level: study name */
 .crumb_study {
-  font-size: 22px;
-  color: #666;
-  cursor: default;
+  font-size: 13px;
+  color: #999;
+  cursor: pointer;
 }
 
 /* Level: category (Baseline Characteristics, Outcomes, etc.) */
 .crumb_category {
-  font-size: 22px;
-  color: #666;
+  font-size: 13px;
+  color: #999;
   cursor: pointer;
-  margin-left:0px;
 }
 
 /* Level: section (Demographics, etc.) */
 .crumb_section {
-  font-size: 22px;
+  font-size: 13px;
   font-family: "IBMPlexSans-bold", sans-serif;
-  color: black;
+  color: #333;
   cursor: pointer;
-  padding: 2px 8px;
-  margin-left:0px;
+  padding: 1px 6px;
 }
 
 .crumb_section:hover,

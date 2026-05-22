@@ -208,6 +208,7 @@ export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
         level="study"
         onNavigate={onNavigate}
       />
+      <span className={styles.separator}>/</span>
 
       {/* Level 2: Category — menu shows sections */}
       <Crumb
@@ -220,13 +221,16 @@ export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
 
       {/* Level 3: Section — menu shows rows in this section */}
       {sectionLabel && (
-        <Crumb
-          label={sectionLabel}
-          activeLabel={current.registry?.display_name || current.name}
-          options={rowOptions}
-          level="section"
-          onNavigate={onNavigate}
-        />
+        <>
+          <span className={styles.separator}>/</span>
+          <Crumb
+            label={sectionLabel}
+            activeLabel={current.registry?.display_name || current.name}
+            options={rowOptions}
+            level="section"
+            onNavigate={onNavigate}
+          />
+        </>
       )}
     </div>
   );

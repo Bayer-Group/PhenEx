@@ -5,6 +5,7 @@ import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/Ou
 import styles from './HorizontalRowViewer.module.css';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 import { HorizontalCell } from './HorizontalCell';
+import { HorizontalRowTitle } from './HorizontalRowTitle';
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -226,6 +227,15 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       onMouseDown={() => { mouseDownOnOverlay.current = true; }}
       onClick={handleOverlayClick}
     >
+      <div className={styles.titleBar} onClick={(e) => e.stopPropagation()}>
+        <HorizontalRowTitle
+          rows={rows}
+          currentIndex={currentIndex}
+          desiredTop={desiredTop}
+          studyTitle={studyTitle}
+          onNavigate={navigate}
+        />
+      </div>
       <div className={styles.scroller} ref={scrollRef}>
         {rows.map((row) => {
           const isFocused = row.index === currentIndex;

@@ -13,6 +13,12 @@
   animation: fadeOut 0.15s ease-in forwards;
 }
 
+.titleBar {
+  padding: 0px 20px;
+  z-index: 3;
+  pointer-events: auto;
+}
+
 .scroller {
   flex: 1;
   display: flex;

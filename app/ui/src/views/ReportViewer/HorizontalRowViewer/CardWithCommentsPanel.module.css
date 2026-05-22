@@ -7,6 +7,11 @@
 .mainPanel {
   flex: 0 0 auto;
   min-width: 0;
+  background: white;
+  border-radius: 12px 0 0 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--line-color, #e0e0e0);
+  border-right: none;
 }
 
 .commentsPanel {
@@ -14,6 +19,7 @@
   min-width: 0;
   position: relative;
   align-self: stretch;
+
 }
 
 .commentsPanelContent {
@@ -24,7 +30,6 @@
   bottom: 0;
   overflow-y: auto;
   scrollbar-width: none;
-  border-left: 1px solid var(--line-color, #e0e0e0);
 }
 
 .commentsPanelContent::-webkit-scrollbar {
@@ -39,7 +44,8 @@
   background-color: transparent;
   z-index: 5000;
   top: 0;
-  left: 0;
+  left: -5px;
+  border-right: 1px solid var(--line-color, #e0e0e0);
 }
 
 .divider:hover {
