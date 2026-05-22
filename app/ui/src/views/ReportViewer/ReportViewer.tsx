@@ -452,7 +452,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           split="vertical"
           initalSizeLeft={280}
           initalSizeRight={300}
-          minSizeLeft={200}
+          minSizeLeft={270}
           minSizeRight={200}
         >
           {/* Left panel: navigation */}

@@ -1,4 +1,4 @@
-import { FC, forwardRef, useMemo, useRef } from 'react';
+import { FC, forwardRef, useCallback, useMemo, useRef, useState } from 'react';
 import { type CohortClassified, type KdeCurve } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
@@ -109,6 +109,8 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
   ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, commentsCollapsed, studyTitle = '' }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const verticalScrollRef = useRef<HTMLDivElement>(null);
+    const [commentsPanelWidth, setCommentsPanelWidth] = useState(300);
+    const handleRightWidthChange = useCallback((w: number) => setCommentsPanelWidth(w), []);
     const availableTteOutcomes = useMemo(
       () => rows
         .filter((c) => c.reporter === row.reporter && c.rowType === 'time_to_event')
@@ -166,6 +168,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
                   maxSizeRight={500}
                   leftContent={mainContent}
                   commentsContent={commentsContent}
+                  onRightWidthChange={handleRightWidthChange}
                 />
             </div>
           </div>
@@ -174,7 +177,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
             orientation="vertical"
             marginTop={130}
             marginBottom={35}
-            marginToEnd={18}
+            marginToEnd={commentsPanelWidth + 5}
             classNameThumb={styles.verticalScrollbarThumb}
           />
         </div>

@@ -6,6 +6,7 @@
   align-items: center;
   gap: 0;
   pointer-events: auto;
+  top: 18px
 
 }
 
@@ -43,21 +44,21 @@
 
 /* Level: study name */
 .crumb_study {
-  font-size: 13px;
+  font-size: var(--font_size_breadcrumb, 14px);
   color: #999;
   cursor: pointer;
 }
 
 /* Level: category (Baseline Characteristics, Outcomes, etc.) */
 .crumb_category {
-  font-size: 13px;
+  font-size: var(--font_size_breadcrumb, 14px);
   color: #999;
   cursor: pointer;
 }
 
 /* Level: section (Demographics, etc.) */
 .crumb_section {
-  font-size: 13px;
+  font-size: var(--font_size_breadcrumb, 14px);
   font-family: "IBMPlexSans-bold", sans-serif;
   color: #333;
   cursor: pointer;

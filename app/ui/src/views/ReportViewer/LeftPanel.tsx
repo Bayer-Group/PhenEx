@@ -1,8 +1,9 @@
-import { FC, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { CohortSelector } from './ReportFloatingControls/CohortSelector';
 import { ReportSelector } from './ReportFloatingControls/ReportSelector';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
+import { Portal } from '../../components/Portal/Portal';
 import { type OutlineEntry } from './OutlineBar';
 import { type SequentialRow } from './studyRegistryUtils';
 import type { CohortGroup, LegendSelection, CohortDescriptions, Report } from './types';
@@ -42,7 +43,23 @@ export const LeftPanel: FC<LeftPanelProps> = ({
   onSelectReport,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRegionRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<'cohorts' | 'reports'>('cohorts');
+  const [regionRect, setRegionRect] = useState<DOMRect | null>(null);
+
+  const updateRect = useCallback(() => {
+    const el = scrollRegionRef.current;
+    if (el) setRegionRect(el.getBoundingClientRect());
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRegionRef.current;
+    if (!el) return;
+    updateRect();
+    const ro = new ResizeObserver(updateRect);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [updateRect]);
 
   return (
     <div className={styles.container}>
@@ -57,7 +74,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
           classNameHoverTab={styles.tabHover}
         />
       </div>
-      <div className={styles.scrollRegion}>
+      <div ref={scrollRegionRef} className={styles.scrollRegion}>
         <div ref={scrollRef} className={styles.scrollContent}>
           {activeTab === 'cohorts' ? (
             <CohortSelector
@@ -75,14 +92,30 @@ export const LeftPanel: FC<LeftPanelProps> = ({
             />
           )}
         </div>
-        <SimpleCustomScrollbar
-          targetRef={scrollRef}
-          orientation="vertical"
-          marginTop={60}
-          marginBottom={100}
-          marginToEnd={5}
-        />
       </div>
+      {regionRect && (
+        <Portal>
+          <div style={{
+            position: 'fixed',
+            top: regionRect.top,
+            left: regionRect.left,
+            width: regionRect.width,
+            height: regionRect.height,
+            pointerEvents: 'none',
+            zIndex: 9999,
+          }}>
+            <div style={{ pointerEvents: 'auto' }}>
+              <SimpleCustomScrollbar
+                targetRef={scrollRef}
+                orientation="vertical"
+                marginTop={35}
+                marginBottom={20}
+                marginToEnd={-12}
+              />
+            </div>
+          </div>
+        </Portal>
+      )}
     </div>
   );
 };

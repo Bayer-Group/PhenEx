@@ -9,6 +9,7 @@ interface CardWithCommentsPanelProps {
   leftContent: React.ReactNode;
   commentsContent: React.ReactNode;
   commentsCollapsed?: boolean;
+  onRightWidthChange?: (width: number) => void;
 }
 
 export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
@@ -19,6 +20,7 @@ export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
   leftContent,
   commentsContent,
   commentsCollapsed = false,
+  onRightWidthChange,
 }) => {
   const initialRightWidth = useMemo(() => {
     try {
@@ -45,7 +47,8 @@ export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
     try {
       localStorage.setItem('phenex_two_panel_right_width', rightWidth.toString());
     } catch { /* ignore */ }
-  }, [rightWidth]);
+    onRightWidthChange?.(commentsCollapsed ? 0 : rightWidth);
+  }, [rightWidth, commentsCollapsed, onRightWidthChange]);
 
   // Recalculate left width from container
   useEffect(() => {
