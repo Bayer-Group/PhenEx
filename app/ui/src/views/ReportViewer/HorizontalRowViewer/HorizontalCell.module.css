@@ -20,7 +20,7 @@
   flex: 1;
   min-width: 0;
   height: 100%;
-  padding: 18px 40px 32px 40px;
+  padding: 18px 40px 0px 40px;
   box-sizing: border-box;
   overflow-y: auto;
   scrollbar-width: none;
@@ -37,16 +37,14 @@
 /* The white content card */
 .card {
   position: relative;
-  background: white;
-  border: 1px solid var(--line-color, #e0e0e0);
+  background: transparent;
   border-radius: 20px;
-  padding: 20px 0px 20px 20px;
-  overflow-x: hidden;
+  padding: 0px 0px 0px 20px;
+  overflow: hidden;
   max-width: 1000px;
   margin: 0 auto;
   transition: opacity 0.2s, border-color 0.2s;
   opacity: 1;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
 .cardTitle {
@@ -105,6 +103,17 @@
 .cardBody {
   flex: 1;
   min-width: 0;
+  min-height: calc(100vh - 100px);
+  padding: 20px 0;
+}
+
+.contentCard {
+  background: var(--background-color-card, #fafafa);
+  border: 1px solid var(--line-color, #e8e8e8);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid var(--line-color, #e0e0e0);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
 .inlineComments {
@@ -113,10 +122,10 @@
   gap: 10px;
   overflow-y: auto;
   scrollbar-width: none;
-  padding: 100px 20px;
+  padding: 20px;
   font-family: "IBMPlexSans-regular", sans-serif;
-  background-color: white;
-  z-index: 1000000;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .inlineComments::-webkit-scrollbar {

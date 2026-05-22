@@ -260,15 +260,23 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   // ── HorizontalRowViewer state (single instance for all charts) ────────
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const scrollToElementRef = useRef<(el: HTMLElement | null) => void>(() => {});
+  const viewportElRef = useRef<HTMLDivElement | null>(null);
   const closeViewer = useCallback((finalIndex: number) => {
+    const openedIndex = viewerIndex;
     setViewerIndex(null);
-    // Scroll background report to the final row without animation
+    if (finalIndex === openedIndex) return;
     const row = sequentialRows[finalIndex];
-    if (row) {
-      const el = document.querySelector(`[data-row-name="${CSS.escape(row.name)}"]`) as HTMLElement | null;
-      if (el) scrollToElementRef.current(el);
+    if (!row) return;
+    const el = document.querySelector(`[data-row-name="${CSS.escape(row.name)}"]`) as HTMLElement | null;
+    if (!el) return;
+    const vp = viewportElRef.current;
+    if (vp) {
+      const vpRect = vp.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      if (elRect.top >= vpRect.top && elRect.bottom <= vpRect.bottom) return;
     }
-  }, [sequentialRows]);
+    scrollToElementRef.current(el);
+  }, [sequentialRows, viewerIndex]);
 
   // ── Table2 + TimeToEvent ──────────────────────────────────────────────
   const table2Cohorts: Table2Cohort[] = useMemo(
@@ -392,6 +400,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     [pz],
   );
   scrollToElementRef.current = scrollToElement;
+  viewportElRef.current = pz.viewportRef.current;
 
   // ── Visible section tracking ──────────────────────────────────────────
   const getVisibleSections = useCallback(() => {

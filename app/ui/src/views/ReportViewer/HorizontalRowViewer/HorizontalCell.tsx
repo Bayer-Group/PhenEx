@@ -11,7 +11,7 @@ import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/Ou
 import { CommentCard } from './CommentCard';
 import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs/SmartBreadcrumbs';
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import { TwoPanelView } from '../../MainView/TwoPanelView/TwoPanelView';
+import { CardWithCommentsPanel } from './CardWithCommentsPanel';
 import booleanStyles from '../GraphsAndTables/ModalRenderers/BooleanRowModal.module.css';
 import categoricalStyles from '../GraphsAndTables/ModalRenderers/CategoricalRowModal.module.css';
 import styles from './HorizontalCell.module.css';
@@ -160,12 +160,14 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
 
     const mainContent = (
       <div className={styles.cardBody}>
-        <div className={styles.cardTitle}>
-          {row.registry?.display_name || row.name}
-        </div>
-        <CardInfoSection row={row} />
-        <div className={styles.cardContent}>
-          {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo /> : null}
+        <div className={styles.contentCard}>
+          <div className={styles.cardTitle}>
+            {row.registry?.display_name || row.name}
+          </div>
+          <CardInfoSection row={row} />
+          <div className={styles.cardContent}>
+            {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo /> : null}
+          </div>
         </div>
       </div>
     );
@@ -193,14 +195,13 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
               className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
               onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(row.index); }}
             >
-                <TwoPanelView
+                <CardWithCommentsPanel
                   initialSizeLeft={500}
                   minSizeLeft={300}
                   minSizeRight={300}
                   maxSizeRight={500}
                   leftContent={mainContent}
-                  slideoverContent={commentsContent}
-                  slideoverCollapsed={false}
+                  commentsContent={commentsContent}
                 />
             </div>
           </div>
@@ -209,7 +210,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
             orientation="vertical"
             marginTop={130}
             marginBottom={35}
-            marginToEnd={5}
+            marginToEnd={18}
             classNameThumb={styles.verticalScrollbarThumb}
           />
         </div>
