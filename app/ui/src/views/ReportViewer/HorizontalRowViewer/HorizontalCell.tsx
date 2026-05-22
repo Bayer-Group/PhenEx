@@ -1,0 +1,219 @@
+import { FC, forwardRef, useMemo, useRef } from 'react';
+import { type CohortClassified, type KdeCurve } from '../types';
+import { type SequentialRow } from '../studyRegistryUtils';
+import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
+import { BarChartCellRenderer } from '../GraphsAndTables/RowRenderers/BarChartCellRenderer';
+import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
+import { NumericContent } from '../GraphsAndTables/ModalRenderers/NumericContent';
+import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEventContent';
+import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
+import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
+import { CommentCard } from './CommentCard';
+import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs/SmartBreadcrumbs';
+import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { TwoPanelView } from '../../MainView/TwoPanelView/TwoPanelView';
+import booleanStyles from '../GraphsAndTables/ModalRenderers/BooleanRowModal.module.css';
+import categoricalStyles from '../GraphsAndTables/ModalRenderers/CategoricalRowModal.module.css';
+import styles from './HorizontalCell.module.css';
+
+// ── Props ───────────────────────────────────────────────────────────────
+
+export interface HorizontalCellProps {
+  row: SequentialRow;
+  rows: SequentialRow[];
+  isFocused: boolean;
+  nearby: boolean;
+  desiredTop: string;
+  cohortDataMap: Record<string, CohortClassified[]>;
+  finalCohortSizes?: Record<string, number | null>;
+  tteCohorts?: TimeToEventCohort[];
+  table2Cohorts?: Table2Cohort[];
+  onNavigate: (index: number) => void;
+  commentsCollapsed?: boolean;
+  studyTitle?: string;
+}
+
+// ── CardInfoSection ─────────────────────────────────────────────────────
+
+const CardInfoSection: FC<{ row: SequentialRow }> = () => {
+  return <div className={styles.cardInfoSection} />;
+};
+
+// ── RowContent dispatcher ───────────────────────────────────────────────
+
+const RowContent: FC<{
+  row: SequentialRow;
+  cohortData: CohortClassified[];
+  kdeData: Record<string, Record<string, KdeCurve>>;
+  finalCohortSizes?: Record<string, number | null>;
+  tteCohorts?: TimeToEventCohort[];
+  table2Cohorts?: Table2Cohort[];
+  availableTteOutcomes?: string[];
+  showCohortInfo?: boolean;
+}> = ({ row, cohortData, kdeData, finalCohortSizes, tteCohorts, table2Cohorts, availableTteOutcomes, showCohortInfo = true }) => {
+  switch (row.rowType) {
+    case 'boolean':
+      return <BooleanContent name={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} showCohortInfo={showCohortInfo} />;
+    case 'categorical':
+      return <CategoricalContent baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
+    case 'numeric':
+      return <NumericContent name={row.name} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} />;
+    case 'time_to_event':
+      return <TimeToEventContent outcome={row.name} cohorts={tteCohorts ?? []} availableOutcomes={availableTteOutcomes} />;
+    case 'table2':
+      return <Table2Content outcome={row.name} cohorts={table2Cohorts ?? []} />;
+    default:
+      return <div style={{ padding: 20, color: '#999' }}>No detail view for {row.rowType} rows yet.</div>;
+  }
+};
+
+// ── BooleanContent ──────────────────────────────────────────────────────
+
+const BooleanContent: FC<{ name: string; cohortData: CohortClassified[]; finalCohortSizes?: Record<string, number | null>; showCohortInfo?: boolean }> = ({ name, cohortData, finalCohortSizes, showCohortInfo = true }) => {
+  const { visible } = useCohortVisibility(cohortData.length);
+  const filtered = useFilteredCohortData(cohortData, visible);
+
+  return (
+    <div className={booleanStyles.container}>
+      <BarChartCellRenderer
+        data={{ name, _meta: { cohortData: filtered, finalCohortSizes } }}
+        isModal
+        mode={showCohortInfo ? 'presentation' : 'compact'}
+        pctDecimals={1}
+      />
+    </div>
+  );
+};
+
+// ── CategoricalContent ──────────────────────────────────────────────────
+
+const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[]; finalCohortSizes?: Record<string, number | null> }> = ({ baseName, cohortData, finalCohortSizes }) => {
+  const { visible } = useCohortVisibility(cohortData.length);
+  const filtered = useFilteredCohortData(cohortData, visible);
+
+  return (
+    <div className={categoricalStyles.container}>
+      <CategoricalBarChartCellRenderer
+        baseName={baseName}
+        cohortData={filtered}
+        finalCohortSizes={finalCohortSizes}
+        orientation="vertical"
+      />
+    </div>
+  );
+};
+
+// ── HorizontalCell ──────────────────────────────────────────────────────
+
+export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, commentsCollapsed, studyTitle = '' }, ref) => {
+    const cohortData = cohortDataMap[row.reporter] ?? [];
+    const verticalScrollRef = useRef<HTMLDivElement>(null);
+    const availableTteOutcomes = useMemo(
+      () => rows
+        .filter((c) => c.reporter === row.reporter && c.rowType === 'time_to_event')
+        .map((c) => c.name),
+      [rows, row.reporter],
+    );
+    const kdeData = useMemo(() => {
+      const result: Record<string, Record<string, KdeCurve>> = {};
+      for (const cd of cohortData) {
+        if (cd.data.kdes) result[cd.name] = cd.data.kdes;
+      }
+      return result;
+    }, [cohortData]);
+
+    const comments = useMemo(() => (row.registry?.comments ?? []).filter((c) => c.text), [row.registry]);
+
+    const CATEGORY_LABELS: Record<string, string> = {
+      attrition: 'Attrition',
+      baseline_characteristics: 'Baseline Characteristics',
+      outcomes: 'Outcomes',
+    };
+    const CAT_KEYS = ['attrition', 'baseline_characteristics', 'outcomes'] as const;
+
+    const breadcrumbItems = useMemo(() => {
+      const items: { displayName: string; onClick: () => void }[] = [];
+
+      // Study name → navigate to first row of first category
+      const catMap = new Map<string, number>();
+      for (const r of rows) {
+        if (!catMap.has(r.category)) catMap.set(r.category, r.index);
+      }
+      if (studyTitle) {
+        items.push({ displayName: studyTitle, onClick: () => onNavigate(0) });
+      }
+
+      // Category
+      const categoryLabel = CATEGORY_LABELS[row.category] ?? row.category;
+      const catIdx = catMap.get(row.category);
+      items.push({ displayName: categoryLabel, onClick: () => onNavigate(catIdx ?? row.index) });
+
+      // Section
+      if (row.section) {
+        const secIdx = rows.find((r) => r.category === row.category && r.section === row.section)?.index ?? row.index;
+        items.push({ displayName: row.section, onClick: () => onNavigate(secIdx) });
+      }
+
+      return items;
+    }, [rows, row, studyTitle, onNavigate]);
+
+    const mainContent = (
+      <div className={styles.cardBody}>
+        <div className={styles.cardTitle}>
+          {row.registry?.display_name || row.name}
+        </div>
+        <CardInfoSection row={row} />
+        <div className={styles.cardContent}>
+          {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo /> : null}
+        </div>
+      </div>
+    );
+
+    const commentsContent = (
+      <div className={styles.inlineComments}>
+        {comments.map((comment, i) => (
+          <CommentCard key={i} comment={comment} />
+        ))}
+      </div>
+    );
+
+    return (
+      <div
+        ref={ref}
+        className={styles.cell}
+        style={{ '--desired-top': desiredTop, '--background-color': 'transparent' } as React.CSSProperties}
+      >
+        <div className={styles.cardColumnInner}>
+          <div ref={verticalScrollRef} className={styles.verticalWrapper}>
+            <div className={styles.breadcrumbs} onClick={(e) => e.stopPropagation()}>
+              <SmartBreadcrumbs items={breadcrumbItems} compact />
+            </div>
+            <div
+              className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
+              onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(row.index); }}
+            >
+                <TwoPanelView
+                  initialSizeLeft={500}
+                  minSizeLeft={300}
+                  minSizeRight={300}
+                  maxSizeRight={500}
+                  leftContent={mainContent}
+                  slideoverContent={commentsContent}
+                  slideoverCollapsed={false}
+                />
+            </div>
+          </div>
+          <SimpleCustomScrollbar
+            targetRef={verticalScrollRef}
+            orientation="vertical"
+            marginTop={130}
+            marginBottom={35}
+            marginToEnd={5}
+            classNameThumb={styles.verticalScrollbarThumb}
+          />
+        </div>
+      </div>
+    );
+  },
+);

@@ -1,0 +1,125 @@
+.cardColumnInner {
+  display: flex;
+  height: 100%;
+  position: relative;
+}
+
+/* Each cell is a vertical wrapper: breadcrumbs + card, positioned at click Y */
+.cell {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 100%;
+  overflow: hidden;
+  transition: opacity 0.2s;
+  background-color: transparent;
+}
+
+.verticalWrapper {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 18px 40px 32px 40px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.verticalWrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.breadcrumbs {
+  margin-bottom: 6px;
+}
+
+/* The white content card */
+.card {
+  position: relative;
+  background: white;
+  border: 1px solid var(--line-color, #e0e0e0);
+  border-radius: 20px;
+  padding: 0px 0px 20px 20px;
+  overflow-x: hidden;
+  max-width: 1000px;
+  margin: 0 auto;
+  transition: opacity 0.2s, border-color 0.2s;
+  opacity: 1;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.cardTitle {
+    margin-top: 10px;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: black;
+  font-size: var(--font_size_pagetitle, 18px);
+  margin-bottom: 0px;
+}
+
+/* ── Card info accordion (below title) ───────────────────────────────── */
+
+.cardInfoSection {
+  position: relative;
+  max-height: 0;
+  overflow: visible;
+  transition: max-height 0.2s ease-out, margin 0.2s ease-out;
+  margin-bottom: 0;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  padding-top: 10px;
+}
+
+.cardInfoLabel {
+  position: absolute;
+  top: -5px;
+  right: 0;
+  font-size: 13px;
+  color: #aaa;
+  pointer-events: none;
+  border: var(--border);
+  padding: 0px 10px;
+  border-radius: 4px;
+}
+
+.cardInfoSectionOpen {
+  max-height: fit-content;
+  margin-bottom: 12px;
+  transition: max-height 0.3s ease-in, margin 0.3s ease-in;
+}
+
+.cardInfoContent {
+  font-size: 22px;
+  line-height: 1.4;
+  color: #444;
+  padding: 8px 0 0 0;
+}
+
+.cardInfoContent p {
+  margin: 0 0 6px 0;
+}
+
+.verticalScrollbarThumb {
+}
+
+/* ── Card body + inline comments layout ──────────────────────────────── */
+
+.cardBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.inlineComments {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 100px 20px;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  background-color: red;
+  z-index: 1000000;
+}
+
+.inlineComments::-webkit-scrollbar {
+  display: none;
+}

@@ -15,48 +15,6 @@
   animation: fadeOut 0.15s ease-in forwards;
 }
 
-.commentsToggle {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 10;
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.35);
-  color: #fff;
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.7;
-  transition: opacity 0.15s;
-}
-.commentsToggle:hover {
-  opacity: 1;
-}
-
-/* Override TwoPanelView styling inside each cell */
-.cell :global(.leftPanelContent) {
-  border-left: none;
-  background-color: rgba(0, 0, 0, 0.05) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* Hide per-cell collapse buttons (universal toggle controls all) */
-.cell :global(.collapseButton) {
-  display: none;
-}
-
-.cardColumnInner {
-  display: flex;
-  height: 100%;
-  position: relative;
-}
-
 .scroller {
   flex: 1;
   display: flex;
@@ -73,17 +31,6 @@
   display: none;
 }
 
-/* Each cell is a vertical wrapper: breadcrumbs + card, positioned at click Y */
-.cell {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-width: 100%;
-  overflow: hidden;
-  transition: opacity 0.2s;
-}
-
 .cardColumn {
   position: relative;
   display: flex;
@@ -92,24 +39,6 @@
   height: 100%;
   overflow: hidden;
 }
- 
-.verticalWrapper {
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  padding: 5vh 40px 32px 40px;
-  box-sizing: border-box;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
-.verticalWrapperCommentsOpen {
-}
-
-.verticalWrapper::-webkit-scrollbar {
-  display: none;
-}
-
 
 /* Breadcrumbs sit above the card */
 .breadcrumbs {
@@ -125,31 +54,6 @@
   display: none;
 }
 
-/* The white content card — fit-content height, scrollable if too tall */
-.card {
-  position: relative;
-  background: white;
-  border: 1px solid var(--line-color, #e0e0e0);
-  border-radius: 5px;
-  padding: 20px 30px;
-  min-width: 500px;
-  overflow-x: hidden;
-  max-width: 600px;
-  margin: 0 auto;
-  transition: opacity 0.2s, border-color 0.2s;
-  opacity: 1;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-}
-
-/* .cardNeighbour {
-  opacity: 0.45;
-  cursor: pointer;
-}
-
-.cardNeighbour:hover {
-  opacity: 0.65;
-} */
-
 /* Horizontal layout: card on the left, comments on the right */
 .cellInner {
   flex: 1;
@@ -161,60 +65,6 @@
   overflow: hidden;
 }
 
-
-.cardTitle {
-  font-family: "IBMPlexSans-bold", sans-serif;
-  color: black;
-  font-size: var(--font_size_pagetitle, 18px);
-  margin-bottom: 0px;
-}
-
-/* ── Card info accordion (below title) ───────────────────────────────── */
-
-.cardInfoSection {
-  position: relative;
-  max-height: 0;
-  overflow: visible;
-  transition: max-height 0.2s ease-out, margin 0.2s ease-out;
-  margin-bottom: 0;
-  font-family: "IBMPlexSans-regular", sans-serif;
-  padding-top:10px;
-
-}
-
-.cardInfoLabel {
-  position: absolute;
-  top: -5px;
-  right: 0;
-  font-size: 13px;
-  color: #aaa;
-  pointer-events: none;
-  border: var(--border);
-  padding: 0px 10px;
-  border-radius: 4px;
-}
-
-.cardInfoSectionOpen {
-  max-height: fit-content;
-  margin-bottom: 12px;
-  transition: max-height 0.3s ease-in, margin 0.3s ease-in;
-}
-
-.cardInfoContent {
-  font-size: 22px;
-  line-height: 1.4;
-  color: #444;
-  padding: 8px 0 0 0;
-}
-
-.cardInfoContent p {
-  margin: 0 0 6px 0;
-}
-
-.verticalScrollbarThumb{
-  /* background-color: white; */
-}
-
 /* ── Comment sidebar (inside TwoPanelView right panel) ────────────────── */
 
 .commentsPanel {
@@ -224,55 +74,6 @@
   padding: 5vh 40px 32px 40px;
   box-sizing: border-box;
   font-family: "IBMPlexSans-regular", sans-serif;
-}
-
-.commentCard {
-  /* background: white; */
-  /* border: 1px solid var(--line-color, #e0e0e0); */
-  border-radius: 5px;
-  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); */
-  padding: 5px 10px;
-  font-size: 10px;
-  background-color: white;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-  border: var(--border);
-}
-
-.commentHeader {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
-  font-size: 11px;
-  color: #888;
-}
-
-.commentUser {
-  font-weight: 700;
-  color: #333;
-}
-
-.commentStatus {
-  font-size: 12px;
-}
-
-.commentDate {
-  margin-left: auto;
-  white-space: nowrap;
-}
-
-.commentBody {
-  font-size: var(--font_size_items);
-  line-height: 1.5;
-  color: #333;
-}
-
-.commentBody p {
-  margin: 0 0 6px;
-}
-
-.commentBody p:last-child {
-  margin-bottom: 0;
 }
 
 @keyframes fadeIn {
@@ -294,20 +95,6 @@
   min-width: 0;
   height: 100%;
   overflow: hidden;
-}
-
-.verticalWrapperCompact {
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  padding: 5vh 40px 32px 40px;
-  box-sizing: border-box;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
-.verticalWrapperCompact::-webkit-scrollbar {
-  display: none;
 }
 
 .commentsAbove {

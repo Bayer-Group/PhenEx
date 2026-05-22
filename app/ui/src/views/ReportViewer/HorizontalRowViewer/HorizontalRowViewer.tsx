@@ -3,10 +3,8 @@ import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import styles from './HorizontalRowViewer.module.css';
-import { HorizontalRowTitle } from './HorizontalRowTitle';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
-import { HorizontalCellFocus } from './HorizontalCellFocus';
-import { HorizontalCellCompact } from './HorizontalCellCompact';
+import { HorizontalCell } from './HorizontalCell';
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -241,22 +239,12 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       onMouseDown={() => { mouseDownOnOverlay.current = true; }}
       onClick={handleOverlayClick}
     >
-      {!isLeftPanelShown && (
-        <HorizontalRowTitle
-          rows={rows}
-          currentIndex={currentIndex}
-          desiredTop={desiredTop}
-          studyTitle={studyTitle}
-          onNavigate={navigate}
-        />
-      )}
       <div className={styles.scroller} ref={scrollRef}>
         {rows.map((row) => {
           const isFocused = row.index === currentIndex;
           const nearby = Math.abs(row.index - currentIndex) <= PRERENDER_NEIGHBOURS;
-          const CellComponent = isLeftPanelShown ? HorizontalCellCompact : HorizontalCellFocus;
           return (
-            <CellComponent
+            <HorizontalCell
               key={row.index}
               ref={isFocused ? focusedRef : null}
               row={row}
@@ -270,17 +258,11 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
               table2Cohorts={table2Cohorts}
               onNavigate={navigate}
               commentsCollapsed={commentsCollapsed}
+              studyTitle={studyTitle}
             />
           );
         })}
       </div>
-      <button
-        className={styles.commentsToggle}
-        onClick={(e) => { e.stopPropagation(); setCommentsCollapsed((v) => !v); }}
-        title={commentsCollapsed ? 'Show comments' : 'Hide comments'}
-      >
-        {commentsCollapsed ? '◀' : '▶'}
-      </button>
     </div>
   );
 };
