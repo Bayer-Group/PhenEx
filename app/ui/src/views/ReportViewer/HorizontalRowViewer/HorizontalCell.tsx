@@ -113,12 +113,17 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
     const { isLeftPanelShown } = useThreePanelCollapse();
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const [commentsPanelWidth, setCommentsPanelWidth] = useState(300);
+    const [titleHidden, setTitleHidden] = useState(false);
     const handleRightWidthChange = useCallback((w: number) => setCommentsPanelWidth(w), []);
 
     useEffect(() => {
       const el = verticalScrollRef.current;
-      if (!el || !isFocused || !onVerticalScroll) return;
-      const handler = () => onVerticalScroll(el.scrollTop);
+      if (!el || !isFocused) return;
+      const handler = () => {
+        const scrollTop = el.scrollTop;
+        setTitleHidden(scrollTop > 100);
+        onVerticalScroll?.(scrollTop);
+      };
       el.addEventListener('scroll', handler, { passive: true });
       handler();
       return () => el.removeEventListener('scroll', handler);
@@ -142,7 +147,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
     const mainContent = (
       <div className={styles.cardBody}>
         <div className={styles.contentCard}>
-          <div className={styles.cardTitle}>
+          <div className={styles.cardTitle} style={{ opacity: titleHidden ? 0 : 1 }}>
             {row.registry?.display_name || row.name}
           </div>
           <CardInfoSection row={row} />
@@ -187,9 +192,9 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
           <SimpleCustomScrollbar
             targetRef={verticalScrollRef}
             orientation="vertical"
-            marginTop={130}
+            marginTop={100}
             marginBottom={35}
-            marginToEnd={commentsPanelWidth +5}
+            marginToEnd={commentsPanelWidth - 1}
             classNameThumb={styles.verticalScrollbarThumb}
             classNameTrack={styles.verticalScrollbarTrack}
           />

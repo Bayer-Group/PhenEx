@@ -75,6 +75,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
   };
 
   const handleTrackClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (e.target === e.currentTarget) {
       const element = targetRef.current;
       if (!element) return;
@@ -251,6 +252,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
       ref={trackRef}
       className={scrollbarClass}
       onClick={handleTrackClick}
+      onMouseDown={(e) => e.stopPropagation()}
       style={scrollbarStyle}
     >
       <div
