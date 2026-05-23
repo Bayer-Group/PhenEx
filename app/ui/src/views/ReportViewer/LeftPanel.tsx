@@ -112,7 +112,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
                 orientation="vertical"
                 marginTop={60}
                 marginBottom={20}
-                marginToEnd={8}
+                marginToEnd={7}
               />
             </div>
           </div>

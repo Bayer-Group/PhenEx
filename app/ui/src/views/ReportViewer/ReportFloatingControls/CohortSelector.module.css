@@ -16,7 +16,7 @@
   flex-direction: column;
   gap: 4px;
   margin-left:0px;
-  margin-right:40px;
+  margin-right:30px;
   border: 1px solid var(--line-color, #ddd);
   border-left:none;
   border-radius: 0px 8px 8px 0px;
@@ -132,11 +132,11 @@
   align-items: center;
   gap: 8px;
   padding-bottom: 4px;
-  border-bottom: var(--border);
   padding-left: 20px;
   background-color: var(--background-color);
   container-type: inline-size;
   container-name: actionbar;
+  background-color: transparent;
 }
 
 .actionInfo {
@@ -156,22 +156,21 @@
 }
 
 .actionCount {
-  font-size: 16px;
+  font-size: 12px;
   color: #999;
-  margin-top: 1px;
   white-space: nowrap;
-  position: absolute;
-  right:100px;
+  padding: 0 6px;
 }
 
 @container actionbar (max-width: 300px) {
-  .actionInfo {
+  .actionCount {
     display: none;
   }
   .actionButtons {
     flex: 1;
     justify-content: center;
     padding: 0 8px;
+    margin-right:30px;
   }
 }
 
@@ -180,8 +179,14 @@
   align-items: center;
   gap: 4px;
   margin-left: auto;
+  margin-right:20px;
   flex-shrink: 0;
   padding-right:10px;
+  background-color: white;
+  border-radius: 10px;
+  border: var(--border);
+
+
 }
 
 .actionButtons > * {

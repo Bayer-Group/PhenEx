@@ -8,11 +8,10 @@
   flex: 0 0 auto;
   min-width: 0;
   background: white;
-  border-radius: 12px 0 0 12px;
   /* box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15); */
   border: 1px solid var(--line-color, #e0e0e0);
   border-right: none;
-  background-color: white;
+  background-color: transparent;
 }
 
 .commentsPanel {
@@ -45,9 +44,9 @@
   background-color: transparent;
   z-index: 5000;
   top: 0;
-  left: -5px;
+  left: 0px;
   border-right: 1px solid var(--line-color, #e0e0e0);
-  background-color: white;
+  background-color: transparent;
 }
 
 .divider:hover {
