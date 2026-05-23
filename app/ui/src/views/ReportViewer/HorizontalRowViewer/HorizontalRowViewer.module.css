@@ -14,9 +14,30 @@
 }
 
 .titleBar {
-  padding: 0px 20px;
+  padding: 5px 10px;
   z-index: 3;
   pointer-events: auto;
+  /* background-color: white !important; */
+  /* width:100%; */
+  height: fit-content;
+  background-color: rgba(255, 255, 255, 0.9);
+  position: absolute;
+  top:12px;
+  left:12px;
+  border-radius: 10px;
+  border: var(--border);
+  font-family: "IBMPlexSans-regular", sans-serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.rowTitleLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  padding: 2px 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .scroller {

@@ -15,10 +15,11 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-left:10px;
-  margin-right:20px;
+  margin-left:0px;
+  margin-right:40px;
   border: 1px solid var(--line-color, #ddd);
-  border-radius: 8px;
+  border-left:none;
+  border-radius: 0px 8px 8px 0px;
   padding-bottom:10px;
   background-color: white;
   transition: transform 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
@@ -29,16 +30,16 @@
 
 .legendBar:hover .legendGroup:hover {
   opacity: 1;
-  transform: scale(1.02);
+  /* transform: scale(1.02); */
   border-color: var(--color_accent_blue, #4a90d9);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  /* box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08); */
 }
 
 .legendGroupTitle {
   font-size: var(--font_size_items, 11px);
   font-weight: 700;
   color: white;
-  padding: 10px 4px 5px 8px;
+  padding: 20px 4px 5px 20px;
   overflow-wrap: break-word;
   word-break: break-word;
   height: fit-content;
@@ -51,7 +52,7 @@
 }
 
 .legendGroupDescription{
-  padding: 0px 4px 10px 10px;
+  padding: 0px 4px 10px 20px;
   font-size: var(--font_size_infotext, 12px);
 }
 
@@ -61,7 +62,7 @@
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  padding: 0px 8px 0px 8px;
+  padding: 0px 8px 0px 22px;
   user-select: none;
   transition: background 0.15s;
 
@@ -163,7 +164,7 @@
   right:100px;
 }
 
-@container actionbar (max-width: 200px) {
+@container actionbar (max-width: 300px) {
   .actionInfo {
     display: none;
   }

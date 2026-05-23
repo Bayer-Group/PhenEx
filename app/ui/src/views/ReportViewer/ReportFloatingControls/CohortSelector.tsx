@@ -33,6 +33,8 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   const [hoveredBtn, setHoveredBtn] = useState<'eye' | 'all' | 'clear' | null>(null);
   const [hoveredItem, setHoveredItem] = useState<{ el: HTMLElement; isActive: boolean } | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const legendBarRef = useRef<HTMLDivElement>(null);
+  const [scrolledPastThreshold, setScrolledPastThreshold] = useState(false);
 
   const startItemHover = useCallback((el: HTMLElement, isActive: boolean) => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
@@ -43,6 +45,22 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     hoverTimerRef.current = null;
     setHoveredItem(null);
+  }, []);
+
+  // Track scroll position for actionBar border
+  useEffect(() => {
+    const el = legendBarRef.current;
+    if (!el) return;
+    // Find the scrollable ancestor
+    let container: HTMLElement | null = el.parentElement;
+    while (container && container.scrollHeight <= container.clientHeight) {
+      container = container.parentElement;
+    }
+    if (!container) return;
+    const handler = () => setScrolledPastThreshold(container!.scrollTop > 50);
+    container.addEventListener('scroll', handler, { passive: true });
+    handler();
+    return () => container!.removeEventListener('scroll', handler);
   }, []);
 
   // Scroll the active cohort into view, centered with padding
@@ -117,8 +135,8 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   }, [groups, activeSet, selectionIndexMap, onAdd, onRemove]);
 
   return (
-    <div className={styles.legendBar}>
-      <div className={styles.actionBar}>
+    <div ref={legendBarRef} className={styles.legendBar}>
+      <div className={styles.actionBar} style={{ borderBottom: scrolledPastThreshold ? undefined : 'none' }}>
         <span className={styles.actionButtons}>
           <button
             ref={eyeRef}

@@ -1,4 +1,4 @@
-import { FC, forwardRef, useCallback, useMemo, useRef, useState } from 'react';
+import { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type CohortClassified, type KdeCurve } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
@@ -11,6 +11,7 @@ import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/Ou
 import { CommentCard } from './CommentCard';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 import { CardWithCommentsPanel } from './CardWithCommentsPanel';
 import booleanStyles from '../GraphsAndTables/ModalRenderers/BooleanRowModal.module.css';
 import categoricalStyles from '../GraphsAndTables/ModalRenderers/CategoricalRowModal.module.css';
@@ -29,6 +30,7 @@ export interface HorizontalCellProps {
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
+  onVerticalScroll?: (scrollTop: number) => void;
   commentsCollapsed?: boolean;
   studyTitle?: string;
 }
@@ -106,11 +108,21 @@ const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[];
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, commentsCollapsed, studyTitle = '' }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, commentsCollapsed, studyTitle = '' }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
+    const { isLeftPanelShown } = useThreePanelCollapse();
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const [commentsPanelWidth, setCommentsPanelWidth] = useState(300);
     const handleRightWidthChange = useCallback((w: number) => setCommentsPanelWidth(w), []);
+
+    useEffect(() => {
+      const el = verticalScrollRef.current;
+      if (!el || !isFocused || !onVerticalScroll) return;
+      const handler = () => onVerticalScroll(el.scrollTop);
+      el.addEventListener('scroll', handler, { passive: true });
+      handler();
+      return () => el.removeEventListener('scroll', handler);
+    }, [isFocused, onVerticalScroll]);
     const availableTteOutcomes = useMemo(
       () => rows
         .filter((c) => c.reporter === row.reporter && c.rowType === 'time_to_event')
@@ -153,7 +165,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
       <div
         ref={ref}
         className={styles.cell}
-        style={{ '--desired-top': desiredTop, '--background-color': 'transparent' } as React.CSSProperties}
+        style={{ '--desired-top': desiredTop, '--background-color': 'transparent', paddingLeft: isLeftPanelShown ? undefined : 100 } as React.CSSProperties}
       >
         <div className={styles.cardColumnInner}>
           <div ref={verticalScrollRef} className={styles.verticalWrapper}>
@@ -177,8 +189,9 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
             orientation="vertical"
             marginTop={130}
             marginBottom={35}
-            marginToEnd={commentsPanelWidth + 5}
+            marginToEnd={commentsPanelWidth +5}
             classNameThumb={styles.verticalScrollbarThumb}
+            classNameTrack={styles.verticalScrollbarTrack}
           />
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
@@ -51,6 +51,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [closing, setClosing] = useState(false);
   const [commentsCollapsed, setCommentsCollapsed] = useState(false);
+  const [showRowTitle, setShowRowTitle] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
@@ -174,6 +175,10 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     setCurrentIndex(index);
   }, []);
 
+  const handleVerticalScroll = useCallback((scrollTop: number) => {
+    setShowRowTitle(scrollTop > 100);
+  }, []);
+
   const startClose = useCallback(() => {
     if (closing) return;
     setClosing(true);
@@ -227,7 +232,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       onMouseDown={() => { mouseDownOnOverlay.current = true; }}
       onClick={handleOverlayClick}
     >
-      <div className={styles.titleBar} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.titleBar} style={{ marginLeft: isLeftPanelShown ? undefined : 50 }} onClick={(e) => e.stopPropagation()}>
         <HorizontalRowTitle
           rows={rows}
           currentIndex={currentIndex}
@@ -235,6 +240,11 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
           studyTitle={studyTitle}
           onNavigate={navigate}
         />
+        {showRowTitle && (
+          <div className={styles.rowTitleLabel}>
+            {current.registry?.display_name || current.name}
+          </div>
+        )}
       </div>
       <div className={styles.scroller} ref={scrollRef}>
         {rows.map((row) => {
@@ -254,6 +264,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
               tteCohorts={tteCohorts}
               table2Cohorts={table2Cohorts}
               onNavigate={navigate}
+              onVerticalScroll={isFocused ? handleVerticalScroll : undefined}
               commentsCollapsed={commentsCollapsed}
               studyTitle={studyTitle}
             />

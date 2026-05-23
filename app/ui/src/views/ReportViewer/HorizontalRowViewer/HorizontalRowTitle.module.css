@@ -1,12 +1,12 @@
 /* ── Floating title container ─────────────────────────────────────────── */
 .container {
-  position:absolute;
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 0;
   pointer-events: auto;
-  top: 18px
+  background-color: transparent;
+  width:100%;
 
 }
 

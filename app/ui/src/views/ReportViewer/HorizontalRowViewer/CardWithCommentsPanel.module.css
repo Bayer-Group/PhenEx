@@ -9,9 +9,10 @@
   min-width: 0;
   background: white;
   border-radius: 12px 0 0 12px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  /* box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15); */
   border: 1px solid var(--line-color, #e0e0e0);
   border-right: none;
+  background-color: white;
 }
 
 .commentsPanel {
@@ -46,10 +47,11 @@
   top: 0;
   left: -5px;
   border-right: 1px solid var(--line-color, #e0e0e0);
+  background-color: white;
 }
 
 .divider:hover {
-  background: linear-gradient(to right, transparent 3px, var(--color-accent, #4a90d9) 4px, var(--color-accent, #4a90d9) 6px, transparent 7px);
+  border-right: 2px solid var(--color_accent_blue);
 }
 
 [data-dragging='true'] {

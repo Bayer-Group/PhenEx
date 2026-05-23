@@ -7,6 +7,7 @@ import { Portal } from '../../components/Portal/Portal';
 import { type OutlineEntry } from './OutlineBar';
 import { type SequentialRow } from './studyRegistryUtils';
 import type { CohortGroup, LegendSelection, CohortDescriptions, Report } from './types';
+import { useThreePanelCollapse } from '../../contexts/ThreePanelCollapseContext';
 import styles from './LeftPanel.module.css';
 
 interface LeftPanelProps {
@@ -46,6 +47,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
   const scrollRegionRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<'cohorts' | 'reports'>('cohorts');
   const [regionRect, setRegionRect] = useState<DOMRect | null>(null);
+  const { isLeftPanelShown } = useThreePanelCollapse();
 
   const updateRect = useCallback(() => {
     const el = scrollRegionRef.current;
@@ -93,7 +95,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
           )}
         </div>
       </div>
-      {regionRect && (
+      {regionRect && isLeftPanelShown && (
         <Portal>
           <div style={{
             position: 'fixed',
@@ -102,15 +104,15 @@ export const LeftPanel: FC<LeftPanelProps> = ({
             width: regionRect.width,
             height: regionRect.height,
             pointerEvents: 'none',
-            zIndex: 9999,
+            zIndex: 10001,
           }}>
             <div style={{ pointerEvents: 'auto' }}>
               <SimpleCustomScrollbar
                 targetRef={scrollRef}
                 orientation="vertical"
-                marginTop={35}
+                marginTop={60}
                 marginBottom={20}
-                marginToEnd={-12}
+                marginToEnd={8}
               />
             </div>
           </div>
