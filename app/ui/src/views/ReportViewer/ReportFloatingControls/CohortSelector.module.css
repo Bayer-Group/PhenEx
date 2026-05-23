@@ -6,7 +6,18 @@
   gap: 20px;
   width: 100%;
   background-color: var(--background-color);
-  padding-bottom: 100px;
+  padding-top: 0px;
+  position: relative;
+}
+
+.topGradient {
+  position: sticky;
+  top: 0;
+  height: 180px;
+  margin-bottom: -80px;
+  background: linear-gradient(to bottom, var(--background-color), transparent);
+  pointer-events: none;
+  z-index: 2;
 }
 
 /* ── LegendItem (dot + labels) ───────────────────────────────────────── */
@@ -125,15 +136,11 @@
 
 /* ── Action bar ──────────────────────────────────────────────────────── */
 .actionBar {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   display: flex;
   align-items: center;
   gap: 8px;
   padding-bottom: 4px;
-  padding-left: 20px;
-  background-color: var(--background-color);
+  padding-left: 50px;
   container-type: inline-size;
   container-name: actionbar;
   background-color: transparent;
@@ -162,7 +169,7 @@
   padding: 0 6px;
 }
 
-@container actionbar (max-width: 300px) {
+/* @container actionbar (max-width: 300px) {
   .actionCount {
     display: none;
   }
@@ -172,21 +179,18 @@
     padding: 0 8px;
     margin-right:30px;
   }
-}
+} */
 
 .actionButtons {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-left: auto;
-  margin-right:20px;
+  margin-right: 20px;
   flex-shrink: 0;
-  padding-right:10px;
+  padding-right: 10px;
   background-color: white;
   border-radius: 10px;
   border: var(--border);
-
-
 }
 
 .actionButtons > * {

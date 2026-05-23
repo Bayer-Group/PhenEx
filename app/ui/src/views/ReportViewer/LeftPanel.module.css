@@ -9,13 +9,20 @@
 }
 
 .tabRegion{
-  height: 50px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 40px;
   background-color: var(--background-color) !important;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding-right: 10px;
-  padding-top:5px;
+  padding: 10px 10px;
+  justify-content: flex-start;
+  padding-left: 55px;
+  pointer-events: auto;
+  background-color: transparent !important;
 }
 
 .tabsContainer {
@@ -38,6 +45,19 @@
   border-color: transparent !important;
 }
 
+.actionBarRegion {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  pointer-events: none;
+}
+
+.actionBarRegion > * {
+  pointer-events: auto;
+}
+
 .scrollRegion {
   position: relative;
   flex: 1;
@@ -50,7 +70,6 @@
   inset: 0;
   overflow-y: auto;
   scrollbar-width: none;
-
 }
 
 .scrollContent::-webkit-scrollbar {

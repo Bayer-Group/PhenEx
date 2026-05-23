@@ -1,4 +1,5 @@
 import React, { FC, useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { getCohortColor, type CohortGroup, type LegendSelection, type CohortDescriptions } from '../types';
 import { useBarHoverStore } from '../GraphsAndTables/RowRenderers/useBarHoverStore';
 import EyeSolidIcon from '../../../assets/icons/eye-solid.svg';
@@ -34,7 +35,11 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   const [hoveredItem, setHoveredItem] = useState<{ el: HTMLElement; isActive: boolean } | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const legendBarRef = useRef<HTMLDivElement>(null);
-  const [scrolledPastThreshold, setScrolledPastThreshold] = useState(false);
+
+  const [actionBarTarget, setActionBarTarget] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setActionBarTarget(document.getElementById('leftpanel-actionbar-target'));
+  }, []);
 
   const startItemHover = useCallback((el: HTMLElement, isActive: boolean) => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
@@ -45,22 +50,6 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
     hoverTimerRef.current = null;
     setHoveredItem(null);
-  }, []);
-
-  // Track scroll position for actionBar border
-  useEffect(() => {
-    const el = legendBarRef.current;
-    if (!el) return;
-    // Find the scrollable ancestor
-    let container: HTMLElement | null = el.parentElement;
-    while (container && container.scrollHeight <= container.clientHeight) {
-      container = container.parentElement;
-    }
-    if (!container) return;
-    const handler = () => setScrolledPastThreshold(container!.scrollTop > 50);
-    container.addEventListener('scroll', handler, { passive: true });
-    handler();
-    return () => container!.removeEventListener('scroll', handler);
   }, []);
 
   // Scroll the active cohort into view, centered with padding
@@ -136,6 +125,8 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
   return (
     <div ref={legendBarRef} className={styles.legendBar}>
+      <div className={styles.topGradient} />
+      {actionBarTarget && createPortal(
       <div className={styles.actionBar}>
         <span className={styles.actionButtons}>
           <span className={styles.actionCount}>
@@ -181,11 +172,12 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
             Clear
           </button>
         </span>
-        <PhenExNavBarTooltip isVisible={hoveredBtn === 'eye'} anchorElement={eyeRef.current} label={showAll ? 'Show selected only' : 'Show all cohorts'} />
-        <PhenExNavBarTooltip isVisible={hoveredBtn === 'all'} anchorElement={allRef.current} label="Select all cohorts" />
-        <PhenExNavBarTooltip isVisible={hoveredBtn === 'clear'} anchorElement={clearRef.current} label="Deselect all cohorts" />
-        <PhenExNavBarTooltip isVisible={hoveredItem !== null} anchorElement={hoveredItem?.el ?? null} label={hoveredItem?.isActive ? 'Click to hide results' : 'Click to view results'} />
-      </div>
+        <PhenExNavBarTooltip isVisible={hoveredBtn === 'eye'} anchorElement={eyeRef.current} label={showAll ? 'Show selected only' : 'Show all cohorts'} verticalPosition="below" horizontalAlignment="left" />
+        <PhenExNavBarTooltip isVisible={hoveredBtn === 'all'} anchorElement={allRef.current} label="Select all cohorts" verticalPosition="below" horizontalAlignment="left" />
+        <PhenExNavBarTooltip isVisible={hoveredBtn === 'clear'} anchorElement={clearRef.current} label="Deselect all cohorts" verticalPosition="below" horizontalAlignment="left" />
+        <PhenExNavBarTooltip isVisible={hoveredItem !== null} anchorElement={hoveredItem?.el ?? null} label={hoveredItem?.isActive ? 'Click to hide results' : 'Click to view results'} verticalPosition="below" horizontalAlignment="left" />
+      </div>,
+      actionBarTarget)}
 
       {groups.map((group, gi) => {
         const groupColor = getCohortColor(gi, 0, group.subcohorts.length);

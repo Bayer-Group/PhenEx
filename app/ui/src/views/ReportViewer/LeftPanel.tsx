@@ -65,18 +65,19 @@ export const LeftPanel: FC<LeftPanelProps> = ({
 
   return (
     <div className={styles.container}>
-      <div className={styles.tabRegion}>
-        <Tabs
-          tabs={['Cohorts', 'Reports']}
-          active_tab_index={activeTab === 'cohorts' ? 0 : 1}
-          onTabChange={(i) => setActiveTab(i === 0 ? 'cohorts' : 'reports')}
-          classNameTabsContainer={styles.tabsContainer}
-          classNameTabs={styles.tab}
-          classNameActiveTab={styles.tabActive}
-          classNameHoverTab={styles.tabHover}
-        />
-      </div>
       <div ref={scrollRegionRef} className={styles.scrollRegion}>
+        <div className={styles.tabRegion}>
+          <Tabs
+            tabs={['Cohorts', 'Reports']}
+            active_tab_index={activeTab === 'cohorts' ? 0 : 1}
+            onTabChange={(i) => setActiveTab(i === 0 ? 'cohorts' : 'reports')}
+            classNameTabsContainer={styles.tabsContainer}
+            classNameTabs={styles.tab}
+            classNameActiveTab={styles.tabActive}
+            classNameHoverTab={styles.tabHover}
+          />
+        </div>
+        <div id="leftpanel-actionbar-target" className={styles.actionBarRegion} />
         <div ref={scrollRef} className={styles.scrollContent}>
           {activeTab === 'cohorts' ? (
             <CohortSelector
@@ -110,7 +111,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
               <SimpleCustomScrollbar
                 targetRef={scrollRef}
                 orientation="vertical"
-                marginTop={60}
+                marginTop={110}
                 marginBottom={20}
                 marginToEnd={7}
               />
