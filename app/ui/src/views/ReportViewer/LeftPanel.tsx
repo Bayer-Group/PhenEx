@@ -1,9 +1,8 @@
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { FC, useRef, useState } from 'react';
 import { CohortSelector } from './ReportFloatingControls/CohortSelector';
 import { ReportSelector } from './ReportFloatingControls/ReportSelector';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
-import { Portal } from '../../components/Portal/Portal';
 import { type OutlineEntry } from './OutlineBar';
 import { type SequentialRow } from './studyRegistryUtils';
 import type { CohortGroup, LegendSelection, CohortDescriptions, Report } from './types';
@@ -46,22 +45,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<'cohorts' | 'reports'>('cohorts');
-  const [regionRect, setRegionRect] = useState<DOMRect | null>(null);
   const { isLeftPanelShown } = useThreePanelCollapse();
-
-  const updateRect = useCallback(() => {
-    const el = scrollRegionRef.current;
-    if (el) setRegionRect(el.getBoundingClientRect());
-  }, []);
-
-  useEffect(() => {
-    const el = scrollRegionRef.current;
-    if (!el) return;
-    updateRect();
-    const ro = new ResizeObserver(updateRect);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [updateRect]);
 
   return (
     <div className={styles.container}>
@@ -95,30 +79,18 @@ export const LeftPanel: FC<LeftPanelProps> = ({
             />
           )}
         </div>
-      </div>
-      {regionRect && isLeftPanelShown && (
-        <Portal>
-          <div style={{
-            position: 'fixed',
-            top: regionRect.top,
-            left: regionRect.left,
-            width: regionRect.width,
-            height: regionRect.height,
-            pointerEvents: 'none',
-            zIndex: 10001,
-          }}>
-            <div style={{ pointerEvents: 'auto' }}>
-              <SimpleCustomScrollbar
-                targetRef={scrollRef}
-                orientation="vertical"
-                marginTop={110}
-                marginBottom={20}
-                marginToEnd={7}
-              />
-            </div>
+        {isLeftPanelShown && (
+          <div className={styles.scrollbarRegion}>
+            <SimpleCustomScrollbar
+              targetRef={scrollRef}
+              orientation="vertical"
+              marginTop={110}
+              marginBottom={5}
+              marginToEnd={7}
+            />
           </div>
-        </Portal>
-      )}
+        )}
+      </div>
     </div>
   );
 };

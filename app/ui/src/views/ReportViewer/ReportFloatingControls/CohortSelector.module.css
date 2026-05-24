@@ -8,6 +8,7 @@
   background-color: var(--background-color);
   padding-top: 0px;
   position: relative;
+  padding-bottom: 200px;
 }
 
 .topGradient {
@@ -144,6 +145,7 @@
   container-type: inline-size;
   container-name: actionbar;
   background-color: transparent;
+
 }
 
 .actionInfo {

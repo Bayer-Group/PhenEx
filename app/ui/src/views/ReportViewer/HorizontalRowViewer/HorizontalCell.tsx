@@ -30,7 +30,7 @@ export interface HorizontalCellProps {
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
-  onVerticalScroll?: (scrollTop: number) => void;
+  onVerticalScroll?: (scrollTop: number, threshold: number) => void;
   commentsCollapsed?: boolean;
   studyTitle?: string;
 }
@@ -119,10 +119,11 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
     useEffect(() => {
       const el = verticalScrollRef.current;
       if (!el || !isFocused) return;
+      const threshold = 10;
       const handler = () => {
-        const scrollTop = el.scrollTop;
-        setTitleHidden(scrollTop > 100);
-        onVerticalScroll?.(scrollTop);
+        const hidden = el.scrollTop > threshold;
+        setTitleHidden(hidden);
+        onVerticalScroll?.(el.scrollTop, threshold);
       };
       el.addEventListener('scroll', handler, { passive: true });
       handler();

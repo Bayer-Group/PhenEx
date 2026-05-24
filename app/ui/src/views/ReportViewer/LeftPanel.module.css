@@ -47,11 +47,12 @@
 
 .actionBarRegion {
   position: absolute;
-  top: 50px;
+  top: 60px;
   left: 0;
   right: 0;
   z-index: 99;
   pointer-events: none;
+  background-color: red;
 }
 
 .actionBarRegion > * {
@@ -74,6 +75,17 @@
 
 .scrollContent::-webkit-scrollbar {
   display: none;
+}
+
+.scrollbarRegion {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.scrollbarRegion > * {
+  pointer-events: auto;
 }
 
 .navTitleCard {

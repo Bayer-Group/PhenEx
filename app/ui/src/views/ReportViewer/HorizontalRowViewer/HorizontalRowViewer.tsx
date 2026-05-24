@@ -175,8 +175,8 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     setCurrentIndex(index);
   }, []);
 
-  const handleVerticalScroll = useCallback((scrollTop: number) => {
-    setShowRowTitle(scrollTop > 100);
+  const handleVerticalScroll = useCallback((scrollTop: number, threshold: number) => {
+    setShowRowTitle(scrollTop > threshold);
   }, []);
 
   const startClose = useCallback(() => {
@@ -240,12 +240,12 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
           studyTitle={studyTitle}
           onNavigate={navigate}
         />
-        {showRowTitle && (
-          <div className={styles.rowTitleLabel}>
-            {current.registry?.display_name || current.name}
-          </div>
-        )}
       </div>
+      {showRowTitle && (
+        <div className={styles.rowTitleLabel} style={{ marginLeft: isLeftPanelShown ? 22 : 62 }} onClick={(e) => e.stopPropagation()}>
+          {current.registry?.display_name || current.name}
+        </div>
+      )}
       <div className={styles.scroller} ref={scrollRef}>
         {rows.map((row) => {
           const isFocused = row.index === currentIndex;
