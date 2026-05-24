@@ -52,7 +52,6 @@
   right: 0;
   z-index: 99;
   pointer-events: none;
-  background-color: red;
 }
 
 .actionBarRegion > * {

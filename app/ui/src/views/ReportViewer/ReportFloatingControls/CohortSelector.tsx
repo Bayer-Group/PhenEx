@@ -1,9 +1,6 @@
 import React, { FC, useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { getCohortColor, type CohortGroup, type LegendSelection, type CohortDescriptions } from '../types';
 import { useBarHoverStore } from '../GraphsAndTables/RowRenderers/useBarHoverStore';
-import EyeSolidIcon from '../../../assets/icons/eye-solid.svg';
-import EyeClosedIcon from '../../../assets/icons/eye-closed.svg';
 import { PhenExNavBarTooltip } from '../../../components/PhenExNavBar/PhenExNavBarTooltip';
 import { RightClickMenu } from '../../../components/RightClickMenu/RightClickMenu';
 import styles from './CohortSelector.module.css';
@@ -11,6 +8,7 @@ import styles from './CohortSelector.module.css';
 interface CohortSelectorProps {
   groups: CohortGroup[];
   selections: LegendSelection[];
+  showAll: boolean;
   onReplace: (index: number, fullName: string) => void;
   onAdd: (fullName: string) => void;
   onRemove: (index: number) => void;
@@ -20,26 +18,17 @@ interface CohortSelectorProps {
 export const CohortSelector: FC<CohortSelectorProps> = ({
   groups,
   selections,
+  showAll,
   onReplace,
   onAdd,
   onRemove,
   cohortDescriptions,
 }) => {
   const { activeIndex } = useBarHoverStore();
-  const [showAll, setShowAll] = useState(false);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const eyeRef = useRef<HTMLButtonElement>(null);
-  const allRef = useRef<HTMLButtonElement>(null);
-  const clearRef = useRef<HTMLButtonElement>(null);
-  const [hoveredBtn, setHoveredBtn] = useState<'eye' | 'all' | 'clear' | null>(null);
   const [hoveredItem, setHoveredItem] = useState<{ el: HTMLElement; isActive: boolean } | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const legendBarRef = useRef<HTMLDivElement>(null);
-
-  const [actionBarTarget, setActionBarTarget] = useState<HTMLElement | null>(null);
-  useEffect(() => {
-    setActionBarTarget(document.getElementById('leftpanel-actionbar-target'));
-  }, []);
 
   const startItemHover = useCallback((el: HTMLElement, isActive: boolean) => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
@@ -126,58 +115,6 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   return (
     <div ref={legendBarRef} className={styles.legendBar}>
       <div className={styles.topGradient} />
-      {actionBarTarget && createPortal(
-      <div className={styles.actionBar}>
-        <span className={styles.actionButtons}>
-          <span className={styles.actionCount}>
-            {selections.length}/{groups.reduce((n, g) => n + g.subcohorts.length, 0)}
-          </span>
-          <button
-            ref={eyeRef}
-            className={styles.eyeToggle}
-            onClick={() => setShowAll((v) => !v)}
-            onMouseEnter={() => setHoveredBtn('eye')}
-            onMouseLeave={() => setHoveredBtn(null)}
-          >
-            <img
-              src={showAll ? EyeSolidIcon : EyeClosedIcon}
-              alt={showAll ? 'Showing all' : 'Selected only'}
-              className={styles.eyeIcon}
-            />
-          </button>
-          <button
-            ref={allRef}
-            className={styles.clearBtn}
-            onClick={() => {
-              for (const group of groups) {
-                for (const sub of group.subcohorts) {
-                  if (!activeSet.has(sub.fullName)) onAdd(sub.fullName);
-                }
-              }
-            }}
-            disabled={groups.every((g) => g.subcohorts.every((s) => activeSet.has(s.fullName)))}
-            onMouseEnter={() => setHoveredBtn('all')}
-            onMouseLeave={() => setHoveredBtn(null)}
-          >
-            All
-          </button>
-          <button
-            ref={clearRef}
-            className={styles.clearBtn}
-            onClick={() => { for (let i = selections.length - 1; i >= 0; i--) onRemove(i); }}
-            disabled={selections.length === 0}
-            onMouseEnter={() => setHoveredBtn('clear')}
-            onMouseLeave={() => setHoveredBtn(null)}
-          >
-            Clear
-          </button>
-        </span>
-        <PhenExNavBarTooltip isVisible={hoveredBtn === 'eye'} anchorElement={eyeRef.current} label={showAll ? 'Show selected only' : 'Show all cohorts'} verticalPosition="below" horizontalAlignment="left" />
-        <PhenExNavBarTooltip isVisible={hoveredBtn === 'all'} anchorElement={allRef.current} label="Select all cohorts" verticalPosition="below" horizontalAlignment="left" />
-        <PhenExNavBarTooltip isVisible={hoveredBtn === 'clear'} anchorElement={clearRef.current} label="Deselect all cohorts" verticalPosition="below" horizontalAlignment="left" />
-        <PhenExNavBarTooltip isVisible={hoveredItem !== null} anchorElement={hoveredItem?.el ?? null} label={hoveredItem?.isActive ? 'Click to hide results' : 'Click to view results'} verticalPosition="below" horizontalAlignment="left" />
-      </div>,
-      actionBarTarget)}
 
       {groups.map((group, gi) => {
         const groupColor = getCohortColor(gi, 0, group.subcohorts.length);

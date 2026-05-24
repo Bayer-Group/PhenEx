@@ -1,5 +1,6 @@
 import { FC, useRef, useState } from 'react';
 import { CohortSelector } from './ReportFloatingControls/CohortSelector';
+import { CohortActionBar } from './ReportFloatingControls/CohortActionBar';
 import { ReportSelector } from './ReportFloatingControls/ReportSelector';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
@@ -45,6 +46,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<'cohorts' | 'reports'>('cohorts');
+  const [showAll, setShowAll] = useState(false);
   const { isLeftPanelShown } = useThreePanelCollapse();
 
   return (
@@ -61,12 +63,24 @@ export const LeftPanel: FC<LeftPanelProps> = ({
             classNameHoverTab={styles.tabHover}
           />
         </div>
-        <div id="leftpanel-actionbar-target" className={styles.actionBarRegion} />
+        {activeTab === 'cohorts' && (
+          <div className={styles.actionBarRegion}>
+            <CohortActionBar
+              groups={groups}
+              selections={selections}
+              showAll={showAll}
+              onToggleShowAll={() => setShowAll((v) => !v)}
+              onAdd={onAdd}
+              onRemove={onRemove}
+            />
+          </div>
+        )}
         <div ref={scrollRef} className={styles.scrollContent}>
           {activeTab === 'cohorts' ? (
             <CohortSelector
               groups={groups}
               selections={selections}
+              showAll={showAll}
               onReplace={onReplace}
               onAdd={onAdd}
               onRemove={onRemove}
