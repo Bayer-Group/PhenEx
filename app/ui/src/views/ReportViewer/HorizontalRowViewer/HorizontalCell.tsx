@@ -204,7 +204,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
             orientation="vertical"
             marginTop={100}
             marginBottom={35}
-            marginToEnd={commentsPanelWidth - 1}
+            marginToEnd={commentsCollapsed ? 10 : commentsPanelWidth - 1}
             classNameThumb={styles.verticalScrollbarThumb}
             classNameTrack={styles.verticalScrollbarTrack}
           />
