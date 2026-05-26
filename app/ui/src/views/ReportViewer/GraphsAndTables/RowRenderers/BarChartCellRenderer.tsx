@@ -3,6 +3,7 @@ import { type CohortClassified } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { CohortNameTooltip } from './CohortNameTooltip';
 import { BooleanRowModal } from '../ModalRenderers/BooleanRowModal';
+import { usePanZoomScale } from '../../../../hooks/PanZoomScaleContext';
 import styles from './BarChartCellRenderer.module.css';
 
 const DEFAULT_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -71,6 +72,8 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
   const closeModal = useCallback(() => setModalOpen(false), []);
 
   const isPresentation = mode === 'presentation';
+  const scale = usePanZoomScale();
+  const hideCompactLabels = !isPresentation && scale < 0.5;
 
   // Clear selection on any user scroll (delayed to skip programmatic scroll-into-view)
   useEffect(() => {
@@ -158,12 +161,14 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
         <div
           className={styles.dataCells}
         >
-          <div
-            className={styles.pctCell}
-            style={{ opacity: dimmed ? 0.25 : 1 }}
-          >
-            <strong>{pct.toFixed(pctDecimals)}</strong>
-          </div>
+          {!hideCompactLabels && (
+            <div
+              className={styles.pctCell}
+              style={{ opacity: dimmed ? 0.25 : 1 }}
+            >
+              <strong>{pct.toFixed(pctDecimals)}</strong>
+            </div>
+          )}
           <div
             className={styles.barCell}
             style={{ opacity: dimmed ? 0.25 : 1 }}
@@ -173,17 +178,19 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
               style={{ width: `${Math.max(0, pct)}%`, backgroundColor: entry.cohort.color }}
             />
           </div>
-          <div className={styles.nCell} style={{ opacity: dimmed ? 0.25 : 1, color: activeIndex === entry.originalIndex ? '#000' : undefined }}>
-            {isPresentation && finalCohortSize != null ? (
-              <>
-                <span className={styles.nValuePrimary}>{n.toLocaleString()}</span>
-                <span className={styles.nValueSlash}>/</span>
-                <span className={styles.nValueSecondary}>{finalCohortSize.toLocaleString()}</span>
-              </>
-            ) : (
-              n.toLocaleString()
-            )}
-          </div>
+          {!hideCompactLabels && (
+            <div className={styles.nCell} style={{ opacity: dimmed ? 0.25 : 1, color: activeIndex === entry.originalIndex ? '#000' : undefined }}>
+              {isPresentation && finalCohortSize != null ? (
+                <>
+                  <span className={styles.nValuePrimary}>{n.toLocaleString()}</span>
+                  <span className={styles.nValueSlash}>/</span>
+                  <span className={styles.nValueSecondary}>{finalCohortSize.toLocaleString()}</span>
+                </>
+              ) : (
+                n.toLocaleString()
+              )}
+            </div>
+          )}
         </div>
       </div>
     );

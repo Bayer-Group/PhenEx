@@ -10,7 +10,7 @@ export const CommentCard: FC<{ comment: RegistryComment }> = ({ comment }) => {
   return (
     <div className={styles.commentCard} onClick={(e) => e.stopPropagation()}>
       <div className={styles.commentHeader}>
-        <span className={styles.commentUser}>{label}</span>
+        <span className={styles.commentUser}>{label} PRELIMINARY</span>
         {statusLabel && <span className={styles.commentStatus}>{statusLabel}</span>}
         {comment.date && <span className={styles.commentDate}>{comment.date}</span>}
       </div>

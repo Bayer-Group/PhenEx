@@ -3,6 +3,7 @@ import { type CohortClassified } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { NumericChartFrame } from './NumericChartFrame';
 import { BoxPlotModal } from '../ModalRenderers/BoxPlotModal';
+import { Portal } from '../../../../components/Portal/Portal';
 import styles from './BoxPlotCellRenderer.module.css';
 
 /* ── Layout constants ────────────────────────────────────────────────── */
@@ -18,6 +19,19 @@ const LABEL_ROW_H = 18; // height reserved for labels below the plot
 function fmt(v: number): string {
   if (Math.abs(v) < 10 && v % 1 !== 0) return v.toFixed(1);
   return Math.round(v).toString();
+}
+
+function getCohortLabel(cohortData: CohortClassified[], index: number): string {
+  const cohort = cohortData[index];
+  if (!cohort) return '';
+  const name = cohort.name;
+  const idx = name.indexOf('__');
+  if (idx === -1) return cohort.displayName || name;
+  const parentName = name.substring(0, idx);
+  const subLabel = name.substring(idx + 2);
+  const parent = cohortData.find((c) => c.name === parentName);
+  const parentDisplay = parent?.displayName || parentName;
+  return `${parentDisplay} · ${subLabel}`;
 }
 
 interface BoxStats {
@@ -134,6 +148,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   const PLOT_W = W - PAD * 2;
   const { activeIndex } = useBarHoverStore();
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const xRange = xMax - xMin || 1;
@@ -180,11 +195,20 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
           const idx = Math.floor(localY / (ROW_H + ROW_GAP));
           if (idx >= 0 && idx < entries.length) {
             setHoveredRow(idx);
+            const entry = entries[idx];
+            const { stats } = entry;
+            const scale = rect.width / W;
+            const meanX = stats.mean != null ? toX(stats.mean) : toX(stats.median);
+            const medianX = toX(stats.median);
+            const cx = rect.left + ((meanX + medianX) / 2) * scale;
+            const cy = idx * (ROW_H + ROW_GAP) + ROW_H / 2;
+            setTooltipPos({ x: cx, y: rect.top + cy * scale });
           } else {
             setHoveredRow(null);
+            setTooltipPos(null);
           }
         }}
-        onMouseLeave={() => setHoveredRow(null)}
+        onMouseLeave={() => { setHoveredRow(null); setTooltipPos(null); }}
       >
         {entries.map((e, i) => {
           const cy = i * (ROW_H + ROW_GAP) + ROW_H / 2;
@@ -212,18 +236,23 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
       </svg>
       )}
 
-      {hoveredRow !== null && (() => {
+      {hoveredRow !== null && tooltipPos && (() => {
         const e = entries[hoveredRow];
         if (!e) return null;
+        const { stats } = e;
+        const label = getCohortLabel(cohortData, e.index);
         return (
-          <BoxPlotModal
-            name={name}
-            cohortData={cohortData}
-            xMin={xMin}
-            xMax={xMax}
-            cohortIndex={e.index}
-            onClose={() => setHoveredRow(null)}
-          />
+          <Portal>
+            <div className={styles.tooltipCard} style={{ left: tooltipPos.x, top: tooltipPos.y, transform: 'translate(-50%, -100%)' }}>
+              <div className={styles.tooltipCohort} style={{ color: e.color }}>{label}</div>
+              <div className={styles.tooltipStats}>
+                <span><strong>Min</strong> {fmt(stats.min)}</span>
+                <span><strong>Mean</strong> {stats.mean != null ? fmt(stats.mean) : '–'}</span>
+                <span><strong>Median</strong> {fmt(stats.median)}</span>
+                <span><strong>Max</strong> {fmt(stats.max)}</span>
+              </div>
+            </div>
+          </Portal>
         );
       })()}
     </div>

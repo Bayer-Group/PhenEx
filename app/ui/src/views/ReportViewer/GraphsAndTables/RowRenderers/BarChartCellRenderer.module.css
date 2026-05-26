@@ -193,7 +193,7 @@
   display: flex;
   align-items: center;
   position: relative;
-  height: clamp(18px, calc(max(18px, 160px / var(--cohort-count, 4)) / var(--pz-scale, 1)), 80px);
+  height: calc(4px / var(--pz-scale, 1));
   cursor: default;
   width:100%;
   border-radius: 5px;
@@ -261,13 +261,14 @@
 .pctCell {
   position: absolute;
   right: 100%;
-  top: 0;
+  top: 50%;
+  transform: translateY(-50%);
   box-sizing: border-box;
   padding: 0 6px;
-  font-size: clamp(12px, calc(max(12px, 60px / var(--cohort-count, 4)) / var(--pz-scale, 1)), 50px);
+  font-size: calc(10px / var(--pz-scale, 1));
   color: #666;
   white-space: nowrap;
-  line-height: 16px;
+  line-height: 1;
   transition: opacity 0.15s ease;
   text-align: right;
 }
@@ -280,6 +281,7 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  font-size: 12px;
 }
 
 /* ── Bar cell (center) ────────────────────────────────────────────────── */
@@ -323,11 +325,13 @@
   padding-left: 10px;
   font-family: 'IBMPlexSans-regular', sans-serif;
   
-  font-size: clamp(10px, calc(max(12px, 60px / var(--cohort-count, 4)) / var(--pz-scale, 1)), 50px);
+  font-size: calc(10px / var(--pz-scale, 1));
   color: #333;
   white-space: nowrap;
-  line-height: 16px;
+  line-height: 1;
   transition: opacity 0.15s ease;
+  display: flex;
+  align-items: center;
 }
 
 .cohortRowPresentation .nCell {
@@ -338,6 +342,7 @@
   padding-left: 0;
   text-align: left;
   font-variant-numeric: tabular-nums;
+  font-size: 12px;
 }
 
 .nValuePrimary {

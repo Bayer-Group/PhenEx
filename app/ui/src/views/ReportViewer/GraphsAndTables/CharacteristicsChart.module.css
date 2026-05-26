@@ -24,6 +24,15 @@
   border: calc(1px / var(--pz-scale, 1)) solid transparent;
 }
 
+.categoricalRow{
+  position: relative;
+  border-radius: calc(8px / var(--pz-scale, 1));
+  display: flex;
+  align-items: stretch;
+  min-height: clamp(300px, calc(400px / var(--pz-scale, 1)), 430px);
+  border: calc(1px / var(--pz-scale, 1)) solid transparent;
+}
+
 .rowTooltip {
   position: absolute;
   top: calc(8px / var(--pz-scale, 1));
@@ -39,6 +48,7 @@
   opacity: 0;
   transition: opacity 0.15s;
   transform: translateY(-150%);
+  z-index:1000;
 }
 
 .row:hover .rowTooltip,
@@ -66,7 +76,7 @@
   white-space: normal;
   padding: 5px 20px 0px 20px;
   padding-left: clamp(200px, calc(100px / var(--pz-scale, 1)), 200px);
-  padding-right: clamp(100px, calc(100px / var(--pz-scale, 1)), 100px);
+  padding-right: calc(30px / var(--pz-scale, 1));
   padding-bottom: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 20px);
   padding-top: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 20px);
   text-align: right;
@@ -78,12 +88,22 @@
 }
 
 .numericNameCell {
-  width: clamp(350px, calc(450px / var(--pz-scale, 1)), 2000px);
+    width: calc(300px / var(--pz-scale, 1));
+  height: clamp(350px, calc(200px / var(--pz-scale, 1)), 1000px);
+
+  padding-right: calc(50px / var(--pz-scale, 1));
+  text-align: left;
+  padding-left: min(calc(max(40px * var(--pz-scale, 1), 10px) + 20px), 40px);
+}
+
+.categoricalNameCell{
+    width: calc(300px / var(--pz-scale, 1));
   height: clamp(350px, calc(200px / var(--pz-scale, 1)), 1000px);
 
   padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 10px);
   text-align: left;
   padding-left: min(calc(max(40px * var(--pz-scale, 1), 10px) + 20px), 40px);
+
 }
 
 .chartCell {
@@ -135,7 +155,7 @@
 
 
 .kdeCell {
-  width: clamp(200px, calc(400px / var(--pz-scale, 1)), 3000px);
+  width: calc(500px / var(--pz-scale, 1));
   flex-shrink: 0;
   display: flex;
   align-items: center;

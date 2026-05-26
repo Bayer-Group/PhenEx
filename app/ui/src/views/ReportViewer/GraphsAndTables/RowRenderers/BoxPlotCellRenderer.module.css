@@ -11,3 +11,39 @@
 .plotSvg {
   display: block;
 }
+
+.tooltipCard {
+  position: fixed;
+  pointer-events: none;
+  background-color: white;
+  border: var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 11px;
+  padding: 8px 12px;
+  white-space: nowrap;
+  z-index: 100000;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: -6px;
+}
+
+.tooltipCohort {
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.tooltipStats {
+  display: flex;
+  gap: 12px;
+  color: #333;
+}
+
+.tooltipStats strong {
+  opacity: 0.5;
+  font-weight: normal;
+  margin-right: 3px;
+}

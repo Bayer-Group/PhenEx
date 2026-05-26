@@ -90,6 +90,24 @@
   font-size: 14px;
 }
 
+.fakeDataLabel {
+  position: absolute;
+  bottom: 50px;
+  right: 40px;
+  z-index: 3;
+  pointer-events: none;
+  padding: 5px 10px;
+  background-color: white;
+  border-radius: 10px;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: var(--font_size_breadcrumb, 14px);
+  color: red;
+  letter-spacing: 0.1em;
+  border: var(--border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+
+}
+
 .resetViewButton {
   padding: 4px;
   cursor: pointer;

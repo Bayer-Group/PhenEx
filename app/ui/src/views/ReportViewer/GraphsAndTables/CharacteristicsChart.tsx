@@ -126,9 +126,9 @@ const CategoricalRow: FC<{
   const { onMouseDown, onClick } = useClickGuard(handler);
 
   return (
-    <div className={styles.numericRow} onMouseDown={onMouseDown} onClick={onClick} style={{ cursor: 'pointer' }} data-row-name={row.name}>
+    <div className={styles.categoricalRow} onMouseDown={onMouseDown} onClick={onClick} style={{ cursor: 'pointer' }} data-row-name={row.name}>
       <span className={styles.rowTooltip}>click to open</span>
-      <div className={`${styles.nameCell} ${styles.numericNameCell}`}>{row.registry?.display_name || row.name}</div>
+      <div className={`${styles.nameCell} ${styles.categoricalNameCell}`}>{row.registry?.display_name || row.name}</div>
       <div className={styles.kdeCell}>
         <CategoricalBarChartCellRenderer
           baseName={row.name}

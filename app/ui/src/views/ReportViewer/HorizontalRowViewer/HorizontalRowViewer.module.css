@@ -17,12 +17,17 @@
   position: absolute;
   top: 12px;
   left: 12px;
+  right: 12px;
   z-index: 3;
-  pointer-events: auto;
+  pointer-events: none;
   display: flex;
   flex-direction: row;
   align-items: stretch;
   gap: 6px;
+}
+
+.titleGroup > * {
+  pointer-events: auto;
 }
 
 .titleBar {
@@ -73,8 +78,8 @@
 
 .rowTitleLabel {
   position: absolute;
-  top: 48px;
-  left: 0;
+  top: 58px;
+  left: 29px;
   z-index: 3;
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;
@@ -84,6 +89,17 @@
   text-overflow: ellipsis;
   padding: 6px 0 0;
   pointer-events: auto;
+  background-color: white;
+  border: var(--border);
+  padding: 0px 10px;
+  pointer-events: auto;
+  background-color: white;
+  border-radius: 10px;
+  border: var(--border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+
 }
 
 .scroller {
@@ -96,6 +112,58 @@
   scrollbar-width: none;
   position: relative;
   z-index: 2;
+}
+
+.navPill {
+  margin-left: 0px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  background-color: white;
+  border: var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  padding: 0 2px;
+  position: relative;
+}
+
+.navArrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color_inactive, #999);
+  padding: 4px 6px;
+  transition: color 0.15s;
+}
+
+.navArrow:hover:not(:disabled) {
+  color: var(--color_accent_blue, #2563eb);
+}
+
+.navArrow:focus{
+  outline: none;
+}
+
+.navArrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.navHint {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  white-space: nowrap;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 11px;
+  color: var(--color_inactive, #999);
+  pointer-events: none;
 }
 
 .scroller::-webkit-scrollbar {
@@ -173,4 +241,23 @@
   flex-direction: column;
   gap: 10px;
   margin-bottom: 16px;
+}
+
+
+.fakeDataLabel{
+ position: absolute;
+  bottom: 50px;
+  right: 40px;
+  z-index: 3;
+  pointer-events: none;
+  padding: 5px 10px;
+  background-color: white;
+  border-radius: 10px;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: var(--font_size_breadcrumb, 14px);
+  color: red;
+  letter-spacing: 0.1em;
+  border: var(--border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+
 }

@@ -526,6 +526,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
             </div>
 
+            <div className={styles.fakeDataLabel}>FAKE DATA</div>
+
             <div className={styles.content} ref={pz.viewportRef}>
               <div className={styles.bottomGradient} />
               <div className={styles.topGradient} />
