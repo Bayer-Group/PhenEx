@@ -25,6 +25,7 @@ interface LeftPanelProps {
   cohortDescriptions?: CohortDescriptions;
   reports?: Report[];
   onSelectReport?: (report: Report) => void;
+  finalCohortSizes?: Record<string, number | null>;
 }
 
 export const LeftPanel: FC<LeftPanelProps> = ({
@@ -42,6 +43,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
   cohortDescriptions,
   reports,
   onSelectReport,
+  finalCohortSizes,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
@@ -85,6 +87,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
               onAdd={onAdd}
               onRemove={onRemove}
               cohortDescriptions={cohortDescriptions}
+              finalCohortSizes={finalCohortSizes}
             />
           ) : (
             <ReportSelector

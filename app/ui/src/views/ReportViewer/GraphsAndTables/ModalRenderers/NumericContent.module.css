@@ -28,3 +28,7 @@
   height: 160px;
   min-height: 0;
 }
+
+.tableHeader {
+  margin-bottom: 8px;
+}

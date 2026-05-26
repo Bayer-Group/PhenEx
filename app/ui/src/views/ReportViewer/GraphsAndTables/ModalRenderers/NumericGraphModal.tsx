@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { type CohortClassified, type KdeCurve } from '../../types';
 import { RowModal } from './RowModal';
 import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
@@ -6,6 +6,7 @@ import { NumericChartFrame } from '../RowRenderers/NumericChartFrame';
 import { KDEChartCellRenderer } from '../RowRenderers/KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from '../RowRenderers/BoxPlotCellRenderer';
 import { NumericTableCellRenderer } from '../RowRenderers/NumericTableCellRenderer';
+import { Tabs } from '../../../../components/ButtonsAndTabs/Tabs/Tabs';
 import styles from './NumericGraphModal.module.css';
 
 interface NumericGraphModalProps {
@@ -31,6 +32,7 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
 }) => {
   const { visible } = useCohortVisibility(cohortData.length);
   const filteredCohortData = useFilteredCohortData(cohortData, visible);
+  const [statMode, setStatMode] = useState<'coverage' | 'missingness'>('coverage');
 
   return (
     <RowModal onClose={onClose} breadcrumbs={breadcrumbs}>
@@ -61,7 +63,14 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
 
         <div className={styles.bottomRow}>
           <div className={styles.card}>
-            <NumericTableCellRenderer name={name} cohortData={filteredCohortData} finalCohortSizes={finalCohortSizes} showBar />
+            <div className={styles.tableHeader}>
+              <Tabs
+                tabs={['Coverage', 'Missingness']}
+                active_tab_index={statMode === 'coverage' ? 0 : 1}
+                onTabChange={(i) => setStatMode(i === 0 ? 'coverage' : 'missingness')}
+              />
+            </div>
+            <NumericTableCellRenderer name={name} cohortData={filteredCohortData} finalCohortSizes={finalCohortSizes} showBar statMode={statMode} />
           </div>
         </div>
       </div>

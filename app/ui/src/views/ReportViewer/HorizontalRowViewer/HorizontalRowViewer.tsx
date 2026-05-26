@@ -323,7 +323,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
           );
         })}
       </div>
-      <div className={styles.fakeDataLabel}>FAKE DATA</div>
+      {/* <div className={styles.fakeDataLabel}>FAKE DATA</div> */}
     </div>
   );
 };

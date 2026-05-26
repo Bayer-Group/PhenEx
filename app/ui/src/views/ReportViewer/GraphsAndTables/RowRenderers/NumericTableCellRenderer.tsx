@@ -18,6 +18,7 @@ interface NumericTableCellRendererProps {
   hideNPct?: boolean;
   showBar?: boolean;
   pctDecimals?: number;
+  statMode?: 'coverage' | 'missingness';
 }
 
 export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
@@ -27,6 +28,7 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
   hideNPct,
   showBar,
   pctDecimals = 1,
+  statMode = 'coverage',
 }) => {
   const { activeIndex, onClick } = useBarHoverStore();
   const [hover, setHover] = useState<{ index: number; x: number; top: number } | null>(null);
@@ -47,8 +49,13 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
         {cohortData.map((cd, i) => {
           const row = cd.data.rows.find((r) => r.Name === name);
           if (!row) return null;
-          const pct = row.Pct ?? 0;
+          const rawPct = row.Pct ?? 0;
+          const rawN = row.N ?? 0;
           const finalCohortSize = finalCohortSizes[cd.name];
+          const isMissing = statMode === 'missingness';
+          const hasSize = finalCohortSize != null && finalCohortSize > 0;
+          const pct = isMissing ? (hasSize ? 100 - rawPct : 0) : rawPct;
+          const n = isMissing ? (hasSize ? finalCohortSize - rawN : 0) : rawN;
           const dimmed = activeIndex !== null && activeIndex !== i;
           return (
             <div
@@ -85,15 +92,14 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
               )}
               {!hideNPct && (
                 <div className={styles.statsNCell}>
-                  {/* If final cohort size is available, show N as "X / FinalSize". Otherwise just show N. */}
                   {row.N != null ? (
                     finalCohortSize != null ? (
                       <>
-                        <span className={styles.statsNPrimary}>{row.N.toLocaleString()}</span>
+                        <span className={styles.statsNPrimary}>{n.toLocaleString()}</span>
                         <span className={styles.statsNSlash}>/</span>
                         <span className={styles.statsNSecondary}>{finalCohortSize.toLocaleString()}</span>
                       </>
-                    ) : row.N.toLocaleString()
+                    ) : n.toLocaleString()
                   ) : '–'}
                 </div>
               )}

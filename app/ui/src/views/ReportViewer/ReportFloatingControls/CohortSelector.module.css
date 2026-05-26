@@ -108,6 +108,15 @@
   color:white;
 }
 
+.cohortSize {
+  margin-left: auto;
+  font-size: 10px;
+  color: #999;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+
 .removeBtn {
   margin-left: auto;
   display: flex;

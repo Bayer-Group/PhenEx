@@ -1,10 +1,11 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { type CohortClassified, type KdeCurve } from '../../types';
 import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
 import { NumericChartFrame } from '../RowRenderers/NumericChartFrame';
 import { KDEChartCellRenderer } from '../RowRenderers/KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from '../RowRenderers/BoxPlotCellRenderer';
 import { NumericTableCellRenderer } from '../RowRenderers/NumericTableCellRenderer';
+import { Tabs } from '../../../../components/ButtonsAndTabs/Tabs/Tabs';
 import styles from './NumericContent.module.css';
 
 interface NumericContentProps {
@@ -17,6 +18,7 @@ interface NumericContentProps {
 export const NumericContent: FC<NumericContentProps> = ({ name, cohortData, kdeData, finalCohortSizes }) => {
   const { visible } = useCohortVisibility(cohortData.length);
   const filtered = useFilteredCohortData(cohortData, visible);
+  const [statMode, setStatMode] = useState<'coverage' | 'missingness'>('coverage');
 
   const { xMin, xMax } = useMemo(() => {
     let lo = Infinity;
@@ -56,7 +58,14 @@ export const NumericContent: FC<NumericContentProps> = ({ name, cohortData, kdeD
       </div>
       <div className={styles.bottomRow}>
         <div className={styles.card}>
-          <NumericTableCellRenderer name={name} cohortData={filtered} finalCohortSizes={finalCohortSizes} showBar />
+          <div className={styles.tableHeader}>
+            <Tabs
+              tabs={['Coverage', 'Missingness']}
+              active_tab_index={statMode === 'coverage' ? 0 : 1}
+              onTabChange={(i) => setStatMode(i === 0 ? 'coverage' : 'missingness')}
+            />
+          </div>
+          <NumericTableCellRenderer name={name} cohortData={filtered} finalCohortSizes={finalCohortSizes} showBar statMode={statMode} />
         </div>
       </div>
     </div>

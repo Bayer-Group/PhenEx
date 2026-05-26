@@ -497,6 +497,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
             onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
             cohortDescriptions={cohortDescriptions}
             reports={reports}
+            finalCohortSizes={finalCohortSizes}
           />
 
           {/* Center panel: charts */}
@@ -526,7 +527,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
             </div>
 
-            <div className={styles.fakeDataLabel}>FAKE DATA</div>
+            {/* <div className={styles.fakeDataLabel}>FAKE DATA</div> */}
 
             <div className={styles.content} ref={pz.viewportRef}>
               <div className={styles.bottomGradient} />

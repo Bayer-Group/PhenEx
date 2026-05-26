@@ -9,8 +9,9 @@
 .row {
   display: flex;
   align-items: stretch;
-  border-bottom: 1px solid var(--line-color, #e0e0e0);
-  min-height: 120px;
+  border-bottom: calc(1px / var(--pz-scale, 1)) solid var(--line-color, #e0e0e0);
+  min-height: calc(120px / var(--pz-scale, 1));
+  border-radius: calc(8px / var(--pz-scale, 1));
 }
 
 .row:hover {
@@ -18,15 +19,15 @@
 }
 
 .nameCell {
-  width: 350px;
+  width: calc(350px / var(--pz-scale, 1));
   flex-shrink: 0;
-  font-family: 'IBMPlexSans-bold', sans-serif;
-  font-size: clamp(18px, calc(14px / var(--pz-scale, 1)), 24px);
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: clamp(50px, calc(18px / var(--pz-scale, 1)), 500px);
   color: #333;
   line-height: 1.25;
   word-break: break-word;
   white-space: normal;
-  padding: 0 20px;
+  padding: 0 calc(20px / var(--pz-scale, 1));
   text-align: right;
   box-sizing: border-box;
   display: flex;
@@ -35,11 +36,11 @@
 }
 
 .kmCell {
-  width: 300px;
+  width: calc(300px / var(--pz-scale, 1));
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding: 6px 0;
+  padding: calc(6px / var(--pz-scale, 1)) 0;
   box-sizing: border-box;
   overflow: visible;
 }

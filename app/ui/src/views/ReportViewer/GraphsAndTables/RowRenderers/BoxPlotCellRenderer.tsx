@@ -21,17 +21,25 @@ function fmt(v: number): string {
   return Math.round(v).toString();
 }
 
-function getCohortLabel(cohortData: CohortClassified[], index: number): string {
+interface CohortLabel {
+  parent: string;
+  sub: string | null;
+  color: string;
+}
+
+function getCohortLabel(cohortData: CohortClassified[], index: number): CohortLabel {
   const cohort = cohortData[index];
-  if (!cohort) return '';
+  if (!cohort) return { parent: '', sub: null, color: '' };
   const name = cohort.name;
   const idx = name.indexOf('__');
-  if (idx === -1) return cohort.displayName || name;
+  if (idx === -1) return { parent: cohort.displayName || name, sub: null, color: cohort.color };
   const parentName = name.substring(0, idx);
-  const subLabel = name.substring(idx + 2);
   const parent = cohortData.find((c) => c.name === parentName);
-  const parentDisplay = parent?.displayName || parentName;
-  return `${parentDisplay} · ${subLabel}`;
+  return {
+    parent: parent?.displayName || parentName,
+    sub: cohort.displayName || name.substring(idx + 2),
+    color: parent?.color || cohort.color,
+  };
 }
 
 interface BoxStats {
@@ -259,11 +267,14 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
         return (
           <Portal>
             <div className={styles.tooltipWrapper} style={{ left: tooltipPos.x, top: tooltipPos.y, transform: 'translate(-50%, -105%)' }}>
-              <div className={styles.tooltipCohort} style={{ color: e.color }}>{label}</div>
+              <div className={styles.tooltipCohort} style={{ color: label.color }}>
+                <div className={styles.tooltipParent}>{label.parent}</div>
+                {label.sub && <div className={styles.tooltipSub}>{label.sub}</div>}
+              </div>
               <div className={styles.tooltipStats}>
-                <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Min</span><span className={styles.tooltipValue}>{fmt(stats.min)}</span></div>
                 <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Mean</span><span className={styles.tooltipValue}>{stats.mean != null ? fmt(stats.mean) : '–'}</span></div>
                 <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Median</span><span className={styles.tooltipValue}>{fmt(stats.median)}</span></div>
+                <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Min</span><span className={styles.tooltipValue}>{fmt(stats.min)}</span></div>
                 <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Max</span><span className={styles.tooltipValue}>{fmt(stats.max)}</span></div>
               </div>
             </div>

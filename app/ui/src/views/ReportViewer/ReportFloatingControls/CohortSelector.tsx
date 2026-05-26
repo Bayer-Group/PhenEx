@@ -36,6 +36,7 @@ interface CohortSelectorProps {
   onAdd: (fullName: string) => void;
   onRemove: (index: number) => void;
   cohortDescriptions?: CohortDescriptions;
+  finalCohortSizes?: Record<string, number | null>;
 }
 
 export const CohortSelector: FC<CohortSelectorProps> = ({
@@ -46,8 +47,10 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   onAdd,
   onRemove,
   cohortDescriptions,
+  finalCohortSizes,
 }) => {
   const { activeIndex } = useBarHoverStore();
+  const [barWidth, setBarWidth] = useState(0);
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const [hoveredItem, setHoveredItem] = useState<{ el: HTMLElement; isActive: boolean } | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -135,6 +138,16 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
     }
   }, [groups, activeSet, selectionIndexMap, onAdd, onRemove]);
 
+  useLayoutEffect(() => {
+    const el = legendBarRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setBarWidth(entry.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const showSizes = barWidth > 200 && finalCohortSizes != null;
+
   return (
     <div ref={legendBarRef} className={styles.legendBar}>
       <div className={styles.topGradient} />
@@ -176,6 +189,11 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                   >
                     {sub.fullName === group.parent ? 'Main Cohort' : (cohortDescriptions?.[sub.fullName]?.display_name || sub.label)}
                   </span>
+                  {showSizes && finalCohortSizes[sub.fullName] != null && (
+                    <span className={styles.cohortSize}>
+                    {finalCohortSizes[sub.fullName]!.toLocaleString()}
+                    </span>
+                  )}
                 </div>
               );
             })}

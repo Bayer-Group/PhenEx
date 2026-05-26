@@ -178,19 +178,21 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const plotAreaRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverPixelX, setHoverPixelX] = useState(0);
 
   useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    const updateWidth = (width: number) => {
+    const update = (entry: ResizeObserverEntry) => {
+      const { width, height } = entry.contentRect;
       setContainerWidth((prev) => (prev === width ? prev : width));
+      setContainerHeight((prev) => (prev === height ? prev : height));
     };
-    updateWidth(el.clientWidth);
-    const ro = new ResizeObserver(([entry]) => {
-      updateWidth(entry.contentRect.width);
-    });
+    setContainerWidth(el.clientWidth);
+    setContainerHeight(el.clientHeight);
+    const ro = new ResizeObserver(([entry]) => update(entry));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -215,10 +217,10 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
     ? RISK_ROW_H + curves.length * RISK_FIELDS.length * RISK_ROW_H
     : 0;
 
-  const width = isFull ? Math.max(COMPACT_W, Math.round(containerWidth) || COMPACT_W) : COMPACT_W;
+  const width = Math.max(COMPACT_W, Math.round(containerWidth) || COMPACT_W);
   const plotLeft = Y_AXIS_W + PAD;
   const plotW = Math.max(120, width - plotLeft - PLOT_RIGHT);
-  const plotH = isFull ? FULL_PLOT_H : COMPACT_PLOT_H;
+  const plotH = isFull ? FULL_PLOT_H : Math.max(COMPACT_PLOT_H, Math.round(containerHeight) - HEADER_H - MARGIN_BOTTOM - STROKE_PAD);
   const svgH = STROKE_PAD + plotH;
 
   const ticks = niceTicks(xMax);
