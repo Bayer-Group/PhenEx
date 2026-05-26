@@ -174,6 +174,8 @@ export interface ClassifiedRows {
 
 export interface CohortClassified {
   name: string;
+  /** Human-friendly label from cohort descriptions, if available */
+  displayName?: string;
   /** Index into COLORS (legacy) */
   ci: number;
   /** Resolved color string for this cohort */

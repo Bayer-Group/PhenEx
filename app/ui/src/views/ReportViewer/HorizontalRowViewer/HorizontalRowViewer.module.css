@@ -47,7 +47,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   cursor: pointer;
   color: var(--color_inactive, #999);
-  padding: 0 8px;
+  padding: 0 8px 0px 4px;
   flex-shrink: 0;
   pointer-events: auto;
   transition: color 0.15s;

@@ -21,7 +21,8 @@
 }
 
 .kdePath {
-  stroke-width: min(calc(max(1px * var(--pz-scale, 1), 10px)), 3px);
+  stroke-width: calc(2px / var(--pz-scale, 1));
+
   stroke-linecap: round;
   stroke-linejoin: round;
 }

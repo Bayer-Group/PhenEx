@@ -100,9 +100,10 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
       };
       groups.push(group);
     }
-    const entry = { cohort, originalIndex: index, label: formatCohortLabel(label) };
+    const entry = { cohort, originalIndex: index, label: cohort.displayName || formatCohortLabel(label) };
     if (label === 'main') {
       group.mainRow = entry;
+      if (cohort.displayName) group.displayName = cohort.displayName;
     } else {
       group.rows.push(entry);
     }
@@ -114,7 +115,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
     return {
       cohort,
       originalIndex: index,
-      label: formatCohortLabel(label),
+      label: cohort.displayName || formatCohortLabel(label),
     };
   });
 
@@ -255,7 +256,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
 
       {hover && !isPresentation && (
         <CohortNameTooltip
-          name={cohortData[hover.index]?.name ?? ''}
+          name={cohortData[hover.index]?.displayName ?? cohortData[hover.index]?.name ?? ''}
           x={hover.x}
           top={hover.top}
         />

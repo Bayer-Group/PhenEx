@@ -109,7 +109,7 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
 
       {hover && (
         <CohortNameTooltip
-          name={cohortData[hover.index]?.name ?? ''}
+          name={cohortData[hover.index]?.displayName ?? cohortData[hover.index]?.name ?? ''}
           x={hover.x}
           top={hover.top}
         />

@@ -182,6 +182,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           if (!entry) return null;
           return {
             name: entry.cohortName,
+            displayName: cohortDescriptions?.[entry.cohortName]?.display_name ?? undefined,
             ci: sel.colorIndex,
             color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
             classified: classifyRows(entry.data.rows),
@@ -189,7 +190,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           };
         })
         .filter((c): c is CohortClassified => c !== null),
-    [cohortEntries, selections],
+    [cohortEntries, selections, cohortDescriptions],
   );
 
   // ── Outcomes ──────────────────────────────────────────────────────────
@@ -206,6 +207,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           if (!entry) return null;
           return {
             name: entry.cohortName,
+            displayName: cohortDescriptions?.[entry.cohortName]?.display_name ?? undefined,
             ci: sel.colorIndex,
             color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
             classified: classifyRows(entry.data.rows),
@@ -213,7 +215,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           };
         })
         .filter((c): c is CohortClassified => c !== null),
-    [outcomesEntries, selections],
+    [outcomesEntries, selections, cohortDescriptions],
   );
 
   // ── Sequential rows (built from selected data so navigable rows = displayed rows)

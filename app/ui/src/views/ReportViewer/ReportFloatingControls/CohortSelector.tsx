@@ -1,9 +1,32 @@
-import React, { FC, useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { FC, useState, useCallback, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
 import { getCohortColor, type CohortGroup, type LegendSelection, type CohortDescriptions } from '../types';
 import { useBarHoverStore } from '../GraphsAndTables/RowRenderers/useBarHoverStore';
 import { PhenExNavBarTooltip } from '../../../components/PhenExNavBar/PhenExNavBarTooltip';
 import { RightClickMenu } from '../../../components/RightClickMenu/RightClickMenu';
 import styles from './CohortSelector.module.css';
+
+const MAX_LABEL_FONT = 11;
+const MIN_LABEL_FONT = 8;
+
+/** Span that shrinks its font-size when text wraps beyond one line. */
+const AutoShrinkLabel: FC<{ text: string; className?: string; style?: React.CSSProperties }> = ({ text, className, style }) => {
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.fontSize = '';
+    const lineH = parseFloat(getComputedStyle(el).lineHeight) || MAX_LABEL_FONT * 1.9;
+    if (el.scrollHeight <= lineH + 2) return;
+    for (let s = MAX_LABEL_FONT - 1; s >= MIN_LABEL_FONT; s--) {
+      el.style.fontSize = `${s}px`;
+      const lh = parseFloat(getComputedStyle(el).lineHeight) || s * 1.9;
+      if (el.scrollHeight <= lh + 2) return;
+    }
+  }, [text]);
+
+  return <span ref={ref} className={className} style={style}>{text}</span>;
+};
 
 interface CohortSelectorProps {
   groups: CohortGroup[];
@@ -125,7 +148,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         return (
           <div key={group.parent} className={styles.legendGroup} onContextMenu={(e) => handleGroupContextMenu(e, gi)} onClick={() => handleGroupClick(gi)} style={{ cursor: 'pointer' }}>
             <div className={styles.legendGroupTitle}>
-              <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: groupColor }}>{cohortDescriptions?.[group.parent]?.display_name || group.parent}</span>
+              <AutoShrinkLabel text={cohortDescriptions?.[group.parent]?.display_name || group.parent} className={styles.legendGroupTitleLabel} style={{ backgroundColor: groupColor }} />
             </div>
             {cohortDescriptions?.[group.parent]?.description && (
               <div className={styles.legendGroupDescription}>{cohortDescriptions[group.parent].description}</div>

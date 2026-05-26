@@ -59,8 +59,10 @@
 
 .legendGroupTitleLabel{
   padding: 3px 10px;
-  border-radius:5px;
-
+  border-radius: 5px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  line-height: 1.9;
 }
 
 .legendGroupDescription{
