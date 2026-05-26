@@ -358,7 +358,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   const tteGroupRef = useRef<HTMLDivElement>(null);
 
   const pz = usePanZoom({
-    minScale: 0.05,
+    minScale: 0.1,
     maxScale: .3,
     initialTransform: { x: INITIAL_X, y: INITIAL_Y, scale: INITIAL_SCALE },
     storageKey,

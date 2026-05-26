@@ -220,7 +220,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
   };
 
   return (
-    <div className={`${styles.container} ${isPresentation ? styles.containerPresentation : ''}`}>
+    <div className={`${styles.container} ${isPresentation ? styles.containerPresentation : ''}`} style={{ '--cohort-count': cohortData.length } as React.CSSProperties}>
       {/* Dismiss overlay — any click exits cohort-select state */}
       {isPresentation && activeIndex !== null && (
         <div className={styles.dismissOverlay} onClick={(e) => { e.stopPropagation(); onHover(null); }} />

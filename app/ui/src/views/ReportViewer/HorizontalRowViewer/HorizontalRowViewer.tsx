@@ -241,19 +241,21 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       onMouseDown={() => { mouseDownOnOverlay.current = true; }}
       onClick={handleOverlayClick}
     >
-      <button className={styles.backButton} style={{ marginLeft: isLeftPanelShown ? undefined : 50 }} onClick={(e) => { e.stopPropagation(); startClose(); }} title="Back">
-        <svg width="20" height="22" viewBox="0 0 25 28" fill="none">
-          <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      </button>
-      <div className={styles.titleBar} style={{ marginLeft: isLeftPanelShown ? undefined : 50 }} onClick={(e) => e.stopPropagation()}>
-        <HorizontalRowTitle
-          rows={rows}
-          currentIndex={currentIndex}
-          desiredTop={desiredTop}
-          studyTitle={studyTitle}
-          onNavigate={navigate}
-        />
+      <div className={styles.titleGroup} style={{ marginLeft: isLeftPanelShown ? undefined : 50 }} onClick={(e) => e.stopPropagation()}>
+        <button className={styles.backButton} onClick={(e) => { e.stopPropagation(); startClose(); }} title="Back">
+          <svg width="20" height="22" viewBox="0 0 25 28" fill="none">
+            <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+        <div className={styles.titleBar}>
+          <HorizontalRowTitle
+            rows={rows}
+            currentIndex={currentIndex}
+            desiredTop={desiredTop}
+            studyTitle={studyTitle}
+            onNavigate={navigate}
+          />
+        </div>
       </div>
       {showRowTitle && (
         <div className={styles.rowTitleLabel} style={{ marginLeft: isLeftPanelShown ? 22 : 62 }} onClick={(e) => e.stopPropagation()}>
