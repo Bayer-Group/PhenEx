@@ -32,7 +32,7 @@
 
 .tooltipCohort {
   font-family: "IBMPlexSans-bold", sans-serif;
-  font-size: 12px;
+  font-size: 18px;
   margin-bottom: 2px;
 }
 
@@ -40,6 +40,7 @@
   display: flex;
   gap: 12px;
   color: #333;
+  font-size: 20px;
 }
 
 .tooltipStats strong {

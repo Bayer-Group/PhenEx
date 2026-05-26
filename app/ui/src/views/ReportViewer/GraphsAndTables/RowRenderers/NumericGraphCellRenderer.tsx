@@ -1,8 +1,6 @@
 import { FC, useMemo } from 'react';
 import { type CohortClassified, type KdeCurve } from '../../types';
 import { KDEChartCellRenderer } from './KDEChartCellRenderer';
-import { BoxPlotCellRenderer } from './BoxPlotCellRenderer';
-import { useBarHoverStore } from './useBarHoverStore';
 import styles from './NumericGraphCellRenderer.module.css';
 
 interface NumericGraphCellRendererProps {
@@ -16,8 +14,6 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
   cohortData,
   kdeData,
 }) => {
-  const { activeIndex } = useBarHoverStore();
-
   // Compute shared x range from row stats (Min/Max) only.
   // KDE curves extend beyond these but are clipped to [Min, Max].
   const { xMin, xMax } = useMemo(() => {
@@ -46,17 +42,6 @@ export const NumericGraphCellRenderer: FC<NumericGraphCellRendererProps> = ({
           xMax={xMax}
         />
       </div>
-      {activeIndex != null && (
-        <div className={styles.boxPlotSection}>
-          <BoxPlotCellRenderer
-            name={name}
-            cohortData={cohortData}
-            xMin={xMin}
-            xMax={xMax}
-            cohortIndex={activeIndex}
-          />
-        </div>
-      )}
     </div>
   );
 };

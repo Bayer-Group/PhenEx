@@ -146,7 +146,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
 
   const W = widthProp ?? (containerW || DEFAULT_W);
   const PLOT_W = W - PAD * 2;
-  const { activeIndex } = useBarHoverStore();
+  const { activeIndex, onClick } = useBarHoverStore();
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -164,12 +164,10 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
     })
     .filter(Boolean) as { color: string; stats: BoxStats; index: number }[];
 
-  // Filter: explicit cohortIndex > activeIndex store > all
+  // Filter: only for explicit cohortIndex (modal use)
   let entries = allEntries;
   if (cohortIndex != null) {
     entries = allEntries.filter((e) => e.index === cohortIndex);
-  } else if (activeIndex !== null) {
-    entries = allEntries.filter((e) => e.index === activeIndex);
   }
 
   if (entries.length === 0) return null;
@@ -179,7 +177,46 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   const boxH = ROW_H * 0.6;
 
   const content = (
-    <div ref={containerRef} className={styles.container}>
+    <div
+      ref={containerRef}
+      className={styles.container}
+      onMouseMove={(e) => {
+        const svg = svgRef.current;
+        if (!svg) return;
+        const rect = svg.getBoundingClientRect();
+        if (!rect.height) return;
+        const scaleY = rect.height / svgH;
+        const scaleX = rect.width / W;
+        const localY = (e.clientY - rect.top) / scaleY;
+        const idx = Math.floor(localY / (ROW_H + ROW_GAP));
+        if (idx >= 0 && idx < entries.length) {
+          setHoveredRow(idx);
+          const entry = entries[idx];
+          const { stats } = entry;
+          const meanX = stats.mean != null ? toX(stats.mean) : toX(stats.median);
+          const medianX = toX(stats.median);
+          const cx = rect.left + ((meanX + medianX) / 2) * scaleX;
+          const cy = idx * (ROW_H + ROW_GAP) + ROW_H / 2;
+          setTooltipPos({ x: cx, y: rect.top + cy * scaleY });
+        } else {
+          setHoveredRow(null);
+          setTooltipPos(null);
+        }
+      }}
+      onMouseLeave={() => { setHoveredRow(null); setTooltipPos(null); }}
+      onClick={(e) => {
+        const svg = svgRef.current;
+        if (!svg) return;
+        const rect = svg.getBoundingClientRect();
+        if (!rect.height) return;
+        const scaleY = rect.height / svgH;
+        const localY = (e.clientY - rect.top) / scaleY;
+        const idx = Math.floor(localY / (ROW_H + ROW_GAP));
+        if (idx >= 0 && idx < entries.length) {
+          onClick(entries[idx].index);
+        }
+      }}
+    >
       {containerW > 0 && entries.length > 0 && (
       <svg
         ref={svgRef}
@@ -188,48 +225,26 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
         viewBox={`0 0 ${W} ${svgH}`}
         preserveAspectRatio="none"
         className={styles.plotSvg}
-        onMouseMove={(e) => {
-          const rect = svgRef.current?.getBoundingClientRect();
-          if (!rect) return;
-          const localY = e.clientY - rect.top;
-          const idx = Math.floor(localY / (ROW_H + ROW_GAP));
-          if (idx >= 0 && idx < entries.length) {
-            setHoveredRow(idx);
-            const entry = entries[idx];
-            const { stats } = entry;
-            const scale = rect.width / W;
-            const meanX = stats.mean != null ? toX(stats.mean) : toX(stats.median);
-            const medianX = toX(stats.median);
-            const cx = rect.left + ((meanX + medianX) / 2) * scale;
-            const cy = idx * (ROW_H + ROW_GAP) + ROW_H / 2;
-            setTooltipPos({ x: cx, y: rect.top + cy * scale });
-          } else {
-            setHoveredRow(null);
-            setTooltipPos(null);
-          }
-        }}
-        onMouseLeave={() => { setHoveredRow(null); setTooltipPos(null); }}
       >
         {entries.map((e, i) => {
           const cy = i * (ROW_H + ROW_GAP) + ROW_H / 2;
           const boxTop = cy - boxH / 2;
           const { stats } = e;
+          const dimmed = activeIndex !== null && activeIndex !== e.index;
 
           return (
-            <g key={e.index} opacity={0.85}>
+            <g key={e.index} opacity={dimmed ? 0.15 : 0.85}>
               <line x1={toX(stats.min)} y1={cy} x2={toX(stats.max)} y2={cy} stroke={e.color} strokeWidth={1} />
               <line x1={toX(stats.min)} y1={cy - boxH * 0.3} x2={toX(stats.min)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1} />
               <line x1={toX(stats.max)} y1={cy - boxH * 0.3} x2={toX(stats.max)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1} />
               <rect
                 x={toX(stats.p25)} y={boxTop}
                 width={toX(stats.p75) - toX(stats.p25)} height={boxH}
-                fill={e.color} fillOpacity={0.2}
+                fill={e.color} fillOpacity={dimmed ? 0.05 : 0.2}
                 stroke={e.color} strokeWidth={1.5} rx={1}
               />
               <line x1={toX(stats.median)} y1={boxTop} x2={toX(stats.median)} y2={boxTop + boxH} stroke={e.color} strokeWidth={2} />
               {stats.mean != null && <circle cx={toX(stats.mean)} cy={cy} r={2.5} fill={e.color} />}
-
-              
             </g>
           );
         })}
