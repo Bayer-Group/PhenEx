@@ -286,8 +286,8 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
             </svg>
           </button>
           <div className={styles.navHint}>Use arrow keys to navigate</div>
-          <PhenExNavBarTooltip isVisible={hoveredNav === 'prev'} anchorElement={prevRef.current} label="Go to the previous feature" verticalPosition="below" horizontalAlignment="left" />
-          <PhenExNavBarTooltip isVisible={hoveredNav === 'next'} anchorElement={nextRef.current} label="Go to the next feature" verticalPosition="below" horizontalAlignment="left" />
+          <PhenExNavBarTooltip isVisible={hoveredNav === 'prev'} anchorElement={prevRef.current} label="Go to the previous feature" verticalPosition="below" horizontalAlignment="right" />
+          <PhenExNavBarTooltip isVisible={hoveredNav === 'next'} anchorElement={nextRef.current} label="Go to the next feature" verticalPosition="below" horizontalAlignment="right" />
         </div>
       </div>
       {showRowTitle && (

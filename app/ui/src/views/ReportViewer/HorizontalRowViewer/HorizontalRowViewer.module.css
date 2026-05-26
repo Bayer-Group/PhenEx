@@ -115,7 +115,7 @@
 }
 
 .navPill {
-  margin-left: 0px;
+  margin-left: auto;
   display: flex;
   flex-direction: row;
   align-items: center;

@@ -258,13 +258,13 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
         const label = getCohortLabel(cohortData, e.index);
         return (
           <Portal>
-            <div className={styles.tooltipCard} style={{ left: tooltipPos.x, top: tooltipPos.y, transform: 'translate(-50%, -100%)' }}>
+            <div className={styles.tooltipWrapper} style={{ left: tooltipPos.x, top: tooltipPos.y, transform: 'translate(-50%, -105%)' }}>
               <div className={styles.tooltipCohort} style={{ color: e.color }}>{label}</div>
               <div className={styles.tooltipStats}>
-                <span><strong>Min</strong> {fmt(stats.min)}</span>
-                <span><strong>Mean</strong> {stats.mean != null ? fmt(stats.mean) : '–'}</span>
-                <span><strong>Median</strong> {fmt(stats.median)}</span>
-                <span><strong>Max</strong> {fmt(stats.max)}</span>
+                <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Min</span><span className={styles.tooltipValue}>{fmt(stats.min)}</span></div>
+                <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Mean</span><span className={styles.tooltipValue}>{stats.mean != null ? fmt(stats.mean) : '–'}</span></div>
+                <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Median</span><span className={styles.tooltipValue}>{fmt(stats.median)}</span></div>
+                <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Max</span><span className={styles.tooltipValue}>{fmt(stats.max)}</span></div>
               </div>
             </div>
           </Portal>
