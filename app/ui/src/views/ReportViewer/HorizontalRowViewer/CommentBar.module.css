@@ -18,8 +18,8 @@
   padding: 6px 12px;
   font-size: 12px;
   font-family: 'IBMPlexSans-regular', sans-serif;
-  color: white;
-  background-color: var(--black, #000);
+  color: black;
+  background-color: white;
   border: none;
   cursor: pointer;
   border-radius: 10px 0px 0px 10px;
@@ -27,7 +27,8 @@
 }
 
 .newCommentBtn:hover {
-  background-color: #3a7ac9;
+  background-color: var(--black, #000);
+  color: white;
 }
 
 .rightSection {

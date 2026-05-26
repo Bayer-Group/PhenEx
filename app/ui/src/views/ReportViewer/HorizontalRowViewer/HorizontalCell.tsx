@@ -195,6 +195,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
                   leftContent={mainContent}
                   commentsContent={commentsContent}
                   onRightWidthChange={handleRightWidthChange}
+                  commentsCollapsed={commentsCollapsed}
                 />
             </div>
           </div>
