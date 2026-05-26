@@ -7,6 +7,8 @@ import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseConte
 import { HorizontalCell } from './HorizontalCell';
 import { HorizontalRowTitle } from './HorizontalRowTitle';
 import { PhenExNavBarTooltip } from '../../../components/PhenExNavBar/PhenExNavBarTooltip';
+import { CommentBar } from './CommentBar';
+import { CommentWindow } from './CommentWindow';
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -53,6 +55,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const [closing, setClosing] = useState(false);
   const [commentsCollapsed, setCommentsCollapsed] = useState(false);
   const [showRowTitle, setShowRowTitle] = useState(false);
+  const [showCommentWindow, setShowCommentWindow] = useState(false);
   const [commentsPanelWidth, setCommentsPanelWidth] = useState(() => {
     try {
       const stored = localStorage.getItem('phenex_two_panel_right_width');
@@ -233,17 +236,17 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 
   if (!current) return null;
 
-  const handleOverlayClick = useCallback(() => {
-    if (!mouseDownOnOverlay.current) return;
-    mouseDownOnOverlay.current = false;
-    startClose();
-  }, [startClose]);
+  // const handleOverlayClick = useCallback(() => {
+  //   if (!mouseDownOnOverlay.current) return;
+  //   mouseDownOnOverlay.current = false;
+  //   startClose();
+  // }, [startClose]);
 
   return (
     <div
       className={`${styles.overlay} ${closing ? styles.closing : ''}`}
       onMouseDown={() => { mouseDownOnOverlay.current = true; }}
-      onClick={handleOverlayClick}
+      // onClick={handleOverlayClick}
     >
       <div className={styles.titleGroup} style={{ marginLeft: isLeftPanelShown ? undefined : 50 }} onClick={(e) => e.stopPropagation()}>
         <button className={styles.backButton} onClick={(e) => { e.stopPropagation(); startClose(); }} title="Back">
@@ -323,6 +326,25 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
           );
         })}
       </div>
+      <div className={styles.commentBarContainer}>
+        <CommentBar
+          commentsCollapsed={commentsCollapsed}
+          onToggleCollapsed={() => setCommentsCollapsed(!commentsCollapsed)}
+          onNewComment={() => setShowCommentWindow(true)}
+        />
+      </div>
+      {showCommentWindow && (
+        <CommentWindow
+          onClose={() => setShowCommentWindow(false)}
+          onSave={(text) => {
+            console.log('Comment saved:', text);
+            setShowCommentWindow(false);
+          }}
+          onAskAI={(text) => {
+            console.log('Ask AI:', text);
+          }}
+        />
+      )}
       {/* <div className={styles.fakeDataLabel}>FAKE DATA</div> */}
     </div>
   );

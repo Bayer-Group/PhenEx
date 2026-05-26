@@ -156,7 +156,7 @@
 .navHint {
   position: absolute;
   bottom: 100%;
-  left: 50%;
+  right: 0px;
   transform: translateX(-50%);
   margin-top: 6px;
   white-space: nowrap;
@@ -259,5 +259,15 @@
   letter-spacing: 0.1em;
   border: var(--border);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+
+}
+
+/* ── Comment bar positioning at bottom of overlay ────────────────────── */
+
+.commentBarContainer {
+  position: absolute;
+  bottom:30px;
+  z-index: 10;
+  right:20px;
 
 }
