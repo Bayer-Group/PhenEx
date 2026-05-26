@@ -112,7 +112,10 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
         const scrollableHeight = element.scrollHeight - element.clientHeight;
         const trackHeight = track.getBoundingClientRect().height;
         if (trackHeight === 0 || scrollableHeight === 0) return;
-        const scrollDelta = (deltaY / trackHeight) * scrollableHeight;
+        const thumbRatio = Math.max(20, (element.clientHeight / element.scrollHeight) * 100) / 100;
+        const effectiveTrack = trackHeight * (1 - thumbRatio);
+        if (effectiveTrack === 0) return;
+        const scrollDelta = (deltaY / effectiveTrack) * scrollableHeight;
         const newScrollTop = dragRef.current.startScrollTop + scrollDelta;
         element.scrollTop = Math.max(0, Math.min(newScrollTop, scrollableHeight));
       } else {
@@ -120,7 +123,10 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
         const scrollableWidth = element.scrollWidth - element.clientWidth;
         const trackWidth = track.getBoundingClientRect().width;
         if (trackWidth === 0 || scrollableWidth === 0) return;
-        const scrollDelta = (deltaX / trackWidth) * scrollableWidth;
+        const thumbRatio = Math.max(20, (element.clientWidth / element.scrollWidth) * 100) / 100;
+        const effectiveTrack = trackWidth * (1 - thumbRatio);
+        if (effectiveTrack === 0) return;
+        const scrollDelta = (deltaX / effectiveTrack) * scrollableWidth;
         const newScrollLeft = dragRef.current.startScrollLeft + scrollDelta;
         element.scrollLeft = Math.max(0, Math.min(newScrollLeft, scrollableWidth));
       }

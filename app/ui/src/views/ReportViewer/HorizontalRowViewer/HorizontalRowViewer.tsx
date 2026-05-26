@@ -52,6 +52,13 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const [closing, setClosing] = useState(false);
   const [commentsCollapsed, setCommentsCollapsed] = useState(false);
   const [showRowTitle, setShowRowTitle] = useState(false);
+  const [commentsPanelWidth, setCommentsPanelWidth] = useState(() => {
+    try {
+      const stored = localStorage.getItem('phenex_two_panel_right_width');
+      if (stored) return parseInt(stored, 10) || 300;
+    } catch { /* ignore */ }
+    return 300;
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
@@ -59,6 +66,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const holdDir = useRef<-1 | 0 | 1>(0);
   const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mountY = useRef(lastClickY);
+  const sharedScrollTopRef = useRef(0);
 
   const current = rows[currentIndex];
   const desiredTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;
@@ -177,6 +185,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 
   const handleVerticalScroll = useCallback((scrollTop: number, threshold: number) => {
     setShowRowTitle(scrollTop > threshold);
+    sharedScrollTopRef.current = scrollTop;
   }, []);
 
   const startClose = useCallback(() => {
@@ -232,6 +241,11 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       onMouseDown={() => { mouseDownOnOverlay.current = true; }}
       onClick={handleOverlayClick}
     >
+      <button className={styles.backButton} style={{ marginLeft: isLeftPanelShown ? undefined : 50 }} onClick={(e) => { e.stopPropagation(); startClose(); }} title="Back">
+        <svg width="20" height="22" viewBox="0 0 25 28" fill="none">
+          <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      </button>
       <div className={styles.titleBar} style={{ marginLeft: isLeftPanelShown ? undefined : 50 }} onClick={(e) => e.stopPropagation()}>
         <HorizontalRowTitle
           rows={rows}
@@ -265,7 +279,10 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
               table2Cohorts={table2Cohorts}
               onNavigate={navigate}
               onVerticalScroll={isFocused ? handleVerticalScroll : undefined}
+              initialScrollTop={sharedScrollTopRef.current}
               commentsCollapsed={commentsCollapsed}
+              commentsPanelWidth={commentsPanelWidth}
+              onCommentsPanelWidthChange={setCommentsPanelWidth}
               studyTitle={studyTitle}
             />
           );

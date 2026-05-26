@@ -96,7 +96,7 @@
 }
 
 .collapseButton.left.collapsed .collapseButtonIcon {
-  transform: scaleX(-1);
+  /* no flip needed for panel icon */
 }
 
 .arrow {

@@ -121,7 +121,8 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
 
   const renderRow = (entry: RenderRow, options?: RenderRowOptions) => {
     const row = entry.cohort.data.rows.find((r) => r.Name === name);
-    const pct = row?.Pct ?? 0;
+    const rawPct = row?.Pct;
+    const pct = (rawPct != null && Number.isFinite(rawPct)) ? rawPct : 0;
     const n = row?.N ?? 0;
     const finalCohortSize = finalCohortSizes[entry.cohort.name];
     const dimmed = activeIndex !== null && activeIndex !== entry.originalIndex;

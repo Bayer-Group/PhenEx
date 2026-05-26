@@ -31,7 +31,10 @@ export interface HorizontalCellProps {
   table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
   onVerticalScroll?: (scrollTop: number, threshold: number) => void;
+  initialScrollTop?: number;
   commentsCollapsed?: boolean;
+  commentsPanelWidth: number;
+  onCommentsPanelWidthChange: (width: number) => void;
   studyTitle?: string;
 }
 
@@ -108,17 +111,21 @@ const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[];
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, commentsCollapsed, studyTitle = '' }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, commentsCollapsed, commentsPanelWidth, onCommentsPanelWidthChange, studyTitle = '' }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const { isLeftPanelShown } = useThreePanelCollapse();
     const verticalScrollRef = useRef<HTMLDivElement>(null);
-    const [commentsPanelWidth, setCommentsPanelWidth] = useState(300);
     const [titleHidden, setTitleHidden] = useState(false);
-    const handleRightWidthChange = useCallback((w: number) => setCommentsPanelWidth(w), []);
+    const initialScrollTopRef = useRef(initialScrollTop ?? 0);
+    initialScrollTopRef.current = initialScrollTop ?? 0;
+    const handleRightWidthChange = useCallback((w: number) => {
+      onCommentsPanelWidthChange(w);
+    }, [onCommentsPanelWidthChange]);
 
     useEffect(() => {
       const el = verticalScrollRef.current;
       if (!el || !isFocused) return;
+      el.scrollTop = initialScrollTopRef.current;
       const threshold = 10;
       const handler = () => {
         const hidden = el.scrollTop > threshold;
@@ -184,6 +191,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
                   minSizeLeft={300}
                   minSizeRight={300}
                   maxSizeRight={500}
+                  rightWidth={commentsPanelWidth}
                   leftContent={mainContent}
                   commentsContent={commentsContent}
                   onRightWidthChange={handleRightWidthChange}

@@ -169,7 +169,7 @@ export const Table2Chart: FC<Table2ChartProps> = ({
           row: c.table2.find((r) => r.Outcome === seqRow.name),
         }));
         if (!rows.some((t) => t.row)) return null;
-        return <Table2RowComponent key={seqRow.name} outcome={seqRow.name} rows={rows} onClick={() => onOpen(seqRow.index)} />;
+        return <Table2RowComponent key={seqRow.name} outcome={seqRow.name} displayName={seqRow.registry?.display_name || seqRow.name} rows={rows} onClick={() => onOpen(seqRow.index)} />;
       })}
     </div>
   );
@@ -177,14 +177,15 @@ export const Table2Chart: FC<Table2ChartProps> = ({
 
 const Table2RowComponent: FC<{
   outcome: string;
+  displayName: string;
   rows: { cohort: Table2Cohort; row: Table2Row | undefined }[];
   onClick?: () => void;
-}> = ({ outcome, rows, onClick }) => {
+}> = ({ outcome, displayName, rows, onClick }) => {
   const { activeIndex, onClick: onBarClick } = useBarHoverStore();
   const guard = useClickGuard(onClick ?? (() => {}));
   return (
     <div className={styles.row} onMouseDown={guard.onMouseDown} onClick={guard.onClick} style={{ cursor: onClick ? 'pointer' : undefined }} data-row-name={outcome}>
-      <div className={styles.nameCell}>{outcome}</div>
+      <div className={styles.nameCell}>{displayName}</div>
       <div className={styles.statsGrid}>
         <div className={styles.statsHeaderRow}>
           <div className={styles.statsCohortCell} />
@@ -239,13 +240,13 @@ export const TimeToEventChart: FC<TimeToEventChartProps> = ({
   return (
     <div className={styles.container}>
       {reporterRows.map((seqRow) => (
-        <TimeToEventRowComponent key={seqRow.name} outcome={seqRow.name} cohorts={cohorts} onClick={() => onOpen(seqRow.index)} />
+        <TimeToEventRowComponent key={seqRow.name} outcome={seqRow.name} displayName={seqRow.registry?.display_name || seqRow.name} cohorts={cohorts} onClick={() => onOpen(seqRow.index)} />
       ))}
     </div>
   );
 };
 
-const TimeToEventRowComponent: FC<{ outcome: string; cohorts: TimeToEventCohort[]; onClick?: () => void }> = ({ outcome, cohorts, onClick }) => {
+const TimeToEventRowComponent: FC<{ outcome: string; displayName: string; cohorts: TimeToEventCohort[]; onClick?: () => void }> = ({ outcome, displayName, cohorts, onClick }) => {
   const kmCurves: KMCurve[] = useMemo(
     () => cohorts
       .map((c) => ({
@@ -263,7 +264,7 @@ const TimeToEventRowComponent: FC<{ outcome: string; cohorts: TimeToEventCohort[
 
   return (
     <div className={styles.row} onMouseDown={guard.onMouseDown} onClick={guard.onClick} style={{ cursor: onClick ? 'pointer' : undefined }} data-row-name={outcome}>
-      <div className={styles.nameCell}>{outcome}</div>
+      <div className={styles.nameCell}>{displayName}</div>
       <div className={styles.kmCell}>
         <KaplanMeierCellRenderer curves={kmCurves} />
       </div>

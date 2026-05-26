@@ -181,11 +181,10 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
         onClick={toggleLeftPanel}
       >
-        <span className={styles.collapseButtonIcon}>
-          <svg width="25" height="28" viewBox="0 0 25 28" fill="none">
-            <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </span>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.4" />
+          <line x1="6.5" y1="1" x2="6.5" y2="17" stroke="currentColor" strokeWidth="1.4" />
+        </svg>
       </div>
     );
     

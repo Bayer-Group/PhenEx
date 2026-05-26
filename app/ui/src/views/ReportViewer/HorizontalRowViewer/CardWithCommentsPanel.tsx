@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import styles from './CardWithCommentsPanel.module.css';
 
 interface CardWithCommentsPanelProps {
@@ -6,6 +6,7 @@ interface CardWithCommentsPanelProps {
   minSizeLeft: number;
   minSizeRight?: number;
   maxSizeRight?: number;
+  rightWidth: number;
   leftContent: React.ReactNode;
   commentsContent: React.ReactNode;
   commentsCollapsed?: boolean;
@@ -17,38 +18,33 @@ export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
   minSizeLeft,
   minSizeRight,
   maxSizeRight,
+  rightWidth: controlledRightWidth,
   leftContent,
   commentsContent,
   commentsCollapsed = false,
   onRightWidthChange,
 }) => {
-  const initialRightWidth = useMemo(() => {
-    try {
-      const stored = localStorage.getItem('phenex_two_panel_right_width');
-      if (stored) {
-        const parsed = parseInt(stored, 10);
-        if (minSizeRight && parsed < minSizeRight) return minSizeRight;
-        if (maxSizeRight && parsed > maxSizeRight) return maxSizeRight;
-        return parsed;
-      }
-    } catch {
-      // Fall through
-    }
-    return minSizeRight || 150;
-  }, [minSizeRight, maxSizeRight]);
-
-  const [rightWidth, setRightWidth] = useState(initialRightWidth);
+  const [rightWidth, setRightWidthLocal] = useState(controlledRightWidth);
   const [leftWidth, setLeftWidth] = useState(initialSizeLeft);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Sync from controlled prop when not dragging
+  useEffect(() => {
+    if (!isDragging) setRightWidthLocal(controlledRightWidth);
+  }, [controlledRightWidth, isDragging]);
+
+  const setRightWidth = useCallback((w: number) => {
+    setRightWidthLocal(w);
+    onRightWidthChange?.(w);
+  }, [onRightWidthChange]);
 
   // Persist right width
   useEffect(() => {
     try {
       localStorage.setItem('phenex_two_panel_right_width', rightWidth.toString());
     } catch { /* ignore */ }
-    onRightWidthChange?.(commentsCollapsed ? 0 : rightWidth);
-  }, [rightWidth, commentsCollapsed, onRightWidthChange]);
+  }, [rightWidth]);
 
   // Recalculate left width from container
   useEffect(() => {
@@ -102,7 +98,7 @@ export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
 
     setLeftWidth(newLeft);
     setRightWidth(newRight);
-  }, [minSizeLeft, minSizeRight, maxSizeRight]);
+  }, [minSizeLeft, minSizeRight, maxSizeRight, setRightWidth]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);

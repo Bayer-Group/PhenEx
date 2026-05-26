@@ -98,7 +98,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
             <SimpleCustomScrollbar
               targetRef={scrollRef}
               orientation="vertical"
-              marginTop={110}
+              marginTop={125}
               marginBottom={5}
               marginToEnd={7}
             />

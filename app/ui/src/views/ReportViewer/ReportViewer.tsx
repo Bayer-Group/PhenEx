@@ -28,7 +28,7 @@ import {
   type Report,
 } from './types';
 import { buildSequentialRowList, getSectionNames, type StudyRegistry } from './studyRegistryUtils';
-import { LeftPanelTitleNavigation } from './LeftPanelTitleNavigation';
+import { HorizontalRowTitle } from './HorizontalRowViewer/HorizontalRowTitle';
 
 interface WaterfallInfoRow {
   Name: string;
@@ -345,7 +345,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   // ── Pan & zoom ────────────────────────────────────────────────────────
   const INITIAL_X = -50;
   const INITIAL_Y = 0;
-  const INITIAL_SCALE = .5;
+  const INITIAL_SCALE = .1;
   const PAN_X_OFFSET = 20;
   const PAN_Y_OFFSET = 100;
 
@@ -358,12 +358,17 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   const tteGroupRef = useRef<HTMLDivElement>(null);
 
   const pz = usePanZoom({
-    minScale: 0.1,
-    maxScale: .5,
+    minScale: 0.05,
+    maxScale: .3,
     initialTransform: { x: INITIAL_X, y: INITIAL_Y, scale: INITIAL_SCALE },
     storageKey,
     panTargetXOffset: PAN_X_OFFSET,
     panTargetYOffset: PAN_Y_OFFSET,
+    lockX: (vpWidth, contentWidth, scale) => {
+      const scaledContent = contentWidth * scale;
+      if (scaledContent >= vpWidth) return -100;
+      return (vpWidth - scaledContent) / 4;
+    },
   });
 
   const baselineSectionNames = useMemo(() => getSectionNames(sequentialRows, 'table1'), [sequentialRows]);
@@ -421,6 +426,26 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
   const activeSection = useVisibleSection(pz.viewportRef, pz.contentRef, getVisibleSections);
 
+  const SECTION_TO_CATEGORY: Record<string, string> = {
+    'Attrition': 'attrition',
+    'Baseline characteristics': 'baseline_characteristics',
+    'Outcomes': 'outcomes',
+    'Incidence Rates': 'outcomes',
+    'Time to Event': 'outcomes',
+  };
+
+  const activeTitleIndex = useMemo(() => {
+    if (!activeSection || !sequentialRows.length) return 0;
+    const bySection = sequentialRows.findIndex((r) => r.section === activeSection);
+    if (bySection >= 0) return bySection;
+    const catKey = SECTION_TO_CATEGORY[activeSection];
+    if (catKey) {
+      const byCat = sequentialRows.findIndex((r) => r.category === catKey);
+      if (byCat >= 0) return byCat;
+    }
+    return 0;
+  }, [activeSection, sequentialRows]);
+
   // ── Outline entries ───────────────────────────────────────────────────
   const outlineEntries: OutlineEntry[] = useMemo(() => {
     const entries: OutlineEntry[] = [];
@@ -475,13 +500,12 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           {/* Center panel: charts */}
           <div className={styles.centerPanel}>
             <div className={styles.floatingTitle}>
-              <LeftPanelTitleNavigation
-                studyTitle={title}
-                entries={outlineEntries}
+              <HorizontalRowTitle
                 rows={sequentialRows}
-                activeSection={activeSection}
-                activeRowIndex={viewerIndex}
-                onOpenRow={setViewerIndex}
+                currentIndex={activeTitleIndex}
+                desiredTop="0"
+                studyTitle={displayTitle}
+                onNavigate={setViewerIndex}
               />
             </div>
             <OutlineBar entries={outlineEntries} activeSection={activeSection} />

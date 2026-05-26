@@ -29,6 +29,10 @@ export interface UsePanZoomOptions {
   panTargetXOffset?: number;
   /** Y offset when panning to content (default 100). */
   panTargetYOffset?: number;
+  /** Lock X so the left edge of content stays at a fixed position.
+   * Pass a number for a fixed margin, or a function (viewportWidth, contentWidth, scale) => x
+   * for dynamic calculation. */
+  lockX?: number | ((vpWidth: number, contentWidth: number, scale: number) => number);
 }
 
 export interface ScrollbarBinding {
@@ -144,7 +148,7 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
 
     // Horizontal scrollbar
     const cw = cs.current.w * s;
-    const canH = cw > vp.w;
+    const canH = cw > vp.w && resolveLockX() == null;
     if (hTrackRef.current) hTrackRef.current.style.display = canH ? '' : 'none';
     if (canH && hThumbRef.current) {
       const size = Math.max(0.05, vp.w / (cw + (getOpt('paddingX', 100)) * 2));
@@ -191,12 +195,25 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
     }
   }
 
+  /** Resolve the lockX value (number or function). */
+  function resolveLockX(): number | null {
+    const lockX = optsRef.current.lockX;
+    if (lockX == null) return null;
+    if (typeof lockX === 'function') {
+      const vp = vpDims();
+      return lockX(vp.w, cs.current.w, t.current.scale);
+    }
+    return lockX;
+  }
+
   /** Set transform with bounds clamping. */
   function setTransform(x: number, y: number, scale: number) {
     t.current.scale = scale;
+    const lx = resolveLockX();
+    const finalX = lx != null ? lx : x;
     const b = getBounds();
     t.current = {
-      x: clamp(x, b.minX, b.maxX),
+      x: lx != null ? finalX : clamp(finalX, b.minX, b.maxX),
       y: clamp(y, b.minY, b.maxY),
       scale,
     };
@@ -208,8 +225,9 @@ export function usePanZoom(options: UsePanZoomOptions = {}): UsePanZoomReturn {
     const el = contentRef.current;
     if (!el) return;
     cs.current = { w: el.scrollWidth, h: el.scrollHeight };
+    const lx = resolveLockX();
     const b = getBounds();
-    t.current.x = clamp(t.current.x, b.minX, b.maxX);
+    t.current.x = lx != null ? lx : clamp(t.current.x, b.minX, b.maxX);
     t.current.y = clamp(t.current.y, b.minY, b.maxY);
     apply();
   }
