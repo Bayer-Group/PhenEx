@@ -54,7 +54,7 @@
   font-size: var(--font_size_phenotypename, 11px);
   font-weight: 700;
   color: white;
-  padding: 20px 4px 5px 10px;
+  padding: 20px 4px 5px 22px;
   overflow-wrap: break-word;
   word-break: break-word;
   height: fit-content;

@@ -5,20 +5,31 @@ import styles from './LegendDot.module.css';
 interface LegendDotProps {
   color?: string;
   isActive: boolean;
+  partiallyActive?: boolean;
   onClick: () => void;
   tooltipLabel?: string;
+  scale?: number;
 }
 
 export const LegendDot: FC<LegendDotProps> = ({
   color,
   isActive,
+  partiallyActive = false,
   onClick,
   tooltipLabel,
+  scale,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
 
   const label = tooltipLabel ?? (isActive ? 'Click to deselect' : 'Click to select');
+
+  const getBackground = (): string => {
+    if (!color) return 'transparent';
+    if (isActive) return color;
+    if (partiallyActive) return `linear-gradient(to right, ${color} 50%, transparent 50%)`;
+    return 'transparent';
+  };
 
   return (
     <>
@@ -26,8 +37,9 @@ export const LegendDot: FC<LegendDotProps> = ({
         ref={ref}
         className={styles.dot}
         style={{
-          background: isActive && color ? color : 'transparent',
-          border: isActive ? '2px solid transparent' : '2px dashed #ccc',
+          background: getBackground(),
+          border: isActive ? '1px solid transparent' : partiallyActive && color ? `1px solid ${color}` : '2px dashed #ccc',
+          ...(scale != null ? { transform: `scale(${scale})` } : {}),
         }}
         onClick={(e) => { e.stopPropagation(); onClick(); }}
         onMouseEnter={() => setHovered(true)}

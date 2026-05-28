@@ -142,8 +142,10 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
               <LegendDot
                 color={groupColor}
                 isActive={group.subcohorts.every((s) => activeSet.has(s.fullName))}
+                partiallyActive={group.subcohorts.some((s) => activeSet.has(s.fullName)) && !group.subcohorts.every((s) => activeSet.has(s.fullName))}
                 onClick={() => handleGroupClick(gi)}
-                tooltipLabel={group.subcohorts.every((s) => activeSet.has(s.fullName)) ? 'Click to deselect all cohorts and stratifications' : 'Click to select all'}
+                tooltipLabel={group.subcohorts.every((s) => activeSet.has(s.fullName)) ? 'Click to deselect all' : group.subcohorts.some((s) => activeSet.has(s.fullName)) ? 'Click to select all' : 'Click to select all'}
+                scale={1.3}
               />
               <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: groupColor }}>
                 {cohortDescriptions?.[group.parent]?.display_name || group.parent}
