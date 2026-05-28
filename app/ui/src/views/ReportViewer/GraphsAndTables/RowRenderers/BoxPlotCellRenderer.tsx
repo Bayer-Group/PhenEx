@@ -196,16 +196,26 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
         const scaleY = rect.height / svgH;
         const scaleX = rect.width / W;
         const localY = (e.clientY - rect.top) / scaleY;
+        const localX = (e.clientX - rect.left) / scaleX;
         const idx = Math.floor(localY / (ROW_H + ROW_GAP));
         if (idx >= 0 && idx < entries.length) {
-          setHoveredRow(idx);
           const entry = entries[idx];
           const { stats } = entry;
-          const meanX = stats.mean != null ? toX(stats.mean) : toX(stats.median);
-          const medianX = toX(stats.median);
-          const cx = rect.left + ((meanX + medianX) / 2) * scaleX;
-          const cy = idx * (ROW_H + ROW_GAP) + ROW_H / 2;
-          setTooltipPos({ x: cx, y: rect.top + cy * scaleY });
+          const p25X = toX(stats.p25);
+          const p75X = toX(stats.p75);
+          if (localX >= p25X && localX <= p75X) {
+            setHoveredRow(idx);
+            const meanX = stats.mean != null ? toX(stats.mean) : toX(stats.median);
+            const medianX = toX(stats.median);
+            const dataX = rect.left + ((meanX + medianX) / 2) * scaleX;
+            const centerX = rect.left + rect.width / 2;
+            const cx = centerX + (dataX - centerX) * 0.3;
+            const cy = idx * (ROW_H + ROW_GAP) + ROW_H / 2;
+            setTooltipPos({ x: cx, y: rect.top + cy * scaleY });
+          } else {
+            setHoveredRow(null);
+            setTooltipPos(null);
+          }
         } else {
           setHoveredRow(null);
           setTooltipPos(null);
@@ -241,18 +251,18 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
           const dimmed = activeIndex !== null && activeIndex !== e.index;
 
           return (
-            <g key={e.index} opacity={dimmed ? 0.15 : 0.85}>
-              <line x1={toX(stats.min)} y1={cy} x2={toX(stats.max)} y2={cy} stroke={e.color} strokeWidth={1} />
-              <line x1={toX(stats.min)} y1={cy - boxH * 0.3} x2={toX(stats.min)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1} />
-              <line x1={toX(stats.max)} y1={cy - boxH * 0.3} x2={toX(stats.max)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1} />
+            <g key={e.index} opacity={dimmed ? 0.15 : 0.85} style={{ transition: 'transform 0.15s ease, opacity 0.15s ease', transform: hoveredRow === i ? `scaleY(1.5)` : 'scaleY(1)', transformOrigin: `0 ${cy}px` }}>
+              <line x1={toX(stats.min)} y1={cy} x2={toX(stats.max)} y2={cy} stroke={e.color} strokeWidth={hoveredRow === i ? 1.5 : 1} />
+              <line x1={toX(stats.min)} y1={cy - boxH * 0.3} x2={toX(stats.min)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={hoveredRow === i ? 1.5 : 1} />
+              <line x1={toX(stats.max)} y1={cy - boxH * 0.3} x2={toX(stats.max)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={hoveredRow === i ? 1.5 : 1} />
               <rect
                 x={toX(stats.p25)} y={boxTop}
                 width={toX(stats.p75) - toX(stats.p25)} height={boxH}
                 fill={e.color} fillOpacity={dimmed ? 0.05 : 0.2}
-                stroke={e.color} strokeWidth={1.5} rx={1}
+                stroke={e.color} strokeWidth={hoveredRow === i ? 2.5 : 1.5} rx={1}
               />
-              <line x1={toX(stats.median)} y1={boxTop} x2={toX(stats.median)} y2={boxTop + boxH} stroke={e.color} strokeWidth={2} />
-              {stats.mean != null && <circle cx={toX(stats.mean)} cy={cy} r={2.5} fill={e.color} />}
+              <line x1={toX(stats.median)} y1={boxTop} x2={toX(stats.median)} y2={boxTop + boxH} stroke={e.color} strokeWidth={hoveredRow === i ? 3 : 2} />
+              {stats.mean != null && <circle cx={toX(stats.mean)} cy={cy} r={hoveredRow === i ? 3.5 : 2.5} fill={e.color} />}
             </g>
           );
         })}

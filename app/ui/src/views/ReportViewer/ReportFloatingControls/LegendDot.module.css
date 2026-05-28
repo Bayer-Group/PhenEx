@@ -1,0 +1,13 @@
+.dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dot:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+}

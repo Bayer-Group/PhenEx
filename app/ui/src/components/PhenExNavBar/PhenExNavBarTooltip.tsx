@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Portal } from '../Portal/Portal';
 import styles from './PhenExNavBarTooltip.module.css';
 
@@ -9,6 +9,7 @@ export interface PhenExNavBarTooltipProps {
   verticalPosition?: 'above' | 'below';
   horizontalAlignment?: 'left' | 'center' | 'right';
   gap?: number;
+  delay?: number; // ms to wait before showing; if user leaves before delay fires, tooltip never appears
 }
 
 export const PhenExNavBarTooltip: React.FC<PhenExNavBarTooltipProps> = ({
@@ -18,10 +19,27 @@ export const PhenExNavBarTooltip: React.FC<PhenExNavBarTooltipProps> = ({
   verticalPosition = 'above',
   horizontalAlignment = 'center',
   gap = 10,
+  delay,
 }) => {
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const [delayedVisible, setDelayedVisible] = useState(false);
 
-  if (!isVisible || !label) return null;
+  useEffect(() => {
+    if (!delay) {
+      setDelayedVisible(isVisible);
+      return;
+    }
+    if (isVisible) {
+      const timer = setTimeout(() => setDelayedVisible(true), delay);
+      return () => clearTimeout(timer);
+    } else {
+      setDelayedVisible(false);
+    }
+  }, [isVisible, delay]);
+
+  const visible = delay != null ? delayedVisible : isVisible;
+
+  if (!visible || !label) return null;
 
   // Calculate position relative to anchor element
   const getTooltipPosition = () => {

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { ResizableContainer } from '../../../components/ResizableContainer';
 import styles from './CommentWindow.module.css';
 
@@ -15,6 +15,10 @@ export const CommentWindow: React.FC<CommentWindowProps> = ({
 }) => {
   const [commentText, setCommentText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Drag state: track the bottom-right anchor point
+  const [anchor, setAnchor] = useState({ right: 20, bottom: 20 });
+  const dragRef = useRef<{ startX: number; startY: number; startRight: number; startBottom: number } | null>(null);
 
   const handleSave = () => {
     onSave(commentText);
@@ -33,7 +37,41 @@ export const CommentWindow: React.FC<CommentWindowProps> = ({
     textareaRef.current?.focus();
   };
 
+  const handleHeaderMouseDown = useCallback((e: React.MouseEvent) => {
+    // Don't drag when clicking buttons
+    if ((e.target as HTMLElement).closest('button')) return;
+    e.preventDefault();
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startRight: anchor.right,
+      startBottom: anchor.bottom,
+    };
+  }, [anchor]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragRef.current) return;
+      const dx = e.clientX - dragRef.current.startX;
+      const dy = e.clientY - dragRef.current.startY;
+      setAnchor({
+        right: Math.max(0, dragRef.current.startRight - dx),
+        bottom: Math.max(0, dragRef.current.startBottom - dy),
+      });
+    };
+    const handleMouseUp = () => {
+      dragRef.current = null;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
   return (
+    <div className={styles.anchor} style={{ right: anchor.right, bottom: anchor.bottom }}>
     <ResizableContainer
       className={styles.resizableContainer}
       initialWidth={500}
@@ -50,8 +88,8 @@ export const CommentWindow: React.FC<CommentWindowProps> = ({
       }}
     >
       <div className={styles.commentWindow}>
-        {/* Header with collapse and clear buttons */}
-        <div className={styles.header}>
+        {/* Header — drag handle */}
+        <div className={styles.header} onMouseDown={handleHeaderMouseDown}>
           <div className={styles.headerLeft}>
             <button
               className={styles.collapseBtn}
@@ -103,5 +141,6 @@ export const CommentWindow: React.FC<CommentWindowProps> = ({
         </div>
       </div>
     </ResizableContainer>
+    </div>
   );
 };

@@ -3,30 +3,8 @@ import { getCohortColor, type CohortGroup, type LegendSelection, type CohortDesc
 import { useBarHoverStore } from '../GraphsAndTables/RowRenderers/useBarHoverStore';
 import { PhenExNavBarTooltip } from '../../../components/PhenExNavBar/PhenExNavBarTooltip';
 import { RightClickMenu } from '../../../components/RightClickMenu/RightClickMenu';
+import { LegendDot } from './LegendDot';
 import styles from './CohortSelector.module.css';
-
-const MAX_LABEL_FONT = 11;
-const MIN_LABEL_FONT = 8;
-
-/** Span that shrinks its font-size when text wraps beyond one line. */
-const AutoShrinkLabel: FC<{ text: string; className?: string; style?: React.CSSProperties }> = ({ text, className, style }) => {
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.fontSize = '';
-    const lineH = parseFloat(getComputedStyle(el).lineHeight) || MAX_LABEL_FONT * 1.9;
-    if (el.scrollHeight <= lineH + 2) return;
-    for (let s = MAX_LABEL_FONT - 1; s >= MIN_LABEL_FONT; s--) {
-      el.style.fontSize = `${s}px`;
-      const lh = parseFloat(getComputedStyle(el).lineHeight) || s * 1.9;
-      if (el.scrollHeight <= lh + 2) return;
-    }
-  }, [text]);
-
-  return <span ref={ref} className={className} style={style}>{text}</span>;
-};
 
 interface CohortSelectorProps {
   groups: CohortGroup[];
@@ -159,9 +137,17 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
           : group.subcohorts.filter((sub) => activeSet.has(sub.fullName));
         if (!showAll && visibleSubs.length === 0) return null;
         return (
-          <div key={group.parent} className={styles.legendGroup} onContextMenu={(e) => handleGroupContextMenu(e, gi)} onClick={() => handleGroupClick(gi)} style={{ cursor: 'pointer' }}>
+          <div key={group.parent} className={styles.legendGroup} onContextMenu={(e) => handleGroupContextMenu(e, gi)}>
             <div className={styles.legendGroupTitle}>
-              <AutoShrinkLabel text={cohortDescriptions?.[group.parent]?.display_name || group.parent} className={styles.legendGroupTitleLabel} style={{ backgroundColor: groupColor }} />
+              <LegendDot
+                color={groupColor}
+                isActive={group.subcohorts.every((s) => activeSet.has(s.fullName))}
+                onClick={() => handleGroupClick(gi)}
+                tooltipLabel={group.subcohorts.every((s) => activeSet.has(s.fullName)) ? 'Click to deselect all cohorts and stratifications' : 'Click to select all'}
+              />
+              <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: groupColor }}>
+                {cohortDescriptions?.[group.parent]?.display_name || group.parent}
+              </span>
             </div>
             {cohortDescriptions?.[group.parent]?.description && (
               <div className={styles.legendGroupDescription}>{cohortDescriptions[group.parent].description}</div>
@@ -177,15 +163,14 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                   className={styles.legendItem}
                   onMouseLeave={stopItemHover}
                 >
-                  <div
-                    className={styles.legendDot}
-                    style={{ background: isActive && color ? color : 'transparent', border: isActive ? '2px solid transparent' : '2px dashed #ccc' }}
-                    onClick={(e) => { e.stopPropagation(); stopItemHover(); handleToggle(sub.fullName); }}
+                  <LegendDot
+                    color={color}
+                    isActive={isActive}
+                    onClick={() => { stopItemHover(); handleToggle(sub.fullName); }}
                   />
                   <span
                     className={`${styles.legendItemLabel} ${!isActive ? styles.legendItemLabelInactive : ''}`}
                     onMouseEnter={(e) => startItemHover(e.currentTarget, isActive)}
-                    onClick={(e) => { e.stopPropagation(); stopItemHover(); handleToggle(sub.fullName); }}
                   >
                     {sub.fullName === group.parent ? 'Main Cohort' : (cohortDescriptions?.[sub.fullName]?.display_name || sub.label)}
                   </span>

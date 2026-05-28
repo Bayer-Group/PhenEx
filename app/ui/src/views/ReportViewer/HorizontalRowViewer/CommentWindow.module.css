@@ -1,8 +1,9 @@
-.resizableContainer {
+.anchor {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000;
+  z-index: 10001;
+}
+
+.resizableContainer {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
 }
@@ -24,6 +25,8 @@
   padding: 8px 12px;
   border-bottom: 1px solid var(--line-color, #ddd);
   background-color: var(--background-color, #f9f9f9);
+  cursor: grab;
+  user-select: none;
 }
 
 .headerLeft {

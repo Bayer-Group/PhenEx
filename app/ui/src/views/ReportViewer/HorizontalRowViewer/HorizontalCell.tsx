@@ -154,12 +154,12 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
 
     const mainContent = (
       <div className={styles.cardBody}>
-        <div className={styles.contentCard}>
+        <div className={styles.contentCard} style={{ marginRight: commentsCollapsed ? 0 : 25, borderRadius: commentsCollapsed ? 0 : '0 10px 10px 0px' }}>
           <div className={styles.cardTitle} style={{ opacity: titleHidden ? 0 : 1 }}>
             {row.registry?.display_name || row.name}
           </div>
           <CardInfoSection row={row} />
-          <div className={styles.cardContent}>
+          <div className={styles.cardContent} style={{ marginRight: commentsCollapsed ? "10%" : 25 }}>
             {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo /> : null}
           </div>
         </div>
