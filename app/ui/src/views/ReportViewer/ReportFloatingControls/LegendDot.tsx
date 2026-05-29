@@ -38,7 +38,7 @@ export const LegendDot: FC<LegendDotProps> = ({
         className={styles.dot}
         style={{
           background: getBackground(),
-          border: isActive ? '1px solid transparent' : partiallyActive && color ? `1px solid ${color}` : '2px dashed #ccc',
+          border: isActive ? '1px solid transparent' : partiallyActive && color ? `1px solid ${color}` : '1px dashed #ccc',
           ...(scale != null ? { transform: `scale(${scale})` } : {}),
         }}
         onClick={(e) => { e.stopPropagation(); onClick(); }}

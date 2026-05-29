@@ -116,6 +116,33 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
     }
   }, [groups, activeSet, selectionIndexMap, onAdd, onRemove]);
 
+  const labelRefs = useRef<Map<string, HTMLSpanElement>>(new Map());
+  const [hoveredDescName, setHoveredDescName] = useState<string | null>(null);
+
+  const [expandedDescs, setExpandedDescs] = useState<Set<string>>(new Set());
+
+  const toggleDesc = useCallback((fullName: string) => {
+    setExpandedDescs((prev) => {
+      const next = new Set(prev);
+      if (next.has(fullName)) next.delete(fullName);
+      else next.add(fullName);
+      return next;
+    });
+  }, []);
+
+  const allDescKeys = useMemo(() => {
+    if (!cohortDescriptions) return [];
+    return groups.flatMap((g) =>
+      g.subcohorts.filter((s) => s.fullName !== g.parent && cohortDescriptions[s.fullName]?.description).map((s) => s.fullName),
+    );
+  }, [groups, cohortDescriptions]);
+
+  const allDescsExpanded = allDescKeys.length > 0 && allDescKeys.every((k) => expandedDescs.has(k));
+
+  const toggleAllDescs = useCallback(() => {
+    setExpandedDescs(allDescsExpanded ? new Set() : new Set(allDescKeys));
+  }, [allDescsExpanded, allDescKeys]);
+
   useLayoutEffect(() => {
     const el = legendBarRef.current;
     if (!el) return;
@@ -130,6 +157,12 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
     <div ref={legendBarRef} className={styles.legendBar}>
       <div className={styles.topGradient} />
 
+      {allDescKeys.length > 0 && (
+        <button className={styles.toggleAllDescsBtn} onClick={toggleAllDescs}>
+          {allDescsExpanded ? 'Hide all descriptions' : 'Show all descriptions'}
+        </button>
+      )}
+
       {groups.map((group, gi) => {
         const groupColor = getCohortColor(gi, 0, group.subcohorts.length);
         const visibleSubs = showAll
@@ -139,43 +172,62 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         return (
           <div key={group.parent} className={styles.legendGroup} onContextMenu={(e) => handleGroupContextMenu(e, gi)}>
             <div className={styles.legendGroupTitle}>
-              <LegendDot
-                color={groupColor}
-                isActive={group.subcohorts.every((s) => activeSet.has(s.fullName))}
-                partiallyActive={group.subcohorts.some((s) => activeSet.has(s.fullName)) && !group.subcohorts.every((s) => activeSet.has(s.fullName))}
-                onClick={() => handleGroupClick(gi)}
-                tooltipLabel={group.subcohorts.every((s) => activeSet.has(s.fullName)) ? 'Click to deselect all' : group.subcohorts.some((s) => activeSet.has(s.fullName)) ? 'Click to select all' : 'Click to select all'}
-                scale={1.3}
-              />
-              <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: groupColor }}>
-                {cohortDescriptions?.[group.parent]?.display_name || group.parent}
-              </span>
+              <div className={styles.legendGroupDot}>
+                <LegendDot
+                  color={groupColor}
+                  isActive={group.subcohorts.every((s) => activeSet.has(s.fullName))}
+                  partiallyActive={group.subcohorts.some((s) => activeSet.has(s.fullName)) && !group.subcohorts.every((s) => activeSet.has(s.fullName))}
+                  onClick={() => handleGroupClick(gi)}
+                  tooltipLabel={group.subcohorts.every((s) => activeSet.has(s.fullName)) ? 'Click to deselect all' : group.subcohorts.some((s) => activeSet.has(s.fullName)) ? 'Click to select all' : 'Click to select all'}
+                  scale={1.3}
+                />
+              </div>
+              <div className={styles.legendGroupTitleContent}>
+                <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: groupColor }}>
+                  {cohortDescriptions?.[group.parent]?.display_name || group.parent}
+                </span>
+                {cohortDescriptions?.[group.parent]?.description && (
+                  <div className={styles.legendGroupDescription}>{cohortDescriptions[group.parent].description}</div>
+                )}
+              </div>
             </div>
-            {cohortDescriptions?.[group.parent]?.description && (
-              <div className={styles.legendGroupDescription}>{cohortDescriptions[group.parent].description}</div>
-            )}
             {visibleSubs.map((sub) => {
               const isActive = activeSet.has(sub.fullName);
               const color = activeColorMap.get(sub.fullName);
               const selIdx = selectionIndexMap.get(sub.fullName);
+              const hasDesc = sub.fullName !== group.parent && !!cohortDescriptions?.[sub.fullName]?.description;
               return (
                 <div
                   key={sub.fullName}
-                  ref={(el) => { if (el && selIdx != null) itemRefs.current.set(selIdx, el); }}
+                  ref={(el) => {
+                    if (el) {
+                      if (selIdx != null) itemRefs.current.set(selIdx, el);
+                      labelRefs.current.set(sub.fullName, el);
+                    }
+                  }}
                   className={styles.legendItem}
-                  onMouseLeave={stopItemHover}
+                  onMouseEnter={() => { if (hasDesc && !expandedDescs.has(sub.fullName)) setHoveredDescName(sub.fullName); }}
+                  onMouseLeave={() => { stopItemHover(); setHoveredDescName((prev) => prev === sub.fullName ? null : prev); }}
                 >
-                  <LegendDot
-                    color={color}
-                    isActive={isActive}
-                    onClick={() => { stopItemHover(); handleToggle(sub.fullName); }}
-                  />
-                  <span
-                    className={`${styles.legendItemLabel} ${!isActive ? styles.legendItemLabelInactive : ''}`}
-                    onMouseEnter={(e) => startItemHover(e.currentTarget, isActive)}
-                  >
-                    {sub.fullName === group.parent ? 'Main Cohort' : (cohortDescriptions?.[sub.fullName]?.display_name || sub.label)}
-                  </span>
+                  <div className={styles.subcohortLegendDot}>
+                    <LegendDot
+                      color={color}
+                      isActive={isActive}
+                      onClick={() => { stopItemHover(); handleToggle(sub.fullName); }}
+                    />
+                  </div>
+                  <div className={`${styles.legendItemContent} ${hasDesc ? styles.legendItemLabelClickable : ''}`} onClick={hasDesc ? () => toggleDesc(sub.fullName) : undefined}>
+                    <span
+                      className={`${styles.legendItemLabel} ${!isActive ? styles.legendItemLabelInactive : ''}`}
+                    >
+                      {sub.fullName === group.parent ? 'Main Cohort' : (cohortDescriptions?.[sub.fullName]?.display_name || sub.label)}
+                    </span>
+                    {hasDesc && expandedDescs.has(sub.fullName) && (
+                      <div className={styles.subcohortDescription}>
+                        {cohortDescriptions![sub.fullName].description}
+                      </div>
+                    )}
+                  </div>
                   {showSizes && finalCohortSizes[sub.fullName] != null && (
                     <span className={styles.cohortSize}>
                     {finalCohortSizes[sub.fullName]!.toLocaleString()}
@@ -205,6 +257,11 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
               disabled: groups[groupMenu.groupIndex]?.subcohorts.every((s) => activeSet.has(s.fullName)),
             },
             {
+              label: allDescsExpanded ? 'Hide all descriptions' : 'Show all descriptions',
+              onClick: () => { toggleAllDescs(); setGroupMenu(null); },
+              disabled: allDescKeys.length === 0,
+            },
+            {
               label: 'Clear all',
               onClick: () => {
                 const group = groups[groupMenu.groupIndex];
@@ -224,6 +281,15 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
           ]}
         />
       )}
+
+      <PhenExNavBarTooltip
+        isVisible={hoveredDescName != null && !expandedDescs.has(hoveredDescName!)}
+        anchorElement={hoveredDescName ? labelRefs.current.get(hoveredDescName) ?? null : null}
+        label={hoveredDescName && cohortDescriptions?.[hoveredDescName]?.description ? cohortDescriptions[hoveredDescName].description! : ''}
+        verticalPosition="below"
+        horizontalAlignment="left"
+        delay={400}
+      />
     </div>
   );
 };
