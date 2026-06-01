@@ -4,10 +4,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: calc(300px / var(--pz-scale, 1));
+  width: calc(200px / var(--pz-scale, 1));
   position: relative;
   padding-top: calc(36px / var(--pz-scale, 1));
-  margin-bottom: calc(100px / var(--pz-scale, 1));
+  margin-bottom: calc(20px / var(--pz-scale, 1));
 }
 
 /* ── Step wrapper (label + trapezoid) ────────────────────────────────── */
@@ -101,8 +101,8 @@
 .rowRight {
   position: absolute;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0px;
+  transform: translateY(-100%);
   z-index: 2;
 }
 
@@ -117,7 +117,7 @@
 
 .connectorWrapper {
   width: 100%;
-  height: calc(40px / var(--pz-scale, 1));
+  height: calc(25px / var(--pz-scale, 1));
   position: relative;
 }
 

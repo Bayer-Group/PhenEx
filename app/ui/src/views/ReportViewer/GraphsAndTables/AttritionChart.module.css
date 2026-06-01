@@ -1,7 +1,7 @@
 .container {
   display: flex;
-  flex-direction: column;
-  gap: 40px;
+  flex-direction: row;
+  gap: 60px;
   align-items: flex-start;
   padding-left: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
   padding-right: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
@@ -23,8 +23,8 @@
 
 .subcohortRow {
   display: flex;
-  flex-direction: row;
-  gap: 60px;
+  flex-direction: column;
+  gap: 40px;
   align-items: flex-start;
 }
 
