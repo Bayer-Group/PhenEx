@@ -5,12 +5,28 @@ from phenex.phenotypes import *
 from phenex.phenotypes.phenotype import ComputationGraph
 from phenex.phenotypes.computation_graph_phenotypes import ComputationGraphPhenotype
 from phenex.core import *
-from phenex.core.reporter_nodes import Reporter as ReporterNode, Table1Node, Table1OutcomesNode, WaterfallNode, CustomReporterNode
+from phenex.core.reporter_nodes import (
+    Reporter as ReporterNode,
+    Table1Node,
+    Table1OutcomesNode,
+    WaterfallNode,
+    CustomReporterNode,
+)
 from phenex.filters import *
 from phenex.derived_tables import *
 from phenex.reporting import *
 from phenex.mappers import DomainsDictionary
-from phenex.tables import PhenexTable, PhenexPersonTable, EventTable, CodeTable, PhenexVisitOccurrenceTable, PhenexIndexTable, PhenexObservationPeriodTable, MeasurementTable, PhenotypeTable
+from phenex.tables import (
+    PhenexTable,
+    PhenexPersonTable,
+    EventTable,
+    CodeTable,
+    PhenexVisitOccurrenceTable,
+    PhenexIndexTable,
+    PhenexObservationPeriodTable,
+    MeasurementTable,
+    PhenotypeTable,
+)
 import inspect
 from phenex.util import create_logger
 from phenex.util.serialization.to_dict import get_phenex_init_params
@@ -79,7 +95,9 @@ def from_dict(data: dict):
                             SNOWFLAKE_SOURCE_DATABASE=value.get(
                                 "SNOWFLAKE_SOURCE_DATABASE"
                             ),
-                            SNOWFLAKE_DEST_DATABASE=value.get("SNOWFLAKE_DEST_DATABASE"),
+                            SNOWFLAKE_DEST_DATABASE=value.get(
+                                "SNOWFLAKE_DEST_DATABASE"
+                            ),
                             # SNOWFLAKE_USER and SNOWFLAKE_PASSWORD will be loaded from env vars
                         )
                     elif "DuckDB" in connector_type:
@@ -91,7 +109,9 @@ def from_dict(data: dict):
                         connector = PostgresConnector(
                             POSTGRES_HOST=value.get("POSTGRES_HOST"),
                             POSTGRES_PORT=value.get("POSTGRES_PORT"),
-                            POSTGRES_SOURCE_DATABASE=value.get("POSTGRES_SOURCE_DATABASE"),
+                            POSTGRES_SOURCE_DATABASE=value.get(
+                                "POSTGRES_SOURCE_DATABASE"
+                            ),
                             POSTGRES_SOURCE_SCHEMA=value.get("POSTGRES_SOURCE_SCHEMA"),
                             POSTGRES_DEST_DATABASE=value.get("POSTGRES_DEST_DATABASE"),
                             POSTGRES_DEST_SCHEMA=value.get("POSTGRES_DEST_SCHEMA"),

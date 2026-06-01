@@ -149,6 +149,7 @@ class DomainsDictionary:
                     mapper_class = getattr(module, table_class_name)
                 except (ImportError, AttributeError, ModuleNotFoundError):
                     import logging
+
                     logging.getLogger(__name__).warning(
                         f"Cannot find mapper class '{table_class_name}' from module '{module_name}'. "
                         f"Domain '{domain_name}' will be set to None. "
