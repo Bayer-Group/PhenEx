@@ -339,6 +339,7 @@ class Mean(ValueAggregator):
     """
 
     def __init__(self, **kwargs):
+        kwargs.pop('aggregation_function', None)
         super(Mean, self).__init__(aggregation_function="mean", **kwargs)
 
 
@@ -351,6 +352,7 @@ class Median(ValueAggregator):
     """
 
     def __init__(self, **kwargs):
+        kwargs.pop('aggregation_function', None)
         super(Median, self).__init__(aggregation_function="median", **kwargs)
 
 
@@ -363,6 +365,7 @@ class Max(ValueAggregator):
     """
 
     def __init__(self, **kwargs):
+        kwargs.pop('aggregation_function', None)
         super(Max, self).__init__(aggregation_function="max", **kwargs)
 
 
@@ -375,6 +378,7 @@ class Min(ValueAggregator):
     """
 
     def __init__(self, **kwargs):
+        kwargs.pop('aggregation_function', None)
         super(Min, self).__init__(aggregation_function="min", **kwargs)
 
 
@@ -402,6 +406,7 @@ class DailyMean(DailyValueAggregator):
     """
 
     def __init__(self, **kwargs):
+        kwargs.pop('aggregation_function', None)
         super(DailyMean, self).__init__(aggregation_function="daily_mean", **kwargs)
 
 
@@ -414,6 +419,7 @@ class DailyMedian(DailyValueAggregator):
     """
 
     def __init__(self, **kwargs):
+        kwargs.pop('aggregation_function', None)
         super(DailyMedian, self).__init__(aggregation_function="daily_median", **kwargs)
 
 
@@ -426,6 +432,7 @@ class DailyMax(DailyValueAggregator):
     """
 
     def __init__(self, **kwargs):
+        kwargs.pop('aggregation_function', None)
         super(DailyMax, self).__init__(aggregation_function="daily_max", **kwargs)
 
 
@@ -438,4 +445,5 @@ class DailyMin(DailyValueAggregator):
     """
 
     def __init__(self, **kwargs):
+        kwargs.pop('aggregation_function', None)
         super(DailyMin, self).__init__(aggregation_function="daily_min", **kwargs)

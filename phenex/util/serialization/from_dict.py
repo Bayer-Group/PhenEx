@@ -1,10 +1,16 @@
 from datetime import datetime
+from phenex.aggregators import *
 from phenex.codelists import *
 from phenex.phenotypes import *
-from phenex.core import *
 from phenex.phenotypes.phenotype import ComputationGraph
+from phenex.phenotypes.computation_graph_phenotypes import ComputationGraphPhenotype
+from phenex.core import *
+from phenex.core.reporter_nodes import Reporter as ReporterNode, Table1Node, Table1OutcomesNode, WaterfallNode, CustomReporterNode
 from phenex.filters import *
+from phenex.derived_tables import *
+from phenex.reporting import *
 from phenex.mappers import DomainsDictionary
+from phenex.tables import PhenexTable, PhenexPersonTable, EventTable, CodeTable, PhenexVisitOccurrenceTable, PhenexIndexTable, PhenexObservationPeriodTable, MeasurementTable, PhenotypeTable
 import inspect
 from phenex.util import create_logger
 from phenex.util.serialization.to_dict import get_phenex_init_params
@@ -19,6 +25,11 @@ def from_dict(data: dict):
     # logger.debug(f"Decoding data: {data}")
 
     class_name = data.get("class_name")
+    if class_name is None:
+        raise ValueError(
+            f"Cannot deserialize: 'class_name' key is missing or None in data. "
+            f"Available keys: {list(data.keys())}"
+        )
 
     # Special handling for DomainsDictionary
     if class_name == "DomainsDictionary":
@@ -59,36 +70,42 @@ def from_dict(data: dict):
                 # Reconstruct the connector with stored config
                 # Credentials will be loaded from environment variables
                 connector = None
-                if "Snowflake" in connector_type:
-                    connector = SnowflakeConnector(
-                        SNOWFLAKE_ACCOUNT=value.get("SNOWFLAKE_ACCOUNT"),
-                        SNOWFLAKE_WAREHOUSE=value.get("SNOWFLAKE_WAREHOUSE"),
-                        SNOWFLAKE_ROLE=value.get("SNOWFLAKE_ROLE"),
-                        SNOWFLAKE_SOURCE_DATABASE=value.get(
-                            "SNOWFLAKE_SOURCE_DATABASE"
-                        ),
-                        SNOWFLAKE_DEST_DATABASE=value.get("SNOWFLAKE_DEST_DATABASE"),
-                        # SNOWFLAKE_USER and SNOWFLAKE_PASSWORD will be loaded from env vars
-                    )
-                elif "DuckDB" in connector_type:
-                    connector = DuckDBConnector(
-                        DUCKDB_SOURCE_DATABASE=value.get("DUCKDB_SOURCE_DATABASE"),
-                        DUCKDB_DEST_DATABASE=value.get("DUCKDB_DEST_DATABASE"),
-                    )
-                elif "Postgres" in connector_type:
-                    connector = PostgresConnector(
-                        POSTGRES_HOST=value.get("POSTGRES_HOST"),
-                        POSTGRES_PORT=value.get("POSTGRES_PORT"),
-                        POSTGRES_SOURCE_DATABASE=value.get("POSTGRES_SOURCE_DATABASE"),
-                        POSTGRES_SOURCE_SCHEMA=value.get("POSTGRES_SOURCE_SCHEMA"),
-                        POSTGRES_DEST_DATABASE=value.get("POSTGRES_DEST_DATABASE"),
-                        POSTGRES_DEST_SCHEMA=value.get("POSTGRES_DEST_SCHEMA"),
-                        # POSTGRES_USER and POSTGRES_PASSWORD will be loaded from env vars
-                    )
-                else:
+                try:
+                    if "Snowflake" in connector_type:
+                        connector = SnowflakeConnector(
+                            SNOWFLAKE_ACCOUNT=value.get("SNOWFLAKE_ACCOUNT"),
+                            SNOWFLAKE_WAREHOUSE=value.get("SNOWFLAKE_WAREHOUSE"),
+                            SNOWFLAKE_ROLE=value.get("SNOWFLAKE_ROLE"),
+                            SNOWFLAKE_SOURCE_DATABASE=value.get(
+                                "SNOWFLAKE_SOURCE_DATABASE"
+                            ),
+                            SNOWFLAKE_DEST_DATABASE=value.get("SNOWFLAKE_DEST_DATABASE"),
+                            # SNOWFLAKE_USER and SNOWFLAKE_PASSWORD will be loaded from env vars
+                        )
+                    elif "DuckDB" in connector_type:
+                        connector = DuckDBConnector(
+                            DUCKDB_SOURCE_DATABASE=value.get("DUCKDB_SOURCE_DATABASE"),
+                            DUCKDB_DEST_DATABASE=value.get("DUCKDB_DEST_DATABASE"),
+                        )
+                    elif "Postgres" in connector_type:
+                        connector = PostgresConnector(
+                            POSTGRES_HOST=value.get("POSTGRES_HOST"),
+                            POSTGRES_PORT=value.get("POSTGRES_PORT"),
+                            POSTGRES_SOURCE_DATABASE=value.get("POSTGRES_SOURCE_DATABASE"),
+                            POSTGRES_SOURCE_SCHEMA=value.get("POSTGRES_SOURCE_SCHEMA"),
+                            POSTGRES_DEST_DATABASE=value.get("POSTGRES_DEST_DATABASE"),
+                            POSTGRES_DEST_SCHEMA=value.get("POSTGRES_DEST_SCHEMA"),
+                            # POSTGRES_USER and POSTGRES_PASSWORD will be loaded from env vars
+                        )
+                    else:
+                        logger.warning(
+                            f"Unknown connector type '{connector_type}'. "
+                            "Connector will be set to None. You must provide it manually."
+                        )
+                except (ValueError, Exception) as e:
                     logger.warning(
-                        f"Unknown connector type '{connector_type}'. "
-                        "Connector will be set to None. You must provide it manually."
+                        f"Could not reconstruct connector of type '{connector_type}': {e}. "
+                        "Connector will be set to None. You must provide it manually before executing."
                     )
 
                 init_args[param] = connector
