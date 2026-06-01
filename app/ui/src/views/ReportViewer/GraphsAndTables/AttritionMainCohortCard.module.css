@@ -4,21 +4,40 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  position: relative;
+  height: calc(400px / var(--pz-scale, 1));
 }
 
 .cardTitle {
   font-size: calc(18px / var(--pz-scale, 1));
   font-weight: 700;
   padding: 0 12px 8px;
+  flex-shrink: 0;
 }
 
-/* ── Subcohort selector grid (legend-item style) ─────────────────────── */
+/* ── Funnel area (scrolls if too tall) ───────────────────────────────── */
+
+.funnelArea {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: none;
+}
+
+.funnelArea::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Subcohort selector grid (pinned at bottom) ──────────────────────── */
 
 .selectorGrid {
   display: flex;
   flex-direction: column;
   gap: 0px;
   padding: 4px 0;
+  flex-shrink: 0;
+  border-top: 1px solid #eee;
+  margin-top: auto;
 }
 
 .selectorItem {
@@ -68,13 +87,4 @@
   color: #999;
   font-family: "IBMPlexSans-regular", sans-serif;
   white-space: nowrap;
-}
-
-.selectorPct {
-  font-size: 10px;
-  color: #bbb;
-  font-family: "IBMPlexSans-regular", sans-serif;
-  white-space: nowrap;
-  min-width: 36px;
-  text-align: right;
 }

@@ -132,12 +132,12 @@
 /* ── Shared row modes ────────────────────────────────────────────────── */
 
 .dimmed .labelRow {
-  opacity: 0;
+  opacity: .3;
   transition: opacity 0.15s ease;
 }
 
 .dimmed .connectorWrapper {
-  opacity: .2;
+  opacity: .8;
   transition: opacity 0.15s ease;
 }
 /* Transition row: dim labels only, trapezoid stays full */

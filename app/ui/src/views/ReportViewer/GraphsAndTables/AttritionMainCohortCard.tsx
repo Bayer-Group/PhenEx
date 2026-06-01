@@ -25,22 +25,9 @@ function getFinalCount(rows: any[]): number | null {
   return rows[rows.length - 1]?.count ?? null;
 }
 
-function getEntryCount(rows: any[]): number | null {
-  if (!rows.length) return null;
-  return rows[0]?.count ?? null;
-}
-
 function fmtN(n: number | null): string {
   if (n == null) return '?';
   return n.toLocaleString();
-}
-
-function fmtPct(n: number | null, total: number | null): string {
-  if (n == null || total == null || total === 0) return '';
-  const pct = (n / total) * 100;
-  if (pct >= 99.95) return '100%';
-  if (pct > 0 && pct < 0.05) return '<0.1%';
-  return `${pct.toFixed(1)}%`;
 }
 
 export const AttritionMainCohortCard: FC<AttritionMainCohortCardProps> = ({
@@ -54,12 +41,6 @@ export const AttritionMainCohortCard: FC<AttritionMainCohortCardProps> = ({
     [charts, selectedCohort],
   );
 
-  // Entry count from the main cohort for % calculation
-  const mainEntryCount = useMemo(() => {
-    const main = charts.find((c) => c.cohortName === parent);
-    return main ? getEntryCount(main.rows) : null;
-  }, [charts, parent]);
-
   if (!activeChart) return null;
 
   const isMainSelected = activeChart.cohortName === parent;
@@ -70,17 +51,19 @@ export const AttritionMainCohortCard: FC<AttritionMainCohortCardProps> = ({
         {parent}
       </div>
 
-      <AttritionCellRenderer
-        rows={activeChart.rows}
-        cohortId={activeChart.cohortName}
-        databaseSize={activeChart.databaseSize}
-        parentRowNames={
-          !isMainSelected && charts.length > 1 ? parentRowNames : undefined
-        }
-        sharedRowMode={sharedRowMode}
-        hoveredParentRow={hoveredParentRow}
-        onParentRowHover={onParentRowHover}
-      />
+      <div className={styles.funnelArea}>
+        <AttritionCellRenderer
+          rows={activeChart.rows}
+          cohortId={activeChart.cohortName}
+          databaseSize={activeChart.databaseSize}
+          parentRowNames={
+            !isMainSelected && charts.length > 1 ? parentRowNames : undefined
+          }
+          sharedRowMode={sharedRowMode}
+          hoveredParentRow={hoveredParentRow}
+          onParentRowHover={onParentRowHover}
+        />
+      </div>
 
       {charts.length > 1 && (
         <div className={styles.selectorGrid}>
@@ -98,7 +81,6 @@ export const AttritionMainCohortCard: FC<AttritionMainCohortCardProps> = ({
                   {chart.cohortName === parent ? 'Main Cohort' : chart.label}
                 </span>
                 <span className={styles.selectorN}>{fmtN(finalN)}</span>
-                <span className={styles.selectorPct}>{fmtPct(finalN, mainEntryCount)}</span>
               </div>
             );
           })}
