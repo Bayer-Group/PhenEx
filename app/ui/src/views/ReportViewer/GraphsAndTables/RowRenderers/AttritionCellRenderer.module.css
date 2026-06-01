@@ -80,7 +80,7 @@
 }
 
 .rowN {
-  font-size: calc(13px / var(--pz-scale, 1));
+  font-size: calc(10px / var(--pz-scale, 1));
   font-weight: 500;
   color: var(--row-color, #333);
   white-space: nowrap;
@@ -101,16 +101,17 @@
 .rowRight {
   position: absolute;
   right: 0;
-  top: 0px;
-  transform: translateY(-100%);
+  bottom: 0px;
+  background-color: transparent;
+  transform: translateY(-120%);
+  font-size: calc(10px / var(--pz-scale, 1));
   z-index: 2;
 }
 
 .rowDelta {
-  font-size: calc(11px / var(--pz-scale, 1));
-  color: var(--row-color, #555);
-  opacity: 0.55;
+  font-size: calc(10px / var(--pz-scale, 1));
   white-space: nowrap;
+  background-color: rgba(255, 255, 255, 0.8);
 }
 
 /* ── Trapezoid connector ─────────────────────────────────────────────── */
@@ -126,4 +127,16 @@
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+/* ── Shared row modes ────────────────────────────────────────────────── */
+
+.dimmed {
+  opacity: 0.25;
+  transition: opacity 0.15s ease;
+}
+
+.dimmed:hover,
+.parentHighlighted {
+  opacity: 1;
 }

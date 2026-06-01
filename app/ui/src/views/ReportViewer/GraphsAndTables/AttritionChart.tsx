@@ -64,10 +64,14 @@ interface GroupedCharts {
   parent: string;
   groupColor: string;
   charts: ChartEntry[];
+  parentRowNames: Set<string>;
 }
 
 export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups }) => {
   const selectedSet = useMemo(() => new Set(cohortData.map((cd) => cd.name)), [cohortData]);
+  const [layout, setLayout] = useState<'rows' | 'columns'>('columns');
+  const [sharedRowMode, setSharedRowMode] = useState<'show' | 'hide' | 'dim'>('show');
+  const [hoveredParentRow, setHoveredParentRow] = useState<string | null>(null);
 
   /** Build per-group chart data, grouping subcohorts under their main cohort. */
   const groupedCharts = useMemo(() => {
@@ -96,10 +100,17 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
       }
 
       if (charts.length > 0) {
+        // Find parent (main) cohort's row names for shared-row detection
+        const mainChart = charts.find((c) => c.cohortName === group.parent);
+        const parentRowNames = new Set(
+          mainChart ? mainChart.rows.map((r: any) => r.name as string) : [],
+        );
+
         result.push({
           parent: group.parent,
           groupColor: getCohortColor(gi, 0, group.subcohorts.length),
           charts,
+          parentRowNames,
         });
       }
     }
@@ -107,18 +118,27 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
     return result;
   }, [groups, waterfall, selectedSet]);
 
-  const [layout, setLayout] = useState<'rows' | 'columns'>('columns');
-
   if (!groupedCharts.length) return null;
+
+  const sharedModeLabels = { show: 'Showing', hide: 'Hidden', dim: 'Dimmed' } as const;
+  const nextMode = { show: 'hide', hide: 'dim', dim: 'show' } as const;
 
   return (
     <div className={styles.wrapper}>
-      <button
-        className={styles.toggleBtn}
-        onClick={() => setLayout((l) => (l === 'rows' ? 'columns' : 'rows'))}
-      >
-        {layout === 'columns' ? '⬇ Switch to rows' : '➡ Switch to columns'}
-      </button>
+      <div className={styles.controls}>
+        <button
+          className={styles.toggleBtn}
+          onClick={() => setLayout((l) => (l === 'rows' ? 'columns' : 'rows'))}
+        >
+          {layout === 'columns' ? '⬇ Rows' : '➡ Columns'}
+        </button>
+        <button
+          className={styles.toggleBtn}
+          onClick={() => setSharedRowMode((m) => nextMode[m])}
+        >
+          Parent rows: {sharedModeLabels[sharedRowMode]}
+        </button>
+      </div>
     <div className={`${styles.container} ${layout === 'columns' ? styles.layoutColumns : styles.layoutRows}`}>
       {groupedCharts.map((group) => (
         <div key={group.parent} className={styles.mainCohortRow}>
@@ -138,6 +158,10 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
                     rows={chart.rows}
                     cohortId={chart.cohortName}
                     databaseSize={chart.databaseSize}
+                    parentRowNames={group.charts.length > 1 ? group.parentRowNames : undefined}
+                    sharedRowMode={sharedRowMode}
+                    hoveredParentRow={hoveredParentRow}
+                    onParentRowHover={setHoveredParentRow}
                   />
                 </div>
               </div>

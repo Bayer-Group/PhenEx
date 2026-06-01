@@ -2,12 +2,14 @@
   position: relative;
 }
 
+.controls {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
 .toggleBtn {
-  position: absolute;
-  top: 0;
-  left: 0px;
   z-index: 10;
-  margin: 8px 12px;
   height: 100px;
   width: 100px;
   padding: 4px 10px;
