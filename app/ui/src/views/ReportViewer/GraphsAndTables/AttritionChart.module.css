@@ -6,14 +6,10 @@
   display: flex;
   gap: 8px;
   padding: 8px 12px;
-  /* transform: scale(10); */
-
 }
 
 .toggleBtn {
   z-index: 10;
-  height: 100px;
-  width: 100px;
   padding: 4px 10px;
   font-size: 12px;
   border: 1px solid #aaa;
@@ -23,128 +19,15 @@
 }
 .toggleBtn:hover {
   background: #e0e0e0;
-  background-color: red;
 }
 
 .container {
   display: flex;
+  flex-direction: row;
   gap: 60px;
   align-items: flex-start;
   padding-left: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
   padding-right: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
   padding-bottom: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 80px);
   margin-bottom: 20px;
-}
-
-.layoutColumns {
-  flex-direction: row;
-}
-
-.layoutRows {
-  flex-direction: column;
-}
-
-.mainCohortRow {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.mainCohortTitle {
-  font-size: calc(18px / var(--pz-scale));
-  font-weight: 700;
-  padding: 0 12px;
-}
-
-.subcohortRow {
-  display: flex;
-  gap: 40px;
-  align-items: flex-start;
-}
-
-/* ── Scrollable subcohort row with nav arrows ────────────────────────── */
-
-.subcohortNavRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.navArrow {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  margin-top: 60px;
-  border: 1px solid #ccc;
-  border-radius: 50%;
-  background: white;
-  color: #555;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  background-color: red;
-}
-
-.navArrow:hover {
-  background: #eee;
-  color: #222;
-}
-
-.navArrow:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
-
-.subcohortScroller {
-  display: flex;
-  gap: 40px;
-  align-items: flex-start;
-  scrollbar-width: none;
-}
-
-.subcohortScroller::-webkit-scrollbar {
-  display: none;
-}
-
-.scrollerHorizontal {
-  flex-direction: row;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-}
-
-.scrollerVertical {
-  flex-direction: column;
-}
-
-.layoutColumns .subcohortRow {
-  flex-direction: column;
-}
-
-.layoutRows .subcohortRow {
-  flex-direction: row;
-}
-
-.cohortBlock {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  flex-shrink: 0;
-}
-
-.cohortTitle {
-  font-size: 16px;
-  font-weight: 600;
-  padding: 8px 12px 4px;
-}
-
-/* Let the SVG scale up while the wrapper fits its content */
-.d3Wrapper {
-  width: max-content;
-  zoom: 1;
-}
-
-.d3Wrapper > div {
-  max-width: none !important;
 }

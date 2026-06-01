@@ -1,0 +1,80 @@
+/* ── AttritionMainCohortCard ──────────────────────────────────────────── */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  font-size: calc(18px / var(--pz-scale, 1));
+  font-weight: 700;
+  padding: 0 12px 8px;
+}
+
+/* ── Subcohort selector grid (legend-item style) ─────────────────────── */
+
+.selectorGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  padding: 4px 0;
+}
+
+.selectorItem {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 5px;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.selectorItem:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-color: #ccc;
+}
+
+.selectorItemActive {
+  background-color: rgba(0, 0, 0, 0.04);
+  border-color: #999;
+}
+
+.selectorDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.selectorLabel {
+  font-size: calc(13px / var(--pz-scale, 1));
+  color: #333;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.selectorN {
+  margin-left: auto;
+  font-size: 10px;
+  color: #999;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  white-space: nowrap;
+}
+
+.selectorPct {
+  font-size: 10px;
+  color: #bbb;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  white-space: nowrap;
+  min-width: 36px;
+  text-align: right;
+}
