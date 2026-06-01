@@ -9,6 +9,7 @@ import { Table2Chart, TimeToEventChart, type Table2Cohort, type TimeToEventCohor
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { AttritionChart } from './GraphsAndTables/AttritionChart';
 import { ChartGroup } from './GraphsAndTables/ChartGroup';
+import { StudyInfoPanel } from './GraphsAndTables/StudyInfoPanel';
 import { ZoomScrubber } from './ReportFloatingControls/ZoomScrubber';
 import { OutlineBar, type OutlineEntry } from './OutlineBar';
 import { useVisibleSection } from './useVisibleSection';
@@ -368,8 +369,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     panTargetYOffset: PAN_Y_OFFSET,
     lockX: (vpWidth, contentWidth, scale) => {
       const scaledContent = contentWidth * scale;
-      if (scaledContent >= vpWidth) return -100;
-      return (vpWidth - scaledContent) / 4;
+      if (scaledContent >= vpWidth) return -50;
+      return (vpWidth - scaledContent) / 2 - 150;
     },
   });
 
@@ -543,6 +544,11 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
                   {cohortData.length > 0 && (
                     <>
+                      <StudyInfoPanel
+                        title={displayTitle}
+                        description="This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints."
+                      />
+
                       <div ref={attritionRef}>
                         <ChartGroup title="Attrition">
                           <AttritionChart cohortData={cohortData} waterfall={waterfallData} />

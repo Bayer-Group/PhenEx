@@ -1,4 +1,5 @@
 .chartGroup {
+  width: var(--chart-width, 8000px);
   border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
   /* padding: calc(10px / var(--pz-scale, 1)); */
   display: flex;

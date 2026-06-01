@@ -139,10 +139,11 @@
 }
 
 .contentInner {
+  --chart-width: calc(820/var(--pz-scale, 1) * 1px);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  width: 100%;
+  width: max-content;
   min-width: 100%;
   margin-left: min(8vw, 120px);
   padding-top: 0px;
