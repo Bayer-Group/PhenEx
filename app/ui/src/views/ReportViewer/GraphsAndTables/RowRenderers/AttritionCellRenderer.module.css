@@ -1,0 +1,122 @@
+/* ── Funnel container ────────────────────────────────────────────────── */
+
+.funnelContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(600px / var(--pz-scale, 1));
+  position: relative;
+}
+
+/* ── Step wrapper (label + trapezoid, label overlaps into trapezoid) ── */
+
+.funnelStep {
+  width: 100%;
+  position: relative;
+}
+
+/* ── Label row (floats above trapezoid via negative margin) ─────────── */
+
+.labelRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: calc(2px / var(--pz-scale, 1)) 0;
+  gap: calc(12px / var(--pz-scale, 1));
+  position: relative;
+  z-index: 1;
+  margin-bottom: calc(-1 * (6px / var(--pz-scale, 1)));
+  pointer-events: auto;
+  background-color: transparent;
+  position: absolute;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.hovered .rowTitle {
+  text-decoration: underline;
+}
+
+/* ── Label sections ─────────────────────────────────────────────────── */
+
+.rowLeft {
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: calc(1px / var(--pz-scale, 1));
+}
+
+.rowTitle {
+  font-size: calc(14px / var(--pz-scale, 1));
+  font-weight: 600;
+  color: var(--row-color, #333);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowSubtitle {
+  font-size: calc(10px / var(--pz-scale, 1));
+  color: var(--row-color, #666);
+  opacity: 0.55;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.rowCenter {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: calc(8px / var(--pz-scale, 1));
+}
+
+.rowN {
+  font-size: calc(13px / var(--pz-scale, 1));
+  font-weight: 500;
+  color: var(--row-color, #333);
+  white-space: nowrap;
+}
+
+.nLabel {
+  font-style: italic;
+  font-weight: 700;
+}
+
+.rowPct {
+  font-size: calc(11px / var(--pz-scale, 1));
+  color: var(--row-color, #555);
+  opacity: 0.65;
+  white-space: nowrap;
+}
+
+.rowRight {
+  flex: 1 1 0%;
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.rowDelta {
+  font-size: calc(11px / var(--pz-scale, 1));
+  color: var(--row-color, #555);
+  opacity: 0.55;
+  white-space: nowrap;
+}
+
+/* ── Trapezoid connector (the visual row itself) ────────────────────── */
+
+.connectorWrapper {
+  width: 100%;
+  height: calc(40px / var(--pz-scale, 1));
+  position: relative;
+}
+
+.trapezoid {
+  position: absolute;
+  inset: 0;
+  background-color: var(--trap-color, #888);
+  opacity: var(--trap-alpha, 0.1);
+}

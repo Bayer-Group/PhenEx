@@ -36,12 +36,13 @@
 .rowTooltip {
   position: absolute;
   top: calc(8px / var(--pz-scale, 1));
-  right: 0px;
-  font-size: calc(20px / var(--pz-scale, 1)) ;
-  background-color: black;
-  color: white;
+  right: 40%;
+  font-size: calc(14px / var(--pz-scale, 1)) ;
+  background-color: white;
+  color: black;
   pointer-events: none;
-  padding: calc(1px / var(--pz-scale, 1)) calc(20px / var(--pz-scale, 1));
+  border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+  padding: calc(2px / var(--pz-scale, 1)) calc(8px / var(--pz-scale, 1));
   border-radius: calc(5px / var(--pz-scale, 1));
 
   font-family: "IBMPlexSans-regular", sans-serif;

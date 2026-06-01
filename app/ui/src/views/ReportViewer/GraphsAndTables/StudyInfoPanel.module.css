@@ -7,7 +7,7 @@
 }
 
 .title {
-  font-size: clamp(80px, calc(32px / var(--pz-scale, 1)), 800px);
+  font-size: calc(48px / var(--pz-scale, 1));
   font-weight: 700;
   color: #222;
   margin: 0 0 0.3em;
