@@ -54,20 +54,21 @@ const TrapezoidConnector: React.FC<{
   const bl = 50 - lowerPct / 2;
   const br = 50 + lowerPct / 2;
 
+  const d = `M ${tl} 0 L ${tr} 0 L ${br} 100 L ${bl} 100 Z`;
+
   return (
-    <div
-      className={styles.connectorWrapper}
-      style={{
-        '--trap-color': `var(--color_${effectiveType}, #888)`,
-        '--trap-alpha': alpha,
-      } as React.CSSProperties}
-    >
-      <div
-        className={styles.trapezoid}
-        style={{
-          clipPath: `polygon(${tl}% 0%, ${tr}% 0%, ${br}% 100%, ${bl}% 100%)`,
-        }}
-      />
+    <div className={styles.connectorWrapper}>
+      <svg
+        className={styles.trapezoidSvg}
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+      >
+        <path
+          d={d}
+          fill={`var(--color_${effectiveType}, #888)`}
+          opacity={alpha}
+        />
+      </svg>
     </div>
   );
 };
@@ -89,15 +90,20 @@ export const AttritionCellRenderer = forwardRef<
 
   const funnelRows = useMemo<FunnelRow[]>(() => {
     if (!rows?.length) return [];
-    const entry = databaseSize ?? rows[0]?.count ?? 1;
+
+    /* Width is always relative to the first real row (entry), not databaseSize.
+       databaseSize is only used for the "Source Database" label count. */
+    const firstCount = rows[0]?.count ?? 1;
+    const widthBase = firstCount > 0 ? firstCount : 1;
+    const dbCount = databaseSize ?? firstCount;
 
     const result: FunnelRow[] = [
       {
         name: 'Source Database',
         effectiveType: 'database',
         hierarchicalIndex: undefined,
-        count: entry,
-        pctOfEntry: 100,
+        count: dbCount,
+        pctOfEntry: 100,          // always full width
         delta: null,
         isSynthetic: true,
         originalIndex: -1,
@@ -106,7 +112,7 @@ export const AttritionCellRenderer = forwardRef<
 
     rows.forEach((r: any, i: number) => {
       const count = r.count ?? 0;
-      const pct = entry > 0 ? (count / entry) * 100 : 0;
+      const pct = (count / widthBase) * 100;
       const delta =
         r.excluded_count != null ? -Math.abs(r.excluded_count) : null;
       result.push({
@@ -127,7 +133,7 @@ export const AttritionCellRenderer = forwardRef<
       effectiveType: 'cohort',
       hierarchicalIndex: undefined,
       count: lastCount,
-      pctOfEntry: entry > 0 ? (lastCount / entry) * 100 : 0,
+      pctOfEntry: (lastCount / widthBase) * 100,
       delta: null,
       isSynthetic: true,
       originalIndex: -1,
@@ -185,7 +191,6 @@ export const AttritionCellRenderer = forwardRef<
               </div>
               <div className={styles.rowCenter}>
                 <span className={styles.rowN}>
-                  <span className={styles.nLabel}>n</span> ={' '}
                   {fmtN(row.count)}
                 </span>
                 <span className={styles.rowPct}>
@@ -199,8 +204,8 @@ export const AttritionCellRenderer = forwardRef<
               </div>
             </div>
 
-            {/* Trapezoid — touches the next one directly */}
-            {next && (
+            {/* Trapezoid — skip the last connector to Final Cohort */}
+            {next && !next.isSynthetic && (
               <TrapezoidConnector
                 upperPct={barPct}
                 lowerPct={Math.max(next.pctOfEntry, MIN_BAR_PCT)}
