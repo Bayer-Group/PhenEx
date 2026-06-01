@@ -1,12 +1,31 @@
 .container {
   display: flex;
-  flex-direction: row;
-  gap: 60px;
+  flex-direction: column;
+  gap: 40px;
   align-items: flex-start;
   padding-left: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
   padding-right: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
   padding-bottom: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 80px);
   margin-bottom: 20px;
+}
+
+.mainCohortRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mainCohortTitle {
+  font-size: 18px;
+  font-weight: 700;
+  padding: 0 12px;
+}
+
+.subcohortRow {
+  display: flex;
+  flex-direction: row;
+  gap: 60px;
+  align-items: flex-start;
 }
 
 .cohortBlock {

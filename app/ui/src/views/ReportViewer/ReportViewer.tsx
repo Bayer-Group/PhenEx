@@ -551,7 +551,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
                       <div ref={attritionRef}>
                         <ChartGroup title="Attrition">
-                          <AttritionChart cohortData={cohortData} waterfall={waterfallData} />
+                          <AttritionChart cohortData={cohortData} waterfall={waterfallData} groups={groups} />
                         </ChartGroup>
                       </div>
 
