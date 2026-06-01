@@ -1,12 +1,43 @@
+.wrapper {
+  position: relative;
+}
+
+.toggleBtn {
+  position: absolute;
+  top: 0;
+  left: 0px;
+  z-index: 10;
+  margin: 8px 12px;
+  height: 100px;
+  width: 100px;
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  cursor: pointer;
+  width: max-content;
+}
+.toggleBtn:hover {
+  background: #e0e0e0;
+  background-color: red;
+}
+
 .container {
   display: flex;
-  flex-direction: row;
   gap: 60px;
   align-items: flex-start;
   padding-left: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
   padding-right: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
   padding-bottom: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 80px);
   margin-bottom: 20px;
+}
+
+.layoutColumns {
+  flex-direction: row;
+}
+
+.layoutRows {
+  flex-direction: column;
 }
 
 .mainCohortRow {
@@ -23,9 +54,16 @@
 
 .subcohortRow {
   display: flex;
-  flex-direction: column;
   gap: 40px;
   align-items: flex-start;
+}
+
+.layoutColumns .subcohortRow {
+  flex-direction: column;
+}
+
+.layoutRows .subcohortRow {
+  flex-direction: row;
 }
 
 .cohortBlock {

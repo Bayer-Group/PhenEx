@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { AttritionCellRenderer } from './RowRenderers/AttritionCellRenderer';
 import { type CohortClassified, type CohortGroup, getCohortColor } from '../types';
 import styles from './AttritionChart.module.css';
@@ -107,10 +107,19 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
     return result;
   }, [groups, waterfall, selectedSet]);
 
+  const [layout, setLayout] = useState<'rows' | 'columns'>('columns');
+
   if (!groupedCharts.length) return null;
 
   return (
-    <div className={styles.container}>
+    <div className={styles.wrapper}>
+      <button
+        className={styles.toggleBtn}
+        onClick={() => setLayout((l) => (l === 'rows' ? 'columns' : 'rows'))}
+      >
+        {layout === 'columns' ? '⬇ Switch to rows' : '➡ Switch to columns'}
+      </button>
+    <div className={`${styles.container} ${layout === 'columns' ? styles.layoutColumns : styles.layoutRows}`}>
       {groupedCharts.map((group) => (
         <div key={group.parent} className={styles.mainCohortRow}>
           <div className={styles.mainCohortTitle} style={{ color: group.groupColor }}>
@@ -136,6 +145,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
           </div>
         </div>
       ))}
+    </div>
     </div>
   );
 };
