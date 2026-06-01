@@ -32,6 +32,8 @@ interface FunnelRow {
   delta: number | null;
   isSynthetic: boolean;
   isParent: boolean;
+  /** Last parent row: row itself shown, but delta is dimmed */
+  isParentTransition: boolean;
   originalIndex: number;
 }
 
@@ -74,7 +76,7 @@ const TrapezoidConnector: React.FC<{
       >
         <path
           d={d}
-          fill={`var(--color_${effectiveType}, #888)`}
+          fill={`var(--color_${effectiveType}, transparent)`}
           opacity={alpha}
         />
       </svg>
@@ -88,7 +90,7 @@ export const AttritionCellRenderer = forwardRef<
   AttritionCellRendererRef,
   AttritionCellRendererProps
 >(({ rows, cohortId: _cohortId, databaseSize, onRowClick, onExpandClick,
-    parentRowNames, sharedRowMode = 'show', hoveredParentRow, onParentRowHover }, ref) => {
+    parentRowNames, sharedRowMode = 'show', hoveredParentRow, onParentRowHover: _onParentRowHover }, ref) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   useImperativeHandle(ref, () => ({
@@ -117,6 +119,7 @@ export const AttritionCellRenderer = forwardRef<
         delta: null,
         isSynthetic: true,
         isParent: false,
+        isParentTransition: false,
         originalIndex: -1,
       },
     ];
@@ -135,6 +138,7 @@ export const AttritionCellRenderer = forwardRef<
         delta,
         isSynthetic: false,
         isParent: parentRowNames?.has(r.name) ?? false,
+        isParentTransition: false,
         originalIndex: i,
       });
     });
@@ -149,21 +153,35 @@ export const AttritionCellRenderer = forwardRef<
       delta: null,
       isSynthetic: true,
       isParent: false,
+      isParentTransition: false,
       originalIndex: -1,
     });
 
     return result;
   }, [rows, databaseSize, parentRowNames]);
 
+  /** The last parent row stays visible — it's the transition into subcohort rows */
+  const displayRows = useMemo(() => {
+    if (!parentRowNames?.size) return funnelRows;
+    let lastParentIdx = -1;
+    for (let i = funnelRows.length - 1; i >= 0; i--) {
+      if (funnelRows[i].isParent) { lastParentIdx = i; break; }
+    }
+    if (lastParentIdx === -1) return funnelRows;
+    return funnelRows.map((r, i) =>
+      i === lastParentIdx ? { ...r, isParent: false, isParentTransition: true } : r,
+    );
+  }, [funnelRows, parentRowNames]);
+
   /** Apply hide mode: filter out parent rows */
   const visibleRows = useMemo(() => {
-    if (sharedRowMode !== 'hide') return funnelRows;
-    return funnelRows.filter((r) => !r.isParent);
-  }, [funnelRows, sharedRowMode]);
+    if (sharedRowMode !== 'hide') return displayRows;
+    return displayRows.filter((r) => !r.isParent);
+  }, [displayRows, sharedRowMode]);
 
   /* ── Hover state ────────────────────────────────────────────────────── */
 
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [hoveredIndex, _setHoveredIndex] = useState<number | null>(null);
 
   const handleClick = useCallback(
     (row: FunnelRow) => {
@@ -185,22 +203,13 @@ export const AttritionCellRenderer = forwardRef<
         const next = visibleRows[i + 1];
         const barPct = Math.max(row.pctOfEntry, MIN_BAR_PCT);
         const isHovered = hoveredIndex === i;
-        const isDimmed = sharedRowMode === 'dim' && row.isParent;
+        const isDimmed = sharedRowMode === 'dim' && (row.isParent || row.isParentTransition);
         const isParentHighlighted = row.isParent && hoveredParentRow === row.name;
-
-        const handleMouseEnter = () => {
-          setHoveredIndex(i);
-          if (row.isParent) onParentRowHover?.(row.name);
-        };
-        const handleMouseLeave = () => {
-          setHoveredIndex(null);
-          if (row.isParent) onParentRowHover?.(null);
-        };
 
         return (
           <div
             key={i}
-            className={`${styles.funnelStep} ${isDimmed ? styles.dimmed : ''} ${isParentHighlighted ? styles.parentHighlighted : ''}`}
+            className={`${styles.funnelStep} ${isDimmed && !row.isParentTransition ? styles.dimmed : ''} ${isDimmed && row.isParentTransition ? styles.dimmedLabelsOnly : ''} ${isParentHighlighted ? styles.parentHighlighted : ''}`}
           >
             {/* Labels — full width, overlaps into trapezoid below */}
             <div
@@ -211,8 +220,6 @@ export const AttritionCellRenderer = forwardRef<
                   : `var(--color_${row.effectiveType}, #555)`,
               } as React.CSSProperties}
               onClick={() => handleClick(row)}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
             >
               <div className={styles.rowLeft}>
                 <span className={styles.rowTitle}>{row.name}</span>
@@ -232,8 +239,11 @@ export const AttritionCellRenderer = forwardRef<
                 </span>
               </div>
               <div className={styles.rowRight}>
-                {row.delta != null && (
-                  <span className={styles.rowDelta}>{fmtN(row.delta)}</span>
+                {row.delta != null &&
+                  !(row.isParentTransition && sharedRowMode === 'hide') && (
+                  <span className={styles.rowDelta}>
+                    {fmtN(row.delta)}
+                  </span>
                 )}
               </div>
             </div>

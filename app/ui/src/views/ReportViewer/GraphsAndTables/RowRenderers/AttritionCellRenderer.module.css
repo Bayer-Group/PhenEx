@@ -6,8 +6,8 @@
   align-items: center;
   width: calc(200px / var(--pz-scale, 1));
   position: relative;
-  padding-top: calc(36px / var(--pz-scale, 1));
-  margin-bottom: calc(20px / var(--pz-scale, 1));
+  padding-top: calc(0px / var(--pz-scale, 1));
+  margin-bottom: calc(30px / var(--pz-scale, 1));
 }
 
 /* ── Step wrapper (label + trapezoid) ────────────────────────────────── */
@@ -103,7 +103,7 @@
   right: 0;
   bottom: 0px;
   background-color: transparent;
-  transform: translateY(-120%);
+  transform: translateY(10px);
   font-size: calc(10px / var(--pz-scale, 1));
   z-index: 2;
 }
@@ -131,12 +131,26 @@
 
 /* ── Shared row modes ────────────────────────────────────────────────── */
 
-.dimmed {
-  opacity: 0.25;
+.dimmed .labelRow {
+  opacity: 0;
   transition: opacity 0.15s ease;
 }
 
-.dimmed:hover,
-.parentHighlighted {
+.dimmed .connectorWrapper {
+  opacity: .2;
+  transition: opacity 0.15s ease;
+}
+/* Transition row: dim labels only, trapezoid stays full */
+.dimmedLabelsOnly .labelRow {
+  opacity: 0.3;
+  transition: opacity 0.15s ease;
+}
+/* .dimmed:hover .labelRow,
+.parentHighlighted .labelRow {
   opacity: 1;
 }
+
+.dimmed:hover .connectorWrapper,
+.parentHighlighted .connectorWrapper {
+  opacity: 0.5;
+} */

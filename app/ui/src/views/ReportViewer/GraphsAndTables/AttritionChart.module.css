@@ -6,6 +6,8 @@
   display: flex;
   gap: 8px;
   padding: 8px 12px;
+  /* transform: scale(10); */
+
 }
 
 .toggleBtn {
@@ -49,7 +51,7 @@
 }
 
 .mainCohortTitle {
-  font-size: 18px;
+  font-size: calc(18px / var(--pz-scale));
   font-weight: 700;
   padding: 0 12px;
 }
@@ -58,6 +60,62 @@
   display: flex;
   gap: 40px;
   align-items: flex-start;
+}
+
+/* ── Scrollable subcohort row with nav arrows ────────────────────────── */
+
+.subcohortNavRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.navArrow {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-top: 60px;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  background: white;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  background-color: red;
+}
+
+.navArrow:hover {
+  background: #eee;
+  color: #222;
+}
+
+.navArrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.subcohortScroller {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  scrollbar-width: none;
+}
+
+.subcohortScroller::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollerHorizontal {
+  flex-direction: row;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+}
+
+.scrollerVertical {
+  flex-direction: column;
 }
 
 .layoutColumns .subcohortRow {

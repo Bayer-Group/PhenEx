@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from 'react';
+import { FC, useCallback, useMemo, useRef, useState } from 'react';
 import { AttritionCellRenderer } from './RowRenderers/AttritionCellRenderer';
 import { type CohortClassified, type CohortGroup, getCohortColor } from '../types';
 import styles from './AttritionChart.module.css';
@@ -66,6 +66,84 @@ interface GroupedCharts {
   charts: ChartEntry[];
   parentRowNames: Set<string>;
 }
+
+/* ── Arrow SVG (matches HorizontalRowViewer nav pill arrows) ───────── */
+const ArrowLeft: FC = () => (
+  <svg width="20" height="22" viewBox="0 0 25 28" fill="none">
+    <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+const ArrowRight: FC = () => (
+  <svg width="20" height="22" viewBox="0 0 25 28" fill="none" style={{ transform: 'scaleX(-1)' }}>
+    <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+
+/* ── Scrollable subcohort row with nav arrows ────────────────────────── */
+interface SubcohortNavRowProps {
+  charts: ChartEntry[];
+  group: GroupedCharts;
+  layout: 'rows' | 'columns';
+  sharedRowMode: 'show' | 'hide' | 'dim';
+  hoveredParentRow: string | null;
+  onParentRowHover: (name: string | null) => void;
+}
+
+const SubcohortNavRow: FC<SubcohortNavRowProps> = ({
+  charts, group, layout, sharedRowMode, hoveredParentRow, onParentRowHover,
+}) => {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const isHorizontal = layout === 'rows';
+
+  const scroll = useCallback((dir: -1 | 1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    // Scroll by roughly one cohort block width
+    const blockWidth = el.firstElementChild?.getBoundingClientRect().width ?? 300;
+    el.scrollBy({ left: dir * (blockWidth + 40), behavior: 'smooth' });
+  }, []);
+
+  return (
+    <div className={styles.subcohortNavRow}>
+      {isHorizontal && (
+        <button className={styles.navArrow} onClick={() => scroll(-1)} title="Scroll left">
+          <ArrowLeft />
+        </button>
+      )}
+      <div className={`${styles.subcohortScroller} ${isHorizontal ? styles.scrollerHorizontal : styles.scrollerVertical}`} ref={scrollerRef}>
+        {charts.map((chart) => (
+          <div key={chart.cohortName} className={styles.cohortBlock}>
+            {charts.length > 1 && (
+              <div className={styles.cohortTitle} style={{ color: chart.color }}>
+                {chart.label}
+              </div>
+            )}
+            <div className={styles.d3Wrapper}>
+              <AttritionCellRenderer
+                rows={chart.rows}
+                cohortId={chart.cohortName}
+                databaseSize={chart.databaseSize}
+                parentRowNames={
+                  charts.length > 1 && chart.cohortName !== group.parent
+                    ? group.parentRowNames
+                    : undefined
+                }
+                sharedRowMode={sharedRowMode}
+                hoveredParentRow={hoveredParentRow}
+                onParentRowHover={onParentRowHover}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+      {isHorizontal && (
+        <button className={styles.navArrow} onClick={() => scroll(1)} title="Scroll right">
+          <ArrowRight />
+        </button>
+      )}
+    </div>
+  );
+};
 
 export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups }) => {
   const selectedSet = useMemo(() => new Set(cohortData.map((cd) => cd.name)), [cohortData]);
@@ -145,28 +223,14 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
           <div className={styles.mainCohortTitle} style={{ color: group.groupColor }}>
             {group.parent}
           </div>
-          <div className={styles.subcohortRow}>
-            {group.charts.map((chart) => (
-              <div key={chart.cohortName} className={styles.cohortBlock}>
-                {group.charts.length > 1 && (
-                  <div className={styles.cohortTitle} style={{ color: chart.color }}>
-                    {chart.label}
-                  </div>
-                )}
-                <div className={styles.d3Wrapper}>
-                  <AttritionCellRenderer
-                    rows={chart.rows}
-                    cohortId={chart.cohortName}
-                    databaseSize={chart.databaseSize}
-                    parentRowNames={group.charts.length > 1 ? group.parentRowNames : undefined}
-                    sharedRowMode={sharedRowMode}
-                    hoveredParentRow={hoveredParentRow}
-                    onParentRowHover={setHoveredParentRow}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+          <SubcohortNavRow
+            charts={group.charts}
+            group={group}
+            layout={layout}
+            sharedRowMode={sharedRowMode}
+            hoveredParentRow={hoveredParentRow}
+            onParentRowHover={setHoveredParentRow}
+          />
         </div>
       ))}
     </div>
