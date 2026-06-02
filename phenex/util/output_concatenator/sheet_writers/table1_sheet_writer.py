@@ -558,7 +558,7 @@ class Table1SheetWriter(_BaseSheetWriter):
         font_scale = 14 / 11
         for offset, col_name in enumerate(columns):
             if col_name.strip().lower() == "n":
-                width = 14  # fits "10,000,000"
+                width = 12
             else:
                 display_name = self._COLUMN_DISPLAY_NAMES.get(col_name, col_name)
                 values = [
@@ -568,5 +568,5 @@ class Table1SheetWriter(_BaseSheetWriter):
                 ]
                 max_val_len = max((len(v) for v in values), default=0)
                 content_len = max(len(display_name), max_val_len)
-                width = min(max(content_len * font_scale + 1, 6), 18)
+                width = min(max(content_len * font_scale * 0.5 + 1, 6), 8)
             sheet.column_dimensions[get_column_letter(start_col + offset)].width = width
