@@ -449,6 +449,22 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     return 0;
   }, [activeSection, sequentialRows]);
 
+  // ── Track pan-zoom Y to show/hide floating title ──────────────────────
+  const [showFloatingTitle, setShowFloatingTitle] = useState(false);
+
+  useEffect(() => {
+    const el = pz.contentRef.current;
+    if (!el) return;
+    const check = () => {
+      const m = el.style.transform.match(/translate\([^,]+,\s*([^)]+)px\)/);
+      if (m) setShowFloatingTitle(parseFloat(m[1]) < -100);
+    };
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(el, { attributes: true, attributeFilter: ['style'] });
+    return () => observer.disconnect();
+  }, [pz.contentRef]);
+
   // ── Outline entries ───────────────────────────────────────────────────
   const outlineEntries: OutlineEntry[] = useMemo(() => {
     const entries: OutlineEntry[] = [];
@@ -504,7 +520,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           {/* Center panel: charts */}
           <div className={styles.centerPanel}>
 
-            <div className={styles.floatingTitle}>
+            <div className={`${styles.floatingTitle} ${showFloatingTitle ? styles.floatingTitleVisible : ''}`}>
               <HorizontalRowTitle
                 rows={sequentialRows}
                 currentIndex={activeTitleIndex}
