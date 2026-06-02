@@ -53,9 +53,7 @@ def _build_cohort_and_tables():
     # ── Inclusion: >= 365 days continuous coverage ───────────────────────
     cc = TimeRangePhenotype(
         name="continuous_coverage",
-        relative_time_range=RelativeTimeRangeFilter(
-            min_days=GreaterThanOrEqualTo(365)
-        ),
+        relative_time_range=RelativeTimeRangeFilter(min_days=GreaterThanOrEqualTo(365)),
     )
 
     # ── Outcomes ─────────────────────────────────────────────────────────
@@ -88,59 +86,92 @@ def _build_cohort_and_tables():
     con = DuckDBConnector()
 
     # Person table
-    df_person = pd.DataFrame({
-        "PATID": patient_ids,
-        "YOB": [1980] * 8,
-        "GENDER": [1] * 8,
-        "ACCEPTABLE": [1] * 8,
-    })
+    df_person = pd.DataFrame(
+        {
+            "PATID": patient_ids,
+            "YOB": [1980] * 8,
+            "GENDER": [1] * 8,
+            "ACCEPTABLE": [1] * 8,
+        }
+    )
     person_table = PersonTableForTests(
-        con.dest_connection.create_table("PERSON", df_person, schema={
-            "PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int,
-        })
+        con.dest_connection.create_table(
+            "PERSON",
+            df_person,
+            schema={
+                "PATID": str,
+                "YOB": int,
+                "GENDER": int,
+                "ACCEPTABLE": int,
+            },
+        )
     )
 
     # Drug exposure table (entry codes)
-    df_drug = pd.DataFrame({
-        "PATID": patient_ids,
-        "PRODCODEID": ["d1"] * 8,
-        "ISSUEDATE": [index_date] * 8,
-    })
+    df_drug = pd.DataFrame(
+        {
+            "PATID": patient_ids,
+            "PRODCODEID": ["d1"] * 8,
+            "ISSUEDATE": [index_date] * 8,
+        }
+    )
     drug_table = DrugExposureTableForTests(
-        con.dest_connection.create_table("DRUG_EXPOSURE", df_drug, schema={
-            "PATID": str, "PRODCODEID": str, "ISSUEDATE": datetime.date,
-        })
+        con.dest_connection.create_table(
+            "DRUG_EXPOSURE",
+            df_drug,
+            schema={
+                "PATID": str,
+                "PRODCODEID": str,
+                "ISSUEDATE": datetime.date,
+            },
+        )
     )
 
     # Observation period table (all have > 1 year prior coverage)
-    df_obs = pd.DataFrame({
-        "PATID": patient_ids,
-        "REGSTARTDATE": [datetime.date(2018, 1, 1)] * 8,
-        "REGENDDATE": [datetime.date(2021, 12, 31)] * 8,
-    })
+    df_obs = pd.DataFrame(
+        {
+            "PATID": patient_ids,
+            "REGSTARTDATE": [datetime.date(2018, 1, 1)] * 8,
+            "REGENDDATE": [datetime.date(2021, 12, 31)] * 8,
+        }
+    )
     obs_table = ObservationPeriodTableForTests(
-        con.dest_connection.create_table("OBSERVATION_PERIOD", df_obs, schema={
-            "PATID": str, "REGSTARTDATE": datetime.date, "REGENDDATE": datetime.date,
-        })
+        con.dest_connection.create_table(
+            "OBSERVATION_PERIOD",
+            df_obs,
+            schema={
+                "PATID": str,
+                "REGSTARTDATE": datetime.date,
+                "REGENDDATE": datetime.date,
+            },
+        )
     )
 
     # Condition occurrence table (outcome events)
     # outcome_a ("oa"): P0 at day 100, P2 at day 200, P4 at day 300
     # outcome_b ("ob"): P0 at day 50
-    df_cond = pd.DataFrame({
-        "PATID": ["P0", "P2", "P4", "P0"],
-        "MEDCODEID": ["oa", "oa", "oa", "ob"],
-        "OBSDATE": [
-            index_date + datetime.timedelta(days=100),
-            index_date + datetime.timedelta(days=200),
-            index_date + datetime.timedelta(days=300),
-            index_date + datetime.timedelta(days=50),
-        ],
-    })
+    df_cond = pd.DataFrame(
+        {
+            "PATID": ["P0", "P2", "P4", "P0"],
+            "MEDCODEID": ["oa", "oa", "oa", "ob"],
+            "OBSDATE": [
+                index_date + datetime.timedelta(days=100),
+                index_date + datetime.timedelta(days=200),
+                index_date + datetime.timedelta(days=300),
+                index_date + datetime.timedelta(days=50),
+            ],
+        }
+    )
     cond_table = ConditionOccurenceTableForTests(
-        con.dest_connection.create_table("CONDITION_OCCURRENCE", df_cond, schema={
-            "PATID": str, "MEDCODEID": str, "OBSDATE": datetime.date,
-        })
+        con.dest_connection.create_table(
+            "CONDITION_OCCURRENCE",
+            df_cond,
+            schema={
+                "PATID": str,
+                "MEDCODEID": str,
+                "OBSDATE": datetime.date,
+            },
+        )
     )
 
     mapped_tables = {
@@ -177,7 +208,9 @@ def test_table2_with_real_cohort():
     # ── Validate outcome_a ───────────────────────────────────────────────
     row_a = results[results["Outcome"] == "OUTCOME_A"].iloc[0]
 
-    assert row_a["N_Events"] == 3, f"outcome_a: expected 3 events, got {row_a['N_Events']}"
+    assert (
+        row_a["N_Events"] == 3
+    ), f"outcome_a: expected 3 events, got {row_a['N_Events']}"
 
     # Person-time calculation:
     # P0: 100 days (event at day 100)
@@ -192,17 +225,19 @@ def test_table2_with_real_cohort():
     expected_py_a = 2425 / 365.25
     expected_rate_a = (3 / expected_py_a) * 100
 
-    assert abs(row_a["Time_Under_Risk"] - expected_py_a) < 0.01, (
-        f"outcome_a: expected {expected_py_a:.3f} patient-years, got {row_a['Time_Under_Risk']}"
-    )
-    assert abs(row_a["Incidence_Rate"] - expected_rate_a) < 0.01, (
-        f"outcome_a: expected rate {expected_rate_a:.3f}, got {row_a['Incidence_Rate']}"
-    )
+    assert (
+        abs(row_a["Time_Under_Risk"] - expected_py_a) < 0.01
+    ), f"outcome_a: expected {expected_py_a:.3f} patient-years, got {row_a['Time_Under_Risk']}"
+    assert (
+        abs(row_a["Incidence_Rate"] - expected_rate_a) < 0.01
+    ), f"outcome_a: expected rate {expected_rate_a:.3f}, got {row_a['Incidence_Rate']}"
 
     # ── Validate outcome_b ───────────────────────────────────────────────
     row_b = results[results["Outcome"] == "OUTCOME_B"].iloc[0]
 
-    assert row_b["N_Events"] == 1, f"outcome_b: expected 1 event, got {row_b['N_Events']}"
+    assert (
+        row_b["N_Events"] == 1
+    ), f"outcome_b: expected 1 event, got {row_b['N_Events']}"
 
     # Person-time calculation:
     # P0: 50 days (event at day 50)
@@ -211,12 +246,12 @@ def test_table2_with_real_cohort():
     expected_py_b = 2605 / 365.25
     expected_rate_b = (1 / expected_py_b) * 100
 
-    assert abs(row_b["Time_Under_Risk"] - expected_py_b) < 0.01, (
-        f"outcome_b: expected {expected_py_b:.3f} patient-years, got {row_b['Time_Under_Risk']}"
-    )
-    assert abs(row_b["Incidence_Rate"] - expected_rate_b) < 0.01, (
-        f"outcome_b: expected rate {expected_rate_b:.3f}, got {row_b['Incidence_Rate']}"
-    )
+    assert (
+        abs(row_b["Time_Under_Risk"] - expected_py_b) < 0.01
+    ), f"outcome_b: expected {expected_py_b:.3f} patient-years, got {row_b['Time_Under_Risk']}"
+    assert (
+        abs(row_b["Incidence_Rate"] - expected_rate_b) < 0.01
+    ), f"outcome_b: expected rate {expected_rate_b:.3f}, got {row_b['Incidence_Rate']}"
 
 
 def test_table2_multiple_time_points():
@@ -235,31 +270,41 @@ def test_table2_multiple_time_points():
     table2 = Table2(time_points=[90, 365])
     results = table2.execute(cohort)
 
-    assert len(results) == 4, f"Expected 4 rows (2 outcomes × 2 time points), got {len(results)}"
+    assert (
+        len(results) == 4
+    ), f"Expected 4 rows (2 outcomes × 2 time points), got {len(results)}"
 
     # ── outcome_a at 90 days ─────────────────────────────────────────────
-    row_a_90 = results[(results["Outcome"] == "OUTCOME_A") & (results["Time_Point"] == 90)].iloc[0]
+    row_a_90 = results[
+        (results["Outcome"] == "OUTCOME_A") & (results["Time_Point"] == 90)
+    ].iloc[0]
 
     # No events before day 90 for outcome_a (first event is P0 at day 100)
-    assert row_a_90["N_Events"] == 0, f"outcome_a@90d: expected 0 events, got {row_a_90['N_Events']}"
+    assert (
+        row_a_90["N_Events"] == 0
+    ), f"outcome_a@90d: expected 0 events, got {row_a_90['N_Events']}"
 
     # All 8 patients contribute 90 days each
     expected_py_a_90 = (8 * 90) / 365.25
-    assert abs(row_a_90["Time_Under_Risk"] - expected_py_a_90) < 0.01, (
-        f"outcome_a@90d: expected {expected_py_a_90:.3f} py, got {row_a_90['Time_Under_Risk']}"
-    )
+    assert (
+        abs(row_a_90["Time_Under_Risk"] - expected_py_a_90) < 0.01
+    ), f"outcome_a@90d: expected {expected_py_a_90:.3f} py, got {row_a_90['Time_Under_Risk']}"
 
     # ── outcome_b at 90 days ─────────────────────────────────────────────
-    row_b_90 = results[(results["Outcome"] == "OUTCOME_B") & (results["Time_Point"] == 90)].iloc[0]
+    row_b_90 = results[
+        (results["Outcome"] == "OUTCOME_B") & (results["Time_Point"] == 90)
+    ].iloc[0]
 
     # P0 has event at day 50
-    assert row_b_90["N_Events"] == 1, f"outcome_b@90d: expected 1 event, got {row_b_90['N_Events']}"
+    assert (
+        row_b_90["N_Events"] == 1
+    ), f"outcome_b@90d: expected 1 event, got {row_b_90['N_Events']}"
 
     # P0: 50 days, P1-P7: 90 days each = 50 + 7*90 = 680 days
     expected_py_b_90 = 680 / 365.25
-    assert abs(row_b_90["Time_Under_Risk"] - expected_py_b_90) < 0.01, (
-        f"outcome_b@90d: expected {expected_py_b_90:.3f} py, got {row_b_90['Time_Under_Risk']}"
-    )
+    assert (
+        abs(row_b_90["Time_Under_Risk"] - expected_py_b_90) < 0.01
+    ), f"outcome_b@90d: expected {expected_py_b_90:.3f} py, got {row_b_90['Time_Under_Risk']}"
 
 
 def test_table2_no_events_outcome():
@@ -308,40 +353,65 @@ def test_table2_many_events_per_patient():
     con = DuckDBConnector()
 
     # Person table
-    df_person = pd.DataFrame({
-        "PATID": patient_ids,
-        "YOB": [1980] * 8,
-        "GENDER": [1] * 8,
-        "ACCEPTABLE": [1] * 8,
-    })
+    df_person = pd.DataFrame(
+        {
+            "PATID": patient_ids,
+            "YOB": [1980] * 8,
+            "GENDER": [1] * 8,
+            "ACCEPTABLE": [1] * 8,
+        }
+    )
     person_table = PersonTableForTests(
-        con.dest_connection.create_table("PERSON", df_person, schema={
-            "PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int,
-        })
+        con.dest_connection.create_table(
+            "PERSON",
+            df_person,
+            schema={
+                "PATID": str,
+                "YOB": int,
+                "GENDER": int,
+                "ACCEPTABLE": int,
+            },
+        )
     )
 
     # Drug exposure (entry codes)
-    df_drug = pd.DataFrame({
-        "PATID": patient_ids,
-        "PRODCODEID": ["d1"] * 8,
-        "ISSUEDATE": [index_date] * 8,
-    })
+    df_drug = pd.DataFrame(
+        {
+            "PATID": patient_ids,
+            "PRODCODEID": ["d1"] * 8,
+            "ISSUEDATE": [index_date] * 8,
+        }
+    )
     drug_table = DrugExposureTableForTests(
-        con.dest_connection.create_table("DRUG_EXPOSURE", df_drug, schema={
-            "PATID": str, "PRODCODEID": str, "ISSUEDATE": datetime.date,
-        })
+        con.dest_connection.create_table(
+            "DRUG_EXPOSURE",
+            df_drug,
+            schema={
+                "PATID": str,
+                "PRODCODEID": str,
+                "ISSUEDATE": datetime.date,
+            },
+        )
     )
 
     # Observation period
-    df_obs = pd.DataFrame({
-        "PATID": patient_ids,
-        "REGSTARTDATE": [datetime.date(2018, 1, 1)] * 8,
-        "REGENDDATE": [datetime.date(2021, 12, 31)] * 8,
-    })
+    df_obs = pd.DataFrame(
+        {
+            "PATID": patient_ids,
+            "REGSTARTDATE": [datetime.date(2018, 1, 1)] * 8,
+            "REGENDDATE": [datetime.date(2021, 12, 31)] * 8,
+        }
+    )
     obs_table = ObservationPeriodTableForTests(
-        con.dest_connection.create_table("OBSERVATION_PERIOD", df_obs, schema={
-            "PATID": str, "REGSTARTDATE": datetime.date, "REGENDDATE": datetime.date,
-        })
+        con.dest_connection.create_table(
+            "OBSERVATION_PERIOD",
+            df_obs,
+            schema={
+                "PATID": str,
+                "REGSTARTDATE": datetime.date,
+                "REGENDDATE": datetime.date,
+            },
+        )
     )
 
     # Condition table: P0, P2, P4 each have ~50 events (many rows per patient)
@@ -350,17 +420,38 @@ def test_table2_many_events_per_patient():
     # P4: first event at day 300, then every 1 day for 49 more events
     cond_rows = []
     for day_offset in range(50):
-        cond_rows.append({"PATID": "P0", "MEDCODEID": "oa_all",
-                          "OBSDATE": index_date + datetime.timedelta(days=100 + day_offset * 5)})
-        cond_rows.append({"PATID": "P2", "MEDCODEID": "oa_all",
-                          "OBSDATE": index_date + datetime.timedelta(days=200 + day_offset * 3)})
-        cond_rows.append({"PATID": "P4", "MEDCODEID": "oa_all",
-                          "OBSDATE": index_date + datetime.timedelta(days=300 + day_offset)})
+        cond_rows.append(
+            {
+                "PATID": "P0",
+                "MEDCODEID": "oa_all",
+                "OBSDATE": index_date + datetime.timedelta(days=100 + day_offset * 5),
+            }
+        )
+        cond_rows.append(
+            {
+                "PATID": "P2",
+                "MEDCODEID": "oa_all",
+                "OBSDATE": index_date + datetime.timedelta(days=200 + day_offset * 3),
+            }
+        )
+        cond_rows.append(
+            {
+                "PATID": "P4",
+                "MEDCODEID": "oa_all",
+                "OBSDATE": index_date + datetime.timedelta(days=300 + day_offset),
+            }
+        )
     df_cond = pd.DataFrame(cond_rows)
     cond_table = ConditionOccurenceTableForTests(
-        con.dest_connection.create_table("CONDITION_OCCURRENCE", df_cond, schema={
-            "PATID": str, "MEDCODEID": str, "OBSDATE": datetime.date,
-        })
+        con.dest_connection.create_table(
+            "CONDITION_OCCURRENCE",
+            df_cond,
+            schema={
+                "PATID": str,
+                "MEDCODEID": str,
+                "OBSDATE": datetime.date,
+            },
+        )
     )
 
     mapped_tables = {
@@ -386,9 +477,7 @@ def test_table2_many_events_per_patient():
     )
     cc = TimeRangePhenotype(
         name="continuous_coverage",
-        relative_time_range=RelativeTimeRangeFilter(
-            min_days=GreaterThanOrEqualTo(365)
-        ),
+        relative_time_range=RelativeTimeRangeFilter(min_days=GreaterThanOrEqualTo(365)),
     )
     cohort = Cohort(
         name="test_many_events",
@@ -401,9 +490,9 @@ def test_table2_many_events_per_patient():
     # Verify the phenotype table has many rows (not deduplicated)
     outcome_pheno = cohort.outcomes[0]
     outcome_df = outcome_pheno.table.execute()
-    assert len(outcome_df) > 8, (
-        f"Phenotype table should have many rows per patient, got {len(outcome_df)}"
-    )
+    assert (
+        len(outcome_df) > 8
+    ), f"Phenotype table should have many rows per patient, got {len(outcome_df)}"
 
     # Run Table2
     table2 = Table2(time_points=[365])
@@ -413,16 +502,16 @@ def test_table2_many_events_per_patient():
     row = results.iloc[0]
 
     # N_Events MUST be 3 (patients P0, P2, P4) — NOT 150 (total event rows)
-    assert row["N_Events"] == 3, (
-        f"N_Events should count patients-with-events (3), not total rows. Got {row['N_Events']}"
-    )
+    assert (
+        row["N_Events"] == 3
+    ), f"N_Events should count patients-with-events (3), not total rows. Got {row['N_Events']}"
 
     # Person-time: P0=100d, P2=200d, P4=300d, P1/P3/P5/P6/P7=365d each
     # (first event dates: P0@100, P2@200, P4@300)
     expected_py = (100 + 200 + 300 + 5 * 365) / 365.25
-    assert abs(row["Time_Under_Risk"] - expected_py) < 0.01, (
-        f"Expected {expected_py:.3f} py, got {row['Time_Under_Risk']}"
-    )
+    assert (
+        abs(row["Time_Under_Risk"] - expected_py) < 0.01
+    ), f"Expected {expected_py:.3f} py, got {row['Time_Under_Risk']}"
 
 
 if __name__ == "__main__":
