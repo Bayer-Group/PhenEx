@@ -1,5 +1,7 @@
-import { FC, useMemo, useState } from 'react';
+import { FC, useMemo, useCallback, useRef, useState } from 'react';
 import { AttritionCellRenderer } from './RowRenderers/AttritionCellRenderer';
+import { type CohortDescriptions } from '../types';
+import { Portal } from '../../../components/Portal/Portal';
 import styles from './AttritionMainCohortCard.module.css';
 
 interface ChartEntry {
@@ -15,6 +17,7 @@ interface AttritionMainCohortCardProps {
   groupColor: string;
   charts: ChartEntry[];
   parentRowNames: Set<string>;
+  cohortDescriptions?: CohortDescriptions;
   sharedRowMode: 'show' | 'hide' | 'dim';
   hoveredParentRow: string | null;
   onParentRowHover: (name: string | null) => void;
@@ -31,9 +34,23 @@ function fmtN(n: number | null): string {
 }
 
 export const AttritionMainCohortCard: FC<AttritionMainCohortCardProps> = ({
-  parent, groupColor, charts, parentRowNames, sharedRowMode, hoveredParentRow, onParentRowHover,
+  parent, groupColor, charts, parentRowNames, cohortDescriptions, sharedRowMode, hoveredParentRow, onParentRowHover,
 }) => {
   const [selectedCohort, setSelectedCohort] = useState(parent);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const subtitleRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const scheduleClose = useCallback(() => {
+    closeTimer.current = setTimeout(() => {
+      if (!menuRef.current?.matches(':hover')) setMenuOpen(false);
+    }, 120);
+  }, []);
+
+  const cancelClose = useCallback(() => {
+    clearTimeout(closeTimer.current);
+  }, []);
 
   // Find the chart to display
   const activeChart = useMemo(
@@ -44,48 +61,77 @@ export const AttritionMainCohortCard: FC<AttritionMainCohortCardProps> = ({
   if (!activeChart) return null;
 
   const isMainSelected = activeChart.cohortName === parent;
+  const hasMultiple = charts.length > 1;
+  const subtitleLabel = isMainSelected
+    ? 'Main Cohort'
+    : (cohortDescriptions?.[activeChart.cohortName]?.display_name || activeChart.label);
 
   return (
     <div className={styles.card}>
       <div className={styles.cardTitle} style={{ color: groupColor }}>
-        {parent}
+        {cohortDescriptions?.[parent]?.display_name || parent}
       </div>
 
-      <div className={styles.funnelArea}>
-        <AttritionCellRenderer
-          rows={activeChart.rows}
-          cohortId={activeChart.cohortName}
-          databaseSize={activeChart.databaseSize}
-          parentRowNames={
-            !isMainSelected && charts.length > 1 ? parentRowNames : undefined
-          }
-          sharedRowMode={sharedRowMode}
-          hoveredParentRow={hoveredParentRow}
-          onParentRowHover={onParentRowHover}
-        />
-      </div>
+      {hasMultiple && (
+        <div className={styles.subtitleWrapper}>
+          <div
+            ref={subtitleRef}
+            className={`${styles.cardSubtitle} ${menuOpen ? styles.cardSubtitleActive : ''}`}
+            onMouseEnter={() => { cancelClose(); setMenuOpen(true); }}
+            onMouseLeave={scheduleClose}
+          >
+            <div className={styles.subtitleDot} style={{ backgroundColor: activeChart.color }} />
+            <span>{subtitleLabel}</span>
+            <span className={styles.subtitleChevron}>▾</span>
+          </div>
 
-      {charts.length > 1 && (
-        <div className={styles.selectorGrid}>
-          {charts.map((chart) => {
-            const finalN = getFinalCount(chart.rows);
-            const isActive = chart.cohortName === activeChart.cohortName;
+          {menuOpen && subtitleRef.current && (() => {
+            const rect = subtitleRef.current!.getBoundingClientRect();
             return (
-              <div
-                key={chart.cohortName}
-                className={`${styles.selectorItem} ${isActive ? styles.selectorItemActive : ''}`}
-                onClick={() => setSelectedCohort(chart.cohortName)}
-              >
-                <div className={styles.selectorDot} style={{ backgroundColor: chart.color }} />
-                <span className={styles.selectorLabel}>
-                  {chart.cohortName === parent ? 'Main Cohort' : chart.label}
-                </span>
-                <span className={styles.selectorN}>{fmtN(finalN)}</span>
-              </div>
+              <Portal>
+                <div
+                  ref={menuRef}
+                  className={styles.dropdownMenu}
+                  style={{ position: 'fixed', top: rect.bottom + 2, left: rect.left }}
+                  onMouseEnter={cancelClose}
+                  onMouseLeave={() => setMenuOpen(false)}
+                >
+              {charts.map((chart) => {
+                const finalN = getFinalCount(chart.rows);
+                const isActive = chart.cohortName === activeChart.cohortName;
+                const label = chart.cohortName === parent
+                  ? 'Main Cohort'
+                  : (cohortDescriptions?.[chart.cohortName]?.display_name || chart.label);
+                return (
+                  <button
+                    key={chart.cohortName}
+                    className={`${styles.menuItem} ${isActive ? styles.menuItemActive : ''}`}
+                    onClick={() => { setSelectedCohort(chart.cohortName); setMenuOpen(false); }}
+                  >
+                    <div className={styles.menuDot} style={{ backgroundColor: chart.color }} />
+                    <span className={styles.menuLabel}>{label}</span>
+                    <span className={styles.menuN}>{fmtN(finalN)}</span>
+                  </button>
+                );
+              })}
+            </div>
+              </Portal>
             );
-          })}
+          })()}
         </div>
       )}
+
+      <AttritionCellRenderer
+        rows={activeChart.rows}
+        cohortId={activeChart.cohortName}
+        databaseSize={activeChart.databaseSize}
+        parentRowNames={
+          !isMainSelected && hasMultiple ? parentRowNames : undefined
+        }
+        sharedRowMode={sharedRowMode}
+        hoveredParentRow={hoveredParentRow}
+        onParentRowHover={onParentRowHover}
+      />
     </div>
   );
 };

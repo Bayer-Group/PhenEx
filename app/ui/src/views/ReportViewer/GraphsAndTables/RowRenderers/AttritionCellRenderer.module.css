@@ -79,6 +79,14 @@
   z-index: 2;
 }
 
+.rowFarLeft {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform: translateY(100%);
+  z-index: 2;
+}
+
 .rowN {
   font-size: calc(10px / var(--pz-scale, 1));
   font-weight: 500;

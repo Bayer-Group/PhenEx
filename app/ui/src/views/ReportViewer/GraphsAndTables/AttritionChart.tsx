@@ -1,5 +1,5 @@
 import { FC, useMemo, useState } from 'react';
-import { type CohortClassified, type CohortGroup, getCohortColor } from '../types';
+import { type CohortClassified, type CohortGroup, type CohortDescriptions, getCohortColor } from '../types';
 import { AttritionMainCohortCard } from './AttritionMainCohortCard';
 import styles from './AttritionChart.module.css';
 
@@ -26,6 +26,7 @@ interface AttritionChartProps {
   cohortData: CohortClassified[];
   waterfall: Record<string, unknown>;
   groups: CohortGroup[];
+  cohortDescriptions?: CohortDescriptions;
 }
 
 /**
@@ -67,7 +68,7 @@ interface GroupedCharts {
   parentRowNames: Set<string>;
 }
 
-export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups }) => {
+export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups, cohortDescriptions }) => {
   const selectedSet = useMemo(() => new Set(cohortData.map((cd) => cd.name)), [cohortData]);
   const [sharedRowMode, setSharedRowMode] = useState<'show' | 'hide' | 'dim'>('show');
   const [hoveredParentRow, setHoveredParentRow] = useState<string | null>(null);
@@ -140,6 +141,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
             groupColor={group.groupColor}
             charts={group.charts}
             parentRowNames={group.parentRowNames}
+            cohortDescriptions={cohortDescriptions}
             sharedRowMode={sharedRowMode}
             hoveredParentRow={hoveredParentRow}
             onParentRowHover={setHoveredParentRow}

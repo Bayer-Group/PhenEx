@@ -229,11 +229,12 @@ export const AttritionCellRenderer = forwardRef<
                   </span>
                 )}
               </div>
-              <div className={styles.rowCenter}>
-
+              <div className={styles.rowFarLeft}>
                 <span className={styles.rowPct}>
                   {fmtPct(row.pctOfEntry)}
                 </span>
+              </div>
+              <div className={styles.rowCenter}>
                 <span className={styles.rowN}>
                   {fmtN(row.count)}
                 </span>

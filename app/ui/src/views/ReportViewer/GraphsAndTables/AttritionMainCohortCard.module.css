@@ -4,87 +4,120 @@
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  position: relative;
-  height: calc(400px / var(--pz-scale, 1));
 }
 
 .cardTitle {
   font-size: calc(18px / var(--pz-scale, 1));
   font-weight: 700;
+  padding: 0 12px 2px;
+}
+
+/* ── Subtitle with dropdown ──────────────────────────────────────────── */
+
+.subtitleWrapper {
+  position: relative;
   padding: 0 12px 8px;
-  flex-shrink: 0;
 }
 
-/* ── Funnel area (scrolls if too tall) ───────────────────────────────── */
-
-.funnelArea {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-  scrollbar-width: none;
-}
-
-.funnelArea::-webkit-scrollbar {
-  display: none;
-}
-
-/* ── Subcohort selector grid (pinned at bottom) ──────────────────────── */
-
-.selectorGrid {
-  display: flex;
-  flex-direction: column;
-  gap: 0px;
-  padding: 4px 0;
-  flex-shrink: 0;
-  border-top: 1px solid #eee;
-  margin-top: auto;
-}
-
-.selectorItem {
-  display: flex;
-  flex-direction: row;
+.cardSubtitle {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 8px 4px 5px;
-  user-select: none;
-  transition: background 0.15s, border-color 0.15s;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  gap: calc(6px / var(--pz-scale, 1));
+  font-size: calc(13px / var(--pz-scale, 1));
+  color: #666;
   cursor: pointer;
+  padding: calc(6px / var(--pz-scale, 1)) calc(12px / var(--pz-scale, 1));
+  border-radius: calc(4px / var(--pz-scale, 1));
+  transition: background 0.15s, color 0.15s;
 }
 
-.selectorItem:hover {
-  background-color: rgba(0, 0, 0, 0.03);
-  border-color: #ccc;
+.cardSubtitle:hover,
+.cardSubtitleActive {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
 }
 
-.selectorItemActive {
-  background-color: rgba(0, 0, 0, 0.04);
-  border-color: #999;
-}
-
-.selectorDot {
+.subtitleDot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.selectorLabel {
-  font-size: calc(13px / var(--pz-scale, 1));
-  color: #333;
-  line-height: 1.3;
+.subtitleChevron {
+  font-size: 10px;
+  opacity: 0.5;
+}
+
+/* ── Dropdown menu ───────────────────────────────────────────────────── */
+
+.dropdownMenu {
+  background: var(--background_color_focus, #1a1a2e);
+  border-radius: 12px;
+  padding: 6px 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  z-index: 10004;
+  animation: menuFadeIn 0.12s ease-out;
+  min-width: 180px;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.dropdownMenu::-webkit-scrollbar {
+  display: none;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.menuItem:hover {
+  border-color: var(--color_accent_blue, #3b82f6);
+  color: white;
+}
+
+.menuItemActive {
+  background: var(--color_accent_blue, #3b82f6);
+  color: white;
+  font-weight: 600;
+}
+
+.menuDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.menuLabel {
   flex: 1;
   min-width: 0;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.selectorN {
+.menuN {
   margin-left: auto;
   font-size: 10px;
-  color: #999;
-  font-family: "IBMPlexSans-regular", sans-serif;
+  opacity: 0.6;
   white-space: nowrap;
+}
+
+@keyframes menuFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
