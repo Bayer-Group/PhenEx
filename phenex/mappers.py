@@ -147,10 +147,16 @@ class DomainsDictionary:
                 try:
                     module = importlib.import_module(module_name)
                     mapper_class = getattr(module, table_class_name)
-                except (ImportError, AttributeError):
-                    raise ValueError(
-                        f"Cannot find mapper class '{table_class_name}' in module '{module_name}'"
+                except (ImportError, AttributeError, ModuleNotFoundError):
+                    import logging
+
+                    logging.getLogger(__name__).warning(
+                        f"Cannot find mapper class '{table_class_name}' from module '{module_name}'. "
+                        f"Domain '{domain_name}' will be set to None. "
+                        f"Import the module containing '{table_class_name}' prior to deserializing to get rid of this warning. "
+                        "You must provide this mapper manually before executing."
                     )
+                    mapper_class = None
 
             domains_dict[domain_name] = mapper_class
 
