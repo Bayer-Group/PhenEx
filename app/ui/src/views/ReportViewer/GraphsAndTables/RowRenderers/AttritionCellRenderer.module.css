@@ -30,6 +30,8 @@
   gap: calc(12px / var(--pz-scale, 1));
   z-index: 1;
   box-sizing: border-box;
+
+  font-family: "IBMPlexSans-regular", sans-serif;
 }
 
 .clickable {

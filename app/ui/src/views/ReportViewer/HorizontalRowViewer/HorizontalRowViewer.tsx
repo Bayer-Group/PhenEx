@@ -248,12 +248,15 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       onMouseDown={() => { mouseDownOnOverlay.current = true; }}
       // onClick={handleOverlayClick}
     >
+      <div className={styles.topGradient} />
+
       <div className={styles.titleGroup} style={{ marginLeft: isLeftPanelShown ? undefined : 50 }} onClick={(e) => e.stopPropagation()}>
         <button className={styles.backButton} onClick={(e) => { e.stopPropagation(); startClose(); }} title="Back">
           <svg width="20" height="22" viewBox="0 0 25 28" fill="none">
             <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </button>
+        
         <div className={styles.titleBar}>
           <HorizontalRowTitle
             rows={rows}
@@ -298,6 +301,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
           {current.registry?.display_name || current.name}
         </div>
       )}
+
       <div className={styles.scroller} ref={scrollRef}>
         {rows.map((row) => {
           const isFocused = row.index === currentIndex;

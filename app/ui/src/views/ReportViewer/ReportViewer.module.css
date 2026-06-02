@@ -30,6 +30,17 @@
   border-radius: 4px;
 }
 
+.topGradient {
+  position: sticky;
+  top: 0;
+  height: 180px;
+  margin-bottom: -80px;
+  background: linear-gradient(to bottom, var(--background-color), transparent);
+  pointer-events: none;
+  z-index: 2;
+  background-color: transparent;
+}
+
 /* ── Legend bar (top-right) ───────────────────────────────────────────── */
 
 /* ── NavBar (center-bottom portal) ────────────────────────────────────── */
@@ -227,22 +238,3 @@
 }
 
 
-/* .bottomGradient {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50px;
-  background: linear-gradient(to top, var(--background-color), #ffffff00);
-  pointer-events: none;
-} */
-
-/* .topGradient {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100px;
-  background: linear-gradient(to top, #ffffff00, var(--background-color));
-  pointer-events: none;
-} */

@@ -503,6 +503,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
           {/* Center panel: charts */}
           <div className={styles.centerPanel}>
+
             <div className={styles.floatingTitle}>
               <HorizontalRowTitle
                 rows={sequentialRows}
@@ -531,7 +532,6 @@ export const ReportViewer: FC<ReportViewerProps> = ({
             {/* <div className={styles.fakeDataLabel}>FAKE DATA</div> */}
 
             <div className={styles.content} ref={pz.viewportRef}>
-              <div className={styles.bottomGradient} />
               <div className={styles.topGradient} />
 
               <div className={styles.contentInner} ref={pz.contentRef}>

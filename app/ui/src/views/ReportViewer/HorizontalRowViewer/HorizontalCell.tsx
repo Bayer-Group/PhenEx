@@ -180,6 +180,8 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
         className={styles.cell}
         style={{ '--desired-top': desiredTop, '--background-color': 'transparent', paddingLeft: isLeftPanelShown ? undefined : 100 } as React.CSSProperties}
       >
+      <div className={styles.topGradient} />
+
         <div className={styles.cardColumnInner}>
           <div ref={verticalScrollRef} className={styles.verticalWrapper}>
             <div
