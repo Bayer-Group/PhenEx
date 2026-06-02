@@ -34,7 +34,7 @@
   border-radius: 0px 8px 8px 0px;
   padding-bottom:10px;
   background-color: white;
-  transition: transform 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, box-shadow 0.5s ease;
 }
 
 .legendBar:hover .legendGroup {
@@ -44,7 +44,7 @@
   opacity: 1;
   /* transform: scale(1.02); */
   /* border-color: black; */
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 0px 20px rgba(0, 0, 0, 0.08);
 }
 
 .legendGroupTitle {
@@ -81,6 +81,7 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  cursor: pointer;
 }
 
 .legendGroupDescription{
@@ -89,6 +90,25 @@
   color: #666;
   font-weight: 400;
   margin-left:-35px;
+}
+
+.groupCaret {
+  display: flex;
+  align-items: center;
+  color: var(--color_inactive, #999);
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.2s ease;
+  margin-top: 3px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.legendGroupTitle:hover .groupCaret {
+  opacity: 1;
+}
+
+.groupCaretCollapsed {
+  transform: rotate(-90deg);
 }
 
 

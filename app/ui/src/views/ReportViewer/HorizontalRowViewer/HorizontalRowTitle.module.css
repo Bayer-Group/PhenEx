@@ -45,14 +45,14 @@
 /* Level: study name */
 .crumb_study {
   font-size: var(--font_size_breadcrumb, 14px);
-  color: #999;
+  color: black;
   cursor: pointer;
 }
 
 /* Level: category (Baseline Characteristics, Outcomes, etc.) */
 .crumb_category {
   font-size: var(--font_size_breadcrumb, 14px);
-  color: #999;
+  color: black;
   cursor: pointer;
 }
 
@@ -60,7 +60,7 @@
 .crumb_section {
   font-size: var(--font_size_breadcrumb, 14px);
   font-family: "IBMPlexSans-bold", sans-serif;
-  color: #333;
+  color: black;
   cursor: pointer;
   padding: 1px 6px;
 }

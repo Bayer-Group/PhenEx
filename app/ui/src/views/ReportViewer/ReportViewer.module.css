@@ -33,7 +33,7 @@
 .topGradient {
   position: sticky;
   top: 0;
-  height: 180px;
+  height: 100px;
   margin-bottom: -80px;
   background: linear-gradient(to bottom, var(--background-color), transparent);
   pointer-events: none;

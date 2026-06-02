@@ -118,6 +118,16 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
   const labelRefs = useRef<Map<string, HTMLSpanElement>>(new Map());
   const [hoveredDescName, setHoveredDescName] = useState<string | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<number>>(new Set());
+
+  const toggleGroupCollapse = useCallback((gi: number) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(gi)) next.delete(gi);
+      else next.add(gi);
+      return next;
+    });
+  }, []);
 
   const [expandedDescs, setExpandedDescs] = useState<Set<string>>(new Set());
 
@@ -182,16 +192,19 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                   scale={1.3}
                 />
               </div>
-              <div className={styles.legendGroupTitleContent}>
+              <div className={styles.legendGroupTitleContent} onClick={() => toggleGroupCollapse(gi)}>
                 <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: groupColor }}>
                   {cohortDescriptions?.[group.parent]?.display_name || group.parent}
                 </span>
-                {cohortDescriptions?.[group.parent]?.description && (
+                {!collapsedGroups.has(gi) && cohortDescriptions?.[group.parent]?.description && (
                   <div className={styles.legendGroupDescription}>{cohortDescriptions[group.parent].description}</div>
                 )}
               </div>
+              <span className={`${styles.groupCaret} ${collapsedGroups.has(gi) ? styles.groupCaretCollapsed : ''}`}>
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </span>
             </div>
-            {visibleSubs.map((sub) => {
+            {!collapsedGroups.has(gi) && visibleSubs.map((sub) => {
               const isActive = activeSet.has(sub.fullName);
               const color = activeColorMap.get(sub.fullName);
               const selIdx = selectionIndexMap.get(sub.fullName);
