@@ -79,10 +79,14 @@ class VerticalDateAggregator:
         self.preserve_nulls = preserve_nulls
 
     def aggregate(self, input_table: Table):
+        # Ensure INDEX_DATE is in the aggregation index if the table has it
+        agg_index = list(self.aggregation_index)
+        if "INDEX_DATE" in input_table.columns and "INDEX_DATE" not in agg_index:
+            agg_index.append("INDEX_DATE")
         # Define the window specification
         partition_cols = [
             getattr(input_table, col) if isinstance(col, str) else col
-            for col in self.aggregation_index
+            for col in agg_index
         ]
         window_spec = ibis.window(
             group_by=partition_cols, order_by=input_table[self.event_date_column]
@@ -124,7 +128,7 @@ class VerticalDateAggregator:
 
         # Apply the distinct reduction if required
         if self.reduce:
-            selected_columns = self.aggregation_index + [self.event_date_column]
+            selected_columns = list(agg_index) + [self.event_date_column]
             input_table = input_table.select(selected_columns).distinct()
             input_table = input_table.mutate(VALUE=ibis.null().cast("int32"))
 
@@ -255,9 +259,13 @@ class ValueAggregator:
         # otherwise, row count is preserved
 
     def aggregate(self, input_table: Table):
+        # Ensure INDEX_DATE is in the aggregation index if the table has it
+        agg_index = list(self.aggregation_index)
+        if "INDEX_DATE" in input_table.columns and "INDEX_DATE" not in agg_index:
+            agg_index.append("INDEX_DATE")
         # Get the aggregation index columns
         _aggregation_index_cols = [
-            getattr(input_table, col) for col in self.aggregation_index
+            getattr(input_table, col) for col in agg_index
         ]
 
         # Determine the aggregation column

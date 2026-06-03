@@ -8,6 +8,7 @@ from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters import DateFilter, ValueFilter
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
+from phenex.phenotypes.functions import select_phenotype_columns
 from phenex.aggregators import First, Last
 
 from phenex.util import create_logger
@@ -81,7 +82,7 @@ def UserDefinedPhenotype(
             if "VALUE" not in table.columns:
                 table = table.mutate(VALUE=ibis.null().cast("int32"))
 
-            return table
+            return select_phenotype_columns(table)
 
     # Set output_display_type = as a class variable based on returns_value parameter
     _UserDefinedPhenotype.output_display_type = "value" if returns_value else "boolean"

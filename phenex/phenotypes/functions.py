@@ -69,7 +69,7 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
     if isinstance(join_table, PhenexTable):
         join_table = join_table.table
 
-    # Detect join keys from the first phenotype's table
+    # Detect the broadest join keys from the join_table (if provided) or phenotypes
     join_keys = _get_join_keys(phenotypes[0].table)
 
     if join_table is None:
@@ -77,7 +77,10 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
             f"hstack: building flat LEFT JOIN chain for {len(phenotypes)} phenotypes (UNION base)"
         )
         key_tables = [
-            pt.namespaced_table.select(join_keys) for pt in phenotypes
+            pt.namespaced_table.select(
+                [k for k in join_keys if k in pt.namespaced_table.columns]
+            )
+            for pt in phenotypes
         ]
         join_table = ibis.union(*key_tables, distinct=True)
     else:
@@ -89,7 +92,10 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
         )
 
     for pt in phenotypes:
-        join_table = join_table.join(pt.namespaced_table, join_keys, how="left")
+        # Per-phenotype join keys: fall back to PERSON_ID only when the
+        # phenotype table lacks a key column (e.g. no INDEX_DATE).
+        pt_join_keys = [k for k in join_keys if k in pt.namespaced_table.columns]
+        join_table = join_table.join(pt.namespaced_table, pt_join_keys, how="left")
 
     # Remove duplicate key columns from right side of joins
     columns = [

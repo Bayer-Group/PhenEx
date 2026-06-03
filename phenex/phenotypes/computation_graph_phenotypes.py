@@ -72,7 +72,10 @@ class ComputationGraphPhenotype(Phenotype):
         """
         join_table = tables.get("PERSON")
         if join_table is not None:
-            join_table = join_table.select("PERSON_ID")
+            person_cols = ["PERSON_ID"]
+            if "INDEX_DATE" in join_table.columns:
+                person_cols.append("INDEX_DATE")
+            join_table = join_table.select(person_cols)
         joined_table = hstack(self.children, join_table)
 
         if self.populate == "value" and self.operate_on == "boolean":
@@ -131,7 +134,7 @@ class ComputationGraphPhenotype(Phenotype):
         if "BOOLEAN" not in schema.names:
             joined_table = joined_table.mutate(BOOLEAN=ibis.null().cast("boolean"))
 
-        return joined_table.distinct()
+        return select_phenotype_columns(joined_table).distinct()
 
     def _return_all_dates(self, table, date_columns):
         """
@@ -416,7 +419,10 @@ class LogicPhenotype(ComputationGraphPhenotype):
         """
         join_table = tables.get("PERSON")
         if join_table is not None:
-            join_table = join_table.select("PERSON_ID")
+            person_cols = ["PERSON_ID"]
+            if "INDEX_DATE" in join_table.columns:
+                person_cols.append("INDEX_DATE")
+            join_table = join_table.select(person_cols)
         joined_table = hstack(self.children, join_table)
         # Convert boolean columns to integers for arithmetic operations if needed
         if self.populate == "value" and self.operate_on == "boolean":
