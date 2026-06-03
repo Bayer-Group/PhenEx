@@ -1,7 +1,7 @@
 """
 Multi-index date variants of codelist phenotype tests.
 
-Each test duplicates input data with a second INDEX_DATE (shifted by 2 years),
+Each test duplicates input data with a second INDEX_DATE (shifted by 90 days),
 verifying that phenotype logic correctly partitions results by (PERSON_ID, INDEX_DATE).
 Only includes tests whose input data contained an INDEX_DATE column.
 """
@@ -34,12 +34,27 @@ class MultiIndexRelativeTimeRangeFilterTestGenerator(
         tests = CodelistPhenotypeRelativeTimeRangeFilterTestGenerator.define_phenotype_tests(
             self
         )
-        # At shifted INDEX_DATE (2024-01-01) all events are 549-911 days away.
-        # No filter with max_days <= 180 matches; no "after" events exist.
-        # → no persons match at the shifted INDEX_DATE.
-        for info in tests:
-            n = len(info["persons"])
-            info["index_dates"] = [self._index_date] * n
+        idx1 = self._index_date
+        idx2 = self._index_date + self.shift
+
+        # With a 90-day shift, relative distances change so different
+        # persons pass each filter at the shifted INDEX_DATE.
+        shifted_persons = {
+            "max_days_leq_180": ["P1", "P2", "P6", "P7", "P8", "P10", "P11"],
+            "max_days_lt_180": ["P2", "P6", "P7", "P8", "P10", "P11"],
+            "min_days_geq_90_max_days_leq_180": ["P1", "P2", "P6", "P7"],
+            "after_max_days_leq_180": ["P9", "P10", "P12", "P13", "P14"],
+            "after_max_days_g_90_max_days_leq_180": ["P12"],
+            "range_min_gn90_max_g90": ["P8", "P9", "P10", "P11", "P14"],
+            "range_min_gn90_max_ge180": ["P8", "P9", "P10", "P11", "P12", "P13", "P14"],
+        }
+
+        for test in tests:
+            orig = list(test["persons"])
+            shifted = shifted_persons[test["name"]]
+            test["persons"] = orig + shifted
+            test["index_dates"] = [idx1] * len(orig) + [idx2] * len(shifted)
+
         return tests
 
 
@@ -63,11 +78,25 @@ class MultiIndexAnchorPhenotypeTestGenerator(
         tests = CodelistPhenotypeAnchorPhenotypeRelativeTimeRangeFilterTestGenerator.define_phenotype_tests(
             self
         )
-        # At shifted INDEX_DATE, anchor phenotype finds no events within range,
-        # so dependent phenotypes also produce no results.
-        for info in tests:
-            n = len(info["persons"])
-            info["index_dates"] = [self._index_date] * n
+        idx1 = self._index_date
+        idx2 = self._index_date + self.shift
+
+        # At shifted INDEX_DATE (2022-04-01):
+        # - phenotypeindex1 (>0, ≤90 before): matches P10-P14 (anchor=2022-01-01)
+        # - phenotypeindex2 (≥0, ≤180 before): matches P5-P9, P10-P14, P15-P19
+        # Then dependent phenotypes filter c2 events relative to anchors.
+        shifted_persons = {
+            "p1": ["P10"],
+            "p2": ["P6", "P7", "P11", "P12", "P16", "P17"],
+            "p4": ["P6", "P7", "P8", "P11", "P12", "P13", "P16", "P17", "P18"],
+        }
+
+        for test in tests:
+            orig = list(test["persons"])
+            shifted = shifted_persons[test["name"]]
+            test["persons"] = orig + shifted
+            test["index_dates"] = [idx1] * len(orig) + [idx2] * len(shifted)
+
         return tests
 
 
@@ -88,64 +117,78 @@ class MultiIndexReturnDateTestGenerator(
         tests = CodelistPhenotypeReturnDateFilterTestGenerator.define_phenotype_tests(
             self
         )
-        index_date_2 = self._index_date + self.shift
+        idx1 = self._index_date
+        idx2 = self._index_date + self.shift
 
-        # At shifted INDEX_DATE (2024-01-01), all events are 639-822 days
-        # BEFORE. Tests with time filters produce no matches; tests without
-        # time filters still return results.
+        # At shifted INDEX_DATE (2022-04-01), c1 events for P0 have new
+        # relative distances.  Compute correct expected output per test.
         for info in tests:
             orig_persons = list(info["persons"])
             orig_dates = list(info["dates"])
             n = len(orig_persons)
+            name = info["name"]
 
-            rtr = info.get("relative_time_range")
-            rd = info.get("return_date", "first")
-
-            if rtr is not None:
-                # Check if this is a "before" filter with no max_days constraint.
-                # At shifted INDEX_DATE, ALL events are before it, so they match.
-                has_max_days = getattr(rtr, "max_days", None) is not None
-                when = getattr(rtr, "when", "before")
-                if when == "before" and not has_max_days:
-                    # "before" with no max_days: at shifted INDEX all events match.
-                    if rd == "last":
-                        # Latest c1 event = event_dates[8] (the latest event)
-                        info["persons"] = orig_persons + ["P0"]
-                        info["dates"] = orig_dates + [self.event_dates[8]]
-                        info["index_dates"] = (
-                            [self._index_date] * n + [index_date_2]
-                        )
-                    elif rd == "first":
-                        info["persons"] = orig_persons + ["P0"]
-                        info["dates"] = orig_dates + [self.event_dates[0]]
-                        info["index_dates"] = (
-                            [self._index_date] * n + [index_date_2]
-                        )
-                    else:
-                        # "all" before: all c1 events match
-                        c1_events = self.event_dates[:3] + self.event_dates[6:9]
-                        info["persons"] = orig_persons + ["P0"] * len(c1_events)
-                        info["dates"] = orig_dates + c1_events
-                        info["index_dates"] = (
-                            [self._index_date] * n + [index_date_2] * len(c1_events)
-                        )
-                else:
-                    # Time-filtered with max_days: no events within range at shifted INDEX.
-                    info["index_dates"] = [self._index_date] * n
-            elif rd == "all":
-                # No filter, return all → same events duplicated for shifted INDEX.
+            if name == "returndate":
+                # return_date="all", no filter → all 6 c1 events at both INDEX_DATEs
                 info["persons"] = orig_persons + orig_persons
                 info["dates"] = orig_dates + orig_dates
-                info["index_dates"] = (
-                    [self._index_date] * n + [index_date_2] * n
-                )
-            elif rd == "first":
-                # No filter, first → same earliest event for shifted INDEX.
-                info["persons"] = orig_persons + orig_persons
-                info["dates"] = orig_dates + orig_dates
-                info["index_dates"] = (
-                    [self._index_date] * n + [index_date_2] * n
-                )
+                info["index_dates"] = [idx1] * n + [idx2] * n
+
+            elif name == "l90":
+                # return_date="all", before, max_days < 90
+                # Shifted: events[6]=2022-03-31 (1d), events[7]=2022-04-01 (0d)
+                sp = ["P0", "P0"]
+                sd = [self.event_dates[6], self.event_dates[7]]
+                info["persons"] = orig_persons + sp
+                info["dates"] = orig_dates + sd
+                info["index_dates"] = [idx1] * n + [idx2] * len(sp)
+
+            elif name == "leq90":
+                # return_date="all", before, max_days ≤ 90
+                # Shifted: events[6] (1d), events[7] (0d)
+                sp = ["P0", "P0"]
+                sd = [self.event_dates[6], self.event_dates[7]]
+                info["persons"] = orig_persons + sp
+                info["dates"] = orig_dates + sd
+                info["index_dates"] = [idx1] * n + [idx2] * len(sp)
+
+            elif name == "first_preindex":
+                # return_date="first", no filter → earliest c1 = events[0]
+                info["persons"] = orig_persons + ["P0"]
+                info["dates"] = orig_dates + [self.event_dates[0]]
+                info["index_dates"] = [idx1] * n + [idx2]
+
+            elif name == "last_preindex":
+                # return_date="last", before → events[7] (on shifted index)
+                info["persons"] = orig_persons + ["P0"]
+                info["dates"] = orig_dates + [self.event_dates[7]]
+                info["index_dates"] = [idx1] * n + [idx2]
+
+            elif name == "first_leq90":
+                # return_date="first", before, max_days ≤ 90 → events[6]
+                info["persons"] = orig_persons + ["P0"]
+                info["dates"] = orig_dates + [self.event_dates[6]]
+                info["index_dates"] = [idx1] * n + [idx2]
+
+            elif name == "last_postindex":
+                # return_date="last", after → events[8]
+                info["persons"] = orig_persons + ["P0"]
+                info["dates"] = orig_dates + [self.event_dates[8]]
+                info["index_dates"] = [idx1] * n + [idx2]
+
+            elif name == "first_postindex":
+                # return_date="first", after → events[7] (on shifted index)
+                info["persons"] = orig_persons + ["P0"]
+                info["dates"] = orig_dates + [self.event_dates[7]]
+                info["index_dates"] = [idx1] * n + [idx2]
+
+            elif name == "postindex_leq90":
+                # return_date="all", after, max_days ≤ 90 → events[7], events[8]
+                sp = ["P0", "P0"]
+                sd = [self.event_dates[7], self.event_dates[8]]
+                info["persons"] = orig_persons + sp
+                info["dates"] = orig_dates + sd
+                info["index_dates"] = [idx1] * n + [idx2] * len(sp)
 
         return tests
 

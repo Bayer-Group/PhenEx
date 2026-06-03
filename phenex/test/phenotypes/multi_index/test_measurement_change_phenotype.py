@@ -34,7 +34,26 @@ class MultiIndexMeasurementChangeRelativeTimeRangeTestGenerator(
 
     def define_phenotype_tests(self):
         tests = MeasurementChangePhenotypeRelativeTimeRangeTestGenerator.define_phenotype_tests(self)
-        return self._duplicate_expected(tests, self._index_date)
+        idx1 = self._index_date
+        idx2 = self._index_date + self.shift
+
+        # With 90-day shift (→ 2022-04-01), all events (Dec 27 – Jan 9) are
+        # before the shifted index.  Post-index tests find nothing; pre-index
+        # tests gain the persons whose events were originally after index.
+        shifted_persons = {
+            "mmcpt": [],       # post-index: no events after shifted
+            "mmcpt_2": [],     # post-index: no events after shifted
+            "mmcpt_3": ["P0", "P3"],  # pre-index: P0 (1d apart) + P3 (original)
+            "mmcpt_4": ["P0", "P1", "P3", "P4", "P6"],  # pre-index: ≤2d apart
+        }
+
+        for test in tests:
+            orig = list(test["persons"])
+            shifted = shifted_persons[test["name"]]
+            test["persons"] = orig + shifted
+            test["index_dates"] = [idx1] * len(orig) + [idx2] * len(shifted)
+
+        return tests
 
 
 def test_multiindex_measurement_change_increase_decrease():
