@@ -18,7 +18,21 @@ class MultiIndexTimeRangeDaysToNextRangePhenotypeTestGenerator(
 
     def define_phenotype_tests(self):
         tests = TimeRangeDaysToNextRangePhenotypeTestGenerator.define_phenotype_tests(self)
-        return self._duplicate_expected(tests, self._index_date)
+        idx1 = self._index_date
+
+        # At shifted index (2022-04-15), no visit ranges contain the shifted
+        # index date, so no anchor range is found and all tests produce empty
+        # results at the shifted index.
+        for test in tests:
+            orig_p = list(test["persons"])
+            orig_v = list(test["values"])
+            orig_d = list(test["dates"])
+            test["persons"] = orig_p
+            test["values"] = orig_v
+            test["dates"] = orig_d
+            test["index_dates"] = [idx1] * len(orig_p)
+
+        return tests
 
 
 def test_multiindex_time_range_days_to_next_range_phenotype():

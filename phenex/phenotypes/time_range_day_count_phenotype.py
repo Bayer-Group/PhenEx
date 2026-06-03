@@ -151,7 +151,10 @@ class TimeRangeDayCountPhenotype(Phenotype):
 
     def _perform_day_count_aggregation(self, table):
         """Count the total number of days across all distinct time periods per person."""
-        table = table.select(["PERSON_ID", "START_DATE", "END_DATE"]).distinct()
+        cols = ["PERSON_ID", "START_DATE", "END_DATE"]
+        if "INDEX_DATE" in table.columns:
+            cols.append("INDEX_DATE")
+        table = table.select(cols).distinct()
         table = table.mutate(
             START_DATE=table.START_DATE.cast("date"),
             END_DATE=table.END_DATE.cast("date"),
