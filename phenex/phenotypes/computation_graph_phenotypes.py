@@ -4,7 +4,7 @@ from ibis.expr.types.relations import Table
 import ibis
 from phenex.tables import PhenotypeTable, PHENOTYPE_TABLE_COLUMNS
 from phenex.phenotypes.phenotype import Phenotype, ComputationGraph
-from phenex.phenotypes.functions import hstack
+from phenex.phenotypes.functions import hstack, _get_join_keys
 from phenex.phenotypes.functions import select_phenotype_columns
 from phenex.aggregators import First, Last
 
@@ -70,7 +70,10 @@ class ComputationGraphPhenotype(Phenotype):
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
-        joined_table = hstack(self.children, tables["PERSON"].select("PERSON_ID"))
+        join_table = tables.get("PERSON")
+        if join_table is not None:
+            join_table = join_table.select("PERSON_ID")
+        joined_table = hstack(self.children, join_table)
 
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:
@@ -200,9 +203,11 @@ class ComputationGraphPhenotype(Phenotype):
             return code_table
 
         if self.return_date == "first":
-            aggregator = First(reduce=False, preserve_nulls=True)
+            agg_index = _get_join_keys(code_table)
+            aggregator = First(reduce=False, preserve_nulls=True, aggregation_index=agg_index)
         elif self.return_date == "last":
-            aggregator = Last(reduce=False, preserve_nulls=True)
+            agg_index = _get_join_keys(code_table)
+            aggregator = Last(reduce=False, preserve_nulls=True, aggregation_index=agg_index)
         elif self.return_date == "nearest":
             # Note: Nearest is not currently implemented in the aggregators
             # This would need to be added to the aggregator module
@@ -409,7 +414,10 @@ class LogicPhenotype(ComputationGraphPhenotype):
         Returns:
             PhenotypeTable: The resulting phenotype table containing the required columns.
         """
-        joined_table = hstack(self.children, tables["PERSON"].select("PERSON_ID"))
+        join_table = tables.get("PERSON")
+        if join_table is not None:
+            join_table = join_table.select("PERSON_ID")
+        joined_table = hstack(self.children, join_table)
         # Convert boolean columns to integers for arithmetic operations if needed
         if self.populate == "value" and self.operate_on == "boolean":
             for child in self.children:

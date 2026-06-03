@@ -26,7 +26,8 @@ class _FilteredPhenotypeView:
 
     @property
     def table(self):
-        return self._phenotype.table.semi_join(self._index_patient_ids, "PERSON_ID")
+        join_keys = [k for k in ["PERSON_ID", "INDEX_DATE"] if k in self._phenotype.table.columns and k in self._index_patient_ids.columns]
+        return self._phenotype.table.semi_join(self._index_patient_ids, join_keys)
 
     @property
     def children(self):
@@ -59,8 +60,9 @@ class _SubcohortProxy:
         outcome_sections: dict = None,
     ):
         self.index_table = index_table
+        _id_cols = ["PERSON_ID"] + (["INDEX_DATE"] if "INDEX_DATE" in index_table.columns else [])
         index_patient_ids = index_table.filter(index_table.BOOLEAN == True).select(
-            "PERSON_ID"
+            *_id_cols
         )
         self.characteristics = [
             _FilteredPhenotypeView(p, index_patient_ids)
@@ -79,8 +81,9 @@ class _SubcohortProxy:
             self.subset_tables_index = {}
             for domain, ptable in parent_subset.items():
                 if "PERSON_ID" in ptable._table.columns:
+                    _sj_keys = [k for k in _id_cols if k in ptable._table.columns]
                     self.subset_tables_index[domain] = type(ptable)(
-                        ptable._table.semi_join(index_patient_ids, "PERSON_ID")
+                        ptable._table.semi_join(index_patient_ids, _sj_keys)
                     )
                 else:
                     self.subset_tables_index[domain] = ptable
@@ -276,18 +279,17 @@ class Subcohort(Cohort):
         # apply only the additional criteria.
         # ------------------------------------------------------------------
         index_table = self.cohort.index_table
+        _ij_keys = ["PERSON_ID"] + (["INDEX_DATE"] if "INDEX_DATE" in index_table.columns else [])
 
         for inclusion in self.additional_inclusions:
             include_pids = inclusion.table.filter(
                 inclusion.table["BOOLEAN"] == True
-            ).select("PERSON_ID")
-            index_table = index_table.inner_join(include_pids, "PERSON_ID")
+            ).select(*_ij_keys)
+            index_table = index_table.inner_join(include_pids, _ij_keys)
 
         for exclusion in self.additional_exclusions:
-            exclude_pids = exclusion.table.select("PERSON_ID")
-            index_table = index_table.filter(
-                ~index_table["PERSON_ID"].isin(exclude_pids["PERSON_ID"])
-            )
+            exclude_pids = exclusion.table.select(*_ij_keys)
+            index_table = index_table.anti_join(exclude_pids, _ij_keys)
 
         self.table = index_table
 

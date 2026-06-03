@@ -67,10 +67,32 @@ class Cohort:
         description: Optional[str] = None,
         database: Optional[Database] = None,
         custom_reporters: Optional[List] = None,
+        return_index: str = "first",
+        max_index_dates: Optional[int] = None,
     ):
         self.name = name
         self.description = description
         self.database = database
+        self.return_index = return_index
+        self.max_index_dates = max_index_dates
+
+        assert return_index in ("first", "last", "all"), (
+            f"return_index must be 'first', 'last', or 'all', got '{return_index}'"
+        )
+        if max_index_dates is not None:
+            assert isinstance(max_index_dates, int) and max_index_dates > 0, (
+                f"max_index_dates must be a positive integer, got {max_index_dates}"
+            )
+
+        # When return_index requires multiple candidate dates, auto-set entry criterion
+        if return_index in ("last", "all"):
+            if hasattr(entry_criterion, "return_date") and entry_criterion.return_date != "all":
+                logger.info(
+                    f"Cohort '{name}': return_index='{return_index}' requires entry criterion "
+                    f"return_date='all'. Auto-setting from '{entry_criterion.return_date}'."
+                )
+                entry_criterion.return_date = "all"
+
         self.table = None  # Will be set during execution to index table
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
@@ -340,6 +362,8 @@ class Cohort:
             entry_phenotype=self.entry_criterion,
             inclusion_table_node=self.inclusions_table_node,
             exclusion_table_node=self.exclusions_table_node,
+            return_index=self.return_index,
+            max_index_dates=self.max_index_dates,
         )
         index_nodes.append(self.index_table_node)
 

@@ -1,6 +1,7 @@
 from ibis import _
 
 from phenex.phenotypes.phenotype import Phenotype
+from phenex.phenotypes.functions import _get_join_keys
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters import DateFilter, ValueFilter
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
@@ -91,19 +92,21 @@ class EventCountPhenotype(Phenotype):
         table = self.phenotype.table
 
         # Select only distinct dates:
-        table = table.select(["PERSON_ID", "EVENT_DATE"]).distinct()
+        group_keys = _get_join_keys(table)
+        table = table.select([*group_keys, "EVENT_DATE"]).distinct()
 
-        # Count occurrences per PERSON_ID
-        occurrence_counts_table = table.group_by("PERSON_ID").aggregate(VALUE=_.count())
+        # Count occurrences per (PERSON_ID, INDEX_DATE)
+        occurrence_counts_table = table.group_by(group_keys).aggregate(VALUE=_.count())
         table, occurrence_counts_table = self._perform_value_filtering(
             table, occurrence_counts_table
         )
         table = self._perform_relative_time_range_filtering(table)
         table = self._perform_date_selection(table)
+        select_cols = [*group_keys, "EVENT_DATE", "VALUE"]
         table = table.left_join(
-            occurrence_counts_table.select("PERSON_ID", "VALUE"),
-            table.PERSON_ID == occurrence_counts_table.PERSON_ID,
-        ).select("PERSON_ID", "EVENT_DATE", "VALUE")
+            occurrence_counts_table.select(*group_keys, "VALUE"),
+            group_keys,
+        ).select(select_cols)
 
         table = table.mutate(BOOLEAN=True).distinct()
         return table
@@ -111,10 +114,12 @@ class EventCountPhenotype(Phenotype):
     def _perform_value_filtering(self, table, occurrence_counts_table):
         if self.value_filter is not None:
             occurrence_counts_table = self.value_filter.filter(occurrence_counts_table)
+            join_keys = _get_join_keys(table)
+            select_cols = [*join_keys, "EVENT_DATE", "VALUE"]
             table = table.right_join(
                 occurrence_counts_table,
-                table.PERSON_ID == occurrence_counts_table.PERSON_ID,
-            ).select(["PERSON_ID", "EVENT_DATE", "VALUE"])
+                join_keys,
+            ).select(select_cols)
         return table, occurrence_counts_table
 
     def _perform_relative_time_range_filtering(self, table):
@@ -124,38 +129,48 @@ class EventCountPhenotype(Phenotype):
             # Self join and rename event_date columns;
             # the first dates will be called INDEX_DATE
             # the second dates will be called EVENT_DATE
-            first_table = table.select(
-                "PERSON_ID",
-                table.EVENT_DATE.name("INDEX_DATE"),
-            )
-            second_table = table.select(
-                "PERSON_ID",
-                table.EVENT_DATE.name("EVENT_DATE"),
-            )
-            table = first_table.join(
-                second_table, first_table.PERSON_ID == second_table.PERSON_ID
-            )
+            has_index = "INDEX_DATE" in table.columns
+            # Preserve original INDEX_DATE by renaming it temporarily
+            if has_index:
+                table = table.rename({"_ORIG_INDEX_DATE": "INDEX_DATE"})
+            first_cols = ["PERSON_ID", table.EVENT_DATE.name("INDEX_DATE")]
+            second_cols = ["PERSON_ID", table.EVENT_DATE.name("EVENT_DATE")]
+            if has_index:
+                first_cols.append("_ORIG_INDEX_DATE")
+                second_cols.append("_ORIG_INDEX_DATE")
+            first_table = table.select(*first_cols)
+            second_table = table.select(*second_cols)
+            join_pred = [first_table.PERSON_ID == second_table.PERSON_ID]
+            if has_index:
+                join_pred.append(first_table._ORIG_INDEX_DATE == second_table._ORIG_INDEX_DATE)
+            table = first_table.join(second_table, join_pred)
 
             table = table.filter(table.INDEX_DATE <= table.EVENT_DATE)
             # perform relative time range filtering; the first date is the anchor ('index_date')
             table = self.relative_time_range.filter(table)
 
+            select_base = ["PERSON_ID"]
+            if has_index:
+                select_base.append("_ORIG_INDEX_DATE")
             if self.component_date_select == "first":
-                table = table.select("PERSON_ID", "INDEX_DATE").rename(
+                table = table.select(*select_base, "INDEX_DATE").rename(
                     {"EVENT_DATE": "INDEX_DATE"}
                 )
             elif self.component_date_select == "second":
-                table = table.select("PERSON_ID", "EVENT_DATE")
+                table = table.select(*select_base, "EVENT_DATE")
+            if has_index:
+                table = table.rename({"INDEX_DATE": "_ORIG_INDEX_DATE"})
         return table
 
     def _perform_date_selection(self, table, reduce=True):
         if self.return_date is None or self.return_date == "all":
             return table
+        agg_index = _get_join_keys(table)
         if self.return_date == "first":
-            aggregator = First(reduce=reduce)
+            aggregator = First(reduce=reduce, aggregation_index=agg_index)
         elif self.return_date == "last":
-            aggregator = Last(reduce=reduce)
+            aggregator = Last(reduce=reduce, aggregation_index=agg_index)
         else:
             raise ValueError(f"Unknown return_date: {self.return_date}")
         table = aggregator.aggregate(table)
-        return table.select("PERSON_ID", "EVENT_DATE")
+        return table.select([*agg_index, "EVENT_DATE"])
