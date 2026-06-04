@@ -10,7 +10,7 @@ index dates but not others.
 Input data
 ~~~~~~~~~~
 Entry events (DRUG_EXPOSURE, code "d1"):
-  P1: 2020-01-01, 2020-07-01, 2021-01-01
+  P1: 2020-01-01 (x2), 2020-07-01, 2021-01-01
   P2: 2020-03-01, 2020-09-01
   P3: 2020-05-01
 
@@ -79,11 +79,13 @@ def _build_mapped_tables(con):
         )
     )
 
+    # P1 has a duplicate d1 on ENTRY_DATE_1 to verify dedup to one row per date
     df_drug = pd.DataFrame(
         {
-            "PATID": ["P1", "P1", "P1", "P2", "P2", "P3"],
-            "PRODCODEID": ["d1"] * 6,
+            "PATID": ["P1", "P1", "P1", "P1", "P2", "P2", "P3"],
+            "PRODCODEID": ["d1"] * 7,
             "ISSUEDATE": [
+                ENTRY_DATE_1,
                 ENTRY_DATE_1,
                 ENTRY_DATE_2,
                 ENTRY_DATE_3,
