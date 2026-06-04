@@ -2773,7 +2773,9 @@ async def suggest_changes_v2(
     if not current_cohort_record:
         public_user_id = os.getenv("PUBLIC_USER_ID")
         if public_user_id:
-            current_cohort_record = await db_manager.get_cohort_for_user(public_user_id, cohort_id)
+            current_cohort_record = await db_manager.get_cohort_for_user(
+                public_user_id, cohort_id
+            )
     if not current_cohort_record:
         raise HTTPException(status_code=404, detail=f"Cohort {cohort_id} not found")
 
