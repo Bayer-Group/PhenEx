@@ -51,7 +51,6 @@ services:
     restart: unless-stopped
     volumes:
       - ${HOME}/.phenex/volumes/db/data:/var/lib/postgresql/data
-      - ./backend/init/01-init-database.sh:/docker-entrypoint-initdb.d/01-init-database.sh:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-postgres}", "-h", "localhost"]
       interval: 5s

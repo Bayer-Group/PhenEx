@@ -2768,8 +2768,12 @@ async def suggest_changes_v2(
 
     user_id = get_authenticated_user_id(request)
 
-    # Get current cohort
+    # Get current cohort — check user-owned first, then fall back to public cohorts
     current_cohort_record = await db_manager.get_cohort_for_user(user_id, cohort_id)
+    if not current_cohort_record:
+        public_user_id = os.getenv("PUBLIC_USER_ID")
+        if public_user_id:
+            current_cohort_record = await db_manager.get_cohort_for_user(public_user_id, cohort_id)
     if not current_cohort_record:
         raise HTTPException(status_code=404, detail=f"Cohort {cohort_id} not found")
 
