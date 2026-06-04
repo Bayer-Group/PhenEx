@@ -272,9 +272,7 @@ class FurtherValueFilterRelativeTimeRangeTestGenerator(PhenotypeTestGenerator):
         df = pd.DataFrame()
         N = 4
         # Each person has a pre and post measurement
-        df["PERSON_ID"] = [f"P{x}" for x in range(N)] + [
-            f"P{x}" for x in range(N)
-        ]
+        df["PERSON_ID"] = [f"P{x}" for x in range(N)] + [f"P{x}" for x in range(N)]
         df["CODE"] = "c1"
         df["CODE_TYPE"] = "ICD10CM"
         df["VALUE"] = list(range(1, N + 1)) + list(range(11, N + 11))
