@@ -9,14 +9,57 @@ from datetime import datetime, timedelta
 
 class DomainsMocker:
     """
-    DomainsMocker immitates healthcare data domains for testing purposes. The mock data is NOT FIT FOR SIMULATION. The data reflect the basic structure of the data without caring too much about accurate statistics. The statistics are generally chosen to be reasonable (e.g. Poisson, Gaussian, log-normal as appropriate), and the content is domain-appropriate (e.g. using relevant codes/code types) but we are NOT trying to accurately model real data.
+    DomainsMocker imitates healthcare data domains for testing purposes. The mock data is NOT FIT FOR SIMULATION. The data reflect the basic structure of the data without caring too much about accurate statistics. The statistics are generally chosen to be reasonable (e.g. Poisson, Gaussian, log-normal as appropriate), and the content is domain-appropriate (e.g. using relevant codes/code types) but we are NOT trying to accurately model real data.
 
     Note that DomainsMocker only supports OMOP structured data due to current license restrictions of other data formats.
 
-    Args:
-        domains_dict: The domains dictionary containing table mappers that define which tables to mock
+    Parameters:
+        domains_dict: The domains dictionary containing table mappers that define which tables to mock.
         n_patients: Number of patients to simulate. Defaults to 10000.
         random_seed: Random seed for reproducible results. Defaults to 42.
+
+    Examples:
+
+    Example: Generate mock OMOP tables and run a CodelistPhenotype
+        ```python
+        from phenex.sim import DomainsMocker
+        from phenex.mappers import OMOPDomains
+        from phenex.phenotypes import CodelistPhenotype
+        from phenex.codelists import Codelist
+
+        # Create a mocker with 1000 patients using OMOP data model
+        mocker = DomainsMocker(domains_dict=OMOPDomains, n_patients=1000, random_seed=42)
+
+        # Retrieve PhenEx-mapped tables (ready for use with phenotypes)
+        mapped_tables = mocker.get_mapped_tables()
+
+        # Define a simple phenotype using OMOP concept IDs for atrial fibrillation
+        af = CodelistPhenotype(
+            name="atrial_fibrillation",
+            domain="CONDITION_OCCURRENCE",
+            codelist=Codelist([4119602, 1569171, 4232691, 4154290, 4232697]),
+            return_date="first",
+        )
+
+        result = af.execute(mapped_tables)
+        print(result.table.execute())
+        ```
+
+    Example: Inspect raw source tables
+        ```python
+        from phenex.sim import DomainsMocker
+        from phenex.mappers import OMOPDomains
+
+        mocker = DomainsMocker(domains_dict=OMOPDomains, n_patients=500)
+
+        # get_source_tables() returns raw ibis in-memory tables keyed by OMOP table name
+        source_tables = mocker.get_source_tables()
+        print(list(source_tables.keys()))
+        # ['PERSON', 'CONDITION_OCCURRENCE', 'DRUG_EXPOSURE', ...]
+
+        person_df = source_tables["PERSON"].execute()
+        print(person_df.head())
+        ```
     """
 
     def __init__(
