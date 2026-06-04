@@ -207,10 +207,14 @@ class ComputationGraphPhenotype(Phenotype):
 
         if self.return_date == "first":
             agg_index = _get_join_keys(code_table)
-            aggregator = First(reduce=False, preserve_nulls=True, aggregation_index=agg_index)
+            aggregator = First(
+                reduce=False, preserve_nulls=True, aggregation_index=agg_index
+            )
         elif self.return_date == "last":
             agg_index = _get_join_keys(code_table)
-            aggregator = Last(reduce=False, preserve_nulls=True, aggregation_index=agg_index)
+            aggregator = Last(
+                reduce=False, preserve_nulls=True, aggregation_index=agg_index
+            )
         elif self.return_date == "nearest":
             # Note: Nearest is not currently implemented in the aggregators
             # This would need to be added to the aggregator module

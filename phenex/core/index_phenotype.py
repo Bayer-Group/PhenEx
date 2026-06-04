@@ -59,14 +59,22 @@ class IndexPhenotype(Phenotype):
             )
 
         if self.inclusion_table_node:
-            inc_keys = ["PERSON_ID"] + (["INDEX_DATE"] if "INDEX_DATE" in self.inclusion_table_node.table.columns else [])
+            inc_keys = ["PERSON_ID"] + (
+                ["INDEX_DATE"]
+                if "INDEX_DATE" in self.inclusion_table_node.table.columns
+                else []
+            )
             include = self.inclusion_table_node.table.filter(
                 self.inclusion_table_node.table["BOOLEAN"] == True
             ).select(inc_keys)
             index_table = index_table.inner_join(include, inc_keys)
 
         if self.exclusion_table_node:
-            exc_keys = ["PERSON_ID"] + (["INDEX_DATE"] if "INDEX_DATE" in self.exclusion_table_node.table.columns else [])
+            exc_keys = ["PERSON_ID"] + (
+                ["INDEX_DATE"]
+                if "INDEX_DATE" in self.exclusion_table_node.table.columns
+                else []
+            )
             exclude = self.exclusion_table_node.table.filter(
                 self.exclusion_table_node.table["BOOLEAN"] == False
             ).select(exc_keys)

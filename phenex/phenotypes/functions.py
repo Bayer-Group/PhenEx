@@ -35,7 +35,9 @@ def attach_anchor_and_get_reference_date(table, anchor_phenotype=None):
             ref_col_name = f"_ref_date_{anchor_phenotype.name}"
             if ref_col_name not in raw.columns:
                 anchor_cols = [anchor_table.PERSON_ID]
-                has_index = "INDEX_DATE" in raw.columns and "INDEX_DATE" in anchor_table.columns
+                has_index = (
+                    "INDEX_DATE" in raw.columns and "INDEX_DATE" in anchor_table.columns
+                )
                 if has_index:
                     anchor_cols.append(anchor_table.INDEX_DATE)
                 anchor_cols.append(anchor_table.EVENT_DATE.name(ref_col_name))
@@ -101,7 +103,8 @@ def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:
     columns = [
         c
         for c in join_table.columns
-        if c in join_keys or (not c.startswith("PERSON_ID") and not c.startswith("INDEX_DATE"))
+        if c in join_keys
+        or (not c.startswith("PERSON_ID") and not c.startswith("INDEX_DATE"))
     ]
     # Deduplicate (join_keys appear once)
     seen = set()
@@ -177,7 +180,8 @@ def hstack_boolean(phenotypes: List["Phenotype"], join_table: Table = None) -> T
         columns = [
             c
             for c in result.columns
-            if c in join_keys or (not c.startswith("PERSON_ID") and not c.startswith("INDEX_DATE"))
+            if c in join_keys
+            or (not c.startswith("PERSON_ID") and not c.startswith("INDEX_DATE"))
         ]
         seen = set()
         unique_columns = []
@@ -255,7 +259,8 @@ def hstack_pivot(
         columns = [
             c
             for c in result.columns
-            if c in join_keys or (not c.startswith("PERSON_ID") and not c.startswith("INDEX_DATE"))
+            if c in join_keys
+            or (not c.startswith("PERSON_ID") and not c.startswith("INDEX_DATE"))
         ]
         seen = set()
         unique_columns = []

@@ -21,7 +21,9 @@ class ExclusionsTableNode(Node):
 
     def _execute(self, tables: Dict[str, Table]):
         # Build base from entry criterion; add INDEX_DATE if ALL phenotype tables have it
-        if self.phenotypes and all("INDEX_DATE" in pt.table.columns for pt in self.phenotypes):
+        if self.phenotypes and all(
+            "INDEX_DATE" in pt.table.columns for pt in self.phenotypes
+        ):
             join_keys = ["PERSON_ID", "INDEX_DATE"]
             exclusions_table = self.index_phenotype.table.mutate(
                 INDEX_DATE=self.index_phenotype.table.EVENT_DATE
@@ -38,10 +40,7 @@ class ExclusionsTableNode(Node):
             )
             exclusions_table = exclusions_table.left_join(pt_table, join_keys)
             drop_cols = [f"{k}_right" for k in join_keys]
-            columns = [
-                c for c in exclusions_table.columns
-                if c not in drop_cols
-            ]
+            columns = [c for c in exclusions_table.columns if c not in drop_cols]
             exclusions_table = exclusions_table.select(columns)
 
         # fill all nones with False

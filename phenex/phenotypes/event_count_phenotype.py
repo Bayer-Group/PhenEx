@@ -142,7 +142,9 @@ class EventCountPhenotype(Phenotype):
             second_table = table.select(*second_cols)
             join_pred = [first_table.PERSON_ID == second_table.PERSON_ID]
             if has_index:
-                join_pred.append(first_table._ORIG_INDEX_DATE == second_table._ORIG_INDEX_DATE)
+                join_pred.append(
+                    first_table._ORIG_INDEX_DATE == second_table._ORIG_INDEX_DATE
+                )
             table = first_table.join(second_table, join_pred)
 
             table = table.filter(table.INDEX_DATE <= table.EVENT_DATE)

@@ -35,7 +35,10 @@ class MultiIndexTimeRangeDayCountPhenotypeTestGenerator(
             "count_days_before_min30": {"persons": ["P1", "P2"], "values": [104, 30]},
             "date_range_max_end_date": {"persons": ["P1", "P2"], "values": [45, 30]},
             "date_range_min_start_date": {"persons": ["P1", "P2"], "values": [46, 0]},
-            "date_range_combined_start_and_end": {"persons": ["P1", "P2"], "values": [61, 0]},
+            "date_range_combined_start_and_end": {
+                "persons": ["P1", "P2"],
+                "values": [61, 0],
+            },
         }
 
         for test in tests:

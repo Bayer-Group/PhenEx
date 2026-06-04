@@ -129,7 +129,9 @@ class AgePhenotype(Phenotype):
             else:
                 anchor_table = self.anchor_phenotype.table
                 reference_column = anchor_table.EVENT_DATE
-                join_keys = [k for k in _get_join_keys(table) if k in anchor_table.columns]
+                join_keys = [
+                    k for k in _get_join_keys(table) if k in anchor_table.columns
+                ]
                 table = table.join(anchor_table, join_keys)
         else:
             assert (

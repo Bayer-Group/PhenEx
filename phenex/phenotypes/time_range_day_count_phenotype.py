@@ -162,7 +162,9 @@ class TimeRangeDayCountPhenotype(Phenotype):
         table = table.mutate(
             DAYS_IN_RANGE=table.END_DATE.delta(table.START_DATE, "day") + 1
         )
-        return table.group_by(_get_join_keys(table)).aggregate(VALUE=_.DAYS_IN_RANGE.sum())
+        return table.group_by(_get_join_keys(table)).aggregate(
+            VALUE=_.DAYS_IN_RANGE.sum()
+        )
 
     def _perform_value_filtering(self, table):
         """Filter persons by total day count using value_filter."""
@@ -175,8 +177,10 @@ class TimeRangeDayCountPhenotype(Phenotype):
         if self.value_filter is not None or "PERSON" not in tables:
             return table
         join_keys = _get_join_keys(table)
-        persons = tables["PERSON"].select([c for c in join_keys if c in tables["PERSON"].columns]).distinct()
-        table = persons.join(
-            table, _get_join_keys(persons), how="left"
+        persons = (
+            tables["PERSON"]
+            .select([c for c in join_keys if c in tables["PERSON"].columns])
+            .distinct()
         )
+        table = persons.join(table, _get_join_keys(persons), how="left")
         return table.mutate(VALUE=table.VALUE.fillna(0))

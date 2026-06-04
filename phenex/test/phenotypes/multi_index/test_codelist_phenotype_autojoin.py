@@ -13,11 +13,15 @@ class MultiIndexCodelistAutojoinTimeRangeTestGenerator(
     _index_date = datetime.date(2022, 1, 1)
 
     def define_input_tables(self):
-        tables = CodelistPhenotypeAutojoinTimeRangeTestGenerator.define_input_tables(self)
+        tables = CodelistPhenotypeAutojoinTimeRangeTestGenerator.define_input_tables(
+            self
+        )
         return self._duplicate_input_tables(tables)
 
     def define_phenotype_tests(self):
-        tests = CodelistPhenotypeAutojoinTimeRangeTestGenerator.define_phenotype_tests(self)
+        tests = CodelistPhenotypeAutojoinTimeRangeTestGenerator.define_phenotype_tests(
+            self
+        )
         idx1 = self._index_date
         idx2 = self._index_date + self.shift
 

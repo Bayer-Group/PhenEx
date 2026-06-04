@@ -21,7 +21,9 @@ class InclusionsTableNode(Node):
 
     def _execute(self, tables: Dict[str, Table]):
         # Build base from entry criterion; add INDEX_DATE if ALL phenotype tables have it
-        if self.phenotypes and all("INDEX_DATE" in pt.table.columns for pt in self.phenotypes):
+        if self.phenotypes and all(
+            "INDEX_DATE" in pt.table.columns for pt in self.phenotypes
+        ):
             join_keys = ["PERSON_ID", "INDEX_DATE"]
             # Derive (PERSON_ID, INDEX_DATE) pairs from entry criterion
             inclusions_table = self.index_phenotype.table.mutate(
@@ -39,10 +41,7 @@ class InclusionsTableNode(Node):
             )
             inclusions_table = inclusions_table.left_join(pt_table, join_keys)
             drop_cols = [f"{k}_right" for k in join_keys]
-            columns = [
-                c for c in inclusions_table.columns
-                if c not in drop_cols
-            ]
+            columns = [c for c in inclusions_table.columns if c not in drop_cols]
             inclusions_table = inclusions_table.select(columns)
 
         # fill all nones with False

@@ -76,17 +76,22 @@ class Cohort:
         self.return_index = return_index
         self.max_index_dates = max_index_dates
 
-        assert return_index in ("first", "last", "all"), (
-            f"return_index must be 'first', 'last', or 'all', got '{return_index}'"
-        )
+        assert return_index in (
+            "first",
+            "last",
+            "all",
+        ), f"return_index must be 'first', 'last', or 'all', got '{return_index}'"
         if max_index_dates is not None:
-            assert isinstance(max_index_dates, int) and max_index_dates > 0, (
-                f"max_index_dates must be a positive integer, got {max_index_dates}"
-            )
+            assert (
+                isinstance(max_index_dates, int) and max_index_dates > 0
+            ), f"max_index_dates must be a positive integer, got {max_index_dates}"
 
         # When return_index requires multiple candidate dates, auto-set entry criterion
         if return_index in ("last", "all"):
-            if hasattr(entry_criterion, "return_date") and entry_criterion.return_date != "all":
+            if (
+                hasattr(entry_criterion, "return_date")
+                and entry_criterion.return_date != "all"
+            ):
                 logger.info(
                     f"Cohort '{name}': return_index='{return_index}' requires entry criterion "
                     f"return_date='all'. Auto-setting from '{entry_criterion.return_date}'."

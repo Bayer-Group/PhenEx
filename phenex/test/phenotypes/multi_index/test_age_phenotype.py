@@ -4,9 +4,7 @@ from phenex.test.phenotypes.multi_index_mixin import MultiIndexMixin
 from phenex.test.phenotypes.test_age_phenotype import AgePhenotypeTestGenerator
 
 
-class MultiIndexAgePhenotypeTestGenerator(
-    MultiIndexMixin, AgePhenotypeTestGenerator
-):
+class MultiIndexAgePhenotypeTestGenerator(MultiIndexMixin, AgePhenotypeTestGenerator):
     name_space = "mi_agpt"
     _index_date = datetime.date(2022, 1, 1)
     _shift = datetime.timedelta(days=730)
@@ -36,10 +34,9 @@ class MultiIndexAgePhenotypeTestGenerator(
 
             info["persons"] = orig_persons + shifted_persons
             info["values"] = orig_values + shifted_values
-            info["index_dates"] = (
-                [self._index_date] * len(orig_persons)
-                + [index_date_2] * len(shifted_persons)
-            )
+            info["index_dates"] = [self._index_date] * len(orig_persons) + [
+                index_date_2
+            ] * len(shifted_persons)
 
         return tests
 
@@ -67,6 +64,7 @@ class MultiIndexAgePhenotypeTestGenerator(
 def test_multiindex_age_phenotype():
     tg = MultiIndexAgePhenotypeTestGenerator()
     tg.run_tests()
+
 
 if __name__ == "__main__":
     test_multiindex_age_phenotype()

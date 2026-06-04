@@ -26,7 +26,12 @@ class _FilteredPhenotypeView:
 
     @property
     def table(self):
-        join_keys = [k for k in ["PERSON_ID", "INDEX_DATE"] if k in self._phenotype.table.columns and k in self._index_patient_ids.columns]
+        join_keys = [
+            k
+            for k in ["PERSON_ID", "INDEX_DATE"]
+            if k in self._phenotype.table.columns
+            and k in self._index_patient_ids.columns
+        ]
         return self._phenotype.table.semi_join(self._index_patient_ids, join_keys)
 
     @property
@@ -60,7 +65,9 @@ class _SubcohortProxy:
         outcome_sections: dict = None,
     ):
         self.index_table = index_table
-        _id_cols = ["PERSON_ID"] + (["INDEX_DATE"] if "INDEX_DATE" in index_table.columns else [])
+        _id_cols = ["PERSON_ID"] + (
+            ["INDEX_DATE"] if "INDEX_DATE" in index_table.columns else []
+        )
         index_patient_ids = index_table.filter(index_table.BOOLEAN == True).select(
             *_id_cols
         )
@@ -279,7 +286,9 @@ class Subcohort(Cohort):
         # apply only the additional criteria.
         # ------------------------------------------------------------------
         index_table = self.cohort.index_table
-        _ij_keys = ["PERSON_ID"] + (["INDEX_DATE"] if "INDEX_DATE" in index_table.columns else [])
+        _ij_keys = ["PERSON_ID"] + (
+            ["INDEX_DATE"] if "INDEX_DATE" in index_table.columns else []
+        )
 
         for inclusion in self.additional_inclusions:
             include_pids = inclusion.table.filter(

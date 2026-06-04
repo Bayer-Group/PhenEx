@@ -4,9 +4,7 @@ from phenex.test.phenotypes.multi_index_mixin import MultiIndexMixin
 from phenex.test.phenotypes.test_event_count_phenotype import EventCountTestGenerator
 
 
-class MultiIndexEventCountTestGenerator(
-    MultiIndexMixin, EventCountTestGenerator
-):
+class MultiIndexEventCountTestGenerator(MultiIndexMixin, EventCountTestGenerator):
     name_space = "mi_ecpt"
     _index_date = datetime.date(2022, 1, 1)
 

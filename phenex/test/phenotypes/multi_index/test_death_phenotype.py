@@ -88,10 +88,9 @@ class MultiIndexDeathPhenotypeTestGenerator(
 
             info["persons"] = orig_persons + shifted_persons
             info["dates"] = orig_dates + shifted_dates
-            info["index_dates"] = (
-                [index_date_1] * len(orig_persons)
-                + [index_date_2] * len(shifted_persons)
-            )
+            info["index_dates"] = [index_date_1] * len(orig_persons) + [
+                index_date_2
+            ] * len(shifted_persons)
 
         return tests
 
@@ -166,10 +165,9 @@ class MultiIndexDeathPhenotypeDateRangeTestGenerator(
             info["persons"] = orig_persons + shifted_persons
             info["dates"] = orig_dates + shifted_dates
             info["values"] = orig_values + shifted_values
-            info["index_dates"] = (
-                [index_date_1] * len(orig_persons)
-                + [index_date_2] * len(shifted_persons)
-            )
+            info["index_dates"] = [index_date_1] * len(orig_persons) + [
+                index_date_2
+            ] * len(shifted_persons)
 
         return tests
 

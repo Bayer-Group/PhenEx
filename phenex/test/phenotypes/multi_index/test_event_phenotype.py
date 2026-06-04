@@ -29,11 +29,17 @@ class MultiIndexEventPhenotypeRelativeTimeRangeFilterTestGenerator(
     _index_date = datetime.date(2022, 1, 1)
 
     def define_input_tables(self):
-        tables = EventPhenotypeRelativeTimeRangeFilterTestGenerator.define_input_tables(self)
+        tables = EventPhenotypeRelativeTimeRangeFilterTestGenerator.define_input_tables(
+            self
+        )
         return self._duplicate_input_tables(tables)
 
     def define_phenotype_tests(self):
-        tests = EventPhenotypeRelativeTimeRangeFilterTestGenerator.define_phenotype_tests(self)
+        tests = (
+            EventPhenotypeRelativeTimeRangeFilterTestGenerator.define_phenotype_tests(
+                self
+            )
+        )
         idx1 = self._index_date
         idx2 = self._index_date + self.shift
 
@@ -46,7 +52,15 @@ class MultiIndexEventPhenotypeRelativeTimeRangeFilterTestGenerator(
             "after_max_days_leq_180": ["P9", "P10", "P12", "P13", "P14"],
             "after_min_gt_90_max_leq_180": ["P12"],
             "range_min_gn90_max_l90": ["P8", "P9", "P10", "P11", "P14"],
-            "range_min_gn90_max_leq180": ["P8", "P9", "P10", "P11", "P12", "P13", "P14"],
+            "range_min_gn90_max_leq180": [
+                "P8",
+                "P9",
+                "P10",
+                "P11",
+                "P12",
+                "P13",
+                "P14",
+            ],
         }
 
         for test in tests:

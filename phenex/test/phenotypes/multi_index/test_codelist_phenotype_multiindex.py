@@ -5,6 +5,7 @@ Each test duplicates input data with a second INDEX_DATE (shifted by 90 days),
 verifying that phenotype logic correctly partitions results by (PERSON_ID, INDEX_DATE).
 Only includes tests whose input data contained an INDEX_DATE column.
 """
+
 import datetime
 
 from phenex.test.phenotypes.multi_index_mixin import MultiIndexMixin
@@ -25,8 +26,10 @@ class MultiIndexRelativeTimeRangeFilterTestGenerator(
     _index_date = datetime.date(2022, 1, 1)
 
     def define_input_tables(self):
-        tables = CodelistPhenotypeRelativeTimeRangeFilterTestGenerator.define_input_tables(
-            self
+        tables = (
+            CodelistPhenotypeRelativeTimeRangeFilterTestGenerator.define_input_tables(
+                self
+            )
         )
         return self._duplicate_input_tables(tables)
 
@@ -110,7 +113,9 @@ class MultiIndexReturnDateTestGenerator(
     _index_date = datetime.date(2022, 1, 1)
 
     def define_input_tables(self):
-        tables = CodelistPhenotypeReturnDateFilterTestGenerator.define_input_tables(self)
+        tables = CodelistPhenotypeReturnDateFilterTestGenerator.define_input_tables(
+            self
+        )
         return self._duplicate_input_tables(tables)
 
     def define_phenotype_tests(self):

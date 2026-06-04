@@ -2,7 +2,10 @@ from typing import Dict, Optional
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters import ValueFilter, RelativeTimeRangeFilter
 from phenex.tables import PhenotypeTable
-from phenex.phenotypes.functions import attach_anchor_and_get_reference_date, _get_join_keys
+from phenex.phenotypes.functions import (
+    attach_anchor_and_get_reference_date,
+    _get_join_keys,
+)
 import ibis
 from ibis import _
 from ibis.expr.types.relations import Table
@@ -112,7 +115,9 @@ class TimeRangeDaysToNextRange(Phenotype):
 
         # 4. Remove all time_ranges except the closest one (min value/gap)
         # We find the min VALUE for each anchor range
-        joined = joined.group_by([*_get_join_keys(joined), group_key]).mutate(min_val=_.VALUE.min())
+        joined = joined.group_by([*_get_join_keys(joined), group_key]).mutate(
+            min_val=_.VALUE.min()
+        )
         joined = joined.filter(joined.VALUE == joined.min_val).drop("min_val")
 
         # 5. Apply Value Filter

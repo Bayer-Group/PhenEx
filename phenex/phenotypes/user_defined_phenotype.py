@@ -73,8 +73,14 @@ def UserDefinedPhenotype(
             table = function(tables)
 
             # Propagate INDEX_DATE from PERSON table when function output lacks it
-            if "INDEX_DATE" not in table.columns and "PERSON" in tables and "INDEX_DATE" in tables["PERSON"].columns:
-                person_index = tables["PERSON"].select("PERSON_ID", "INDEX_DATE").distinct()
+            if (
+                "INDEX_DATE" not in table.columns
+                and "PERSON" in tables
+                and "INDEX_DATE" in tables["PERSON"].columns
+            ):
+                person_index = (
+                    tables["PERSON"].select("PERSON_ID", "INDEX_DATE").distinct()
+                )
                 table = table.join(person_index, "PERSON_ID")
 
             if "BOOLEAN" not in table.columns:

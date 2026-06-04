@@ -164,8 +164,10 @@ class TimeRangeCountPhenotype(Phenotype):
         if self.value_filter is not None or "PERSON" not in tables:
             return table
         join_keys = _get_join_keys(table)
-        persons = tables["PERSON"].select([c for c in join_keys if c in tables["PERSON"].columns]).distinct()
-        table = persons.join(
-            table, _get_join_keys(persons), how="left"
+        persons = (
+            tables["PERSON"]
+            .select([c for c in join_keys if c in tables["PERSON"].columns])
+            .distinct()
         )
+        table = persons.join(table, _get_join_keys(persons), how="left")
         return table.mutate(VALUE=table.VALUE.fillna(0))

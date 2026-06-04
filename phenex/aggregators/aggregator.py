@@ -264,9 +264,7 @@ class ValueAggregator:
         if "INDEX_DATE" in input_table.columns and "INDEX_DATE" not in agg_index:
             agg_index.append("INDEX_DATE")
         # Get the aggregation index columns
-        _aggregation_index_cols = [
-            getattr(input_table, col) for col in agg_index
-        ]
+        _aggregation_index_cols = [getattr(input_table, col) for col in agg_index]
 
         # Determine the aggregation column
         if self.aggregation_column is None:

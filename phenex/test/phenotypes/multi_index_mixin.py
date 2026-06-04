@@ -5,6 +5,7 @@ and adapts the test runner to verify results per (PERSON_ID, INDEX_DATE).
 Each test class can set ``_shift`` to control the INDEX_DATE offset.
 The module-level ``SHIFT`` (90 days) is the default.
 """
+
 import datetime
 import os
 
@@ -32,7 +33,7 @@ class MultiIndexMixin:
 
     def _duplicate_input_tables(self, input_tables):
         """Duplicate all rows with a second INDEX_DATE shifted by self.shift.
-        
+
         Tables without INDEX_DATE get the column added (using self._index_date)
         before duplication so that every domain table carries the index.
         """
@@ -96,9 +97,9 @@ class MultiIndexMixin:
                 print(f"Result:\n{result_table.to_pandas()}")
 
             path = os.path.join(self.dirpaths["result"], filename)
-            result_table.to_pandas().sort_values(
-                by=["PERSON_ID", "INDEX_DATE"]
-            ).to_csv(path, index=False, date_format=self.date_format)
+            result_table.to_pandas().sort_values(by=["PERSON_ID", "INDEX_DATE"]).to_csv(
+                path, index=False, date_format=self.date_format
+            )
 
             schema = {}
             for col in df.columns:

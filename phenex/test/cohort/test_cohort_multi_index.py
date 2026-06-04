@@ -63,43 +63,55 @@ EXCLUSION_DATE_P3 = datetime.date(2020, 3, 1)
 
 def _build_mapped_tables(con):
     """Create shared input tables for all three tests."""
-    df_person = pd.DataFrame({
-        "PATID": ["P1", "P2", "P3"],
-        "YOB": [1980, 1980, 1980],
-        "GENDER": [1, 2, 1],
-        "ACCEPTABLE": [1, 1, 1],
-    })
+    df_person = pd.DataFrame(
+        {
+            "PATID": ["P1", "P2", "P3"],
+            "YOB": [1980, 1980, 1980],
+            "GENDER": [1, 2, 1],
+            "ACCEPTABLE": [1, 1, 1],
+        }
+    )
     person_table = PersonTableForTests(
         con.dest_connection.create_table(
-            "PERSON", df_person,
+            "PERSON",
+            df_person,
             schema={"PATID": str, "YOB": int, "GENDER": int, "ACCEPTABLE": int},
         )
     )
 
-    df_drug = pd.DataFrame({
-        "PATID": ["P1", "P1", "P1", "P2", "P2", "P3"],
-        "PRODCODEID": ["d1"] * 6,
-        "ISSUEDATE": [
-            ENTRY_DATE_1, ENTRY_DATE_2, ENTRY_DATE_3,
-            ENTRY_DATE_4, ENTRY_DATE_5,
-            ENTRY_DATE_6,
-        ],
-    })
+    df_drug = pd.DataFrame(
+        {
+            "PATID": ["P1", "P1", "P1", "P2", "P2", "P3"],
+            "PRODCODEID": ["d1"] * 6,
+            "ISSUEDATE": [
+                ENTRY_DATE_1,
+                ENTRY_DATE_2,
+                ENTRY_DATE_3,
+                ENTRY_DATE_4,
+                ENTRY_DATE_5,
+                ENTRY_DATE_6,
+            ],
+        }
+    )
     drug_table = DrugExposureTableForTests(
         con.dest_connection.create_table(
-            "DRUG_EXPOSURE", df_drug,
+            "DRUG_EXPOSURE",
+            df_drug,
             schema={"PATID": str, "PRODCODEID": str, "ISSUEDATE": datetime.date},
         )
     )
 
-    df_condition = pd.DataFrame({
-        "PATID": ["P1", "P3"],
-        "MEDCODEID": ["e1", "e1"],
-        "OBSDATE": [EXCLUSION_DATE_P1, EXCLUSION_DATE_P3],
-    })
+    df_condition = pd.DataFrame(
+        {
+            "PATID": ["P1", "P3"],
+            "MEDCODEID": ["e1", "e1"],
+            "OBSDATE": [EXCLUSION_DATE_P1, EXCLUSION_DATE_P3],
+        }
+    )
     condition_table = ConditionOccurenceTableForTests(
         con.dest_connection.create_table(
-            "CONDITION_OCCURRENCE", df_condition,
+            "CONDITION_OCCURRENCE",
+            df_condition,
             schema={"PATID": str, "MEDCODEID": str, "OBSDATE": datetime.date},
         )
     )
@@ -117,7 +129,8 @@ def _make_exclusion():
         codelist=Codelist(["e1"]).copy(use_code_type=False),
         domain="CONDITION_OCCURRENCE",
         relative_time_range=RelativeTimeRangeFilter(
-            when="before", min_days=GreaterThanOrEqualTo(0),
+            when="before",
+            min_days=GreaterThanOrEqualTo(0),
         ),
     )
 
@@ -125,6 +138,7 @@ def _make_exclusion():
 # ---------------------------------------------------------------------------
 # return_index = "first"
 # ---------------------------------------------------------------------------
+
 
 class MultiIndexFirstTestGenerator(CohortTestGenerator):
     test_date = True
@@ -147,16 +161,19 @@ class MultiIndexFirstTestGenerator(CohortTestGenerator):
         return _build_mapped_tables(self.con)
 
     def define_expected_output(self):
-        df = pd.DataFrame({
-            "PERSON_ID": ["P1", "P2"],
-            "EVENT_DATE": [ENTRY_DATE_1, ENTRY_DATE_4],
-        })
+        df = pd.DataFrame(
+            {
+                "PERSON_ID": ["P1", "P2"],
+                "EVENT_DATE": [ENTRY_DATE_1, ENTRY_DATE_4],
+            }
+        )
         return {"index": df}
 
 
 # ---------------------------------------------------------------------------
 # return_index = "last"
 # ---------------------------------------------------------------------------
+
 
 class MultiIndexLastTestGenerator(CohortTestGenerator):
     test_date = True
@@ -179,16 +196,19 @@ class MultiIndexLastTestGenerator(CohortTestGenerator):
         return _build_mapped_tables(self.con)
 
     def define_expected_output(self):
-        df = pd.DataFrame({
-            "PERSON_ID": ["P1", "P2"],
-            "EVENT_DATE": [ENTRY_DATE_1, ENTRY_DATE_5],
-        })
+        df = pd.DataFrame(
+            {
+                "PERSON_ID": ["P1", "P2"],
+                "EVENT_DATE": [ENTRY_DATE_1, ENTRY_DATE_5],
+            }
+        )
         return {"index": df}
 
 
 # ---------------------------------------------------------------------------
 # return_index = "all"
 # ---------------------------------------------------------------------------
+
 
 class MultiIndexAllTestGenerator(CohortTestGenerator):
     test_date = True
@@ -211,16 +231,19 @@ class MultiIndexAllTestGenerator(CohortTestGenerator):
         return _build_mapped_tables(self.con)
 
     def define_expected_output(self):
-        df = pd.DataFrame({
-            "PERSON_ID": ["P1", "P2", "P2"],
-            "EVENT_DATE": [ENTRY_DATE_1, ENTRY_DATE_4, ENTRY_DATE_5],
-        })
+        df = pd.DataFrame(
+            {
+                "PERSON_ID": ["P1", "P2", "P2"],
+                "EVENT_DATE": [ENTRY_DATE_1, ENTRY_DATE_4, ENTRY_DATE_5],
+            }
+        )
         return {"index": df}
 
 
 # ---------------------------------------------------------------------------
 # pytest entry points
 # ---------------------------------------------------------------------------
+
 
 def test_cohort_multi_index_first():
     g = MultiIndexFirstTestGenerator()
