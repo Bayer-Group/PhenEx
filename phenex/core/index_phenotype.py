@@ -92,7 +92,9 @@ class IndexPhenotype(Phenotype):
         # "all": keep everything
 
         # Deduplicate to at most one row per (PERSON_ID, INDEX_DATE)
-        dedup_keys = ["PERSON_ID"] + (["INDEX_DATE"] if "INDEX_DATE" in index_table.columns else [])
+        dedup_keys = ["PERSON_ID"] + (
+            ["INDEX_DATE"] if "INDEX_DATE" in index_table.columns else []
+        )
         w = ibis.window(group_by=dedup_keys, order_by="EVENT_DATE")
         index_table = index_table.mutate(_dedup_rn=ibis.row_number().over(w))
         index_table = index_table.filter(index_table._dedup_rn == 0).drop("_dedup_rn")
