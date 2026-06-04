@@ -6,9 +6,9 @@ import styles from './HorizontalRowViewer.module.css';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 import { HorizontalCell } from './HorizontalCell';
 import { HorizontalRowTitle } from './HorizontalRowTitle';
-import { PhenExNavBarTooltip } from '../../../components/PhenExNavBar/PhenExNavBarTooltip';
 import { CommentBar } from './CommentBar';
 import { CommentWindow } from './CommentWindow';
+import { NavPill } from './NavPill';
 
 // ── Constants ───────────────────────────────────────────────────────────
 
@@ -69,9 +69,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
   const mouseDownOnOverlay = useRef(false);
-  const prevRef = useRef<HTMLButtonElement>(null);
-  const nextRef = useRef<HTMLButtonElement>(null);
-  const [hoveredNav, setHoveredNav] = useState<'prev' | 'next' | null>(null);
   const holdDir = useRef<-1 | 0 | 1>(0);
   const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mountY = useRef(lastClickY);
@@ -258,7 +255,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
             <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </button>
-        
         <div className={`${styles.titleBar} ${showRowTitle ? styles.titleBarScrolled : ''}`}>
           <HorizontalRowTitle
             rows={rows}
@@ -267,35 +263,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
             studyTitle={studyTitle}
             onNavigate={navigate}
           />
-        </div>
-        <div className={styles.navPill}>
-          <button
-            ref={prevRef}
-            className={styles.navArrow}
-            disabled={currentIndex <= 0}
-            onClick={() => { if (currentIndex > 0) navigate(currentIndex - 1); }}
-            onMouseEnter={() => setHoveredNav('prev')}
-            onMouseLeave={() => setHoveredNav(null)}
-          >
-            <svg width="20" height="22" viewBox="0 0 25 28" fill="none">
-              <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </button>
-          <button
-            ref={nextRef}
-            className={styles.navArrow}
-            disabled={currentIndex >= rows.length - 1}
-            onClick={() => { if (currentIndex < rows.length - 1) navigate(currentIndex + 1); }}
-            onMouseEnter={() => setHoveredNav('next')}
-            onMouseLeave={() => setHoveredNav(null)}
-          >
-            <svg width="20" height="22" viewBox="0 0 25 28" fill="none" style={{ transform: 'scaleX(-1)' }}>
-              <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </button>
-          <div className={styles.navHint}>Use arrow keys to navigate</div>
-          <PhenExNavBarTooltip isVisible={hoveredNav === 'prev'} anchorElement={prevRef.current} label="Go to the previous feature" verticalPosition="below" horizontalAlignment="right" />
-          <PhenExNavBarTooltip isVisible={hoveredNav === 'next'} anchorElement={nextRef.current} label="Go to the next feature" verticalPosition="below" horizontalAlignment="right" />
         </div>
       </div>
       {showRowTitle && (
@@ -332,6 +299,9 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
             />
           );
         })}
+      </div>
+      <div className={styles.navPillContainer}>
+        <NavPill currentIndex={currentIndex} total={rows.length} onNavigate={navigate} />
       </div>
       <div className={styles.commentBarContainer}>
         <CommentBar

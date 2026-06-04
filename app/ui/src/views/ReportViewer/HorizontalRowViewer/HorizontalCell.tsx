@@ -190,7 +190,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
       <div
         ref={ref}
         className={styles.cell}
-        style={{ '--desired-top': desiredTop, '--background-color': 'transparent', paddingLeft: isLeftPanelShown ? undefined : 100 } as React.CSSProperties}
+        style={{ '--desired-top': desiredTop, paddingLeft: isLeftPanelShown ? undefined : 100 } as React.CSSProperties}
       >
       <div className={styles.topGradient} />
 

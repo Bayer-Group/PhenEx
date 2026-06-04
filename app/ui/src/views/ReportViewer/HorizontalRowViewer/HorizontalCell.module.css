@@ -67,13 +67,14 @@ margin-bottom: 200px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background-color: var(--background-color) !important;
   overflow-y: auto;
   scrollbar-width: none;
-  padding: 70px 50px 100px 0px;
+  padding: 70px 0px 100px 20px;
   font-family: "IBMPlexSans-regular", sans-serif;
   height: 100%;
   box-sizing: border-box;
+  background-color: var(--background-color) !important;
+
 }
 
 .inlineComments::-webkit-scrollbar {

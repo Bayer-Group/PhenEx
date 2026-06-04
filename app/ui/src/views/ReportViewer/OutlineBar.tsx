@@ -30,7 +30,7 @@ export const OutlineBar: FC<OutlineBarProps> = ({ entries, activeSection }) => {
     setHover(false);
   }, []);
 
-  const TICK_H = 4;
+  const TICK_H = 6;
   const GAP = 14; /* match to css .bar*/
   const totalH = entries.length * (TICK_H + GAP) - GAP;
 
@@ -45,7 +45,7 @@ export const OutlineBar: FC<OutlineBarProps> = ({ entries, activeSection }) => {
       >
         {entries.map((entry, i) => {
           const isActive = activeSection === entry.name;
-          const width = entry.level === 0 ? 12 +20: 20;
+          const width = entry.level === 0 ? 12 +30: 30;
           return (
             <div
               key={`${entry.name}-${i}`}

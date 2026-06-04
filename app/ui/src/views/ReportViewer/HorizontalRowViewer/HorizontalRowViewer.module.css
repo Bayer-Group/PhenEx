@@ -138,8 +138,15 @@
   z-index: 2;
 }
 
+.navPillContainer {
+  position: absolute;
+  bottom: 90px;
+  right: 30px;
+  z-index: 10;
+  background-color: red;
+}
+
 .navPill {
-  margin-left: auto;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -149,7 +156,6 @@
   border-radius: 10px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   padding: 0 2px;
-  position: relative;
 }
 
 .navArrow {
@@ -175,19 +181,6 @@
 .navArrow:disabled {
   opacity: 0.3;
   cursor: default;
-}
-
-.navHint {
-  position: absolute;
-  bottom: 100%;
-  right: 0px;
-  transform: translateX(-50%);
-  margin-top: 6px;
-  white-space: nowrap;
-  font-family: "IBMPlexSans-regular", sans-serif;
-  font-size: 11px;
-  color: var(--color_inactive, #999);
-  pointer-events: none;
 }
 
 .scroller::-webkit-scrollbar {
