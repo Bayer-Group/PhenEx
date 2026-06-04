@@ -571,3 +571,10 @@ def is_phenex_index_table(table: PhenexTable) -> bool:
 
 
 PHENOTYPE_TABLE_COLUMNS = ["PERSON_ID", "BOOLEAN", "EVENT_DATE", "VALUE"]
+PHENOTYPE_TABLE_COLUMNS_WITH_INDEX = [
+    "PERSON_ID",
+    "INDEX_DATE",
+    "BOOLEAN",
+    "EVENT_DATE",
+    "VALUE",
+]

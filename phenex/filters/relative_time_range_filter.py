@@ -3,6 +3,7 @@ from typing import Optional
 # from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.filter import Filter
 from phenex.filters.value_filter import ValueFilter
+from phenex.phenotypes.functions import _get_join_keys
 from phenex.tables import EventTable, is_phenex_phenotype_table
 from phenex.filters.value import *
 
@@ -64,8 +65,10 @@ class RelativeTimeRangeFilter(Filter):
             else:
                 anchor_table = self.anchor_phenotype.table
                 reference_column = anchor_table.EVENT_DATE
-                # Note that joins can change column names if the tables have name collisions!
-                table = table.join(anchor_table, "PERSON_ID")
+                join_keys = [
+                    k for k in _get_join_keys(table) if k in anchor_table.columns
+                ]
+                table = table.join(anchor_table, join_keys)
         else:
             assert (
                 "INDEX_DATE" in table.columns

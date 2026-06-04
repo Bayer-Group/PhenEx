@@ -4,6 +4,7 @@ from deepdiff import DeepDiff
 from phenex.tables import (
     PhenotypeTable,
     PHENOTYPE_TABLE_COLUMNS,
+    PHENOTYPE_TABLE_COLUMNS_WITH_INDEX,
     is_phenex_phenotype_table,
 )
 from phenex.util import create_logger
@@ -53,7 +54,12 @@ class Phenotype(Node):
                 f"Phenotype {self.name} must return columns {PHENOTYPE_TABLE_COLUMNS}. Found {table.columns}."
             )
 
-        self.table = table.select(PHENOTYPE_TABLE_COLUMNS)
+        # INDEX_DATE is optional; include in output only if present in the input table
+        if "INDEX_DATE" in table.columns:
+            self.table = table.select(PHENOTYPE_TABLE_COLUMNS_WITH_INDEX)
+        else:
+            self.table = table.select(PHENOTYPE_TABLE_COLUMNS)
+
         # for some reason, having NULL datatype screws up writing the table to disk; here we make explicit cast
         if type(self.table.schema()["VALUE"]) == ibis.expr.datatypes.core.Null:
             self.table = self.table.cast({"VALUE": "float64"})
@@ -78,6 +84,8 @@ class Phenotype(Node):
             f"{self.name}_EVENT_DATE": "EVENT_DATE",
             f"{self.name}_VALUE": "VALUE",
         }
+        if "INDEX_DATE" in self.table.columns:
+            new_column_names["INDEX_DATE"] = "INDEX_DATE"
         return self.table.rename(new_column_names)
 
     def _execute(self, tables: Dict[str, Table]):
