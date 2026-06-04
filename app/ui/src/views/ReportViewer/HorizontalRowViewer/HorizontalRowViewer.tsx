@@ -35,6 +35,7 @@ interface HorizontalRowViewerProps {
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   studyTitle?: string;
+  studyDescription?: string;
   onClose: (finalIndex: number) => void;
 }
 
@@ -48,6 +49,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   tteCohorts,
   table2Cohorts,
   studyTitle,
+  studyDescription,
   onClose,
 }) => {
   const { isLeftPanelShown } = useThreePanelCollapse();
@@ -326,6 +328,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
               commentsPanelWidth={commentsPanelWidth}
               onCommentsPanelWidthChange={setCommentsPanelWidth}
               studyTitle={studyTitle}
+              studyDescription={studyDescription}
             />
           );
         })}

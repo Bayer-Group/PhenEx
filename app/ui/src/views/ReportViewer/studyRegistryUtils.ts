@@ -37,7 +37,7 @@ export interface StudyRegistry {
 
 // ── Sequential row list types ───────────────────────────────────────────
 
-export type RowType = CharacteristicType | 'waterfall' | 'table2' | 'time_to_event';
+export type RowType = CharacteristicType | 'waterfall' | 'table2' | 'time_to_event' | 'study_info';
 
 export interface SequentialRow {
   /** Global 0-based index in the flat list */
@@ -231,6 +231,17 @@ export function buildSequentialRowList(
 ): SequentialRow[] {
   const rows: SequentialRow[] = [];
   let index = 0;
+
+  // Prepend a study_info row at position 0
+  rows.push({
+    index: index++,
+    category: 'study_info',
+    reporter: 'study_info',
+    section: null,
+    name: 'study_info',
+    rowType: 'study_info',
+    registry: null,
+  });
 
   // Build a lookup from registry: reporter → name → entry
   const registryLookup = new Map<string, Map<string, RegistryRowEntry>>();

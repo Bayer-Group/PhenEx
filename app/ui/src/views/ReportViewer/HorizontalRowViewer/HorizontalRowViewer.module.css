@@ -44,7 +44,7 @@
 
 .titleBar {
   padding: 5px 10px;
-  margin-left:30px;
+  margin-left:40px;
   pointer-events: auto;
   background-color: transparent;
   border-radius: 10px;
@@ -80,6 +80,7 @@
   animation: backButtonIn 0.3s ease-out both;
   animation-delay: 0.15s;
   position: absolute;
+  height:40px
   /* margin-top:30px; */
 }
 
@@ -101,8 +102,8 @@
 
 .rowTitleLabel {
   position: absolute;
-  top: 58px;
-  left: 29px;
+  top: 60px;
+  left: 10px;
   z-index: 10;
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;

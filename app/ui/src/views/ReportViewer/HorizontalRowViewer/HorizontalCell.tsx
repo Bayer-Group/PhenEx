@@ -8,6 +8,7 @@ import { NumericContent } from '../GraphsAndTables/ModalRenderers/NumericContent
 import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEventContent';
 import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
+import { StudyInfoCellRenderer } from '../GraphsAndTables/RowRenderers/StudyInfoCellRenderer';
 import { CommentCard } from './CommentCard';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
@@ -36,6 +37,7 @@ export interface HorizontalCellProps {
   commentsPanelWidth: number;
   onCommentsPanelWidthChange: (width: number) => void;
   studyTitle?: string;
+  studyDescription?: string;
 }
 
 // ── CardInfoSection ─────────────────────────────────────────────────────
@@ -55,7 +57,9 @@ const RowContent: FC<{
   table2Cohorts?: Table2Cohort[];
   availableTteOutcomes?: string[];
   showCohortInfo?: boolean;
-}> = ({ row, cohortData, kdeData, finalCohortSizes, tteCohorts, table2Cohorts, availableTteOutcomes, showCohortInfo = true }) => {
+  studyTitle?: string;
+  studyDescription?: string;
+}> = ({ row, cohortData, kdeData, finalCohortSizes, tteCohorts, table2Cohorts, availableTteOutcomes, showCohortInfo = true, studyTitle, studyDescription }) => {
   switch (row.rowType) {
     case 'boolean':
       return <BooleanContent name={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} showCohortInfo={showCohortInfo} />;
@@ -67,9 +71,17 @@ const RowContent: FC<{
       return <TimeToEventContent outcome={row.name} cohorts={tteCohorts ?? []} availableOutcomes={availableTteOutcomes} />;
     case 'table2':
       return <Table2Content outcome={row.name} cohorts={table2Cohorts ?? []} />;
+    case 'study_info':
+      return <StudyInfoContent title={studyTitle ?? ''} description={studyDescription} />;
     default:
       return <div style={{ padding: 20, color: '#999' }}>No detail view for {row.rowType} rows yet.</div>;
   }
+};
+
+// ── StudyInfoContent ────────────────────────────────────────────────────
+
+const StudyInfoContent: FC<{ title: string; description?: string }> = ({ title, description }) => {
+  return <StudyInfoCellRenderer title={title} description={description} />;
 };
 
 // ── BooleanContent ──────────────────────────────────────────────────────
@@ -111,7 +123,7 @@ const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[];
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, commentsCollapsed, commentsPanelWidth, onCommentsPanelWidthChange, studyTitle = '' }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, commentsCollapsed, commentsPanelWidth, onCommentsPanelWidthChange, studyTitle = '', studyDescription }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const { isLeftPanelShown } = useThreePanelCollapse();
     const verticalScrollRef = useRef<HTMLDivElement>(null);
@@ -160,7 +172,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
           </div>
           <CardInfoSection row={row} />
           <div className={styles.cardContent} style={{ marginRight: commentsCollapsed ? "10%" : 25 }}>
-            {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo /> : null}
+            {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo studyTitle={studyTitle} studyDescription={studyDescription} /> : null}
           </div>
         </div>
       </div>
