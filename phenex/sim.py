@@ -42,7 +42,7 @@ class DomainsMocker:
         )
 
         result = af.execute(mapped_tables)
-        print(result.table.execute())
+        print(result.head().to_pandas())
         ```
 
     Example: Inspect raw source tables
