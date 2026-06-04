@@ -14,6 +14,7 @@ from phenex.codelists import LocalCSVCodelistFactory
 from phenex.filters.value_filter import ValueFilter
 from phenex.filters.date_filter import DateFilter, After, Before
 from phenex.aggregators import *
+from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 
 
@@ -258,6 +259,92 @@ class FurtherValueFilterDateRangeTestGenerator(PhenotypeTestGenerator):
         return test_infos
 
 
+class FurtherValueFilterRelativeTimeRangeTestGenerator(PhenotypeTestGenerator):
+    """Test relative_time_range filtering on the output of a MeasurementPhenotype."""
+
+    name_space = "fvf_relativetimerange"
+    test_values = True
+
+    def define_input_tables(self):
+        d_pre = datetime.date(2022, 1, 1)
+        d_post = datetime.date(2022, 12, 1)
+
+        df = pd.DataFrame()
+        N = 4
+        # Each person has a pre and post measurement
+        df["PERSON_ID"] = [f"P{x}" for x in range(N)] + [
+            f"P{x}" for x in range(N)
+        ]
+        df["CODE"] = "c1"
+        df["CODE_TYPE"] = "ICD10CM"
+        df["VALUE"] = list(range(1, N + 1)) + list(range(11, N + 11))
+        df["EVENT_DATE"] = [d_pre] * N + [d_post] * N
+        df["INDEX_DATE"] = datetime.date(2022, 6, 1)
+
+        return [
+            {
+                "name": "MEASUREMENT",
+                "df": df,
+            }
+        ]
+
+    def define_phenotype_tests(self):
+        codelist_factory = LocalCSVCodelistFactory(
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        )
+        source_phenotype = MeasurementPhenotype(
+            name="all_values",
+            codelist=codelist_factory.get_codelist("c1"),
+            domain="MEASUREMENT",
+        )
+
+        # Only post-index values (after index date)
+        c1 = {
+            "name": "post_index_only",
+            "persons": [f"P{x}" for x in range(4)],
+            "values": [11, 12, 13, 14],
+            "phenotype": FurtherValueFilterPhenotype(
+                name="post_index_only",
+                phenotype=source_phenotype,
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="after"
+                ),
+            ),
+        }
+
+        # Only pre-index values (before index date)
+        c2 = {
+            "name": "pre_index_only",
+            "persons": [f"P{x}" for x in range(4)],
+            "values": [1, 2, 3, 4],
+            "phenotype": FurtherValueFilterPhenotype(
+                name="pre_index_only",
+                phenotype=source_phenotype,
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="before"
+                ),
+            ),
+        }
+
+        # Post-index + value filter > 12
+        c3 = {
+            "name": "post_index_gt12",
+            "persons": ["P2", "P3"],
+            "values": [13, 14],
+            "phenotype": FurtherValueFilterPhenotype(
+                name="post_index_gt12",
+                phenotype=source_phenotype,
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(0), when="after"
+                ),
+                value_filter=ValueFilter(min_value=GreaterThan(12)),
+            ),
+        }
+
+        test_infos = [c1, c2, c3]
+        return test_infos
+
+
 class FurtherValueFilterReturnDateTestGenerator(PhenotypeTestGenerator):
     """Test return_date selection on the output of a MeasurementPhenotype."""
 
@@ -341,6 +428,11 @@ def test_further_value_filter_date_range():
     spg.run_tests()
 
 
+def test_further_value_filter_relative_time_range():
+    spg = FurtherValueFilterRelativeTimeRangeTestGenerator()
+    spg.run_tests()
+
+
 def test_further_value_filter_return_date():
     spg = FurtherValueFilterReturnDateTestGenerator()
     spg.run_tests()
@@ -350,4 +442,5 @@ if __name__ == "__main__":
     test_further_value_filter_basic()
     test_further_value_filter_aggregation()
     test_further_value_filter_date_range()
+    test_further_value_filter_relative_time_range()
     test_further_value_filter_return_date()
