@@ -1,0 +1,47 @@
+.editor {
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+  max-height: 300px;
+}
+
+.tabList {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.tabButton {
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.tabButton:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.activeTab {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.tabContent {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 200px;
+}

@@ -91,7 +91,7 @@
         <mxCell id="W7fSoNP8aSXUWgSMz05Q-49" value="EntryPhenotype" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="827" y="460" width="170" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="W7fSoNP8aSXUWgSMz05Q-50" value="MultipleOccurrencePhenotype" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="W7fSoNP8aSXUWgSMz05Q-50" value="EventCountPhenotype" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="827" y="530" width="170" height="60" as="geometry" />
         </mxCell>
         <mxCell id="W7fSoNP8aSXUWgSMz05Q-51" value="CountPhenotype" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">

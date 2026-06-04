@@ -1,0 +1,191 @@
+:root{
+  --font_size_pagetitle: 32px;
+  --font_size_breadcrumb: 20px;
+  --font_size_phenotypename: 18px;
+  --font_size_infotext: 12px;
+}
+.cohortTableContainer {
+  display: flex;
+  flex-direction: column;
+  margin-top:50px;
+  height: calc(100% - 50px);
+  width: 100%;
+  position: relative;
+}
+
+.topSection {
+  /* Height hugs content */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  padding-bottom: 10px;
+  padding-top: 5px;
+  padding-left:20px;
+}
+
+.bottomSection {
+  /* Fill remaining vertical space */
+  flex: 1;
+  padding-top: 0px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.bottomGradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: linear-gradient(to top, var(--background-color), #ffffff00);
+  pointer-events: none;
+}
+
+.visible {
+  transform: translateX(0);
+}
+
+.hidden {
+  transform: translateX(-100%);
+}
+
+.cohortDescription {
+  flex: 1;
+  padding: 12px;
+}
+
+.cohortDescription .ql-container {
+  height: calc(100% - 42px);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cohortDescription .ql-toolbar {
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.cohortDescription .ql-editor {
+  height: 100px;
+}
+
+.cohortDescription .ql-editor.ql-blank::before {
+  color: #999;
+}
+
+.cohortDescription .ql-tooltip {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.rag-green-outer {
+  background-color: #b7e1cd;
+  color: #000;
+}
+
+.cohortNameContainer {
+  width: 100%;
+  margin-bottom: 20px;
+  height: 40px;
+}
+.breadcrumbsContainer{
+  /* No absolute positioning - flows naturally */
+  width: fit-content;
+  margin-top: 0px;
+  margin-left: var(--centerPanelLeftMargin);
+  line-height: 10px;
+  /* display: flex;
+  align-items: baseline; */
+  /* height: 20px; */
+}
+.breadcrumbItem{
+  font-size: var(--font_size_infotext) !important;
+  line-height: var(--font_size_infotext) !important;
+
+}
+
+.breadcrumbLastItem{ /* this is the main title */
+  font-size: var(--font_size_breadcrumb) !important;
+  font-family: 'IBMPlexSans-bold' !important;
+}
+
+
+.sectionTabsContainer {
+  flex-direction: row;
+  display: flex;
+  margin-left: var(--centerPanelLeftMargin);
+  /* No absolute positioning - flows naturally below RighPanelNavigationTabBar */
+  background-color: transparent;
+}
+
+.classNameTabsContainer{
+  color:red !important;
+  background-color: transparent !important;
+  border-color:transparent;
+  height: 32px !important;
+  backdrop-filter: none !important;
+  /* border: 1px solid var(--line-color); */
+  -webkit-backdrop-filter: none !important;
+
+}
+
+.classNameSectionTabs{
+  font-size: 20px !important;
+  height: 32px !important;
+  padding-left: 10px;
+  padding-right:10px;
+}
+
+.addPhenotypeButton{
+  margin-left:30px;
+  margin-top:5px;
+  font-family: "IBMPlexSans-regular" !important;
+}
+
+.addPhenotypeButtonLabel{
+  /* height: 32px !important; */
+  padding-left: 8px!important;
+  padding-right: 8px !important;
+}
+
+.newPhenotypeButton {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  z-index: 11;
+}
+
+.newPhenotypeButtonLabel {
+  padding: 10px 20px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  background: #0066cc !important;
+  border: 2px solid transparent !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  font-family: 'IBMPlexSans-semibold', sans-serif !important;
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2) !important;
+  height: auto !important;
+}
+
+.newPhenotypeButtonLabel:hover {
+  background: #0052a3 !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3) !important;
+}
+
+.newPhenotypeButtonLabel:active {
+  transform: scale(0.98) !important;
+}

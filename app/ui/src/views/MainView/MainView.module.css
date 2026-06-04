@@ -1,0 +1,51 @@
+.mainView {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+.toggleButton {
+  position: absolute;
+  left: 300px;
+  bottom: 10px;
+  z-index: 10;
+  padding: 8px;
+  background-color: var(--accent-color);
+  border: 1px solid #ccc;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  outline: none;
+  transition: left 0.3s ease;
+}
+
+.toggleButton:hover {
+  background-color: #e0e0e0;
+}
+
+.mainView .toggleButton[aria-label='Show left panel'] {
+  left: 0;
+}
+
+.mainView {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+
+/* Add styles to ensure the collapse button appears above the tree */
+.mainView > div {
+  position: relative;
+  z-index: 1;
+}
+
+.mainView > div > div[class*='Pane'] {
+  position: relative;
+  z-index: 1;
+}
+
+.mainView > div > div[class*='Resizer'] {
+  position: relative;
+  z-index: 10;
+}

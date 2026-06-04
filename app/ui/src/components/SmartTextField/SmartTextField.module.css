@@ -1,0 +1,18 @@
+.textField {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  min-height: 1.5em;
+  display: inline-block;
+}
+
+.textField:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.textField:empty::before {
+  content: attr(placeholder);
+  color: #999;
+  font-style: italic;
+}

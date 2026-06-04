@@ -1,0 +1,168 @@
+.cohortTableContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  background-color: var(--background-color);
+}
+
+.topSection {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  padding-bottom: 10px;
+  padding-top: 5px;
+  padding-left: 20px;
+}
+
+.bottomSection {
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.visible {
+  transform: translateX(0);
+}
+
+.hidden {
+  transform: translateX(-100%);
+}
+
+.cohortDescription {
+  flex: 1;
+  padding: 12px;
+}
+
+.cohortDescription .ql-container {
+  height: calc(100% - 42px);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cohortDescription .ql-toolbar {
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.cohortDescription .ql-editor {
+  height: 100px;
+}
+
+.cohortDescription .ql-editor.ql-blank::before {
+  color: #999;
+}
+
+.cohortDescription .ql-tooltip {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.rag-green-outer {
+  background-color: #b7e1cd;
+  color: #000;
+}
+
+.studyNameContainer {
+  width: 100%;
+  margin-bottom: 20px;
+  height: 40px;
+  margin-top:40px;
+}
+
+.breadcrumbsContainer{
+  /* No absolute positioning - flows naturally */
+  margin-top: 0px;
+  margin-left: var(--centerPanelLeftMargin);
+  line-height: 10px;
+
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 4px 8px;
+  border-radius: 8px;
+
+  /* display: flex;
+  align-items: baseline; */
+  /* height: 20px; */
+}
+.breadcrumbItem{
+  font-size: var(--font_size_infotext) !important;
+  line-height: var(--font_size_infotext) !important;
+}
+
+.breadcrumbLastItem{ /* this is the main title */
+
+  font-size: var(--font_size_breadcrumb) !important;
+  font-family: 'IBMPlexSans-bold' !important;
+}
+
+.studyNameInput {
+  border: none;
+  padding: 0px;
+  font-size: 40px !important;
+  outline: none;
+  width: 60%;
+  font-family: 'IBMPlexSans-bold' !important;
+  margin-left: 30px;
+  margin-top: 0px;
+  color:var(--text-color-normal) !important;
+}
+
+.studyNameInput::placeholder {
+  color: var(--text-color-secondary);
+}
+
+.sectionTabsContainer {
+  flex-direction: row;
+  display: flex;
+  margin-left: 20px;
+  background-color: transparent;
+}
+
+.classNameTabsContainer{
+  color:red !important;
+  background-color: transparent !important;
+  border-color:transparent;
+  backdrop-filter: none !important;
+  /* border: 1px solid var(--line-color); */
+  -webkit-backdrop-filter: none !important;
+  
+}
+
+.newCohortButton {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  z-index: 11;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #0066cc;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.2);
+}
+
+.newCohortButton:hover {
+  background: #0052a3;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 102, 204, 0.3);
+}
+
+.newCohortButton:active {
+  transform: scale(0.98);
+}

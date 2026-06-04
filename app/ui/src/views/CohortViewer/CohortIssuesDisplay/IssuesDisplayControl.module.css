@@ -1,0 +1,30 @@
+.container {
+  position: absolute;
+  user-select: none;
+  right: 50px;
+  bottom: 42px;
+  transition: bottom 0.3s ease, opacity 0.3s ease;
+  z-index: 1001;
+}
+
+.showingPopover {
+  bottom: 50px; /* Move up instead of changing x position */
+}
+
+.issuesButton {
+  position: absolute;
+  bottom: 0px !important;
+  right: 0px;
+  margin: 0px !important;
+  padding: 0px !important;
+  background-color: transparent;
+  z-index: 1000;
+}
+
+.popover {
+  z-index: 2;
+}
+
+.hasIssues {
+  pointer-events: all;
+}

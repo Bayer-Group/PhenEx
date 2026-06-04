@@ -1,0 +1,151 @@
+.gridWrapper {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.gridContainer {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+/* Hide AG Grid's default scrollbars for this wrapper */
+.gridWrapper :global(.ag-body-viewport),
+.gridWrapperAutoHeight :global(.ag-body-viewport),
+.gridWrapper :global(.ag-center-cols-viewport),
+.gridWrapperAutoHeight :global(.ag-center-cols-viewport),
+.gridWrapper :global(.ag-body-horizontal-scroll),
+.gridWrapperAutoHeight :global(.ag-body-horizontal-scroll),
+.gridWrapper :global(.ag-body-vertical-scroll),
+.gridWrapperAutoHeight :global(.ag-body-vertical-scroll) {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
+}
+
+.gridWrapper :global(.ag-body-viewport::-webkit-scrollbar),
+.gridWrapperAutoHeight :global(.ag-body-viewport::-webkit-scrollbar),
+.gridWrapper :global(.ag-center-cols-viewport::-webkit-scrollbar),
+.gridWrapperAutoHeight :global(.ag-center-cols-viewport::-webkit-scrollbar),
+.gridWrapper :global(.ag-body-horizontal-scroll::-webkit-scrollbar),
+.gridWrapperAutoHeight :global(.ag-body-horizontal-scroll::-webkit-scrollbar),
+.gridWrapper :global(.ag-body-vertical-scroll::-webkit-scrollbar),
+.gridWrapperAutoHeight :global(.ag-body-vertical-scroll::-webkit-scrollbar) {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Additional comprehensive scrollbar hiding - copied from PhenotypeViewer */
+.gridWrapper :global(.ag-body-vertical-scroll) {
+  display: none !important;
+}
+
+.gridWrapper :global(.ag-body-viewport.ag-layout-normal) {
+  overflow-y: hidden !important;
+  overflow-x: scroll !important; /* Keep horizontal scrolling enabled */
+/* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.gridWrapper :global(.ag-force-vertical-scroll) {
+  overflow-y: hidden !important;
+}
+
+/* Hide horizontal scrollbars */
+.gridWrapper :global(.ag-body-horizontal-scroll) {
+  display: none !important;
+}
+
+.gridWrapper :global(.ag-body-horizontal-scroll-viewport) {
+  display: none !important;
+}
+
+.gridWrapper :global(.ag-force-horizontal-scroll) {
+  overflow-x: scroll !important; /* Keep scrolling enabled */
+}
+
+/* Ensure center cols viewport keeps horizontal scrolling but hides scrollbars */
+.gridWrapper :global(.ag-center-cols-viewport) {
+  overflow-x: scroll !important; /* Keep scrolling enabled */
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+.gridWrapper :global(.ag-center-cols-container) {
+  overflow-x: scroll !important; /* Keep scrolling enabled */
+}
+
+/* Additional comprehensive horizontal scrollbar hiding */
+.gridWrapper :global(.ag-root-wrapper) {
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.gridWrapper :global(.ag-root-wrapper-body) {
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.gridWrapper :global(.ag-body-horizontal-scroll-viewport) {
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.gridWrapper :global(.ag-horizontal-left-spacer),
+.gridWrapper :global(.ag-horizontal-right-spacer) {
+  display: none !important;
+}
+
+/* Nuclear option - hide all scrollbars within the grid wrapper */
+.gridWrapper *,
+.gridWrapperAutoHeight * {
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+/* Override AG Grid internal height constraints for autoHeight layout */
+.gridWrapperAutoHeight :global(.ag-root),
+.gridWrapperAutoHeight :global(.ag-root-wrapper),
+.gridWrapperAutoHeight :global(.ag-body-viewport),
+.gridWrapperAutoHeight :global(.ag-center-cols-viewport),
+.gridWrapperAutoHeight :global(.ag-center-cols-clipper),
+.gridWrapperAutoHeight :global(.ag-center-cols-container) {
+  height: auto !important;
+  min-height: 0 !important;
+  border: none !important;
+}

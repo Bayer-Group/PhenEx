@@ -1,0 +1,12 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.error {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 2px;
+}

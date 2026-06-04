@@ -1,0 +1,132 @@
+.container {
+  height: 100%;
+  width: 100%;
+  user-select: none;
+  background-color: var(--background-color);
+}
+
+.content {
+  padding: 2rem;
+  padding-top: 0px;
+  position: absolute;
+  z-index: 2;
+  top: 0px;
+  margin-right: 40px;
+  font-family: 'IBMPlexSans-Regular';
+}
+
+.title {
+  position: relative;
+  color: var(--color-accent-bright);
+  font-family: 'IBMPlexSans-Bold';
+  font-size: 50px;
+  margin-right: 5px;
+}
+
+.text {
+  margin-top: 190px;
+}
+
+.content em {
+  color: var(--color-accent-bright);
+  font-family: 'IBMPlexSans-Bold';
+}
+
+.ctaSection {
+  margin-top: 60px;
+  display: flex;
+  justify-content: center;
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.primaryCta, .secondaryCta {
+  padding: 18px 36px;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  border: 2px solid transparent;
+}
+
+.primaryCta {
+  color: #ffffff;
+  background: #0066cc;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.primaryCta:hover {
+  background: #0052a3;
+  box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4);
+  transform: translateY(-2px);
+}
+
+.primaryCta:active {
+  transform: translateY(0);
+}
+
+.secondaryCta {
+  color: var(--text-color);
+  background: transparent;
+  border: 2px solid var(--color-accent-bright);
+}
+
+.secondaryCta:hover {
+  background: var(--color-accent-bright);
+  color: var(--background-color);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+  transform: translateY(-2px);
+}
+
+.secondaryCta:active {
+  transform: translateY(0);
+}
+
+.content p {
+  color: var(--text-color-secondary);
+  z-index: 10;
+  max-width: 1000px;
+  font-size: 25px;
+}
+
+.topLeft {
+  position: absolute;
+  top: 9px;
+  left: 40px;
+  height: 200px;
+  font-size: 24px;
+}
+
+.bottomRight {
+  position: absolute;
+  bottom: 15px;
+  right: 80px;
+  font-size: 32px;
+}
+
+.label {
+  /* color: var(--color-accent); */
+  font-family: 'IBMPlexSans-bold';
+  z-index: 100;
+}
+
+.logo {
+  position: absolute;
+  width: 100px;
+  right: 0px;
+  top: 10px;
+  margin-right: 50px;
+  margin-top: 30px;
+  z-index: 1;
+  pointer-events: none;
+  z-index: 0;
+  /* transform: rotate(-40deg); */
+}

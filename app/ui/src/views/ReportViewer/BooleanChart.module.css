@@ -1,0 +1,67 @@
+/* ── AG Grid overrides for BooleanChart ──────────────────────────────── */
+.gridContainer {
+  width: 100%;
+}
+
+/* ── Name cell ────────────────────────────────────────────────────────── */
+.nameCell {
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: var(--font_size_phenotypename, 14px);
+  color: #333;
+  line-height: 1.25;
+  word-break: break-word;
+  white-space: normal;
+  padding: 6px 12px 6px 8px;
+  text-align: right;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Bar chart cell ───────────────────────────────────────────────────── */
+.barCell {
+  width: 100%;
+  height: 100%;
+  padding: 4px 0;
+  box-sizing: border-box;
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 16px;
+  margin-bottom: 2px;
+}
+
+.barRow:last-child {
+  margin-bottom: 0;
+}
+
+.barFill {
+  border-radius: 2px;
+  flex-shrink: 0;
+  height: 100%;
+}
+
+.barValue {
+  font-size: 10px;
+  color: #666;
+  white-space: nowrap;
+}
+
+/* ── Analysis cell ────────────────────────────────────────────────────── */
+.analysisCell {
+  padding: 6px 12px 6px 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.analysisText {
+  font-style: italic;
+  font-size: var(--font_size_items, 16px);
+  color: #999;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+  margin: 0;
+}

@@ -1,0 +1,92 @@
+/* LogicalFilterRenderer.module.css - Styles for logical filter tree rendering */
+
+.container {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px; /*var(--item-padding-horizontal, 8px);*/
+  flex-wrap: wrap;
+  max-width: 100%;
+  padding-top:var(--item-margin-top);
+}
+
+.empty {
+  color: var(--color-text-secondary, #888);
+  font-style: italic;
+}
+
+.filterItem {
+  display: inline-flex;
+  align-items: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  background-color: var(--item-color-default);
+  border-radius: var(--item-radius);
+  border-width: var(--border_width_item) !important;
+  transition: var(--item-transition);
+  font-family: var(--item-font-family);
+  font-size: var(--item-font-size);
+  line-height: calc(var(--item-font-size) * .9);
+  padding: var(--padding_vertical_item) 5px !important;
+  /* transform: scale(.95); */
+  border-color: transparent !important;
+
+
+}
+
+.selectedClassName{
+  background-color: red !important;
+}
+
+
+.filterItem:hover {
+  opacity: 0.8;
+  /* transform: scale(1); */
+  background-color: white;
+}
+
+
+.operator {
+  /* display: inline-flex; */
+  /* align-items: center;
+  justify-content: center; */
+  /* padding: var(--item-padding-vertical, 4px) var(--item-padding-horizontal, 8px); */
+  border-radius: var(--item-radius, 4px);
+  background-color: var(--color-operator-bg, #f0f0f0);
+  font-size: var(--item-font-size);
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  user-select: none;
+  background-color: transparent;
+  padding: 4px 0px;
+  line-height:var(--item-font-size);
+
+}
+
+.operator:hover {
+  background-color: var(--color-operator-bg-hover, #e0e0e0);
+  transform: scale(1.05);
+}
+
+.operator:active {
+  transform: scale(0.95);
+}
+
+.parenthesis {
+  font-size: var(--font_size_infotext);
+  width: 4px;
+  padding: 0 0;
+  /* margin-top:-3px; */
+  opacity:.3;
+}
+
+/* Selected item styling - applies white text when item has a color_block class */
+.filterItem:global([class*="_color_block"]) {
+  color: white;
+}
+
+.filterItem:global([class*="_color_block"]) * {
+  color: white !important;
+}

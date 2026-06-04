@@ -1,0 +1,66 @@
+.filtersContainer {
+  /* width: 100%; */
+  /* gap: 3px;
+  line-height: 11px;
+  font-size: 11px;
+  font-family: 'IBMPlexSans-regular';
+  padding-top: var(--item-margin-top) !important; */
+}
+
+.filterRow {
+  /* padding: 8px !important; */
+}
+
+.filterRowSpan {
+  /* background-color: var(--item-color-default) !important;
+  border-radius: var(--item-radius);
+  padding: 5px 10px;
+  line-height: 10px;
+  border-radius: var(--item-radius);
+  border: var(--item-border-default);
+  transition: var(--item-transition); */
+}
+
+.filterRowSpan:hover {
+  /* transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: var(--item-border-hover); */
+}
+/* 
+.filtersContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterText {
+  font-size: 11px;
+  color: #333;
+} */
+
+.timeValue {
+  padding: 0px 3px;
+
+  /* color: #2c5282;
+  padding: 0px 3px; */
+}
+
+.reference {
+  font-style: italic;
+}
+
+.operator {
+  font-family: 'IBMPlexSans-bold';
+}
+
+.when {
+  font-family: 'IBMPlexSans-bold';
+}
+.min {
+}

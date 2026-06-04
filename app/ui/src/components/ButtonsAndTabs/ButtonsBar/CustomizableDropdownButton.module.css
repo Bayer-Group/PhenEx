@@ -1,0 +1,13 @@
+.dropdownMenu {
+  position: fixed;
+  z-index: 9999;
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 150px;
+  max-width: 300px;
+  border: var(--border-accent);
+  overflow: hidden;
+}

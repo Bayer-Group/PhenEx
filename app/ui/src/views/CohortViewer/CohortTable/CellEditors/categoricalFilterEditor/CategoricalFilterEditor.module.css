@@ -1,0 +1,160 @@
+.container {
+  padding: 16px;
+  min-height: 100px;
+  /* max-height: 500px;
+  overflow-y: auto; */
+  background-color: white;
+  border-radius: var(--border-radius);
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+}
+
+.filterRow {
+  display: flex;
+}
+
+.filterRow input,
+.filterRow select {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.filterRow input {
+  flex: 1;
+}
+
+.filterRow select {
+  width: 120px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 10px 10px 10px;
+}
+
+.filterContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.logicalContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  padding: 0px 0px 0px 0px;
+  /* border: 3px solid blue; */
+}
+
+.lastCategoricalFilter {
+  margin-bottom: 10px;
+}
+
+.logicalOperator {
+  /* margin-top:-10px; */
+  padding: 5px 5px;
+  padding-bottom: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: black;
+  font-size: 20px;
+  font-family: 'IBMPlexSans-bold';
+  transition: 0.2s ease;
+}
+
+.logicalOperator:hover {
+  color: var(--color-accent);
+}
+
+.logicalBorderedArea:has(> .filters > .logicalOperator:hover) {
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.logicalButtons {
+  opacity: 0;
+  display: flex;
+  flex-direction: row;
+  right: 0px;
+  margin-top: 0px !important;
+  margin-left: auto;
+  gap: 10px;
+  transition: opacity 0.3s ease;
+  font-size: 10px;
+  z-index: 1000;
+  position: relative;
+}
+
+.filterContainer:hover > .logicalButtons,
+.logicalContainer:hover > .logicalButtons,
+.logicalButtons:hover {
+  opacity: 1;
+}
+
+.logicalButtons:hover + .logicalBorderedArea,
+.logicalButtons:hover ~ .logicalBorderedArea,
+.logicalContainer:hover > .logicalBorderedArea {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.logicalButtons button {
+  padding: 0px 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: var(--border);
+  border-radius: 8px;
+  background: #f5f5f5;
+  cursor: pointer;
+  color: var(--text-color-inactive);
+}
+
+.logicalButtons:hover > .logicalBorderedArea {
+  background-color: red;
+}
+
+.logicalButtons button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-accent);
+  color: white;
+}
+
+.logicalBorderedArea {
+  border: 1px solid var(--line-color);
+  border-radius: 12px;
+  padding: 7px 7px 8px 7px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.logicalBorderedArea:hover:not(:has(*:hover)) {
+  border-color: var(--color-accent);
+}
+
+.logicalBorderedArea:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.logicalLogicalButtons {
+  margin-top: -10px;
+  height: 12px;
+  font-size: 8px;
+  background-color: transparent;
+  padding-right: 5px;
+  padding-top: 4px;
+
+  transition: all 0.3s ease;
+  /* margin-bottom: 10px; */
+}
+
+.logicalLogicalButtons:hover {
+  transform: translateY(-1px);
+}

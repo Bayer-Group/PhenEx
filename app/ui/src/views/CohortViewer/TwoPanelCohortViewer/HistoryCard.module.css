@@ -1,0 +1,139 @@
+
+.historyCard {
+  position: absolute;
+  width: 150px;
+  /* width: auto;
+  min-width:100px;
+  max-width:150px; */
+  height: auto; /* Default to auto height */
+  max-height:60px;
+  min-height:20px;
+  border-radius: 8px;
+  border: 1px solid var(--line-color);
+  background: white;
+  cursor: pointer;
+  /* box-shadow:var(--box_shadow) !important; */
+  
+  /* Stack positioning using CSS custom property */
+  right: calc(var(--card-index) * 10px);
+
+  transform: translateZ(calc(var(--card-index) * 0px));
+  z-index: calc(10 - var(--card-index));
+  opacity: calc(1 - (var(--card-index) / (var(--max-cards) - 3)));
+  /* opacity: calc(1 - 1.2*(var(--card-index) / (var(--max-cards)))); */
+
+  line-height: 16px;
+  transition: all 0.2s ease;
+  top:50%;
+  transform: translateY(-50%);
+}
+
+/* Only the topmost card (index 0) gets fixed height */
+.cardIndex0 {
+    background-color: red;
+  height: 60px;
+}
+
+.historyCard:hover {
+  /* transform: translateZ(calc(var(--card-index) * 1px)) translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); */
+}
+
+.cardContent {
+  padding: 5px 10px 5px 30px;
+  height: 100%;
+  /* height: 40px; */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-family: "IBMPlexSans-bold";
+  /* color: #333; */
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  text-align: right;
+  
+  /* Allow up to 2 lines of text with ellipsis */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  
+  /* Remove position and transform that were interfering with centering */
+  width: 100%;
+  max-width: 100%;
+}
+
+.cardSubtitle {
+  font-size: 10px;
+  color: #666;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Index-specific classes for targeting cards */
+.cardIndex0 {
+  /* Topmost card gets fixed height */
+  height: auto;
+}
+
+.cardIndex1 {
+  /* Auto height for cards behind the top card */
+  height: auto;
+}
+
+.cardIndex2 {
+  /* Auto height for cards behind the top card */
+  height: 60px;
+  background-color: red;
+}
+
+.cardIndex3 {
+  /* Auto height for cards behind the top card */
+  height: 60px;
+}
+
+/* Stack hover animation behavior */
+/* Use CSS calc to dynamically position cards based on their index */
+/* The topmost card (highest index) should not move */
+/* Cards behind it should move up progressively more */
+
+/* Define a CSS variable for card height and spacing */
+:root {
+  --card-height: 60px;
+  --max-cards: 4; /* Should match maxCards from React component */
+  --card-x-offset: 120px; /* Fixed pixel offset for consistent spacing */
+}
+
+/* Global hover animation using CSS custom properties */
+.cardHovered {
+  /* NO Y translation - just spread out horizontally */
+  /* Index 0 (topmost, highest z-index) should NOT move */
+  /* Higher index cards should move LEFT (negative X) */
+  transform: translateZ(calc(var(--card-index) * 0px)) 
+             translateX(calc(var(--card-index) * -160px)) 
+             translateY(-50%) 
+             !important;
+
+    opacity: 1;
+}
+
+
+.backButton{
+  left: 8px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  font-family: 'SNPro-black' !important;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+}

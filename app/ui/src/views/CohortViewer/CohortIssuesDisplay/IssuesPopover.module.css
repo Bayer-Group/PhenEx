@@ -1,0 +1,186 @@
+:root {
+  --issue_popover_margin: 15px;
+  --issue_popover_radius: 20px;
+  --color_translucent: rgba(248, 249, 250, 0.8);
+  --issues_popover_gutter:0px;
+}
+
+.customCloseButton {
+  position: absolute;
+  top: 5px;
+  right: -12px;
+  height:60px;
+  width: 50px !important;
+
+  background: transparent;
+  border: none;
+  font-size: 40px;
+  font-family: "IBMPlexSans-bold";
+  cursor: pointer;
+  color: var(--color-accent-bright);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  transition: color .3s ease;
+
+}
+
+.customCloseButton:hover {
+  color:var(--color_accent_orange);
+}
+
+.customCloseButton:focus{
+  border:none;
+  outline:none;
+}
+
+.popover {
+  position: absolute;
+  right: var(--issue_popover_margin);
+  bottom: 0px;
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: var(--border);
+  border-radius: var(--issue_popover_radius) var(--issue_popover_radius)
+    var(--issue_popover_radius) var(--issue_popover_radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 2;
+  overflow: hidden;
+  height: 80vh;
+}
+
+.popover.draggable{
+  background-color: red!important;
+  bottom: none;
+}
+.popover.noIssues {
+  border-color: var(--phenex-green);
+}
+
+.body {
+  flex: 1;
+  overflow: auto!important;
+  padding: 80px var(--issues_popover_gutter) 10px var(--issues_popover_gutter);
+  margin-top: 0px;
+  background-color: transparent;
+}
+
+.tabsWithIcon {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: rgba(248, 249, 250, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 8px 12px;
+  border-radius: 8px;
+  z-index: 10;
+  border: 1px solid var(--line-color);
+}
+
+.birdIcon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.tabsContainer {
+  height: auto;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+  background-color: rgba(250,250,250,0.8)!important;
+  border: 1px solid var(--line-color)!important;
+  backdrop-filter: blur(10px);
+  width: fit-content;
+}
+
+.tabsContainer:hover{
+  background-color: var(--color-accent-hover)!important;
+  border: 1px solid var(--color-accent-bright)!important;
+}
+
+.tab{
+  font-size: 18px!important;
+  padding: 12px 20px!important;
+  border-radius: 6px!important;
+  height: auto!important;
+  min-height: 44px!important;
+  color: var(--text-color-inactive)!important;
+  background-color: var(--button-background-color-default)!important;
+  border: 1px solid var(--button-border-color-default)!important;
+  font-family: 'IBMPlexSans-bold'!important;
+  cursor: pointer!important;
+  transition: all 0.2s ease-in-out!important;
+  white-space: nowrap!important;
+}
+
+.tab:hover {
+  background-color: var(--button-background-color-hover)!important;
+  color: var(--color-accent-bright)!important;
+  border: 1px solid var(--color-accent-bright)!important;
+}
+
+/* This targets the active tab through the Tabs component's active class */
+.tab:global(.active) {
+  background-color: var(--color-accent-bright)!important;
+  color: white!important;
+  border: 1px solid var(--color-accent-bright)!important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)!important;
+}
+
+.transparentHeader{
+  position: absolute;
+  top:0px;
+  height:100px;
+  background-color: transparent;
+  width:100%;
+  z-index: 1000;
+  cursor: grab;
+  /* Ensure it doesn't interfere with resize handles */
+  pointer-events: auto;
+}
+
+.transparentHeaderGradient{
+  position: absolute;
+  top:0px;
+  width:100%;
+  height:100%;
+  background: linear-gradient(0deg, transparent, white);
+}
+
+.customScrollbarThumb {
+  background-color: var(--color-accent-bright);
+  border-radius: 4px;
+}
+
+.resizablePopover .popover {
+  /* Make popover fill the resizable container */
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+  right: auto !important;
+  bottom: auto !important;
+  top: auto !important;
+  left: auto !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.resizablePopover .body {
+  /* Make body flexible to fill available space */
+  flex: 1;
+  overflow: hidden;
+  min-height: 0; /* Allow flexbox shrinking */
+}
