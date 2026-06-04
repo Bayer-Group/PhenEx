@@ -3,6 +3,7 @@ import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataS
 import {
   suggestChanges,
   getUserCohort,
+  getPublicCohort,
   acceptChanges,
   rejectChanges,
 } from '../../api/text_to_cohort/route';
@@ -290,7 +291,20 @@ class ChatPanelDataService {
       if (this.cohortDataService.cohort_data?.id) {
         try {
           console.log('Fetching updated cohort after AI changes...');
-          const response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
+          let response: any;
+          try {
+            response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
+          } catch (userCohortError: any) {
+            // If the cohort isn't owned by the current user (e.g. a public cohort),
+            // fall back to the public cohort endpoint.
+            const status = userCohortError?.response?.status ?? userCohortError?.status;
+            if (status === 404) {
+              console.log('getUserCohort returned 404, retrying as public cohort...');
+              response = await getPublicCohort(this.cohortDataService.cohort_data.id, true);
+            } else {
+              throw userCohortError;
+            }
+          }
           this.cohortDataService.updateCohortFromChat(response);
         } catch (error) {
           console.error('Failed to fetch updated cohort after AI changes:', error);
