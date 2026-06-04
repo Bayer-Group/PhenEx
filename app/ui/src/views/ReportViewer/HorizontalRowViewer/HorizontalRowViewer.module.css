@@ -44,15 +44,23 @@
 
 .titleBar {
   padding: 5px 10px;
+  margin-left:30px;
   pointer-events: auto;
-  background-color: white;
+  background-color: transparent;
   border-radius: 10px;
-  border: var(--border);
+  border: 1px solid transparent;
   font-family: "IBMPlexSans-regular", sans-serif;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
   display: flex;
   align-items: center;
   z-index: 10;
+  transition: background-color 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.titleBarScrolled {
+  background-color: white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  border: var(--border);
 }
 
 .backButton {
@@ -71,6 +79,8 @@
   transition: color 0.15s;
   animation: backButtonIn 0.3s ease-out both;
   animation-delay: 0.15s;
+  position: absolute;
+  /* margin-top:30px; */
 }
 
 .backButton:hover {

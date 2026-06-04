@@ -257,7 +257,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
           </svg>
         </button>
         
-        <div className={styles.titleBar}>
+        <div className={`${styles.titleBar} ${showRowTitle ? styles.titleBarScrolled : ''}`}>
           <HorizontalRowTitle
             rows={rows}
             currentIndex={currentIndex}
