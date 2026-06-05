@@ -49,6 +49,11 @@ class FurtherValueFilterPhenotype(Phenotype):
     ):
         super(FurtherValueFilterPhenotype, self).__init__(**kwargs)
 
+        if not isinstance(phenotype, Phenotype):
+            raise TypeError(
+                f"'phenotype' must be a Phenotype instance, got {type(phenotype).__name__}."
+            )
+
         self.source_phenotype = phenotype
         self.add_children(phenotype)
 
