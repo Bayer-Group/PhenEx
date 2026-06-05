@@ -665,7 +665,7 @@ class Cohort:
                 con=con,
                 overwrite=overwrite,
                 n_threads=n_threads,
-                lazy_execution=False,
+                lazy_execution=lazy_execution,
                 table_name_prefix=self.name,
             )
             # TODO fix this hacky solution. Remove entry_criterion from subset table children so it won't be
@@ -681,7 +681,7 @@ class Cohort:
                 con=None,
                 overwrite=overwrite,
                 n_threads=n_threads,
-                lazy_execution=lazy_execution,
+                lazy_execution=False,
                 table_name_prefix=self.name,
             )
             # Restore entry_criterion as a child for correct dependency graphs later
