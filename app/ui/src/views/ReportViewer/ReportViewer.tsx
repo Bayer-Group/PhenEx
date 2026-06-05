@@ -529,7 +529,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                 onNavigate={setViewerIndex}
               />
             </div>
-            <OutlineBar entries={outlineEntries} activeSection={activeSection} />
+            {/* <OutlineBar entries={outlineEntries} activeSection={activeSection} /> */}
 
             {/* Zoom controls — bottom right */}
             <div className={styles.zoomControls}>

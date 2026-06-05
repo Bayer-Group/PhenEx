@@ -289,3 +289,39 @@
   right:20px;
 
 }
+
+/* ── Outline panel (slideover) ───────────────────────────────────────── */
+
+.outlinePanel {
+  display: flex;
+  flex-direction: column;
+  padding: 5vh 16px 32px 16px;
+  box-sizing: border-box;
+}
+
+.outlineItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 6px;
+  transition: background 0.1s;
+}
+
+.outlineItem:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.outlineItemActive {
+  background: rgba(0, 0, 0, 0.08);
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}

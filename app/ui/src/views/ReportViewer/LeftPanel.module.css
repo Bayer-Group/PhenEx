@@ -112,3 +112,15 @@
   color: #555;
   line-height: 1.2;
 }
+
+.scrollBarTrack{
+  /* background-color: red; */
+}
+
+.scrollBarThumb{
+  background-color: rgb(217, 217, 217) !important;
+}
+
+.scrollBarTrack:hover {
+  background-color: transparent !important;
+}
