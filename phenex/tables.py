@@ -132,6 +132,7 @@ class PhenexTable:
     KNOWN_FIELDS = []  # List[phenex column names]
     DEFAULT_MAPPING = {}  # dict: input column name -> phenex column name
     PATHS = {}  # dict: table class name -> List[other table class names]
+    DATE_FORMAT = {}  # dict: source column name -> strftime format string
     REQUIRED_FIELDS = list(DEFAULT_MAPPING.keys())
 
     def __init__(self, table, name=None, column_mapping={}):
@@ -177,6 +178,15 @@ class PhenexTable:
         default_mapping.update(column_mapping)
         return default_mapping
 
+    def _format_column(self, col_ref, col_name):
+        """
+        Apply date formatting if the source column has a DATE_FORMAT entry.
+        Parses string columns to timestamps using the specified strftime format.
+        """
+        if col_name in self.DATE_FORMAT:
+            return col_ref.to_timestamp(self.DATE_FORMAT[col_name])
+        return col_ref
+
     def _resolve_column_mapping(self, table, column_mapping):
         """
         Convert raw column mapping (strings/lists) to ibis expressions for use in mutate().
@@ -184,15 +194,16 @@ class PhenexTable:
         String values become direct column references: table[col].
         List values become coalesce expressions over the listed columns.
         Date columns in a coalesce list are cast to timestamp for consistent typing.
+        Date formatting via DATE_FORMAT is applied before coalescing.
         """
         processed_mapping = {}
         for key, value in column_mapping.items():
             if isinstance(value, list):
                 # Coalesce multiple columns - first non-null value wins
-                # Cast date columns to timestamp for consistent typing
+                # Apply date formatting, then cast dates to timestamp for consistent typing
                 cols = []
                 for col in value:
-                    col_ref = table[col]
+                    col_ref = self._format_column(table[col], col)
                     col_type = str(col_ref.type())
                     if col_type.startswith("date") and not col_type.startswith(
                         "timestamp"
@@ -201,8 +212,8 @@ class PhenexTable:
                     cols.append(col_ref)
                 processed_mapping[key] = ibis.coalesce(*cols)
             else:
-                # Single column mapping - create column reference
-                processed_mapping[key] = table[value]
+                # Single column mapping - apply date formatting if specified
+                processed_mapping[key] = self._format_column(table[value], value)
         return processed_mapping
 
     def __getattr__(self, name):
@@ -371,6 +382,7 @@ class PhenexTable:
             "KNOWN_FIELDS": cls.KNOWN_FIELDS,
             "DEFAULT_MAPPING": cls.DEFAULT_MAPPING,
             "PATHS": cls.PATHS,
+            "DATE_FORMAT": cls.DATE_FORMAT,
             "REQUIRED_FIELDS": cls.REQUIRED_FIELDS,
         }
 
@@ -472,6 +484,8 @@ class PhenexVisitOccurrenceTable(PhenexTable):
         "VISIT_OCCURRENCE_ID": "VISIT_DETAIL_ID",
         "VISIT_OCCURRENCE_SOURCE_VALUE": "VISIT_DETAIL_SOURCE_VALUE",
     }
+
+    DATE_FORMAT = {}  # e.g. {"VISIT_DETAIL_ID": "%Y%m%d"}
 
 
 class PhenexIndexTable(PhenexTable):
