@@ -165,13 +165,13 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
   return (
     <div ref={legendBarRef} className={styles.legendBar}>
-      <div className={styles.topGradient} />
+      {/* <div className={styles.topGradient} /> */}
 
-      {allDescKeys.length > 0 && (
+      {/* {allDescKeys.length > 0 && (
         <button className={styles.toggleAllDescsBtn} onClick={toggleAllDescs}>
           {allDescsExpanded ? 'Hide all descriptions' : 'Show all descriptions'}
         </button>
-      )}
+      )} */}
 
       {groups.map((group, gi) => {
         const groupColor = getCohortColor(gi, 0, group.subcohorts.length);

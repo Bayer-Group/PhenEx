@@ -23,6 +23,7 @@
   padding-left: 55px;
   pointer-events: auto;
   background-color: transparent !important;
+  opacity: 0;
 }
 
 .tabsContainer {
@@ -47,7 +48,7 @@
 
 .actionBarRegion {
   position: absolute;
-  top: 60px;
+  bottom: 60px;
   left: 0;
   right: 0;
   z-index: 99;
