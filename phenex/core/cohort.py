@@ -636,7 +636,7 @@ class Cohort:
                 con=con,
                 overwrite=overwrite,
                 n_threads=n_threads,
-                lazy_execution=lazy_execution,
+                lazy_execution=False,
                 table_name_prefix=self.name,
             )
             # TODO fix this hacky solution. Remove entry_criterion from subset table children so it won't be
