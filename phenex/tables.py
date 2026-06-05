@@ -29,23 +29,29 @@ class PhenexTable:
       Example: {"EVENT_DATE": ["STARTDATETIME", "RECORDEDDATETIME"]} creates EVENT_DATE using
       STARTDATETIME if available, falling back to RECORDEDDATETIME if STARTDATETIME is null
 
-    DATE_FORMAT is a dictionary mapping source (original) column names to Python strftime format
-    strings. When a source column appears in DATE_FORMAT, its string values are parsed into
-    timestamps using the specified format before any further processing (coalescing, casting, etc.).
+    DATE_FORMAT is a dictionary mapping source (original) column names to date format strings.
+    When a source column appears in DATE_FORMAT, its string values are parsed into timestamps
+    using the specified format before any further processing (coalescing, casting, etc.).
     This is useful when date columns are stored as strings in the source data.
 
-    Example:
+    IMPORTANT: The format string must use the syntax of your database backend, not Python strftime.
+    Common formats by backend:
+    - Snowflake: "YYYYMMDD", "YYYYMM", "YYYY-MM-DD"
+    - DuckDB: "%Y%m%d", "%Y%m", "%Y-%m-%d"
+    - BigQuery: "%Y%m%d", "%Y%m", "%Y-%m-%d"
+
+    Example (Snowflake):
     ```python
     class MyCodeTable(CodeTable):
-        DATE_FORMAT = {"EVENTDATE": "%Y%m%d"}  # parse "20240115" -> 2024-01-15
+        DATE_FORMAT = {"EVENTDATE": "YYYYMMDD"}  # parse "20240115" -> 2024-01-15
         DEFAULT_MAPPING = {
             "EVENT_DATE": "EVENTDATE",  # single column with date formatting
         }
 
     class MyCodeTableCoalesce(CodeTable):
         DATE_FORMAT = {
-            "STARTDATE": "%Y%m%d",      # parse "20240115" -> 2024-01-15
-            "RECORDEDDATE": "%d/%m/%Y",  # parse "15/01/2024" -> 2024-01-15
+            "STARTDATE": "YYYYMMDD",      # parse "20240115" -> 2024-01-15
+            "RECORDEDDATE": "DD/MM/YYYY",  # parse "15/01/2024" -> 2024-01-15
         }
         DEFAULT_MAPPING = {
             "EVENT_DATE": ["STARTDATE", "RECORDEDDATE"],  # coalesce after formatting
@@ -155,7 +161,7 @@ class PhenexTable:
     KNOWN_FIELDS = []  # List[phenex column names]
     DEFAULT_MAPPING = {}  # dict: input column name -> phenex column name
     PATHS = {}  # dict: table class name -> List[other table class names]
-    DATE_FORMAT = {}  # dict: source column name -> strftime format string
+    DATE_FORMAT = {}  # dict: source column name -> backend-native date format string
     REQUIRED_FIELDS = list(DEFAULT_MAPPING.keys())
 
     def __init__(self, table, name=None, column_mapping={}):
@@ -204,7 +210,7 @@ class PhenexTable:
     def _format_column(self, col_ref, col_name):
         """
         Apply date formatting if the source column has a DATE_FORMAT entry.
-        Parses string columns to timestamps using the specified strftime format.
+        Parses string columns to timestamps using the backend's native format.
         """
         if col_name in self.DATE_FORMAT:
             return col_ref.to_timestamp(self.DATE_FORMAT[col_name])
@@ -508,7 +514,7 @@ class PhenexVisitOccurrenceTable(PhenexTable):
         "VISIT_OCCURRENCE_SOURCE_VALUE": "VISIT_DETAIL_SOURCE_VALUE",
     }
 
-    DATE_FORMAT = {}  # e.g. {"VISIT_DETAIL_ID": "%Y%m%d"}
+    DATE_FORMAT = {}  # e.g. Snowflake: {"VISIT_DETAIL_ID": "YYYYMMDD"}
 
 
 class PhenexIndexTable(PhenexTable):
