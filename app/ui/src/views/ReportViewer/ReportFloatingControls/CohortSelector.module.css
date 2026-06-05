@@ -86,7 +86,7 @@
 }
 
 .legendGroupDescription{
-  padding: 2px 15px 0px 0px;
+  padding: 2px 0px 0px 12px;
   font-size: var(--font_size_infotext, 12px);
   color: #666;
   font-weight: 400;

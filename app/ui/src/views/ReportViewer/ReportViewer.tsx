@@ -1,20 +1,12 @@
-import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { FC, useState, useEffect, useCallback, useMemo } from 'react';
 import styles from './ReportViewer.module.css';
-import { PanZoomScrollbar } from '../../components/CustomScrollbar/PanZoomScrollbar';
-import { usePanZoom } from '../../hooks/usePanZoom';
-import { PanZoomScaleProvider } from '../../hooks/PanZoomScaleContext';
 import { LeftPanel } from './LeftPanel';
-import { CharacteristicsChart } from './GraphsAndTables/CharacteristicsChart';
-import { Table2Chart, TimeToEventChart, type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
+import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
-import { AttritionChart } from './GraphsAndTables/AttritionChart';
-import { ChartGroup } from './GraphsAndTables/ChartGroup';
-import { StudyInfoPanel } from './GraphsAndTables/StudyInfoPanel';
-import { ZoomScrubber } from './ReportFloatingControls/ZoomScrubber';
-import { OutlineBar, type OutlineEntry } from './OutlineBar';
-import { useVisibleSection } from './useVisibleSection';
+import { type OutlineEntry } from './OutlineBar';
 import { ThreePanelView } from '../MainView/ThreePanelView/ThreePanelView';
 import { ThreePanelCollapseProvider } from '../../contexts/ThreePanelCollapseContext';
+import { SpatialStudyDisplay } from './SpatialStudyDisplay';
 import {
   classifyRows,
   parseCohortGroups,
@@ -29,7 +21,6 @@ import {
   type Report,
 } from './types';
 import { buildSequentialRowList, getSectionNames, type StudyRegistry } from './studyRegistryUtils';
-import { HorizontalRowTitle } from './HorizontalRowViewer/HorizontalRowTitle';
 
 interface WaterfallInfoRow {
   Name: string;
@@ -261,25 +252,10 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   const tteRows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'TimeToEvent'), [sequentialRows]);
 
   // ── HorizontalRowViewer state (single instance for all charts) ────────
-  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const scrollToElementRef = useRef<(el: HTMLElement | null) => void>(() => {});
-  const viewportElRef = useRef<HTMLDivElement | null>(null);
-  const closeViewer = useCallback((finalIndex: number) => {
-    const openedIndex = viewerIndex;
-    setViewerIndex(null);
-    if (finalIndex === openedIndex) return;
-    const row = sequentialRows[finalIndex];
-    if (!row) return;
-    const el = document.querySelector(`[data-row-name="${CSS.escape(row.name)}"]`) as HTMLElement | null;
-    if (!el) return;
-    const vp = viewportElRef.current;
-    if (vp) {
-      const vpRect = vp.getBoundingClientRect();
-      const elRect = el.getBoundingClientRect();
-      if (elRect.top >= vpRect.top && elRect.bottom <= vpRect.bottom) return;
-    }
-    scrollToElementRef.current(el);
-  }, [sequentialRows, viewerIndex]);
+  const [viewerIndex, setViewerIndex] = useState<number>(-1);
+  const closeViewer = useCallback((_finalIndex: number) => {
+    setViewerIndex(-1);
+  }, []);
 
   // ── Table2 + TimeToEvent ──────────────────────────────────────────────
   const table2Cohorts: Table2Cohort[] = useMemo(
@@ -345,148 +321,33 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     [findGroupInfo, updateSelections],
   );
 
-  // ── Pan & zoom ────────────────────────────────────────────────────────
-  const INITIAL_X = -50;
-  const INITIAL_Y = 0;
-  const INITIAL_SCALE = .1;
-  const PAN_X_OFFSET = 20;
-  const PAN_Y_OFFSET = 100;
+  const studyDescription = "This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints.";
 
-  const baselineSectionRefs = useRef(new Map<string, HTMLDivElement>());
-  const outcomesSectionRefs = useRef(new Map<string, HTMLDivElement>());
-  const attritionRef = useRef<HTMLDivElement>(null);
-  const baselineGroupRef = useRef<HTMLDivElement>(null);
-  const outcomesGroupRef = useRef<HTMLDivElement>(null);
-  const table2GroupRef = useRef<HTMLDivElement>(null);
-  const tteGroupRef = useRef<HTMLDivElement>(null);
-
-  const pz = usePanZoom({
-    minScale: 0.1,
-    maxScale: .3,
-    initialTransform: { x: INITIAL_X, y: INITIAL_Y, scale: INITIAL_SCALE },
-    storageKey,
-    panTargetXOffset: PAN_X_OFFSET,
-    panTargetYOffset: PAN_Y_OFFSET,
-    lockX: (vpWidth, contentWidth, scale) => {
-      const scaledContent = contentWidth * scale;
-      if (scaledContent >= vpWidth) return -50;
-      return (vpWidth - scaledContent) / 2 - 150;
-    },
-  });
-
-  const baselineSectionNames = useMemo(() => getSectionNames(sequentialRows, 'table1'), [sequentialRows]);
-  const outcomesSectionNames = useMemo(() => getSectionNames(sequentialRows, 'table1_outcomes'), [sequentialRows]);
-
-  const scrollToSection = useCallback(
-    (name: string, refs: Map<string, HTMLDivElement>) => {
-      const el = refs.get(name);
-      const contentInner = pz.contentRef.current;
-      if (!el || !contentInner) return;
-      let top = 0;
-      let current: HTMLElement | null = el;
-      while (current && current !== contentInner) {
-        top += current.offsetTop;
-        current = current.offsetParent as HTMLElement | null;
-      }
-      pz.panToContent(0, top);
-    },
-    [pz],
-  );
-
-  const scrollToElement = useCallback(
-    (el: HTMLElement | null) => {
-      const contentInner = pz.contentRef.current;
-      if (!el || !contentInner) return;
-      let top = 0;
-      let current: HTMLElement | null = el;
-      while (current && current !== contentInner) {
-        top += current.offsetTop;
-        current = current.offsetParent as HTMLElement | null;
-      }
-      pz.panToContent(0, top);
-    },
-    [pz],
-  );
-  scrollToElementRef.current = scrollToElement;
-  viewportElRef.current = pz.viewportRef.current;
-
-  // ── Visible section tracking ──────────────────────────────────────────
-  const getVisibleSections = useCallback(() => {
-    const entries: { name: string; element: HTMLElement }[] = [];
-    if (attritionRef.current) entries.push({ name: 'Attrition', element: attritionRef.current });
-    if (baselineGroupRef.current) entries.push({ name: 'Baseline characteristics', element: baselineGroupRef.current });
-    for (const [name, el] of baselineSectionRefs.current) {
-      entries.push({ name, element: el });
-    }
-    if (outcomesGroupRef.current) entries.push({ name: 'Outcomes', element: outcomesGroupRef.current });
-    for (const [name, el] of outcomesSectionRefs.current) {
-      entries.push({ name, element: el });
-    }
-    if (table2GroupRef.current) entries.push({ name: 'Incidence Rates', element: table2GroupRef.current });
-    if (tteGroupRef.current) entries.push({ name: 'Time to Event', element: tteGroupRef.current });
-    return entries;
-  }, []);
-
-  const activeSection = useVisibleSection(pz.viewportRef, pz.contentRef, getVisibleSections);
-
-  const SECTION_TO_CATEGORY: Record<string, string> = {
-    'Attrition': 'attrition',
-    'Baseline characteristics': 'baseline_characteristics',
-    'Outcomes': 'outcomes',
-    'Incidence Rates': 'outcomes',
-    'Time to Event': 'outcomes',
-  };
-
-  const activeTitleIndex = useMemo(() => {
-    if (!activeSection || !sequentialRows.length) return 0;
-    const bySection = sequentialRows.findIndex((r) => r.section === activeSection);
-    if (bySection >= 0) return bySection;
-    const catKey = SECTION_TO_CATEGORY[activeSection];
-    if (catKey) {
-      const byCat = sequentialRows.findIndex((r) => r.category === catKey);
-      if (byCat >= 0) return byCat;
-    }
-    return 0;
-  }, [activeSection, sequentialRows]);
-
-  // ── Track pan-zoom Y to show/hide floating title ──────────────────────
-  const [showFloatingTitle, setShowFloatingTitle] = useState(false);
-
-  useEffect(() => {
-    const el = pz.contentRef.current;
-    if (!el) return;
-    const check = () => {
-      const m = el.style.transform.match(/translate\([^,]+,\s*([^)]+)px\)/);
-      if (m) setShowFloatingTitle(parseFloat(m[1]) < -100);
-    };
-    check();
-    const observer = new MutationObserver(check);
-    observer.observe(el, { attributes: true, attributeFilter: ['style'] });
-    return () => observer.disconnect();
-  }, [pz.contentRef]);
-
-  // ── Outline entries ───────────────────────────────────────────────────
+  // ── Outline entries (for LeftPanel) ───────────────────────────────────
   const outlineEntries: OutlineEntry[] = useMemo(() => {
     const entries: OutlineEntry[] = [];
-    entries.push({ name: 'Attrition', level: 0, onClick: () => scrollToElement(attritionRef.current) });
-    entries.push({ name: 'Baseline characteristics', level: 0, onClick: () => scrollToElement(baselineGroupRef.current) });
+    const baselineSectionNames = getSectionNames(sequentialRows, 'table1');
+    const outcomesSectionNames = getSectionNames(sequentialRows, 'table1_outcomes');
+
+    entries.push({ name: 'Attrition', level: 0, onClick: () => {} });
+    entries.push({ name: 'Baseline characteristics', level: 0, onClick: () => {} });
     for (const name of baselineSectionNames) {
-      entries.push({ name, level: 1, onClick: () => scrollToSection(name, baselineSectionRefs.current) });
+      entries.push({ name, level: 1, onClick: () => {} });
     }
     if (outcomesSectionNames.length > 0 || table2Rows.length > 0 || tteRows.length > 0) {
-      entries.push({ name: 'Outcomes', level: 0, onClick: () => scrollToElement(outcomesGroupRef.current) });
+      entries.push({ name: 'Outcomes', level: 0, onClick: () => {} });
       for (const name of outcomesSectionNames) {
-        entries.push({ name, level: 1, onClick: () => scrollToSection(name, outcomesSectionRefs.current) });
+        entries.push({ name, level: 1, onClick: () => {} });
       }
       if (table2Rows.length > 0) {
-        entries.push({ name: 'Incidence Rates', level: 1, onClick: () => scrollToElement(table2GroupRef.current) });
+        entries.push({ name: 'Incidence Rates', level: 1, onClick: () => {} });
       }
       if (tteRows.length > 0) {
-        entries.push({ name: 'Time to Event', level: 1, onClick: () => scrollToElement(tteGroupRef.current) });
+        entries.push({ name: 'Time to Event', level: 1, onClick: () => {} });
       }
     }
     return entries;
-  }, [baselineSectionNames, outcomesSectionNames, table2Rows.length, tteRows.length, scrollToElement, scrollToSection]);
+  }, [sequentialRows, table2Rows.length, tteRows.length]);
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
@@ -506,7 +367,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
             selections={selections}
             entries={outlineEntries}
             rows={sequentialRows}
-            activeSection={activeSection}
+            activeSection={null}
             activeRowIndex={viewerIndex}
             onOpenRow={setViewerIndex}
             onReplace={handleReplace}
@@ -519,118 +380,28 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
           {/* Center panel: charts */}
           <div className={styles.centerPanel}>
+            <SpatialStudyDisplay
+              cohortData={cohortData}
+              outcomesCohortData={outcomesCohortData}
+              waterfallData={waterfallData}
+              sequentialRows={sequentialRows}
+              table1Rows={table1Rows}
+              outcomesRows={outcomesRows}
+              table2Rows={table2Rows}
+              tteRows={tteRows}
+              table2Cohorts={table2Cohorts}
+              tteCohorts={tteCohorts}
+              groups={groups}
+              cohortDescriptions={cohortDescriptions}
+              finalCohortSizes={finalCohortSizes}
+              title={displayTitle}
+              description={studyDescription}
+              loading={loading}
+              storageKey={storageKey}
+              onOpenRow={setViewerIndex}
+            />
 
-            <div className={`${styles.floatingTitle} ${showFloatingTitle ? styles.floatingTitleVisible : ''}`}>
-              <HorizontalRowTitle
-                rows={sequentialRows}
-                currentIndex={activeTitleIndex}
-                desiredTop="0"
-                studyTitle={displayTitle}
-                onNavigate={setViewerIndex}
-              />
-            </div>
-            {/* <OutlineBar entries={outlineEntries} activeSection={activeSection} /> */}
-
-            {/* Zoom controls — bottom right */}
-            <div className={styles.zoomControls}>
-              {!pz.isAtHome && (
-                <button
-                  onClick={pz.resetView}
-                  title="Reset view"
-                  className={styles.resetViewButton}
-                >
-                  reset view
-                </button>
-              )}
-              <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
-            </div>
-
-            {/* <div className={styles.fakeDataLabel}>FAKE DATA</div> */}
-
-            <div className={styles.content} ref={pz.viewportRef}>
-              <div className={styles.topGradient} />
-
-              <div className={styles.contentInner} ref={pz.contentRef}>
-                <PanZoomScaleProvider value={pz.scale}>
-                  {loading && <div className={styles.loading}>Loading…</div>}
-
-                  {!loading && !cohortData.length && (
-                    <div className={styles.empty}>Select one or more cohorts to view data.</div>
-                  )}
-
-                  {cohortData.length > 0 && (
-                    <>
-                      <StudyInfoPanel
-                        title={displayTitle}
-                        description="This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints."
-                      />
-
-                      <div ref={attritionRef}>
-                        <ChartGroup title="Attrition">
-                          <AttritionChart cohortData={cohortData} waterfall={waterfallData} groups={groups} cohortDescriptions={cohortDescriptions} />
-                        </ChartGroup>
-                      </div>
-
-                      <div ref={baselineGroupRef}>
-                        <ChartGroup title="Baseline Characteristics">
-                          <CharacteristicsChart
-                            cohortData={cohortData}
-                            reporterRows={table1Rows}
-                            sectionRefs={baselineSectionRefs.current}
-                            onOpen={setViewerIndex}
-                            finalCohortSizes={finalCohortSizes}
-                          />
-                        </ChartGroup>
-                      </div>
-
-                      {outcomesRows.length > 0 && (
-                        <div ref={outcomesGroupRef}>
-                          <ChartGroup title="Outcomes">
-                            <CharacteristicsChart
-                              cohortData={outcomesCohortData}
-                              reporterRows={outcomesRows}
-                              sectionRefs={outcomesSectionRefs.current}
-                              onOpen={setViewerIndex}
-                              finalCohortSizes={finalCohortSizes}
-                            />
-                          </ChartGroup>
-                        </div>
-                      )}
-
-                      {table2Rows.length > 0 && (
-                        <div ref={table2GroupRef}>
-                          <ChartGroup title="Incidence Rates">
-                            <Table2Chart
-                              cohorts={table2Cohorts}
-                              reporterRows={table2Rows}
-                              onOpen={setViewerIndex}
-                            />
-                          </ChartGroup>
-                        </div>
-                      )}
-
-                      {tteRows.length > 0 && (
-                        <div ref={tteGroupRef}>
-                          <ChartGroup title="Time to Event">
-                            <TimeToEventChart
-                              cohorts={tteCohorts}
-                              reporterRows={tteRows}
-                              onOpen={setViewerIndex}
-                            />
-                          </ChartGroup>
-                        </div>
-                      )}
-
-                      <div className={styles.bottomSpacer} />
-                    </>
-                  )}
-                </PanZoomScaleProvider>
-              </div>
-              <PanZoomScrollbar {...pz.scrollbar} />
-            </div>
-
-            {viewerIndex != null && (
-              <HorizontalRowViewer
+            <HorizontalRowViewer
                 rows={sequentialRows}
                 initialIndex={viewerIndex}
                 cohortDataMap={cohortDataMap}
@@ -638,10 +409,9 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                 tteCohorts={tteCohorts}
                 table2Cohorts={table2Cohorts}
                 studyTitle={displayTitle}
-                studyDescription="This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints. This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints. This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints. This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints. This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints. This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints. This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints. This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints."
+                studyDescription={studyDescription}
                 onClose={closeViewer}
               />
-            )}
           </div>
 
           {/* Right panel: empty for future use */}

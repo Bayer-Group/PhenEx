@@ -44,21 +44,21 @@
 
 /* Level: study name */
 .crumb_study {
-  font-size: var(--font_size_breadcrumb, 14px);
+  font-size: var(--font_size_infotext, 14px);
   color: black;
   cursor: pointer;
 }
 
 /* Level: category (Baseline Characteristics, Outcomes, etc.) */
 .crumb_category {
-  font-size: var(--font_size_breadcrumb, 14px);
+  font-size: var(--font_size_infotext, 14px);
   color: black;
   cursor: pointer;
 }
 
 /* Level: section (Demographics, etc.) */
 .crumb_section {
-  font-size: var(--font_size_breadcrumb, 14px);
+  font-size: var(--font_size_infotext, 14px);
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;
   cursor: pointer;
