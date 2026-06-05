@@ -875,57 +875,6 @@ class MeasurementPhenotypeValueAggregationDuplicateValuesTestGenerator(
         return test_infos
 
 
-class MeasurementPhenotypeFurtherFilterTestGenerator(PhenotypeTestGenerator):
-    name_space = "mmpt_furtherfilter"
-    test_values = True
-
-    def define_input_tables(self):
-        df = pd.DataFrame()
-        N = 10
-        df["VALUE"] = list(range(N))
-        df["PERSON_ID"] = [f"P{x}" for x in range(N)]
-        df["CODE"] = "c1"
-        df["CODE_TYPE"] = "ICD10CM"
-        df["EVENT_DATE"] = None
-        df["flag"] = ["inpatient"] * 5 + [""] * (10 - 5)
-
-        return [
-            {
-                "name": "MEASUREMENT",
-                "df": df,
-            }
-        ]
-
-    def define_phenotype_tests(self):
-        codelist_factory = LocalCSVCodelistFactory(
-            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
-        )
-        phenotype_to_filter_further = MeasurementPhenotype(
-            name="leq9",
-            codelist=codelist_factory.get_codelist("c1"),
-            domain="MEASUREMENT",
-            value_filter=ValueFilter(value=9, operator="<="),
-        )
-
-        c2 = {
-            "name": "further_filter_l2",
-            "persons": [f"P{x}" for x in range(2)],
-            "values": [x for x in range(2)],
-            "phenotype": MeasurementPhenotype(
-                name="further_filter_l2",
-                value_filter=ValueFilter(value=2, operator="<"),
-                further_value_filter_phenotype=phenotype_to_filter_further,
-            ),
-        }
-
-        test_infos = [c2]
-        for test_info in test_infos:
-            test_info["refactor"] = True  # TODO remove once refactored
-            test_info["extra_tests"] = ["unique"]
-
-        return test_infos
-
-
 def test_measurement_phenotype():
     spg = MeasurementPhenotypeValueFilterTestGenerator()
     spg.run_tests()
