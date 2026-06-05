@@ -67,13 +67,17 @@ class Cohort:
         description: Optional[str] = None,
         database: Optional[Database] = None,
         custom_reporters: Optional[List] = None,
+<<<<<<< HEAD
         return_index: str = "first",
         max_index_dates: Optional[int] = None,
+=======
+>>>>>>> feat/dontwritevalues
         write_subset_tables_entry: bool = True,
     ):
         self.name = name
         self.description = description
         self.database = database
+<<<<<<< HEAD
         self.return_index = return_index
         self.max_index_dates = max_index_dates
 
@@ -99,6 +103,8 @@ class Cohort:
                 )
                 entry_criterion.return_date = "all"
 
+=======
+>>>>>>> feat/dontwritevalues
         self.write_subset_tables_entry = write_subset_tables_entry
         self.table = None  # Will be set during execution to index table
         self.subset_tables_entry = None  # Will be set during execution
@@ -659,19 +665,29 @@ class Cohort:
                 table_name_prefix=self.name,
             )
         else:
-            # Execute entry criterion first so it gets written to backend
+            # Execute entry criterion in-memory so .table stays on the source
+            # backend, avoiding cross-backend joins with subset tables.
             self.entry_criterion.execute(
                 tables=tables,
-                con=con,
+                con=None,
                 overwrite=overwrite,
                 n_threads=n_threads,
-                lazy_execution=lazy_execution,
                 table_name_prefix=self.name,
             )
-            # TODO fix this hacky solution. Remove entry_criterion from subset table children so it won't be
-            # re-executed as a dependency when the entry_stage runs.
-            # entry_criterion.table is already set, so SubsetTable._execute can
-            # still access it via self.index_phenotype.table.
+            # Write entry criterion and its dependencies to dest
+            if con is not None:
+                prefix = re.sub(r"[^A-Za-z0-9_]", "_", self.name).upper()
+                node = self.entry_criterion
+                if node.table is not None:
+                    db_name = (
+                        f"{prefix}__{node.name}"
+                        if not node.name.startswith(prefix)
+                        else node.name
+                    )
+                    con.create_table(node.table, db_name, overwrite=overwrite)
+            # Remove entry_criterion from subset table children so it won't be
+            # re-executed; its .table is already set and SubsetTable._execute
+            # accesses it via self.index_phenotype.table.
             for node in self.subset_tables_entry_nodes:
                 node._children = [
                     c for c in node._children if c is not self.entry_criterion
@@ -681,10 +697,9 @@ class Cohort:
                 con=None,
                 overwrite=overwrite,
                 n_threads=n_threads,
-                lazy_execution=False,
                 table_name_prefix=self.name,
             )
-            # Restore entry_criterion as a child for correct dependency graphs later
+            # Restore children for correct dependency graphs in later stages
             for node in self.subset_tables_entry_nodes:
                 node._children.insert(0, self.entry_criterion)
 
