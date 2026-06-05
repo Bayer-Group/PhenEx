@@ -29,6 +29,29 @@ class PhenexTable:
       Example: {"EVENT_DATE": ["STARTDATETIME", "RECORDEDDATETIME"]} creates EVENT_DATE using
       STARTDATETIME if available, falling back to RECORDEDDATETIME if STARTDATETIME is null
 
+    DATE_FORMAT is a dictionary mapping source (original) column names to Python strftime format
+    strings. When a source column appears in DATE_FORMAT, its string values are parsed into
+    timestamps using the specified format before any further processing (coalescing, casting, etc.).
+    This is useful when date columns are stored as strings in the source data.
+
+    Example:
+    ```python
+    class MyCodeTable(CodeTable):
+        DATE_FORMAT = {"EVENTDATE": "%Y%m%d"}  # parse "20240115" -> 2024-01-15
+        DEFAULT_MAPPING = {
+            "EVENT_DATE": "EVENTDATE",  # single column with date formatting
+        }
+
+    class MyCodeTableCoalesce(CodeTable):
+        DATE_FORMAT = {
+            "STARTDATE": "%Y%m%d",      # parse "20240115" -> 2024-01-15
+            "RECORDEDDATE": "%d/%m/%Y",  # parse "15/01/2024" -> 2024-01-15
+        }
+        DEFAULT_MAPPING = {
+            "EVENT_DATE": ["STARTDATE", "RECORDEDDATE"],  # coalesce after formatting
+        }
+    ```
+
     JOIN_KEYS and PATHS Documentation:
 
     JOIN_KEYS defines direct relationships between tables. The key is the CLASS NAME of the target table,
