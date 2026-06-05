@@ -69,6 +69,7 @@ class Cohort:
         custom_reporters: Optional[List] = None,
         return_index: str = "first",
         max_index_dates: Optional[int] = None,
+        write_subset_tables_entry: bool = True,
     ):
         self.name = name
         self.description = description
@@ -98,6 +99,7 @@ class Cohort:
                 )
                 entry_criterion.return_date = "all"
 
+        self.write_subset_tables_entry = write_subset_tables_entry
         self.table = None  # Will be set during execution to index table
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
@@ -647,14 +649,45 @@ class Cohort:
 
         logger.info(f"Cohort '{self.name}': executing entry stage ...")
 
-        self.entry_stage.execute(
-            tables=tables,
-            con=con,
-            overwrite=overwrite,
-            n_threads=n_threads,
-            lazy_execution=lazy_execution,
-            table_name_prefix=self.name,
-        )
+        if self.write_subset_tables_entry:
+            self.entry_stage.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
+            )
+        else:
+            # Execute entry criterion first so it gets written to backend
+            self.entry_criterion.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
+            )
+            # TODO fix this hacky solution. Remove entry_criterion from subset table children so it won't be
+            # re-executed as a dependency when the entry_stage runs.
+            # entry_criterion.table is already set, so SubsetTable._execute can
+            # still access it via self.index_phenotype.table.
+            for node in self.subset_tables_entry_nodes:
+                node._children = [
+                    c for c in node._children if c is not self.entry_criterion
+                ]
+            self.entry_stage.execute(
+                tables=tables,
+                con=None,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
+            )
+            # Restore entry_criterion as a child for correct dependency graphs later
+            for node in self.subset_tables_entry_nodes:
+                node._children.insert(0, self.entry_criterion)
+
         self.subset_tables_entry = tables = self.get_subset_tables_entry(tables)
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
