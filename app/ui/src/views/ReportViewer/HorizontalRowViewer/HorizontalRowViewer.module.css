@@ -295,7 +295,7 @@
 .outlinePanel {
   display: flex;
   flex-direction: column;
-  padding: 5vh 16px 32px 16px;
+  padding: 10vh 16px 32px 16px;
   box-sizing: border-box;
 }
 

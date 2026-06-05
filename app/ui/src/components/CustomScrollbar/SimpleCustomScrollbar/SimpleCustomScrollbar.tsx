@@ -6,8 +6,9 @@ export interface SimpleCustomScrollbarProps {
   orientation?: 'vertical' | 'horizontal';
   classNameThumb?: string;
   classNameTrack?: string;
-  marginTop?: number;
-  marginBottom?: number;
+  height?: number | string;
+  marginTop?: number | string;
+  marginBottom?: number | string;
   marginToEnd?: number; // Right margin for vertical, bottom margin for horizontal
 }
 
@@ -16,6 +17,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
   orientation = 'vertical',
   classNameThumb = '',
   classNameTrack = '',
+  height,
   marginTop = 0,
   marginBottom = 0,
   marginToEnd = 0
@@ -203,20 +205,30 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
   // Calculate thumb size and position
   let scrollbarStyle, thumbStyle;
   
+  const toPx = (v: number | string) => typeof v === 'number' ? `${v}px` : v;
+
   if (orientation === 'vertical') {
     const thumbHeight = Math.max(20, (scrollInfo.clientHeight / scrollInfo.scrollHeight) * 100);
     const thumbTop = (scrollInfo.scrollTop / (scrollInfo.scrollHeight - scrollInfo.clientHeight)) * (100 - thumbHeight);
     
-    const effectiveHeight = scrollInfo.clientHeight > 0 
-      ? scrollInfo.clientHeight - marginTop - marginBottom 
-      : `calc(100% - ${marginTop + marginBottom}px)`;
+    let computedHeight: string;
+    if (height != null) {
+      computedHeight = toPx(height);
+    } else if (typeof marginTop === 'number' && typeof marginBottom === 'number') {
+      computedHeight = scrollInfo.clientHeight > 0
+        ? `${scrollInfo.clientHeight - marginTop - marginBottom}px`
+        : `calc(100% - ${marginTop + marginBottom}px)`;
+    } else {
+      computedHeight = `calc(100% - ${toPx(marginTop)} - ${toPx(marginBottom)})`;
+    }
     
     scrollbarStyle = {
-      height: typeof effectiveHeight === 'number' ? `${effectiveHeight}px` : effectiveHeight,
-      top: marginTop,
+      height: computedHeight,
+      top: marginTop !== 0 ? toPx(marginTop) : undefined,
+      bottom: marginTop === 0 && marginBottom !== 0 ? toPx(marginBottom) : undefined,
       right: marginToEnd,
       display: scrollInfo.isScrollable ? 'block' : 'none'
-    };
+    } as React.CSSProperties;
     
     thumbStyle = {
       height: `${thumbHeight}%`,
@@ -227,16 +239,23 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     const thumbWidth = Math.max(20, (scrollInfo.clientWidth / scrollInfo.scrollWidth) * 100);
     const thumbLeft = (scrollInfo.scrollLeft / (scrollInfo.scrollWidth - scrollInfo.clientWidth)) * (100 - thumbWidth);
     
-    const effectiveWidth = scrollInfo.clientWidth > 0 
-      ? scrollInfo.clientWidth - marginTop - marginToEnd
-      : `calc(100% - ${marginTop + marginToEnd}px)`;
+    let computedWidth: string;
+    if (height != null) {
+      computedWidth = toPx(height);
+    } else if (typeof marginTop === 'number' && typeof marginToEnd === 'number') {
+      computedWidth = scrollInfo.clientWidth > 0
+        ? `${scrollInfo.clientWidth - marginTop - marginToEnd}px`
+        : `calc(100% - ${marginTop + marginToEnd}px)`;
+    } else {
+      computedWidth = `calc(100% - ${toPx(marginTop)} - ${toPx(marginToEnd)})`;
+    }
     
     scrollbarStyle = {
-      width: typeof effectiveWidth === 'number' ? `${effectiveWidth}px` : effectiveWidth,
-      left: marginTop,
+      width: computedWidth,
+      left: marginTop !== 0 ? toPx(marginTop) : undefined,
       bottom: marginToEnd,
       display: scrollInfo.isScrollable ? 'block' : 'none'
-    };
+    } as React.CSSProperties;
     
     thumbStyle = {
       width: `${thumbWidth}%`,

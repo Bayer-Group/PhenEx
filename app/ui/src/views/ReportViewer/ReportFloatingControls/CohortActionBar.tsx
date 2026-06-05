@@ -76,9 +76,9 @@ export const CohortActionBar: FC<CohortActionBarProps> = ({
           Clear
         </button>
       </span>
-      <PhenExNavBarTooltip isVisible={hoveredBtn === 'eye'} anchorElement={eyeRef.current} label={showAll ? 'Show selected only' : 'Show all cohorts'} verticalPosition="below" horizontalAlignment="left" />
-      <PhenExNavBarTooltip isVisible={hoveredBtn === 'all'} anchorElement={allRef.current} label="Select all cohorts" verticalPosition="below" horizontalAlignment="left" />
-      <PhenExNavBarTooltip isVisible={hoveredBtn === 'clear'} anchorElement={clearRef.current} label="Deselect all cohorts" verticalPosition="below" horizontalAlignment="left" />
+      <PhenExNavBarTooltip isVisible={hoveredBtn === 'eye'} anchorElement={eyeRef.current} label={showAll ? 'Show selected only' : 'Show all cohorts'} verticalPosition="above" horizontalAlignment="left" />
+      <PhenExNavBarTooltip isVisible={hoveredBtn === 'all'} anchorElement={allRef.current} label="Select all cohorts" verticalPosition="above" horizontalAlignment="left" />
+      <PhenExNavBarTooltip isVisible={hoveredBtn === 'clear'} anchorElement={clearRef.current} label="Deselect all cohorts" verticalPosition="above" horizontalAlignment="left" />
     </div>
   );
 };
