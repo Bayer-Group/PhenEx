@@ -55,7 +55,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const { isLeftPanelShown } = useThreePanelCollapse();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [closing, setClosing] = useState(false);
-  const [commentsCollapsed, setCommentsCollapsed] = useState(false);
+  const [commentsCollapsed, setCommentsCollapsed] = useState(true);
   const [showRowTitle, setShowRowTitle] = useState(false);
   const [showCommentWindow, setShowCommentWindow] = useState(false);
   const [commentsPanelWidth, setCommentsPanelWidth] = useState(() => {
@@ -303,7 +303,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       <div className={styles.navPillContainer}>
         <NavPill currentIndex={currentIndex} total={rows.length} onNavigate={navigate} />
       </div>
-      <div className={styles.commentBarContainer}>
+      {/* <div className={styles.commentBarContainer}>
         <CommentBar
           commentsCollapsed={commentsCollapsed}
           onToggleCollapsed={() => setCommentsCollapsed(!commentsCollapsed)}
@@ -321,7 +321,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
             console.log('Ask AI:', text);
           }}
         />
-      )}
+      )} */}
       {/* <div className={styles.fakeDataLabel}>FAKE DATA</div> */}
     </div>
   );

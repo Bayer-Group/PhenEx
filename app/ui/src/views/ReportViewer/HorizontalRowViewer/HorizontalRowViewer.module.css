@@ -143,7 +143,6 @@
   bottom: 90px;
   right: 30px;
   z-index: 10;
-  background-color: red;
 }
 
 .navPill {
@@ -153,9 +152,9 @@
   gap: 0;
   background-color: white;
   border: var(--border);
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-  padding: 0 2px;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 0 4px;
 }
 
 .navArrow {
@@ -166,12 +165,14 @@
   border: none;
   cursor: pointer;
   color: var(--color_inactive, #999);
-  padding: 4px 6px;
-  transition: color 0.15s;
+  padding: 10px 12px;
+  border-radius: 10px;
+  transition: color 0.15s, background-color 0.15s;
 }
 
 .navArrow:hover:not(:disabled) {
   color: var(--color_accent_blue, #2563eb);
+  background-color: rgba(37, 99, 235, 0.06);
 }
 
 .navArrow:focus{

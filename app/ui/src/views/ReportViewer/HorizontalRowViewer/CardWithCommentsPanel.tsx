@@ -21,7 +21,7 @@ export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
   rightWidth: controlledRightWidth,
   leftContent,
   commentsContent,
-  commentsCollapsed = false,
+  commentsCollapsed = true,
   onRightWidthChange,
 }) => {
   const [rightWidth, setRightWidthLocal] = useState(controlledRightWidth);

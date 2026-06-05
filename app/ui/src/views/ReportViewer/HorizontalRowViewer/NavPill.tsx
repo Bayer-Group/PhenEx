@@ -23,8 +23,8 @@ export const NavPill: FC<NavPillProps> = ({ currentIndex, total, onNavigate }) =
         onMouseEnter={() => setHoveredNav('prev')}
         onMouseLeave={() => setHoveredNav(null)}
       >
-        <svg width="20" height="22" viewBox="0 0 25 28" fill="none">
-          <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <svg width="28" height="50" viewBox="0 0 25 28" fill="none">
+          <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
         </svg>
       </button>
       <button
@@ -35,8 +35,8 @@ export const NavPill: FC<NavPillProps> = ({ currentIndex, total, onNavigate }) =
         onMouseEnter={() => setHoveredNav('next')}
         onMouseLeave={() => setHoveredNav(null)}
       >
-        <svg width="20" height="22" viewBox="0 0 25 28" fill="none" style={{ transform: 'scaleX(-1)' }}>
-          <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        <svg width="28" height="30" viewBox="0 0 25 28" fill="none" style={{ transform: 'scaleX(-1)' }}>
+          <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
         </svg>
       </button>
       <PhenExNavBarTooltip isVisible={hoveredNav === 'prev'} anchorElement={prevRef.current} label="Previous feature" verticalPosition="above" horizontalAlignment="right" />
