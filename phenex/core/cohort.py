@@ -67,17 +67,13 @@ class Cohort:
         description: Optional[str] = None,
         database: Optional[Database] = None,
         custom_reporters: Optional[List] = None,
-<<<<<<< HEAD
         return_index: str = "first",
         max_index_dates: Optional[int] = None,
-=======
->>>>>>> feat/dontwritevalues
         write_subset_tables_entry: bool = True,
     ):
         self.name = name
         self.description = description
         self.database = database
-<<<<<<< HEAD
         self.return_index = return_index
         self.max_index_dates = max_index_dates
 
@@ -103,8 +99,6 @@ class Cohort:
                 )
                 entry_criterion.return_date = "all"
 
-=======
->>>>>>> feat/dontwritevalues
         self.write_subset_tables_entry = write_subset_tables_entry
         self.table = None  # Will be set during execution to index table
         self.subset_tables_entry = None  # Will be set during execution
@@ -678,13 +672,13 @@ class Cohort:
             if con is not None:
                 prefix = re.sub(r"[^A-Za-z0-9_]", "_", self.name).upper()
                 node = self.entry_criterion
-                if node.table is not None:
-                    db_name = (
-                        f"{prefix}__{node.name}"
-                        if not node.name.startswith(prefix)
-                        else node.name
-                    )
-                    con.create_table(node.table, db_name, overwrite=overwrite)
+                # if node.table is not None:
+                #     db_name = (
+                #         f"{prefix}__{node.name}"
+                #         if not node.name.startswith(prefix)
+                #         else node.name
+                #     )
+                #     con.create_table(node.table, db_name, overwrite=overwrite)
             # Remove entry_criterion from subset table children so it won't be
             # re-executed; its .table is already set and SubsetTable._execute
             # accesses it via self.index_phenotype.table.
