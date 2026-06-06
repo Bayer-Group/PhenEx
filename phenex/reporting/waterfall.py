@@ -19,7 +19,12 @@ class Waterfall(Reporter):
     | Remaining | The number of patients remaining in the cohort after sequentially applying the inclusion/exclusion criteria in the order that they are listed in this table. |
     | % | The percentage of patients who fulfill the entry criterion who are remaining in the cohort after application of the phenotype on that row |
     | Delta | The change in number of patients that occurs by applying the phenotype on that row. |
+    | N_events | The number of events (rows / index dates) that fulfill the phenotype on that row. With multi-index cohorts a single patient may contribute multiple events; this counts every ``(PERSON_ID, INDEX_DATE)`` pair rather than distinct patients. |
+    | N_events_remaining | The number of events remaining in the cohort after sequentially applying the inclusion/exclusion criteria in the order that they are listed in this table. |
 
+    The corresponding ``Pct_N_events`` and ``Pct_events_remaining`` columns express
+    ``N_events`` and ``N_events_remaining`` as a percentage of the entry criterion's
+    event count.
     """
 
     def __init__(
@@ -33,18 +38,21 @@ class Waterfall(Reporter):
     def execute(self, cohort: "Cohort") -> pd.DataFrame:
         self.cohort = cohort
         logger.debug(f"Beginning execution of waterfall. Calculating N patents")
-        N = (
-            cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
-            .select("PERSON_ID")
-            .distinct()
-            .count()
-            .execute()
-        )
+        final_table = cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
+        N = self._count_persons(final_table)
+        N_events = self._count_events(final_table)
         logger.debug(f"Cohort has {N} patients")
         # create info dictionaries for each phenotype containing counts
         self.ds = []
+        # Derive a multi-index-aware running table keyed on (PERSON_ID, INDEX_DATE).
+        # The entry criterion exposes EVENT_DATE; treat it as the INDEX_DATE so that
+        # each candidate index date is counted as a distinct event.
         table = cohort.entry_criterion.table
-        N_entry = table.select("PERSON_ID").distinct().count().execute()
+        if "INDEX_DATE" not in table.columns and "EVENT_DATE" in table.columns:
+            table = table.mutate(INDEX_DATE=table.EVENT_DATE)
+        table = table.select(self._index_keys(table))
+        N_entry = self._count_persons(table)
+        N_events_entry = self._count_events(table)
         index = 1
         self.ds.append(
             {
@@ -53,7 +61,9 @@ class Waterfall(Reporter):
                 "Index": str(index),
                 "Name": (cohort.entry_criterion.display_name),
                 "N": N_entry,
+                "N_events": N_events_entry,
                 "Remaining": N_entry,
+                "N_events_remaining": N_events_entry,
             }
         )
 
@@ -93,6 +103,10 @@ class Waterfall(Reporter):
         # calculate percentage of entry criterion
         self.df["Pct_Remaining"] = self.df["Remaining"] / N_entry * 100
         self.df["Pct_N"] = self.df["N"] / N_entry * 100
+        self.df["Pct_N_events"] = self.df["N_events"] / N_events_entry * 100
+        self.df["Pct_events_remaining"] = (
+            self.df["N_events_remaining"] / N_events_entry * 100
+        )
 
         # Calculate Pct Source Database column before rounding
         # Entry row gets a percentage, middle rows get NaN, last row will be added after concat
@@ -118,6 +132,10 @@ class Waterfall(Reporter):
             "Name": "Final Cohort Size",
             "Remaining": N,
             "Pct_Remaining": round(100 * N / N_entry, self.decimal_places),
+            "N_events_remaining": N_events,
+            "Pct_events_remaining": round(
+                100 * N_events / N_events_entry, self.decimal_places
+            ),
             "Level": 0,
             "Index": "",
         }
@@ -146,8 +164,12 @@ class Waterfall(Reporter):
             "Level",
             "N",
             "Pct_N",
+            "N_events",
+            "Pct_N_events",
             "Remaining",
             "Pct_Remaining",
+            "N_events_remaining",
+            "Pct_events_remaining",
             "Delta",
             "Pct_Source_Database",
         ]
@@ -170,7 +192,7 @@ class Waterfall(Reporter):
 
         df = self.df.drop(columns=["Level"], errors="ignore").copy()
 
-        COUNT_COLS = {"N", "Remaining", "Delta"}
+        COUNT_COLS = {"N", "Remaining", "Delta", "N_events", "N_events_remaining"}
 
         records = []
         for row in df.to_dict(orient="records"):
@@ -222,11 +244,11 @@ class Waterfall(Reporter):
         self, table, phenotype, type, level, index=None, full_name=None
     ):
         if type == "inclusion":
-            table = table.inner_join(
-                phenotype.table, table["PERSON_ID"] == phenotype.table["PERSON_ID"]
-            )
+            keys = self._join_keys(table, phenotype.table)
+            table = table.inner_join(phenotype.table, keys)
         elif type == "exclusion":
-            table = table.filter(~table["PERSON_ID"].isin(phenotype.table["PERSON_ID"]))
+            keys = self._join_keys(table, phenotype.table)
+            table = table.anti_join(phenotype.table, keys)
         elif type == "component":
             table = table
         else:
@@ -236,6 +258,8 @@ class Waterfall(Reporter):
         if full_name is None:
             full_name = phenotype.display_name
 
+        table = table.select(self._index_keys(table))
+        is_component = type == "component"
         self.ds.append(
             {
                 "Type": type,
@@ -243,17 +267,19 @@ class Waterfall(Reporter):
                 "Level": level,
                 "Index": index if index is not None else str(level),
                 "N": phenotype.table.select("PERSON_ID").distinct().count().execute(),
+                "N_events": phenotype.table.count().execute(),
                 "Remaining": (
-                    table.select("PERSON_ID").distinct().count().execute()
-                    if type != "component"
-                    else np.nan
+                    self._count_persons(table) if not is_component else np.nan
+                ),
+                "N_events_remaining": (
+                    self._count_events(table) if not is_component else np.nan
                 ),
             }
         )
         logger.debug(
             f"Finished {type} criteria {phenotype.name}: N = {self.ds[-1]['N']} waterfall = {self.ds[-1]['Remaining']}"
         )
-        return table.select("PERSON_ID")
+        return table
 
     def get_pretty_display(self) -> pd.DataFrame:
         """
@@ -349,24 +375,20 @@ class Waterfall(Reporter):
     def _format_numeric_columns(self):
         """Convert numeric columns to formatted strings with thousand separators"""
         # Format integer columns with commas
-        self.df["N"] = self.df["N"].apply(
-            lambda x: f"{int(x):,}" if pd.notna(x) else ""
-        )
-        self.df["Delta"] = self.df["Delta"].apply(
-            lambda x: f"{int(x):,}" if pd.notna(x) else ""
-        )
-        self.df["Remaining"] = self.df["Remaining"].apply(
-            lambda x: f"{int(x):,}" if pd.notna(x) else ""
-        )
+        for col in ["N", "Delta", "Remaining", "N_events", "N_events_remaining"]:
+            self.df[col] = self.df[col].apply(
+                lambda x: f"{int(x):,}" if pd.notna(x) else ""
+            )
 
         # Format percentage columns without commas (they won't need them)
-        self.df["Pct_Remaining"] = (
-            self.df["Pct_Remaining"].astype("Float64").astype(str)
-        )
-        self.df["Pct_N"] = self.df["Pct_N"].astype("Float64").astype(str)
-        self.df["Pct_Source_Database"] = (
-            self.df["Pct_Source_Database"].astype("Float64").astype(str)
-        )
+        for col in [
+            "Pct_Remaining",
+            "Pct_N",
+            "Pct_Source_Database",
+            "Pct_N_events",
+            "Pct_events_remaining",
+        ]:
+            self.df[col] = self.df[col].astype("Float64").astype(str)
 
     def _apply_styling(self):
         """Apply background colors to dataframe rows"""
@@ -532,6 +554,31 @@ class Waterfall(Reporter):
         b_hex = format(int(b * 255), "02x")
 
         return f"{r_hex}{g_hex}{b_hex}".upper()
+
+    def _index_keys(self, table):
+        """Return the identity columns for a table: (PERSON_ID, INDEX_DATE) when
+        INDEX_DATE is present (multi-index cohorts), otherwise PERSON_ID only."""
+        keys = ["PERSON_ID"]
+        if "INDEX_DATE" in table.columns:
+            keys.append("INDEX_DATE")
+        return keys
+
+    def _join_keys(self, left, right):
+        """Return the keys to join/anti-join two tables on. INDEX_DATE is only
+        used when both tables expose it, otherwise we fall back to PERSON_ID."""
+        keys = ["PERSON_ID"]
+        if "INDEX_DATE" in left.columns and "INDEX_DATE" in right.columns:
+            keys.append("INDEX_DATE")
+        return keys
+
+    def _count_persons(self, table):
+        """Count distinct patients in a table."""
+        return table.select("PERSON_ID").distinct().count().execute()
+
+    def _count_events(self, table):
+        """Count distinct events, i.e. distinct (PERSON_ID, INDEX_DATE) pairs when
+        INDEX_DATE is present, otherwise distinct patients."""
+        return table.select(self._index_keys(table)).distinct().count().execute()
 
     def append_delta(self, ds):
         ds[0]["Delta"] = np.nan
