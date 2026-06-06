@@ -96,27 +96,48 @@ class AgePhenotype(Phenotype):
         else:
             return "age"
 
+    def _nullify_empty(self, col):
+        """
+        Drop blank/empty string birth values to null so they can't be formatted
+        into an invalid date. Non-string columns are returned unchanged.
+        """
+        if str(col.type()).startswith("string"):
+            return col.nullif("")
+        return col
+
+    def _extract_year(self, col):
+        """
+        Extract a 4-digit year as an integer from possibly messy string values
+        (e.g. "1936 and Earlier" -> 1936). Returns null when no 4-digit year is
+        present so it can't be formatted into an invalid date. Non-string columns
+        are returned unchanged.
+        """
+        if str(col.type()).startswith("string"):
+            return col.re_extract(r"\d{4}", 0).nullif("").cast("int64")
+        return col
+
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]
         assert is_phenex_person_table(person_table)
-
         if "YEAR_OF_BIRTH" in person_table.columns:
             if "DATE_OF_BIRTH" in person_table.columns:
                 logger.debug(
                     "Year of birth and date of birth is present, taking date of birth where possible otherwise setting date of birth to june 6th"
                 )
                 date_of_birth = ibis.coalesce(
-                    ibis.date(person_table.DATE_OF_BIRTH),
-                    ibis.date(person_table.YEAR_OF_BIRTH, 6, 1),
+                    ibis.date(self._nullify_empty(person_table.DATE_OF_BIRTH)),
+                    ibis.date(self._extract_year(person_table.YEAR_OF_BIRTH), 6, 1),
                 )
             else:
                 logger.debug(
                     "Only year of birth is present in person table, setting birth date to june 6th"
                 )
-                date_of_birth = ibis.date(person_table.YEAR_OF_BIRTH, 6, 1)
+                date_of_birth = ibis.date(
+                    self._extract_year(person_table.YEAR_OF_BIRTH), 6, 1
+                )
         else:
             logger.debug("Year of birth not present, taking date of birth")
-            date_of_birth = ibis.date(person_table.DATE_OF_BIRTH)
+            date_of_birth = ibis.date(self._nullify_empty(person_table.DATE_OF_BIRTH))
         person_table = person_table.mutate(EVENT_DATE=date_of_birth)
 
         # Apply the time range filter

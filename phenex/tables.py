@@ -211,8 +211,13 @@ class PhenexTable:
         """
         Apply date formatting if the source column has a DATE_FORMAT entry.
         Parses string columns to timestamps using the backend's native format.
+
+        Blank/empty strings cannot be parsed into a timestamp, so they are
+        nullified before parsing. This drops unformattable values to null
+        instead of raising a date-formatting error.
         """
         if col_name in self.DATE_FORMAT:
+            col_ref = col_ref.nullif("")
             return col_ref.to_timestamp(self.DATE_FORMAT[col_name])
         return col_ref
 

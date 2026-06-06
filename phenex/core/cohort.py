@@ -663,25 +663,26 @@ class Cohort:
             # backend, avoiding cross-backend joins with subset tables.
             self.entry_criterion.execute(
                 tables=tables,
-                con=None,
+                con=con,
                 overwrite=overwrite,
                 n_threads=n_threads,
                 table_name_prefix=self.name,
+                lazy_execution=lazy_execution,
             )
-            # Write entry criterion and its dependencies to dest
-            if con is not None:
-                prefix = re.sub(r"[^A-Za-z0-9_]", "_", self.name).upper()
-                node = self.entry_criterion
-                # if node.table is not None:
-                #     db_name = (
-                #         f"{prefix}__{node.name}"
-                #         if not node.name.startswith(prefix)
-                #         else node.name
-                #     )
-                #     con.create_table(node.table, db_name, overwrite=overwrite)
-            # Remove entry_criterion from subset table children so it won't be
-            # re-executed; its .table is already set and SubsetTable._execute
-            # accesses it via self.index_phenotype.table.
+            # # Write entry criterion and its dependencies to dest
+            # if con is not None:
+            #     prefix = re.sub(r"[^A-Za-z0-9_]", "_", self.name).upper()
+            #     node = self.entry_criterion
+            #     # if node.table is not None:
+            #     #     db_name = (
+            #     #         f"{prefix}__{node.name}"
+            #     #         if not node.name.startswith(prefix)
+            #     #         else node.name
+            #     #     )
+            #     #     con.create_table(node.table, db_name, overwrite=overwrite)
+            # # Remove entry_criterion from subset table children so it won't be
+            # # re-executed; its .table is already set and SubsetTable._execute
+            # # accesses it via self.index_phenotype.table.
             for node in self.subset_tables_entry_nodes:
                 node._children = [
                     c for c in node._children if c is not self.entry_criterion
