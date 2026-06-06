@@ -35,10 +35,13 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
     Continuing (unfrozen)::
 
         H: Δ | I: of_entry% | J: of_entryN
+        K: of_entry_events% | L: of_entry_eventsN
+        M: remaining_events% | N: remaining_eventsN
 
     Sub-cohort columns::
 
         spacer | Index | source% | remaining% | remainingN | Δ | of_entry% | of_entryN
+               | of_entry_events% | of_entry_eventsN | remaining_events% | remaining_eventsN
     """
 
     # Font sizes
@@ -61,17 +64,23 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
     _DATA_DELTA = 3
     _DATA_ENTRY_PCT = 4
     _DATA_ENTRY_N = 5
-    _NUM_DATA_COLS = 6
+    _DATA_ENTRY_EVENTS_PCT = 6
+    _DATA_ENTRY_EVENTS_N = 7
+    _DATA_REM_EVENTS_PCT = 8
+    _DATA_REM_EVENTS_N = 9
+    _NUM_DATA_COLS = 10
 
     # Header rows (frozen)
     _HEADER_ROW_1 = 1  # merged category names
     _HEADER_ROW_2 = 2  # sub-labels
     _FREEZE_ROW = 3  # first unfrozen row
 
-    # Main cohort column widths: spacer, Type, Index, Name, src%, rem%, remN, Δ, entry%, entryN
-    _MAIN_WIDTHS = [3, 14, 4, 28, 10, 10, 14, 14, 10, 14]
-    # Sub-cohort column widths: spacer, Index, Name, src%, rem%, remN, Δ, entry%, entryN
-    _SUB_WIDTHS = [3, 4, 28, 10, 10, 14, 14, 10, 14]
+    # Main cohort column widths: spacer, Type, Index, Name, src%, rem%, remN, Δ,
+    # entry%, entryN, entryEv%, entryEvN, remEv%, remEvN
+    _MAIN_WIDTHS = [3, 14, 4, 28, 10, 10, 14, 14, 10, 14, 10, 14, 10, 14]
+    # Sub-cohort column widths: spacer, Index, Name, src%, rem%, remN, Δ,
+    # entry%, entryN, entryEv%, entryEvN, remEv%, remEvN
+    _SUB_WIDTHS = [3, 4, 28, 10, 10, 14, 14, 10, 14, 10, 14, 10, 14]
 
     _SEPARATOR_HEIGHT = 15
     _TITLE_ROW_HEIGHT = 28
@@ -91,6 +100,8 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
         ("remaining", 2, [("%", "right"), ("N", "left")]),
         ("", 1, [("\u0394", "right")]),
         ("of_entry", 2, [("%", "right"), ("N", "left")]),
+        ("of_entry_events", 2, [("%", "right"), ("N", "left")]),
+        ("remaining_events", 2, [("%", "right"), ("N", "left")]),
     ]
 
     def write(self, sheet, report_files, cohort_dirs, cohort_groups):
@@ -456,7 +467,7 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
     def _write_data_cells(
         self, sheet, row, data_col, dr, is_final, fill_color, font_color=None
     ):
-        """Write the 6 data columns for a waterfall row."""
+        """Write the data columns for a waterfall row."""
         pct_src = dr.get("Pct_Source_Database")
         if pct_src is not None:
             self._write_cell(
@@ -535,6 +546,60 @@ class SimplifiedAttritionTable(_BaseSheetWriter):
                 horizontal="left",
                 font_color=font_color,
                 number_format=self._number_format_for_value(n_val),
+                fill_color=fill_color,
+            )
+        pct_n_events = dr.get("Pct_N_events")
+        if pct_n_events is not None:
+            self._write_cell(
+                sheet,
+                row,
+                data_col + self._DATA_ENTRY_EVENTS_PCT,
+                self._clean_numeric(pct_n_events),
+                size=self._FONT_SIZE_CONTENT,
+                horizontal="right",
+                font_color=font_color,
+                number_format=self._number_format_for_value(pct_n_events),
+                fill_color=fill_color,
+            )
+        n_events = dr.get("N_events")
+        if n_events is not None:
+            self._write_cell(
+                sheet,
+                row,
+                data_col + self._DATA_ENTRY_EVENTS_N,
+                self._clean_numeric(n_events),
+                size=self._FONT_SIZE_CONTENT,
+                horizontal="left",
+                font_color=font_color,
+                number_format=self._number_format_for_value(n_events),
+                fill_color=fill_color,
+            )
+        pct_events_rem = dr.get("Pct_events_remaining")
+        if pct_events_rem is not None:
+            self._write_cell(
+                sheet,
+                row,
+                data_col + self._DATA_REM_EVENTS_PCT,
+                self._clean_numeric(pct_events_rem),
+                bold=is_final,
+                size=self._FONT_SIZE_CONTENT,
+                horizontal="right",
+                font_color=font_color,
+                number_format=self._number_format_for_value(pct_events_rem),
+                fill_color=fill_color,
+            )
+        n_events_rem = dr.get("N_events_remaining")
+        if n_events_rem is not None:
+            self._write_cell(
+                sheet,
+                row,
+                data_col + self._DATA_REM_EVENTS_N,
+                self._clean_numeric(n_events_rem),
+                bold=is_final,
+                size=self._FONT_SIZE_CONTENT,
+                horizontal="left",
+                font_color=font_color,
+                number_format=self._number_format_for_value(n_events_rem),
                 fill_color=fill_color,
             )
 

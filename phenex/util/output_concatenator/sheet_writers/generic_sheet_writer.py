@@ -31,6 +31,10 @@ class GenericSheetWriter(_BaseSheetWriter):
         "Delta",
         "Pct_N",
         "N",
+        "Pct_N_events",
+        "N_events",
+        "Pct_events_remaining",
+        "N_events_remaining",
     ]
     _COLUMN_HEADERS: Dict[str, str] = {
         "Type": "",
@@ -42,10 +46,14 @@ class GenericSheetWriter(_BaseSheetWriter):
         "Delta": "\u0394",
         "Pct_N": "%",
         "N": "N",
+        "Pct_N_events": "%",
+        "N_events": "N events",
+        "Pct_events_remaining": "%",
+        "N_events_remaining": "remaining events",
     }
 
     # Columns that should be sized for large numbers (2-digit millions).
-    _WIDE_COLUMNS = {"N", "Remaining", "Delta"}
+    _WIDE_COLUMNS = {"N", "Remaining", "Delta", "N_events", "N_events_remaining"}
 
     def write(
         self,
@@ -161,7 +169,8 @@ class GenericSheetWriter(_BaseSheetWriter):
                 display,
                 bold=True,
                 size=14,
-                horizontal="center",
+                horizontal="left" if col_name == "Name" else "right",
+                indent=1 if col_name == "Name" else 0,
             )
 
     def _write_data_rows(self, sheet, rows: list, columns: List[str], start_col: int):
@@ -183,7 +192,8 @@ class GenericSheetWriter(_BaseSheetWriter):
                     start_col + offset,
                     value,
                     size=14,
-                    horizontal="center",
+                    horizontal="left" if col_name == "Name" else "right",
+                    indent=1 if col_name == "Name" else 0,
                     fill_color=fill_color,
                     number_format=fmt,
                 )
