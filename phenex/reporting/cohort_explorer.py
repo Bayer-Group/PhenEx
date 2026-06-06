@@ -41,23 +41,28 @@ logger = logging.getLogger(__name__)
 
 class CohortExplorer(Reporter):
     """
-    Interactive dashboard for exploring cohort phenotypes and their distributions.
-
-    This reporter creates an interactive Bokeh dashboard that allows users to:
-    - Select different phenotypes from cohort.phenotypes
-    - Explore VALUE column distributions with histograms
-    - View timeline patterns when EVENT_DATE is available
-    - Compare raw vs standardized values across phenotypes
-    - Examine event frequency per patient
-
-    The implementation follows the working callback example pattern to ensure
-    JavaScript callbacks function properly in both Jupyter and exported HTML.
+    Use CohortExplorer to create an interactive Bokeh dashboard for exploring cohort phenotype distributions. It lets you browse phenotypes, view VALUE histograms, examine EVENT_DATE timelines, compare raw vs standardized values, and inspect per-patient event frequencies.
 
     Parameters:
         title: Dashboard title
         width: Dashboard width in pixels
         height: Plot height in pixels
         decimal_places: Number of decimal places for display (inherited)
+
+    Examples:
+
+    Example: Explore a cohort interactively
+        ```python
+        from phenex.reporting import CohortExplorer
+
+        explorer = CohortExplorer(title="My Cohort")
+        cohort = Cohort(
+            ...,
+            custom_reporters=[explorer]
+        )
+        cohort.execute(tables)
+        explorer.to_html("explorer.html")  # open in browser
+        ```
     """
 
     def __init__(

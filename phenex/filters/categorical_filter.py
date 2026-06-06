@@ -4,7 +4,7 @@ from typing import List, Optional, Union, Dict
 
 class CategoricalFilter(Filter):
     """
-    This class filters events in an EventTable based on specified categorical values.
+    Use CategoricalFilter to restrict events or patients based on discrete categorical values in a column (e.g. "inpatient visits only", "female patients", "ICD-10 codes in primary diagnosis position"). Supports inclusion (isin), exclusion (notin), null checks (isnull, notnull).
 
     Attributes:
         column_name (str): The name of the column to filter by.

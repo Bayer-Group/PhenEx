@@ -9,7 +9,7 @@ from phenex.filters.value import *
 
 class RelativeTimeRangeFilter(Filter):
     """
-    This class filters events in an EventTable based on a specified time range relative to an anchor date.  The anchor date can either be provided by an anchor phenotype or by an 'INDEX_DATE' column in the EventTable.
+    Use RelativeTimeRangeFilter to restrict events to a time window relative to an anchor date (e.g. "within 365 days before index date", "any time after index"). The anchor is either a specified phenotype's event date or the INDEX_DATE column if no anchor phenotype is provided (the latter is only possible in the context of a cohort which has defined an entry phenotype; when in doubt, specify the anchor phenotype explicitly).
 
     Parameters:
         min_days: Minimum number of days from the anchor date to filter events.

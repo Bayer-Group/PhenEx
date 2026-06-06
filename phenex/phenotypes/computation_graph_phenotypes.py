@@ -220,9 +220,11 @@ class ComputationGraphPhenotype(Phenotype):
 
 class ScorePhenotype(ComputationGraphPhenotype):
     """
-    ScorePhenotype is a CompositePhenotype that performs arithmetic operations using the **boolean** column of its component phenotypes and populations the **value** column. It should be used for calculating medical scores such as CHADSVASC, HASBLED, etc.
+    Use ScorePhenotype to calculate clinical risk scores that are sums of yes/no criteria (e.g. CHA₂DS₂-VASc, HAS-BLED, Charlson Comorbidity Index). Each component phenotype contributes its boolean (present/absent) value, optionally multiplied by a weight. The expression defines the arithmetic: e.g. 2*age_gt_75 + hypertension + diabetes.
 
-    --> See the comparison table of CompositePhenotype classes
+    This phenotype returns:
+        DATE: The date from return_date (first, last, or from a specified phenotype).
+        VALUE: The computed score (sum of weighted boolean components).
 
     Parameters:
         expression: The arithmetic expression to be evaluated composed of phenotypes combined by python arithmetic operations.
@@ -283,8 +285,11 @@ class ScorePhenotype(ComputationGraphPhenotype):
 
 class ArithmeticPhenotype(ComputationGraphPhenotype):
     """
-    ArithmeticPhenotype is a composite phenotype that performs arithmetic operations using the **value** column of its component phenotypes and populations the **value** column. It should be used for calculating values such as BMI, GFR or converting units.
-    --> See the comparison table of CompositePhenotype classes
+    Use ArithmeticPhenotype to compute derived numeric values from other phenotypes' values (e.g. BMI = weight / height², eGFR from creatinine, unit conversions). Each component phenotype contributes its numeric VALUE column, and the expression defines the arithmetic.
+
+    This phenotype returns:
+        DATE: The date from return_date (first, last, or from a specified phenotype).
+        VALUE: The computed numeric result of the arithmetic expression.
 
     Parameters:
         expression: The arithmetic expression to be evaluated composed of phenotypes combined by python arithmetic operations.
@@ -335,9 +340,11 @@ class ArithmeticPhenotype(ComputationGraphPhenotype):
 
 class LogicPhenotype(ComputationGraphPhenotype):
     """
-    LogicPhenotype is a composite phenotype that performs boolean operations using the **boolean** column of its component phenotypes and populations the **boolean** column of the resulting phenotype table. It should be used in any instance where multiple phenotypes are logically combined, for example, does a patient have diabetes AND hypertension, etc.
+    Use LogicPhenotype to combine multiple phenotypes with boolean logic (AND, OR, NOT). Use it when inclusion/exclusion criteria require compound conditions, e.g. "patients with diabetes AND hypertension", "patients with condition A OR condition B", "patients with diagnosis but NOT on treatment".
 
-    --> See the comparison table of CompositePhenotype classes
+    This phenotype returns:
+        DATE: The date from return_date (first, last, or from a specified phenotype).
+        VALUE: Not populated. The BOOLEAN column indicates the result of the logical expression.
 
     Parameters:
         expression: The logical expression to be evaluated composed of phenotypes combined by python arithmetic operations.

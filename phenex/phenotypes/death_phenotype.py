@@ -11,8 +11,11 @@ from phenex.filters.date_filter import DateFilter
 
 class DeathPhenotype(Phenotype):
     """
-    DeathPhenotype is a class that represents a death-based phenotype. It filters individuals
-    who have died and returns their date of death.
+    Use DeathPhenotype to identify patients who have died, as an outcome (e.g. "all-cause mortality") or as an inclusion/exclusion criterion. Returns the date of death. Can be combined with relative_time_range to restrict to deaths within a specific window (e.g. "death within 30 days of index").
+
+    This phenotype returns:
+        DATE: Date of death.
+        VALUE: Not populated (null).
 
     Parameters:
         name: Name of the phenotype, default is 'death'.
@@ -35,7 +38,7 @@ class DeathPhenotype(Phenotype):
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,
-        **kwargs
+        **kwargs,
     ):
         super(DeathPhenotype, self).__init__(name=name, **kwargs)
         self.domain = domain

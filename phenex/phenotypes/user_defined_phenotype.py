@@ -21,17 +21,15 @@ def UserDefinedPhenotype(
     returns_value: bool = False,
 ):
     """
-    UserDefinedPhenotype allows users of PhenEx to implement custom functionality within a single phenotype. To use, the user must pass a function that returns an ibis table. This means that the function must
-    1. return an ibis table
-    2. There are a minimum of one column : PERSON_ID. If no other columns are returned, it is assumed that all person_ids in the PERSON_ID column fulfill the UserDefinedPhenotype
-    3. If additional columns are returned, they must be named BOOLEAN, EVENT_DATE, and VALUE. The BOOLEAN column indicates whether the person_id fulfills the UserDefinedPhenotype; patients with BOOLEAN = False will be removed. The EVENT_DATE column contains the date of the event, and the VALUE column contains a numeric value associated with the event. Any other columns are ignored.
+    Use UserDefinedPhenotype as an escape hatch when no built-in phenotype covers your use case. Pass a custom function that receives the mapped tables and returns an ibis table with at minimum a PERSON_ID column. Two main scenarios: (1) hybrid workflows where cohort extraction was done outside PhenEx (e.g. in R or SQL) and you want to inject those results as an entry criterion, and (2) complex custom event logic that cannot be expressed with built-in phenotypes.
 
-    UserDefinedPhenotype is especially useful for two use cases :
-    1. Hybrid workflows: If you have performed cohort extraction outside of PhenEx (e.g. in R, SQL) but would like to use PhenEx to calculate baseline characteristics and outcomes, we can set the entry criterion to a UserDefinedPhenotype and read a dataframe of PERSON_IDS and INDEX_DATES. In this way, PhenEx flexibly allows us to use multiple tools in our analysis.
-    2. Custom event definitions: If you need to define events based on complex logic that is not easily expressed using the built-in PhenEx functionality, you can use UserDefinedPhenotype to implement this logic in a custom function.
+    The function must return an ibis table with:
+    1. PERSON_ID column (required). If no other columns, all person_ids are assumed to fulfill the phenotype.
+    2. Optional BOOLEAN, EVENT_DATE, VALUE columns. BOOLEAN=False patients are excluded. Any other columns are ignored.
 
-    DATE: custom, as defined by user
-    VALUE: custom, as defined by user
+    This phenotype returns:
+        DATE: Custom, as defined by the user function.
+        VALUE: Custom, as defined by the user function.
 
     Parameters:
         name: The name of the phenotype.

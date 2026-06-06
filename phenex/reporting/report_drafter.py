@@ -44,22 +44,13 @@ except ImportError:
 
 class ReportDrafter(Reporter):
     """
-    The ReportDrafter creates comprehensive draft study reports including:
-    - Cohort definition description (entry, inclusion, exclusion criteria)
-    - Data analysis description and date ranges
-    - Waterfall table showing patient attrition
-    - Study variables (characteristics and outcomes)
-    - Table 1 (baseline characteristics)
-    - Table 2 (outcomes analysis)
-    - AI-generated descriptive text and figure captions (when AI is enabled)
+    Use ReportDrafter to generate a comprehensive draft study report from a cohort, including cohort definition, waterfall table, baseline characteristics (Table 1), outcomes analysis (Table 2), and optionally AI-generated descriptive text. Reports are exported in editable Markdown and Word formats and require human review before use.
 
     **IMPORTANT: Human-in-the-Loop Required**
 
-    The ReportDrafter generates DRAFT reports that require human review and editing before use. Reports are exported in editable formats (Markdown and Word) specifically to enable human oversight and refinement. AI-generated content should be verified for:
-    - Clinical accuracy and appropriateness
-    - Study-specific context and nuances
-    - Compliance with institutional guidelines
-    - Proper medical terminology and phrasing
+    The ReportDrafter generates DRAFT reports that require human review and editing.
+    AI-generated content should be verified for clinical accuracy, study-specific
+    context, and compliance with institutional guidelines.
 
     **Never use generated reports without thorough human review and approval.**
 

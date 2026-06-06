@@ -55,25 +55,35 @@ class Value:
 
 
 class GreaterThan(Value):
+    """Use GreaterThan to specify a strict lower bound on a numeric value (e.g. GreaterThan(0) means > 0). Use with ValueFilter or RelativeTimeRangeFilter to exclude the boundary value."""
+
     def __init__(self, value: int, **kwargs):
         super(GreaterThan, self).__init__(">", value)
 
 
 class GreaterThanOrEqualTo(Value):
+    """Use GreaterThanOrEqualTo to specify an inclusive lower bound on a numeric value (e.g. GreaterThanOrEqualTo(18) means >= 18). Use with ValueFilter or RelativeTimeRangeFilter to include the boundary value."""
+
     def __init__(self, value: int, **kwargs):
         super(GreaterThanOrEqualTo, self).__init__(">=", value)
 
 
 class LessThan(Value):
+    """Use LessThan to specify a strict upper bound on a numeric value (e.g. LessThan(365) means < 365). Use with ValueFilter or RelativeTimeRangeFilter to exclude the boundary value."""
+
     def __init__(self, value: int, **kwargs):
         super(LessThan, self).__init__("<", value)
 
 
 class LessThanOrEqualTo(Value):
+    """Use LessThanOrEqualTo to specify an inclusive upper bound on a numeric value (e.g. LessThanOrEqualTo(65) means <= 65). Use with ValueFilter or RelativeTimeRangeFilter to include the boundary value."""
+
     def __init__(self, value: int, **kwargs):
         super(LessThanOrEqualTo, self).__init__("<=", value)
 
 
 class EqualTo(Value):
+    """Use EqualTo to specify an exact numeric match (e.g. EqualTo(1) means = 1). Use with ValueFilter when the value must be exactly a specific number."""
+
     def __init__(self, value: int, **kwargs):
         super(EqualTo, self).__init__("=", value)

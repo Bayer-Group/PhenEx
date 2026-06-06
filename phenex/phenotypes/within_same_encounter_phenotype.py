@@ -4,7 +4,11 @@ from phenex.phenotypes.phenotype import Phenotype
 
 class WithinSameEncounterPhenotype(Phenotype):
     """
-    WithinSameEncounterPhenotype is a phenotype that filters a target phenotype based on the occurrence of an anchor phenotype within the same encounter. This phenotype can only be used with CodelistPhenotypes and MeasurementPhenotypes as anchor/phenotype.
+    Use WithinSameEncounterPhenotype when two events must co-occur within the same encounter/visit (e.g. "diagnosis of sepsis during a hospitalization where a blood culture was performed", "lab test during the same visit as a procedure"). Links a target phenotype to an anchor phenotype via a shared encounter identifier. Only works with CodelistPhenotype and MeasurementPhenotype inputs.
+
+    This phenotype returns:
+        DATE: The event date from the target phenotype.
+        VALUE: The value from the target phenotype (if any).
 
     Parameters:
         name: The name of the phenotype. Optional. If not passed, name will be derived from the name of the codelist.

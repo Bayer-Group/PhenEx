@@ -34,9 +34,7 @@ class _ComponentPhenotypeView:
 
 class Table1(Reporter):
     """
-    Table1 is a common term used in epidemiology to describe a table that shows an overview of the baseline characteristics of a cohort. It contains the counts and percentages of the cohort that have each characteristic, for both boolean and value characteristics. In addition, summary statistics are provided for value characteristics (mean, std, median, min, max).
-
-    Table1 by default reports on all phenotypes in the cohort's characteristics, but a custom list of phenotypes can be provided to the execute() method. When using the default cohort.characteristics, the section structure defined on the cohort is preserved in the Table1 output for better organization and display.
+    Use Table1 to generate a baseline characteristics summary table for a cohort, showing counts, percentages, and summary statistics (mean, std, median, min, max) for each characteristic. It reports on all phenotypes in the cohort's characteristics by default, preserving any section structure defined on the cohort.
 
     Parameters:
         decimal_places: Number of decimal places to round to. Default: 1
@@ -44,6 +42,26 @@ class Table1(Reporter):
             (child) phenotypes are expanded inline beneath each parent phenotype,
             indented according to their nesting depth.  ``None`` (default) disables
             expansion.  Set to a large number (e.g. 100) to include all levels.
+
+    Examples:
+
+    Example: Access Table1 after cohort execution
+        ```python
+        from phenex.reporting import Table1
+
+        # Table1 is generated automatically during cohort.execute()
+        df = cohort.table1  # DataFrame with characteristics summary
+        cohort.write_reports_to_excel("./output")  # writes table1.xlsx
+        ```
+
+    Example: Use as a custom reporter with component phenotype expansion
+        ```python
+        table1 = Table1(include_component_phenotypes_level=100)
+        cohort = Cohort(
+            ...,
+            custom_reporters=[table1]
+        )
+        ```
     """
 
     def __init__(self, include_component_phenotypes_level=None, **kwargs):

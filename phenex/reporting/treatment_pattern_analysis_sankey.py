@@ -163,18 +163,7 @@ class SankeyGenerator:
 
 class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Reporter):
     """
-    Reporter that produces a d3-sankey diagram showing patient flow between
-    treatment regimen combinations across consecutive time periods.
-
-    The reporter automatically discovers every TreatmentPatternAnalysis group
-    present in ``cohort.characteristics`` and ``cohort.outcomes`` by reading the
-    ``_tpa_name`` / ``_tpa_period_num`` / ``_tpa_period_label`` attributes set by
-    :class:`~phenex.phenotypes.factory.TreatmentPatternAnalysis`, with a regex
-    fallback for manually named phenotypes.
-
-    One :class:`SankeyGenerator` is created per group.  Each generator fetches
-    patient IDs from the already-executed phenotype tables and computes cross-period
-    flows by set intersection.
+    Use TreatmentPatternAnalysisSankeyReporter to produce a d3-sankey diagram showing patient flow between treatment regimen combinations across consecutive time periods. It automatically discovers TreatmentPatternAnalysis groups from cohort characteristics/outcomes and computes cross-period flows by set intersection.
 
     Outputs
     -------

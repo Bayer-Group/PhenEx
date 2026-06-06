@@ -20,20 +20,7 @@ logger = create_logger(__name__)
 
 class TimeToEvent(Reporter):
     """
-    Perform a time to event analysis using Kaplan-Meier estimation.
-
-    This reporter generates:
-    1. A private patient-level time-to-event table (_tte_table) for intermediate processing
-    2. Aggregated survival/risk data in self.df combining results from all outcomes
-    3. Kaplan-Meier survival curves
-
-    The patient-level table (_tte_table) contains one row per patient with:
-    - Index date for each patient
-    - Event dates for all outcomes (NULL if did not occur)
-    - Event dates for all right censoring events (NULL if did not occur)
-    - End of study period date (if provided)
-    - Days from index to each event
-    - Indicator variables for whether the first event was the outcome of interest
+    Use TimeToEvent to perform Kaplan-Meier survival analysis on cohort outcomes. It generates patient-level time-to-event data, aggregated survival/risk tables, and Kaplan-Meier survival curves accounting for right-censoring events and administrative censoring.
 
     The aggregated output (self.df) contains survival function estimates and event counts
     for each outcome, suitable for reporting and visualization.
@@ -43,6 +30,24 @@ class TimeToEvent(Reporter):
             Suggested are death and end of followup.
         end_of_study_period: A datetime defining the end of study period.
         decimal_places: Number of decimal places for rounding survival probabilities. Default: 4
+
+    Examples:
+
+    Example: Basic time-to-event analysis
+        ```python
+        from phenex.reporting import TimeToEvent
+
+        tte = TimeToEvent(
+            right_censor_phenotypes=[death_phenotype],
+            end_of_study_period=datetime(2023, 12, 31)
+        )
+        cohort = Cohort(
+            ...,
+            custom_reporters=[tte]
+        )
+        cohort.execute(tables)
+        df = tte.df  # aggregated survival data
+        ```
     """
 
     def __init__(

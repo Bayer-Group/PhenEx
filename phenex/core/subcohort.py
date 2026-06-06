@@ -147,15 +147,7 @@ class _PseudoReporterNode:
 
 class Subcohort(Cohort):
     """
-    A Subcohort derives from a parent cohort and applies additional inclusion /
-    exclusion criteria. The subcohort inherits the entry criterion, inclusions,
-    exclusions, and outcomes from the parent cohort but can add additional
-    filtering criteria and outcomes.
-
-    Like ``Cohort``, a ``Subcohort`` exposes a ``table1`` property that reports
-    baseline characteristics for the subcohort population. The characteristics
-    are taken from the parent cohort and their data are subset to the patients
-    that satisfy the subcohort's criteria.
+    Use Subcohort to derive a sub-population from an existing parent cohort by applying additional inclusion/exclusion criteria. It inherits the entry criterion, inclusions, exclusions, and characteristics from the parent cohort but lets you add further phenotype-based restrictions and additional outcomes.
 
     Parameters:
         name: A descriptive name for the subcohort.

@@ -12,7 +12,7 @@ from phenex.filters.value import (
 
 class ValueFilter(Filter):
     """
-    ValueFilter filters events in an PhenexTable based on a specified value range.
+    Use ValueFilter to restrict events based on a numeric value range (e.g. "HbA1c > 7.0", "age between 18 and 65", "BMI ≥ 30"). Specify min_value and/or max_value using Value subclasses (GreaterThan, LessThanOrEqualTo, etc.) to define the boundaries.
 
     Parameters:
         min_value: Minimum value required to pass through the filter.
@@ -21,6 +21,40 @@ class ValueFilter(Filter):
 
     Methods:
         filter: Filters the given PhenexTable based on the range of values specified by the min_value and max_value attributes. See Filter.
+
+    Examples:
+
+    Example: Filter for HbA1c values above 7.0
+        ```python
+        from phenex.filters import ValueFilter
+        from phenex.filters.value import GreaterThan
+
+        hba1c_filter = ValueFilter(
+            min_value=GreaterThan(7.0)
+        )
+        ```
+
+    Example: Filter for age between 18 and 65
+        ```python
+        from phenex.filters import ValueFilter
+        from phenex.filters.value import GreaterThanOrEqualTo, LessThanOrEqualTo
+
+        age_filter = ValueFilter(
+            min_value=GreaterThanOrEqualTo(18),
+            max_value=LessThanOrEqualTo(65)
+        )
+        ```
+
+    Example: Filter for BMI >= 30 on a custom column
+        ```python
+        from phenex.filters import ValueFilter
+        from phenex.filters.value import GreaterThanOrEqualTo
+
+        bmi_filter = ValueFilter(
+            min_value=GreaterThanOrEqualTo(30),
+            column_name="BMI"
+        )
+        ```
     """
 
     def __init__(
