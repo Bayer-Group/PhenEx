@@ -370,12 +370,20 @@ class Subcohort(Cohort):
         # overwriting it with index-filtered data.
         entry_rows = parent_df[parent_df["Type"] == "entry"]
         N_entry = int(entry_rows["N"].iloc[0])
+        N_events_entry = (
+            int(entry_rows["N_events"].iloc[0])
+            if "N_events" in entry_rows.columns
+            else N_entry
+        )
 
         # Start the running table from the parent's index table (the
         # patients that survived ALL parent inclusion/exclusion criteria).
         # This avoids replaying parent criteria from a potentially
         # corrupted entry_criterion.table.
-        running_table = self.cohort.index_table.select("PERSON_ID")
+        index_keys = ["PERSON_ID"] + (
+            ["INDEX_DATE"] if "INDEX_DATE" in self.cohort.index_table.columns else []
+        )
+        running_table = self.cohort.index_table.select(index_keys)
 
         waterfall = Waterfall(
             include_component_phenotypes_level=include_component_phenotypes_level
@@ -417,16 +425,16 @@ class Subcohort(Cohort):
         waterfall.ds = waterfall.append_delta(waterfall.ds)
         waterfall.df = pd.DataFrame(waterfall.ds)
 
-        N = (
-            self.index_table.filter(self.index_table.BOOLEAN == True)
-            .select("PERSON_ID")
-            .distinct()
-            .count()
-            .execute()
-        )
+        final_filtered = self.index_table.filter(self.index_table.BOOLEAN == True)
+        N = final_filtered.select("PERSON_ID").distinct().count().execute()
+        N_events = waterfall._count_events(final_filtered)
 
         waterfall.df["Pct_Remaining"] = waterfall.df["Remaining"] / N_entry * 100
         waterfall.df["Pct_N"] = waterfall.df["N"] / N_entry * 100
+        waterfall.df["Pct_N_events"] = waterfall.df["N_events"] / N_events_entry * 100
+        waterfall.df["Pct_events_remaining"] = (
+            waterfall.df["N_events_remaining"] / N_events_entry * 100
+        )
 
         float_cols = waterfall.df.select_dtypes(include="float").columns
         waterfall.df[float_cols] = waterfall.df[float_cols].round(
@@ -451,6 +459,10 @@ class Subcohort(Cohort):
                     "Name": "Final Cohort Size",
                     "Remaining": N,
                     "Pct_Remaining": round(100 * N / N_entry, waterfall.decimal_places),
+                    "N_events_remaining": N_events,
+                    "Pct_events_remaining": round(
+                        100 * N_events / N_events_entry, waterfall.decimal_places
+                    ),
                     "Level": 0,
                     "Index": "",
                 }
@@ -475,8 +487,12 @@ class Subcohort(Cohort):
             "Level",
             "N",
             "Pct_N",
+            "N_events",
+            "Pct_N_events",
             "Remaining",
             "Pct_Remaining",
+            "N_events_remaining",
+            "Pct_events_remaining",
             "Delta",
             "Pct_Source_Database",
         ]
