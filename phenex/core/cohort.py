@@ -43,6 +43,8 @@ class Cohort:
         description: A plain text description of the cohort.
         data_period: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the data_period was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
         custom_reporters: Additional reporter instances to run on this cohort only, after the default Waterfall and Table1 reporters. Each reporter must implement ``execute(cohort)`` and ``to_json(path)``.
+        write_subset_tables_entry: If True (default), materialize the entry-subset tables to the destination database. If False, keep them as lazy expressions instead.
+        write_subset_tables_index: If True (default), materialize the index-subset tables to the destination database. If False, keep them as lazy expressions instead.
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
@@ -70,6 +72,7 @@ class Cohort:
         return_index: str = "first",
         max_index_dates: Optional[int] = None,
         write_subset_tables_entry: bool = True,
+        write_subset_tables_index: bool = True,
     ):
         self.name = name
         self.description = description
@@ -100,6 +103,7 @@ class Cohort:
                 entry_criterion.return_date = "all"
 
         self.write_subset_tables_entry = write_subset_tables_entry
+        self.write_subset_tables_index = write_subset_tables_index
         self.table = None  # Will be set during execution to index table
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
@@ -152,6 +156,7 @@ class Cohort:
         self.derived_tables_stage = None
         self.entry_stage = None
         self.index_stage = None
+        self.subset_index_stage = None
         self.derived_tables_post_entry_stage = None
         self.reporting_stage = None
 
@@ -394,10 +399,26 @@ class Cohort:
             domains=entry_domains,
             index_phenotype=self.index_table_node,
         )
-        self.index_stage = NodeGroup(
-            name="index_stage",
-            nodes=self.subset_tables_index_nodes + index_nodes,
-        )
+        if self.write_subset_tables_index:
+            # Default: materialize the index-subset tables together with the
+            # index nodes in a single multithreaded stage.
+            self.subset_index_stage = None
+            self.index_stage = NodeGroup(
+                name="index_stage",
+                nodes=self.subset_tables_index_nodes + index_nodes,
+            )
+        else:
+            # Keep the index-subset tables in a separate stage so they can be
+            # executed without materializing to the destination database
+            # (see execute()).
+            self.index_stage = NodeGroup(
+                name="index_stage",
+                nodes=index_nodes,
+            )
+            self.subset_index_stage = NodeGroup(
+                name="subset_index_stage",
+                nodes=self.subset_tables_index_nodes,
+            )
 
         #
         # Post-index / reporting stage: OPTIONAL
@@ -737,6 +758,27 @@ class Cohort:
             table_name_prefix=self.name,
         )
         self.table = self.index_table_node.table
+
+        if not self.write_subset_tables_index:
+            # Execute the index-subset tables in-memory so they are not
+            # materialized to the destination database. The index table is
+            # already computed, so detach it from the subset nodes' children to
+            # avoid re-executing it; SubsetTable accesses it via
+            # self.index_phenotype.table.
+            for node in self.subset_tables_index_nodes:
+                node._children = [
+                    c for c in node._children if c is not self.index_table_node
+                ]
+            self.subset_index_stage.execute(
+                tables=self.subset_tables_entry,
+                con=None,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                table_name_prefix=self.name,
+            )
+            # Restore children for correct dependency graphs in later stages
+            for node in self.subset_tables_index_nodes:
+                node._children.insert(0, self.index_table_node)
 
         logger.info(f"Cohort '{self.name}': completed index stage.")
         logger.info(f"Cohort '{self.name}': executing reporting stage ...")
