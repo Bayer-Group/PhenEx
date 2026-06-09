@@ -35,7 +35,7 @@ class DeathPhenotype(Phenotype):
         relative_time_range: Union[
             RelativeTimeRangeFilter, List[RelativeTimeRangeFilter]
         ] = None,
-        **kwargs
+        **kwargs,
     ):
         super(DeathPhenotype, self).__init__(name=name, **kwargs)
         self.domain = domain
