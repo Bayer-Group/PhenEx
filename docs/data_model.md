@@ -19,18 +19,6 @@ Similarly, a value column is present on a phenotype table. If a value can be ass
 | EVENT_DATE | date, null | Date assigned to the phenotype. Generally null, unless parameters to phenotype allow for assignment of a single date |
 | VALUE | optional, float, int or str | Value assigned to the phenotype. Generally null, unless parameters to phenotype allow for assignment of a date. For example, measurement phenotypes are often associated with values. |
 
-## Anchor dates and the INDEX_DATE column
-
-Many phenotypes are defined relative to a reference date — for example, "diabetes diagnosis in the year before index" or "blood pressure within 90 days of AF diagnosis". In PhenEx, this reference date is called the **anchor date**.
-
-There are two ways an anchor date is determined:
-
-1. **INDEX_DATE (default)**. When a Cohort is executed, the entry criterion phenotype defines an index date for each patient. This index date is attached to all downstream domain tables as the `INDEX_DATE` column. Any `RelativeTimeRangeFilter` that does not specify an `anchor_phenotype` will automatically use `INDEX_DATE`.
-
-2. **anchor_phenotype**. You can explicitly set the anchor to be the `EVENT_DATE` of another phenotype by passing it as the `anchor_phenotype` parameter of a `RelativeTimeRangeFilter`. This is useful when a phenotype's time window is relative to something other than the cohort index date — for example, "statin prescription within 90 days of MI diagnosis".
-
-The anchor date concept is central to PhenEx: it allows phenotypes to be chained together, with each phenotype's time window defined relative to the output of another.
-
 ## Multi-phenotype tables
 
 PhenEx operates by manipulating phenotype tables. We very often join the output of phenotypes on person_id to create ‘multi-phenotype tables’. These tables generally all have the same structure; each row is a unique person_id, and there are multiple columns, with each column representing a unique phenotype’s output (boolean, event_date, or value). The phenotype output columns are prefixed with the name of the phenotype followed by an underscore followed by what parameter (boolean, event_date, or value). 
