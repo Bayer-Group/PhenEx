@@ -118,11 +118,16 @@ class SnowflakeConnector:
         ]
         self._check_env_vars(required_vars)
         self._check_source_dest()
+        # Source and destination live in the same Snowflake account, so a single
+        # backend connection can fully-qualify either database/schema. Sharing one
+        # connection (instead of opening separate source/dest connections) means
+        # source and dest tables belong to the same Ibis backend and can be joined
+        # server-side. Ibis refuses to join tables that come from two different
+        # connection objects, even when they point at the same account.
         self.source_connection = self.connect_source()
-        if self.SNOWFLAKE_DEST_DATABASE:
-            self.dest_connection = self.connect_dest()
-        else:
-            self.dest_connection = None
+        self.dest_connection = (
+            self.source_connection if self.SNOWFLAKE_DEST_DATABASE else None
+        )
 
     def _check_env_vars(self, required_vars: List[str]):
         for var in required_vars:

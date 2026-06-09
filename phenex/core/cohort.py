@@ -67,10 +67,39 @@ class Cohort:
         description: Optional[str] = None,
         database: Optional[Database] = None,
         custom_reporters: Optional[List] = None,
+        return_index: str = "first",
+        max_index_dates: Optional[int] = None,
+        write_subset_tables_entry: bool = True,
     ):
         self.name = name
         self.description = description
         self.database = database
+        self.return_index = return_index
+        self.max_index_dates = max_index_dates
+
+        assert return_index in (
+            "first",
+            "last",
+            "all",
+        ), f"return_index must be 'first', 'last', or 'all', got '{return_index}'"
+        if max_index_dates is not None:
+            assert (
+                isinstance(max_index_dates, int) and max_index_dates > 0
+            ), f"max_index_dates must be a positive integer, got {max_index_dates}"
+
+        # When return_index requires multiple candidate dates, auto-set entry criterion
+        if return_index in ("last", "all"):
+            if (
+                hasattr(entry_criterion, "return_date")
+                and entry_criterion.return_date != "all"
+            ):
+                logger.info(
+                    f"Cohort '{name}': return_index='{return_index}' requires entry criterion "
+                    f"return_date='all'. Auto-setting from '{entry_criterion.return_date}'."
+                )
+                entry_criterion.return_date = "all"
+
+        self.write_subset_tables_entry = write_subset_tables_entry
         self.table = None  # Will be set during execution to index table
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
@@ -340,6 +369,8 @@ class Cohort:
             entry_phenotype=self.entry_criterion,
             inclusion_table_node=self.inclusions_table_node,
             exclusion_table_node=self.exclusions_table_node,
+            return_index=self.return_index,
+            max_index_dates=self.max_index_dates,
         )
         index_nodes.append(self.index_table_node)
 
@@ -618,14 +649,55 @@ class Cohort:
 
         logger.info(f"Cohort '{self.name}': executing entry stage ...")
 
-        self.entry_stage.execute(
-            tables=tables,
-            con=con,
-            overwrite=overwrite,
-            n_threads=n_threads,
-            lazy_execution=lazy_execution,
-            table_name_prefix=self.name,
-        )
+        if self.write_subset_tables_entry:
+            self.entry_stage.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
+            )
+        else:
+            # Execute entry criterion in-memory so .table stays on the source
+            # backend, avoiding cross-backend joins with subset tables.
+            self.entry_criterion.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                table_name_prefix=self.name,
+                lazy_execution=lazy_execution,
+            )
+            # # Write entry criterion and its dependencies to dest
+            # if con is not None:
+            #     prefix = re.sub(r"[^A-Za-z0-9_]", "_", self.name).upper()
+            #     node = self.entry_criterion
+            #     # if node.table is not None:
+            #     #     db_name = (
+            #     #         f"{prefix}__{node.name}"
+            #     #         if not node.name.startswith(prefix)
+            #     #         else node.name
+            #     #     )
+            #     #     con.create_table(node.table, db_name, overwrite=overwrite)
+            # # Remove entry_criterion from subset table children so it won't be
+            # # re-executed; its .table is already set and SubsetTable._execute
+            # # accesses it via self.index_phenotype.table.
+            for node in self.subset_tables_entry_nodes:
+                node._children = [
+                    c for c in node._children if c is not self.entry_criterion
+                ]
+            self.entry_stage.execute(
+                tables=tables,
+                con=None,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                table_name_prefix=self.name,
+            )
+            # Restore children for correct dependency graphs in later stages
+            for node in self.subset_tables_entry_nodes:
+                node._children.insert(0, self.entry_criterion)
+
         self.subset_tables_entry = tables = self.get_subset_tables_entry(tables)
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
