@@ -8,6 +8,7 @@ from phenex.phenotypes.phenotype import Phenotype
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters import DateFilter, ValueFilter
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
+from phenex.phenotypes.functions import select_phenotype_columns
 from phenex.aggregators import First, Last
 
 from phenex.util import create_logger
@@ -71,6 +72,17 @@ def UserDefinedPhenotype(
         def _execute(self, tables) -> PhenotypeTable:
             table = function(tables)
 
+            # Propagate INDEX_DATE from PERSON table when function output lacks it
+            if (
+                "INDEX_DATE" not in table.columns
+                and "PERSON" in tables
+                and "INDEX_DATE" in tables["PERSON"].columns
+            ):
+                person_index = (
+                    tables["PERSON"].select("PERSON_ID", "INDEX_DATE").distinct()
+                )
+                table = table.join(person_index, "PERSON_ID")
+
             if "BOOLEAN" not in table.columns:
                 table = table.mutate(BOOLEAN=True).distinct()
             else:
@@ -81,7 +93,7 @@ def UserDefinedPhenotype(
             if "VALUE" not in table.columns:
                 table = table.mutate(VALUE=ibis.null().cast("int32"))
 
-            return table
+            return select_phenotype_columns(table)
 
     # Set output_display_type = as a class variable based on returns_value parameter
     _UserDefinedPhenotype.output_display_type = "value" if returns_value else "boolean"
