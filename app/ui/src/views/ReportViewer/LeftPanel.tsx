@@ -101,9 +101,11 @@ export const LeftPanel: FC<LeftPanelProps> = ({
             <SimpleCustomScrollbar
               targetRef={scrollRef}
               orientation="vertical"
-              height={140}
-              marginBottom={'30vh'}
-              marginToEnd={8}
+              // height={140}
+              // marginBottom={'30vh'}
+              marginTop={100}
+              marginBottom={0}
+              marginToEnd={0}
               classNameTrack={styles.scrollBarTrack}
               classNameThumb={styles.scrollBarThumb}
             />

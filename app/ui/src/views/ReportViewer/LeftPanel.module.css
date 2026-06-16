@@ -115,14 +115,17 @@
 }
 
 .scrollBarTrack{
-  background-color: rgb(217, 217, 217);
+  background-color: transparent;
+  border-radius: 0px;
+
 }
 
 .scrollBarThumb{
-  background-color: rgb(101, 96, 96) !important;
+  background-color: rgba(101, 96, 96, 0.2) !important;
+  border-radius: 0px;
+  width:13px;
 }
 
 .scrollBarTrack:hover {
-  background-color: rgb(217, 217, 217) !important;
-
+  background-color: transparent;
 }

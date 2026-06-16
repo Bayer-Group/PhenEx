@@ -37,7 +37,7 @@ interface HorizontalRowViewerProps {
   table2Cohorts?: Table2Cohort[];
   studyTitle?: string;
   studyDescription?: string;
-  onClose: (finalIndex: number) => void;
+  onClose?: (finalIndex: number) => void;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -225,14 +225,14 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   }, []);
 
   const startClose = useCallback(() => {
-    if (closing) return;
+    if (!onClose || closing) return;
     setClosing(true);
     setTimeout(() => onClose(currentIndex), ANIM_MS);
   }, [closing, onClose, currentIndex]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') startClose();
+      if (e.key === 'Escape' && onClose) startClose();
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         if (e.repeat) {
@@ -280,11 +280,13 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       <div className={styles.topGradient} />
 
       <div className={styles.titleGroup} style={{ marginLeft: isLeftPanelShown ? undefined : 50 }} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.backButton} onClick={(e) => { e.stopPropagation(); startClose(); }} title="Back">
-          <svg width="20" height="22" viewBox="0 0 25 28" fill="none">
-            <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </button>
+        {onClose && (
+          <button className={styles.backButton} onClick={(e) => { e.stopPropagation(); startClose(); }} title="Back">
+            <svg width="20" height="22" viewBox="0 0 25 28" fill="none">
+              <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        )}
         <div className={`${styles.titleBar} ${showRowTitle ? styles.titleBarScrolled : ''}`}>
           <HorizontalRowTitle
             rows={rows}

@@ -30,6 +30,7 @@
   border-radius: 8px;
   transition: background-color 0.2s ease, opacity 0.2s ease;
   min-height: 20px;
+  z-index: 11;
 }
 
 .scrollbar:hover .thumb {

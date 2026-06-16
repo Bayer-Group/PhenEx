@@ -36,6 +36,7 @@
   flex-direction: row;
   align-items: stretch;
   gap: 6px;
+  background-color: red;
 }
 
 .titleGroup > * {

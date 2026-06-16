@@ -192,10 +192,10 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
         className={styles.cell}
         style={{ '--desired-top': desiredTop, paddingLeft: isLeftPanelShown ? undefined : 100 } as React.CSSProperties}
       >
-      <div className={styles.topGradient} />
 
         <div className={styles.cardColumnInner}>
           <div ref={verticalScrollRef} className={styles.verticalWrapper}>
+
             <div
               className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
               onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(row.index); }}
@@ -216,11 +216,13 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
           <SimpleCustomScrollbar
             targetRef={verticalScrollRef}
             orientation="vertical"
-            height={140}
-            marginBottom={'30vh'}
-            marginToEnd={commentsCollapsed ? 10 : commentsPanelWidth - 1}
-            classNameThumb={styles.verticalScrollbarThumb}
-            classNameTrack={styles.verticalScrollbarTrack}
+             // height={140}
+              // marginBottom={'30vh'}
+              marginTop={100}
+              marginBottom={0}
+            marginToEnd={commentsCollapsed ? 0 : commentsPanelWidth - 1}
+            classNameThumb={styles.scrollBarThumb}
+            classNameTrack={styles.scrollBarTrack}
           />
         </div>
       </div>

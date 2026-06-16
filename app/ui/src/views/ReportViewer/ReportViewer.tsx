@@ -6,7 +6,6 @@ import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { type OutlineEntry } from './OutlineBar';
 import { ThreePanelView } from '../MainView/ThreePanelView/ThreePanelView';
 import { ThreePanelCollapseProvider } from '../../contexts/ThreePanelCollapseContext';
-import { SpatialStudyDisplay } from './SpatialStudyDisplay';
 import {
   classifyRows,
   parseCohortGroups,
@@ -245,17 +244,12 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     ) as Record<string, number | null>;
   }, [waterfallData]);
 
-  // ── Reporter rows (filtered from sequential rows, one source of truth) ──
-  const table1Rows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'table1'), [sequentialRows]);
-  const outcomesRows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'table1_outcomes'), [sequentialRows]);
+  // ── Reporter rows (for outline and cohort computations) ──────────────
   const table2Rows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'Table2'), [sequentialRows]);
   const tteRows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'TimeToEvent'), [sequentialRows]);
 
-  // ── HorizontalRowViewer state (single instance for all charts) ────────
-  const [viewerIndex, setViewerIndex] = useState<number>(-1);
-  const closeViewer = useCallback((_finalIndex: number) => {
-    setViewerIndex(-1);
-  }, []);
+  // ── HorizontalRowViewer state ─────────────────────────────────────────
+  const [viewerIndex, setViewerIndex] = useState(0);
 
   // ── Table2 + TimeToEvent ──────────────────────────────────────────────
   const table2Cohorts: Table2Cohort[] = useMemo(
@@ -378,40 +372,18 @@ export const ReportViewer: FC<ReportViewerProps> = ({
             finalCohortSizes={finalCohortSizes}
           />
 
-          {/* Center panel: charts */}
+          {/* Center panel */}
           <div className={styles.centerPanel}>
-            <SpatialStudyDisplay
-              cohortData={cohortData}
-              outcomesCohortData={outcomesCohortData}
-              waterfallData={waterfallData}
-              sequentialRows={sequentialRows}
-              table1Rows={table1Rows}
-              outcomesRows={outcomesRows}
-              table2Rows={table2Rows}
-              tteRows={tteRows}
-              table2Cohorts={table2Cohorts}
-              tteCohorts={tteCohorts}
-              groups={groups}
-              cohortDescriptions={cohortDescriptions}
-              finalCohortSizes={finalCohortSizes}
-              title={displayTitle}
-              description={studyDescription}
-              loading={loading}
-              storageKey={storageKey}
-              onOpenRow={setViewerIndex}
-            />
-
             <HorizontalRowViewer
-                rows={sequentialRows}
-                initialIndex={viewerIndex}
-                cohortDataMap={cohortDataMap}
-                finalCohortSizes={finalCohortSizes}
-                tteCohorts={tteCohorts}
-                table2Cohorts={table2Cohorts}
-                studyTitle={displayTitle}
-                studyDescription={studyDescription}
-                onClose={closeViewer}
-              />
+              rows={sequentialRows}
+              initialIndex={viewerIndex}
+              cohortDataMap={cohortDataMap}
+              finalCohortSizes={finalCohortSizes}
+              tteCohorts={tteCohorts}
+              table2Cohorts={table2Cohorts}
+              studyTitle={displayTitle}
+              studyDescription={studyDescription}
+            />
           </div>
 
           {/* Right panel: empty for future use */}
