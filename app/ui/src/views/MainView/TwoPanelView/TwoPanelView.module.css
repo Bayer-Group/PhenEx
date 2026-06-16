@@ -1,0 +1,374 @@
+:root {
+  --margin_top_right_panel:0; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
+  --border_radius_right_panel: 0px; /* this keeps together the rightpanelcontent, the collapse button, and the info button*/
+}
+.container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: var(--background-color) !important;
+  overflow: hidden;
+}
+
+.leftPanel {
+  flex: 0 0 auto;
+  min-width: 0;
+  background-color: var(--background-color) !important;
+  position: relative;
+  height: 100%;
+  transition:
+    width 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.rightPanel {
+  flex: 0 0 auto;
+  min-width: 0;
+  position: relative;
+  transition: none;
+  background-color: var(--background-color) !important;
+  opacity: 1;
+  transition:
+    opacity 0.1s ease;
+  border-radius: 20px 20px 20px 20px;
+}
+
+.rightPanel.fullWidth {
+  width: 100% !important;
+  min-width: 100% !important;
+}
+
+.rightPanel.collapsed {
+  opacity: 0;
+  transition:
+    /* width .3s ease, */
+    opacity 0.1s ease !important;
+}
+
+.rightPanel.collapsed {
+  opacity: 0;
+}
+
+.leftPanel.collapsed {
+  opacity: 0;
+}
+
+.divider {
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  position: absolute;
+  background-color: transparent;
+  z-index: 5000;
+  top: 0;
+  left: -6px;
+}
+
+.leftPanel .leftPanelContent{
+  opacity: 1!important;
+  transition: opacity 1.1s ease !important;
+}
+.leftPanel.collapsed .leftPanelContent{
+  opacity:0 !important;
+  transition: opacity .3s ease !important;
+}
+
+.leftPanelContent {
+  position: relative;
+  height: 100%;
+  z-index: 0;
+  border-radius: var(--border_radius_right_panel);
+  background-color: transparent !important;
+  overflow: auto;
+  border-left: var(--border);
+}
+
+.rightPanelContent {
+  position: relative;
+  height: 100%;
+  z-index: 0;
+  border-radius: var(--border_radius_right_panel);
+  background-color: red !important;
+  /* overflow: hidden; */
+}
+.divider.collapsed {
+  width: 0;
+  border: none;
+}
+
+.divider:hover {
+  /* border-color: var(--color-accent); */
+}
+
+.divider:hover .dividerLine {
+  width: 3px;
+}
+
+.divider:hover .dividerLine.right.collapsed {
+  width: 3px;
+  pointer-events: none;
+  cursor: default;
+}
+
+.divider:hover .collapseButton {
+  border-color: var(--color-accent);
+}
+
+.collapsed {
+  width: 0;
+  overflow: hidden;
+}
+
+.collapseButton {
+  opacity: 1;
+  z-index: 10000;
+  position: absolute;
+  pointer-events: all;
+  margin-top: 12px;
+  padding: 0 3px 0 0;
+  font-size: 22px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  width: 25px !important;
+  color: var(--color_inactive);
+  top: 0px;
+  right: 10px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent !important;
+  transition: transform 0.2s ease;
+}
+
+.collapseButtonIcon {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+.collapseButton.collapsed .collapseButtonIcon {
+  transform: scaleX(1);
+}
+
+.collapseButton svg{
+  color: var(--color_accent_dark);
+  stroke-width: 10;
+}
+
+.collapseButton:hover {
+  transform: scale(1.5);
+}
+
+.collapseButton:hover svg{
+  color: var(--color_accent_blue);
+}
+
+.panel.collapsed {
+  width: 0 !important;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
+}
+
+[data-dragging='true'] {
+  cursor: col-resize;
+  user-select: none;
+}
+
+[data-dragging='true'] * {
+  user-select: none;
+}
+
+.container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: var(--background-color) !important;
+}
+
+.leftPanel {
+  background-color: var(--background-color) !important;
+  transition:
+    /* width 0.3s ease, */
+    opacity 0.2s ease;
+}
+
+.leftPanel.rightCollapsed{
+    transition:
+    opacity 0.1s ease;
+}
+
+.rightPanel.leftCollapsed{
+    transition:
+    opacity 0.1s ease;
+}
+
+.rightPanel {
+  position: relative;
+  background-color: var(--background-color) !important;
+  transition:
+    /* width 0.2s ease, */
+    opacity 0.2s ease;
+}
+
+/* Remove transitions ONLY during drag */
+[data-dragging='true'] .leftPanel,
+[data-dragging='true'] .rightPanel {
+  transition: none !important;
+}
+
+[data-dragging='true'] .topPanel,
+[data-dragging='true'] .bottomPanel {
+  transition: none !important;
+}
+
+/* Rest of your CSS remains the same */
+.rightPanel.collapsed {
+  opacity: 0;
+}
+
+.leftPanel.collapsed {
+  opacity: 0;
+}
+
+.collapsed {
+  width: 0;
+  overflow: hidden;
+}
+
+/* Horizontal Split Styles */
+.container.horizontal {
+  flex-direction: column;
+}
+
+.topPanel {
+  background-color: var(--background-color) !important;
+  position: relative;
+  transition:
+    height 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.bottomPanel {
+  background-color: var(--background-color) !important;
+  position: relative;
+  border-top: var(--border);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+  transition:
+    height 0.2s ease;
+}
+
+.bottomPanel.collapsed {
+  height: 0 !important;
+  overflow: visible; /* Changed from hidden to visible so title button can show */
+}
+
+.topPanel.collapsed {
+  opacity: 0;
+  height: 0 !important;
+  overflow: hidden;
+}
+
+.bottomPanelContent {
+  height: 100%;
+  overflow: auto;
+  padding: var(--margin_top_right_panel);
+  box-sizing: border-box;
+  transition: opacity 0.2s ease;
+}
+
+.dividerHorizontal {
+  height: 15px;
+  width: 100%;
+  cursor: row-resize;
+  position: absolute;
+  top: -7px;
+  left: 0;
+  background-color: transparent;
+  z-index: 100;
+}
+
+.dividerHorizontal:hover {
+}
+
+
+
+
+
+.collapseArrows{
+  margin-left: 5px;
+  transform: rotate(90deg)!important;
+  font-family: "SNPro-black"!important;
+    display: inline-block; /* Important for rotation to take effect */
+
+}
+
+
+.collapseButtonHorizontal.collapsed .collapseArrows{
+  transform: rotate(0deg)!important;
+    display: inline-block; /* Important for rotation to take effect */
+
+}
+
+/* Popover Styles */
+.popoverOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.711);
+  z-index: 9999;
+  display: flex;
+  opacity: 0;
+  animation: fadeIn 0.2s ease-in forwards;
+  /* justify-content: center; */
+  /* align-items: center; */
+  /* backdrop-filter: blur(1px); */
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.popoverOverlay.closing {
+  animation: fadeOut .1s ease-out forwards;
+}
+
+.popoverContent {
+  width: 600px;
+  height: 600px;
+  background-color: transparent !important; /* This sets the entire popover background color! */
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  right: 10%;
+  top: 10%;
+  opacity: 0;
+  animation: fadeIn 0.2s ease-in forwards;
+}
+
+.popoverContent > div {
+    height: 100%;
+    width: 100%;
+}

@@ -1,0 +1,39 @@
+.buttonContainer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 25px;
+  min-height: 25px;
+  z-index: 10;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color_accent_dark);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.button:hover {
+  transform: scale(1.15);
+  background: var(--color_accent_dark);
+  color: white;
+}
+
+.button:active {
+  transform: scale(1.05);
+}
+
+.button svg {
+  display: block;
+}

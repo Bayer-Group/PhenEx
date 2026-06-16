@@ -1,0 +1,230 @@
+.container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.leftPanel {
+  background-color: transparent;
+}
+
+.centerPanel {
+  flex: 1;
+  min-width: 500px;
+  position: relative;
+}
+
+.rightPanel {
+  background-color: var(--background-color);
+}
+
+.divider {
+  width: 15px;
+  top: 0px;
+  height: 100vh;
+  cursor: col-resize;
+  /* position: absolute; */
+  z-index: 100000;
+  /* display: flex;
+  align-items: center; */
+  /* justify-content: center; */
+}
+
+.divider.left {
+  position: absolute;
+  right: 0px;
+  background-color: transparent !important;
+}
+
+.divider.right {
+}
+
+.dividerLine {
+  height: 100%;
+  pointer-events: none;
+  width: 0px;
+  background-color: var(--border-color);
+  transition: background-color 0.2s ease;
+  z-index: 1000;
+}
+
+.divider:hover .dividerLine {
+  /* background-color: var(--color-accent); */
+  width: 1px;
+}
+
+.divider:hover .dividerLine.right.collapsed {
+  /* width: 3px;
+  pointer-events: none;
+  cursor: default; */
+}
+
+.collapsed {
+  /* width: 0; */
+  /* overflow: hidden; */
+}
+
+.collapseButton {
+  z-index: 999999999;
+  position: fixed;
+  pointer-events: all;
+  margin-left: 0px;
+  margin-top: 0px;
+  padding: 0px;
+  cursor: pointer;
+  width: 40px !important;
+  height: 40px !important;
+  color: var(--color_inactive);
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.collapseButton svg{
+  color: var(--color_accent_dark);
+  stroke-width: 10;
+}
+
+.collapseButtonIcon {
+  display: inline-block;
+}
+
+.collapseButton.left.collapsed .collapseButtonIcon {
+  transform: scaleX(-1);
+}
+
+.arrow {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+
+.collapseButton:hover {
+  transform: scale(1.4);
+}
+
+.collapseButton:hover svg{
+  color: var(--color_accent_blue);
+}
+
+.collapseButton:focus {
+  outline: none;
+}
+
+.collapseButton.left {
+  left: 10px;
+  top: 10px;
+}
+
+.collapseButton.left:hover {
+  color: var(--color_accent_blue);
+}
+
+.panel.collapsed {
+  width: 0 !important;
+  padding: 0;
+  margin: 0;
+}
+
+.rightDividerPadding {
+  width: 9px;
+  height: 100%;
+  background-color: blue !important; /*var(--background-color);*/
+  /* margin-left: -12px; */
+  pointer-events: none;
+  position: absolute;
+  /* border-right: 1px solid var(--line-color); */
+  /* box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.1); */
+}
+
+
+.leftDividerPadding {
+  width: 8px;
+  height: 100%;
+  background-color: var(--background-color);
+  pointer-events: none;
+  z-index: 100;
+  position: absolute;
+  margin-left: 10px;
+  /* transition: all 0.2s ease; */
+  /* border-left: 1px solid var(--line-color); */
+  /* background-color: red; */
+}
+
+.leftDividerPadding.leftDividercollapsed {
+  background-color: var(--background-color);
+  margin-left: 0px;
+  width: 16px;
+}
+
+.rightDividerPadding.collapsed {
+  background-color: transparent;
+  width: 100px;
+}
+
+.panel {
+  transition:
+    /* max-width 0.2s ease,
+    width 0.2s ease, */
+    opacity 0.2s ease;
+  overflow: hidden;
+  opacity: 1;
+}
+
+.leftPanel {
+  width: 100%;
+  background-color: var(--background-color);
+  max-width: var(--initial-left-width);
+  z-index: 10000;
+  /* padding-right:10px; */
+
+}
+
+.rightPanel {
+  width: 100%;
+  max-width: var(--initial-right-width);
+}
+
+.panel.collapsed {
+  max-width: 0 !important;
+  width: 0 !important;
+  opacity: 0;
+  opacity: 0;
+}
+
+.divider {
+  transition:
+    /* all 0.2s ease,
+    width 0.2s ease, */
+    opacity 0.2s ease;
+  opacity: 1;
+}
+
+/* Remove transitions ONLY during drag */
+[data-dragging='true'] .leftPanel,
+[data-dragging='true'] .rightPanel {
+  transition: none !important;
+}
+
+/* Hover trigger area for animated portal */
+.hoverTrigger {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background-color: transparent;
+  z-index: 50;
+  cursor: pointer;
+}
+
+/* Container for left panel content inside portal - must fill full height */
+.leftPanelWidthAdjustablePortal {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}

@@ -1,0 +1,157 @@
+.editor {
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+  max-height: 300px;
+}
+
+.tabContent {
+  width: 50px;
+}
+
+.manualEntryRow {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  width: 50px;
+}
+
+.codeTypeField,
+.codesField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.codeTypeField {
+  flex: 0 0 45px;
+}
+
+.codeTypeInput {
+  font-size: 10px !important;
+  width: 45px;
+}
+.codesField {
+  flex: 1;
+}
+
+.codesTextarea {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  min-height: 60px;
+  resize: vertical;
+  font-family: inherit;
+  width: 100px;
+}
+
+.addButton {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s;
+}
+
+.addButton:hover {
+  background: #e0e0e0;
+}
+
+label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.searchInput {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.optionsList {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.option {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.deleteButton {
+  margin-top: 20px;
+  width: 20px;
+  height: 30px;
+  background: #fff;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #666;
+  font-size: 19px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.deleteButton:hover {
+  background: #ffebeb;
+  color: red;
+  border-color: red;
+}
+
+.selected {
+  background-color: #e6f7ff;
+  font-weight: 500;
+}
+
+.noResults {
+  padding: 12px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+}
+
+.editorContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chin {
+  display: flex;
+  gap: 16px;
+  padding: 8px;
+  border-top: 1px solid #ddd;
+  background-color: #f5f5f5;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #333;
+  cursor: pointer;
+}
+
+.checkboxLabel input[type='checkbox'] {
+  margin: 0;
+  cursor: pointer;
+}

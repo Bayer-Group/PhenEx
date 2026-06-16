@@ -1,0 +1,519 @@
+:root {
+  --xbutton_color_orange_background: hsl(14, 100%, 95%);
+  --popover_border_radius_bottom: 10px;
+  --popover_border_radius_top: 10px;
+  --popover_font_size: 20px;
+  --padding_custom_two_line_header: 5px 10px 20px 10px;
+  --border_radius_sharp: 2px;
+  --border_radius_currenselection:8px;
+}
+
+.composerBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100000;
+  background-color: transparent;
+}
+
+:global(.ag-popup-editor) {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  /* border-radius: 0px 0px 0px 0px !important; */
+  box-shadow: none !important;
+  /* transform: translateY(calc(-100% + 40px)); */
+  overflow: hidden;
+}
+
+:global(.ag-popup-child) {
+  border-radius: 4px 10px 10px 10px;
+}
+
+.header {
+  user-select: none !important;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: 'IBMPlexSans-regular';
+  margin-bottom: 0px;
+  padding-right: 20px;
+  /* margin: 4px; */
+  overflow: hidden;
+  text-wrap: wrap;
+  background-color: white;
+  /* border-radius: var(--issue_popover_radius) var(--issue_popover_radius) 0px 0px; */
+  box-shadow: var(--box_shadow_selected_no_hover);
+  background-color: var(--color-accent-bright);
+  transition:
+    box-shadow 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
+  position: relative;
+  /* line-height:var(--popover_font_size); */
+}
+
+.header:hover {
+}
+
+.threeLineTitle {
+  user-select: none;
+  cursor: grab;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0px 10px 0px 10px;
+  height: auto; /* Allow height to hug content */
+  min-height: fit-content;
+  overflow: visible;
+}
+
+.threeLineTitle:active {
+  cursor: grabbing;
+}
+
+
+
+
+.bottomLine {
+  display: block;
+}
+
+.selectedClassName{
+  background-color: var(--color_accent_blue) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.composerContainer > * {
+}
+
+.composerContainer {
+  width:100%;
+  background-color: var(--background_color_focus);
+  border-radius: 10px;
+  position: relative;
+  color: white;
+  overflow: hidden;
+  animation: fadeIn 0.05s ease-in-out;
+  border: none !important;
+  padding: 0px;
+}
+
+.composerHeader {
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: grab;
+  user-select: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.composerHeader:active {
+  cursor: grabbing;
+}
+
+.composerTitle {
+  opacity: 0.9;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.composerContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 5px 0px 5px;
+  margin: 0px !important;
+  overflow: hidden; /* Prevent outer scrolling */
+  /* width: 100%; */
+  height: 100%;
+}
+
+.contentScrollable {
+  overflow-y: auto;
+  /* Remove flex: 1 and min-height to allow content to determine height */
+}
+/* 
+.infoContentArea {
+  padding: 0px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.infoContentArea h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  color: var(--color-accent-bright);
+  font-family: 'IBMPlexSans-bold';
+}
+
+.infoContentArea h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: var(--text-color);
+  font-family: 'IBMPlexSans-bold';
+}
+
+.infoContentArea p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-color);
+} */
+
+.filler {
+  font-size: var(--popover_font_size);
+  font-family: 'IBMPlexSans-regular';
+}
+
+.phenotypeName {
+  font-family: 'IBMPlexSans-bolditalic' !important;
+  padding-left: 5px;
+}
+
+.actionText {
+  padding-left: 5px;
+  font-size: var(--popover_font_size);
+  font-family: 'IBMPlexSans-bolditalic';
+  padding-right: 10px;
+}
+
+.doneButtonContainer {
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  z-index: 1000;
+}
+
+.doneButton {
+  background-color: transparent;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-family: 'IBMPlexSans-bold';
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.2s ease;
+  
+}
+
+.doneButton:hover {
+  color: var(--color_accent_blue);
+  transform: scale(1.8);
+}
+
+.doneButton:focus{
+  outline:none;
+  border:none;
+}
+
+.doneButton svg {
+  width: 12px;
+  height: 8px;
+  fill: white;
+}
+.doneButton:hover svg {
+  width: 12px;
+  height: 8px;
+  fill: var(--color_accent_blue);
+}
+
+.header:hover .doneButton {
+  color: var(--color-accent) !important;
+}
+
+/*
+.doneButton:hover {
+  color: white;
+  background-color: var(--color-accent);
+}
+
+.doneButton:focus {
+  outline: none;
+  border: none;
+
+}
+
+.doneButton:focus-visible {
+  outline: none;
+  border: none;
+} */
+
+.bottomLabel {
+  font-family: 'IBMPlexSans-regular';
+  /* font-size:calc(var(--popover_font_size) - 4px); */
+}
+
+.xButton {
+}
+
+.header:hover .xButton {
+}
+
+
+
+.index {
+  font-size: var(--font_size_mid_phenotype_info) !important;
+  margin-left: 4px;
+  margin-bottom: 4px;
+  margin-top: 4px;
+  padding: 0px !important;
+  font-family: "IBMPlexSans-bold" !important;
+  height: var(--font_size_mid_phenotype_info);
+}
+
+.breadcrumbsContainer {
+  margin-top: 0px;
+  margin-left: 0px;
+  gap:0px;
+  padding-bottom: 3px;
+}
+
+.breadcrumbItem {
+  font-size: var(--font_size_infotext) !important;
+  line-height: var(--font_size_infotext);
+  opacity: 1 !important;
+  color: white  !important;
+  font-family: "IBMPlexSans-bold" !important;
+}
+
+.breadcrumbItem:hover {
+  background-color: transparent;
+}
+.breadcrumbLastItem {
+  font-size: var(--font_size_breadcrumb) !important;
+  font-family: 'IBMPlexSans-bold' !important;
+  line-height: 12px !important;
+  color: white  !important;
+}
+
+
+.breadcrumbLastItem:hover {
+  background-color: transparent;
+
+}
+
+.infoContainer {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: var(--background-color);
+  border-bottom: 1px solid var(--line-color);
+  height: 30px; /* Fixed absolute height */
+  min-height: 40px; /* Fixed height to prevent layout shifts */
+  max-height: 50px; /* Prevent container from growing */
+  padding-top: 0px; /* Add some top padding to prevent content overlap */
+  overflow: hidden; /* Hide any overflow to prevent layout changes */
+}
+
+.infoButton {
+  position: absolute !important;
+  right: 10px;
+  top: 10px;
+  z-index: 10;
+  min-width: 30px; /* Ensure button has consistent size */
+  height: 24px;
+  font-family: "IBMPlexSans-bold";
+  background-color: var(--background-color);
+}
+
+.infoButton.open {
+  color: var(--color-accent-bright);
+  background-color: var(--background-color);
+  color: var(--button-text-color-selected);
+  border: 1px solid transparent;
+  font-family: var(--button-font-family-selected);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.selectionPlaceholder {
+  height: 30px; /* Match the height of current selection content */
+  visibility: hidden; /* Hidden but takes up space */
+  line-height: 30px; /* Ensure proper spacing */
+}
+
+/* Removed old infobox styles - info content now renders in main content area */
+
+/* Removed duplicate infoContainer - styles are defined above */
+
+
+.infoContainer{
+  padding:0px;
+  padding-left:10px;
+  padding-bottom:5px;
+  border-bottom: 1px solid var(--line-color);
+  line-height: 20px;
+}
+
+.currentSelectionHeader{
+  font-size:12px;
+  line-height:0px;
+  padding:0px;
+  /* margin-top:-10px; */
+  font-family:"IBMPlexSans-regular";
+}
+.currentSelectionValue{
+  font-family:"IBMPlexSans-bolditalic";
+  font-size:20px;
+}
+
+/* Two-panel layout styles */
+.twoPanelWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.currentSelectionContainer {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background_color_focus) !important;
+  padding: 5px;
+  border-radius: 0 0 10px 10px;
+  /* border-left: var(--border);
+  border-bottom: var(--border);
+  border-right: var(--border); */
+
+}
+.blocker{
+  height: 0px;
+  width: 100%;
+}
+
+.currentSelectionTopSection {
+  /* background-color: transparent;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--color-accent-bright); */
+  /* background-color: var(--background-color) !important; */
+  /* border-radius: var(--border_radius_sharp) var(--border_radius_sharp) 0px 0px; */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0;
+  overflow: visible;
+  cursor: grab;
+  user-select: none;
+  height: auto; /* Height hugs content */
+  min-height: fit-content;
+}
+
+.currentSelectionTopSection:active {
+  cursor: grabbing;
+}
+
+.currentSelectionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  width: 100%;
+  background-color: var(--background-color);
+  color: white !important;
+  /* width:calc(100% + 8px); */
+  border-radius: 10px 10px 0px 0px;
+  background-color: var(--background_color_focus)  !important; /* TEMPORARY - REMOVE LATER */
+
+}
+
+.currentSelectionLabel {
+  font-family: "IBMPlexSans-regular";
+  font-size: 12px;
+  color: var(--text-color-normal);
+  opacity: 0.8;
+}
+
+.currentSelectionBottomSection {
+  display: flex;
+  align-items: stretch;
+  padding: 0px;
+  cursor: grab;
+  transition: box-shadow 0.2s ease-in-out;
+  background-color: var(--background-color);
+  border-radius: var(--border_radius_currenselection);
+;
+
+}
+
+.currentSelectionBottomSection:active {
+  cursor: grabbing;
+}
+
+.cellMirror:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+.cellMirror {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font-size: 18px;
+  position: relative;
+  border-radius: var(--border_radius_currenselection);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+}
+
+.cellMirrorContents{
+  padding: 5px var(--item-margin-horizontal);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cellMirrorContent {
+  font-family: "IBMPlexSans-regular";
+  color: var(--text-color-normal);
+}
+
+.addButton {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0px;
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  border: none;
+  background-color: var(--color_accent_dark);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  font-weight: bold;
+}
+
+.addButton svg {
+  stroke: white;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.addButton:hover svg {
+  stroke: white;
+}
+
+
+.addButton:hover {
+  transform: scale(1.4);
+  background-color: var(--color_accent_blue);
+}
+
+.addButton:active {
+  transform: scale(0.95);
+}

@@ -1,0 +1,212 @@
+/* Container */
+.verticalCardContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  flex-grow: 0;
+  width: 380px;
+  min-width: 380px;
+  max-width: 380px;
+}
+
+.verticalCardContainerReport {
+  width: 500px; /* can set report specific width*/
+}
+
+/* Cohort Card */
+.cohortCard {
+  outline: 2px solid transparent;
+  outline-offset: 0;
+  position: relative;
+  width: 100%;
+  min-width: 380px;
+  max-width: 380px;
+}
+
+.cohortCardReport {
+  width: 400px; /* can set report specific width*/
+  /* min-width: 180px;
+  max-width: 180px; */
+}
+
+.cohortCard:hover:not(.noHover) {
+}
+
+.cohortCard.forceHover {
+}
+
+.cohortCard.noHover:hover {
+}
+
+/* Header color changes on hover */
+.cohortCard:hover:not(.noHover) .cohortHeaderTitle,
+.cohortCard.forceHover .cohortHeaderTitle {
+  color: var(--color_accent_blue);
+}
+
+.cohortCard:hover:not(.noHover) .expandArrow,
+.cohortCard.forceHover .expandArrow {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(102%) contrast(97%);
+}
+
+.cohortCard.noHover:hover .cohortHeaderTitle {
+  color: #1a1a1a;
+}
+
+/* Header */
+.cohortHeader {
+  padding: 8px 0px;
+  margin-bottom: 8px;
+}
+
+.cohortHeaderContent {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: var(--dynamic-arrow-size, 40px);
+}
+
+/* Options button */
+.optionsButton {
+  background: none;
+  border: none;
+  color: currentColor;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  align-self: flex-start;
+  opacity: 0.7; 
+  margin-top:10px;
+  margin-left:-10px;
+}
+
+.optionsButton:hover {
+  opacity: 1;
+  background: var(--hover-background, #f0f0f0);
+}
+
+.cohortHeaderTitle {
+  font-weight: 600;
+  font-size: var(--dynamic-font-size, 16px);
+  color: #1a1a1a;
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  line-height: 1.3;
+  cursor: text;
+  padding: 2px 6px;
+  margin: 0;
+}
+
+.cohortHeaderTitleInput {
+  font-weight: 600;
+  font-size: var(--dynamic-font-size, 16px);
+  color: #1a1a1a;
+  flex: 1;
+  min-width: 0;
+  border: 2px solid var(--color_accent_blue);
+  border-radius: 4px;
+  padding: 2px 6px;
+  background: white;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.3;
+  margin: 0;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Cohort header expand button */
+.cohortHeaderContent .expandButton {
+  background: none;
+  border: none;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+  padding: 0px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  align-self: flex-end;
+  opacity: 1;
+}
+
+.cohortHeaderContent .expandButton:hover {
+  background: var(--hover-background, #f0f0f0);
+}
+
+.cohortHeaderContent .expandArrow {
+  width: var(--dynamic-arrow-size, 40px);
+  height: var(--dynamic-arrow-size, 40px);
+  display: block;
+}
+
+.topFiller {
+  width:100%;
+  height: 20px;
+  background-color: var(--color_entry_dim);
+}
+
+/* Table Container */
+.tableContainer {
+  padding: 0 0 0px 0;
+  min-height: 60px;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease-out, outline 0.2s ease-out;
+  outline: 2px solid transparent;
+  outline-offset: 0;
+}
+
+.cohortCard:hover:not(.noHover) .tableContainer {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  outline: var(--dynamic-outline-width, 3px) solid var(--color_accent_blue);
+}
+
+.cohortCard.forceHover .tableContainer {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  outline: var(--dynamic-outline-width, 3px) solid var(--color_accent_blue);
+}
+
+.cohortCard.noHover:hover .tableContainer {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  outline: 2px solid transparent;
+}
+
+/* Phenotype List */
+.phenotypeList {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Empty State */
+.emptyState {
+  padding: 24px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  font-size: 14px;
+}
+
+
+.reportMode {
+  box-shadow: none !important;
+  background: transparent !important;
+
+}

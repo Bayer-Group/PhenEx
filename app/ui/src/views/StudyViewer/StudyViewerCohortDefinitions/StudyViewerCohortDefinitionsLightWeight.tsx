@@ -1,0 +1,627 @@
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import styles from './StudyViewerCohortDefinitions.module.css';
+import { StudyDataService } from '../StudyDataService';
+import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
+import { deleteCohort } from '@/api/text_to_cohort/route';
+import { CohortGroupView } from './CohortGroupView';
+
+// Scale range constants
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 1.5;
+
+// Convert scale (0.3-1.5) to percentage (0-100)
+const scaleToPercentage = (scale: number): number => {
+  return ((scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100;
+};
+
+// Convert percentage (0-100) to scale (0.3-1.5)
+const percentageToScale = (percentage: number): number => {
+  return MIN_SCALE + (percentage / 100) * (MAX_SCALE - MIN_SCALE);
+};
+
+export interface StudyViewerCohortDefinitionsHandle {
+  navigateCohort: (direction: 'left' | 'right') => void;
+  setZoomPercentage: (percentage: number) => void;
+  getZoomPercentage: () => number;
+  canNavigateLeft: () => boolean;
+  canNavigateRight: () => boolean;
+}
+
+interface StudyViewerCohortDefinitionsLightWeightProps {
+  studyDataService: StudyDataService;
+  onZoomChange?: (percentage: number) => void;
+}
+
+export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
+  StudyViewerCohortDefinitionsHandle,
+  StudyViewerCohortDefinitionsLightWeightProps
+>(({ studyDataService, onZoomChange }, ref) => {
+  const [cohortDefinitions, setCohortDefinitions] = useState<CohortWithTableData[] | null>(null);
+  const [deleteConfirmCohort, setDeleteConfirmCohort] = useState<CohortWithTableData | null>(null);
+  
+  // Initialize view state from local storage if available
+  const [viewState, setViewState] = useState(() => {
+    const studyId = studyDataService.study_data?.id;
+    if (studyId) {
+      try {
+        const saved = localStorage.getItem(`cohort-view-state-${studyId}`);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Failed to parse saved view state', e);
+      }
+    }
+    return { x: 0, y: 0, scale: 1 };
+  });
+
+  // Persist view state changes to local storage (debounced)
+  useEffect(() => {
+    const studyId = studyDataService.study_data?.id;
+    if (!studyId) return;
+
+    const timeoutId = setTimeout(() => {
+      localStorage.setItem(`cohort-view-state-${studyId}`, JSON.stringify(viewState));
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [viewState, studyDataService.study_data?.id]);
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [isShiftPressed, setIsShiftPressed] = useState(false);
+  const [isCommandPressed, setIsCommandPressed] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const tableContainerRefs = useRef<Map<string | number, React.RefObject<HTMLDivElement | null>>>(new Map());
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const transformRef = useRef<HTMLDivElement>(null);
+  const cohortDefinitionsRef = useRef(cohortDefinitions);
+  const navigate = useNavigate();
+  const lastZoomTime = useRef(0);
+  
+  // Current transform values (ref to avoid re-renders)
+  const currentTransform = useRef(viewState);
+  const persistTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Update ref when cohortDefinitions changes
+  useEffect(() => {
+    cohortDefinitionsRef.current = cohortDefinitions;
+  }, [cohortDefinitions]);
+
+  // Track shift key state globally
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setIsShiftPressed(true);
+      }
+      if (e.key === 'Meta' || e.key === 'Control') {
+        setIsCommandPressed(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setIsShiftPressed(false);
+      }
+      if (e.key === 'Meta' || e.key === 'Control') {
+        setIsCommandPressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+  
+  // Track current focused cohort index for navigation
+  const [focusedCohortIndex, setFocusedCohortIndex] = useState(0);
+
+  // Helper to update transform directly on DOM
+  const applyTransform = useCallback((x: number, y: number, scale: number) => {
+    if (transformRef.current) {
+      transformRef.current.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+      // @ts-ignore
+      transformRef.current.style.setProperty('--zoom-scale', scale.toString());
+    }
+    currentTransform.current = { x, y, scale };
+    
+    // Notify parent of zoom change
+    onZoomChange?.(scaleToPercentage(scale));
+    
+    // Debounce persist to localStorage
+    if (persistTimeout.current) clearTimeout(persistTimeout.current);
+    persistTimeout.current = setTimeout(() => {
+      setViewState({ x, y, scale });
+    }, 500);
+  }, [onZoomChange]);
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    navigateCohort: (direction: 'left' | 'right') => {
+      if (!cohortDefinitionsRef.current || cohortDefinitionsRef.current.length === 0) return;
+      
+      const maxIndex = cohortDefinitionsRef.current.length - 1;
+      let newIndex = focusedCohortIndex;
+      
+      if (direction === 'left') {
+        newIndex = Math.max(0, focusedCohortIndex - 1);
+      } else {
+        newIndex = Math.min(maxIndex, focusedCohortIndex + 1);
+      }
+      
+      if (newIndex !== focusedCohortIndex) {
+        setFocusedCohortIndex(newIndex);
+        
+        // Scroll to the cohort card - find its position and center it
+        const cohortCards = document.querySelectorAll('[data-cohort-card]');
+        const targetCard = cohortCards[newIndex] as HTMLElement;
+        
+        if (targetCard && viewportRef.current) {
+          const viewportRect = viewportRef.current.getBoundingClientRect();
+          const current = currentTransform.current;
+          
+          // Calculate offset to center the card
+          const cardCenterX = (targetCard.offsetLeft + targetCard.offsetWidth / 2) * current.scale;
+          const cardCenterY = (targetCard.offsetTop + targetCard.offsetHeight / 2) * current.scale;
+          const viewportCenterX = viewportRect.width / 2;
+          const viewportCenterY = viewportRect.height / 2;
+          
+          const newX = viewportCenterX - cardCenterX;
+          const newY = viewportCenterY - cardCenterY;
+          
+          applyTransform(newX, newY, current.scale);
+        }
+      }
+    },
+    
+    setZoomPercentage: (percentage: number) => {
+      const newScale = percentageToScale(Math.max(0, Math.min(100, percentage)));
+      const current = currentTransform.current;
+      
+      // Zoom towards center of viewport
+      if (viewportRef.current) {
+        const centerX = viewportRef.current.clientWidth / 2;
+        const centerY = viewportRef.current.clientHeight / 2;
+        const pointX = (centerX - current.x) / current.scale;
+        const pointY = (centerY - current.y) / current.scale;
+        const newX = centerX - pointX * newScale;
+        const newY = centerY - pointY * newScale;
+        applyTransform(newX, newY, newScale);
+      } else {
+        applyTransform(current.x, current.y, newScale);
+      }
+    },
+    
+    getZoomPercentage: () => {
+      return scaleToPercentage(currentTransform.current.scale);
+    },
+    
+    canNavigateLeft: () => {
+      return focusedCohortIndex > 0;
+    },
+    
+    canNavigateRight: () => {
+      if (!cohortDefinitionsRef.current) return false;
+      return focusedCohortIndex < cohortDefinitionsRef.current.length - 1;
+    }
+  }), [focusedCohortIndex, applyTransform]);
+
+  // Notify parent of initial zoom state on mount
+  useEffect(() => {
+    onZoomChange?.(scaleToPercentage(viewState.scale));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    // Function to update cohort definitions when study data changes
+    const updateCohortDefinitions = () => {
+      const definitions = studyDataService.cohort_definitions_service.getCohortDefinitions();
+      setCohortDefinitions(definitions);
+    };
+
+    // Set up export callback
+    studyDataService.exportStudyCallback = async () => {
+      // Find all D3 flowchart SVG elements
+      const svgElements = document.querySelectorAll('svg[data-cohort-flowchart]');
+      
+      if (svgElements.length === 0) {
+        console.warn('No cohort flowchart SVG elements found to export');
+        alert('Please switch to Report view to export flowcharts');
+        return;
+      }
+
+      console.log(`Found ${svgElements.length} cohort flowcharts to export`);
+
+      // Ask user which format
+      const format = confirm('Export as PNG? (Click OK for PNG, Cancel for SVG)') ? 'png' : 'svg';
+
+      // Export each flowchart
+      for (let i = 0; i < svgElements.length; i++) {
+        const svgElement = svgElements[i] as SVGSVGElement;
+        const cohortId = svgElement.getAttribute('data-cohort-flowchart') || `cohort_${i}`;
+        const cohortName = svgElement.getAttribute('data-cohort-name') || `Cohort ${i + 1}`;
+        const studyName = studyDataService.study_name || 'study';
+        const timestamp = new Date().toISOString().split('T')[0];
+        const sanitizedCohortName = cohortName.replace(/[^a-z0-9]/gi, '_');
+        
+        if (format === 'svg') {
+          // Export SVG directly
+          const svgData = new XMLSerializer().serializeToString(svgElement);
+          const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+          const url = URL.createObjectURL(svgBlob);
+          
+          const link = document.createElement('a');
+          link.download = `${studyName}_${sanitizedCohortName}_${timestamp}.svg`;
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+        } else {
+          // Export as PNG - use data URL to avoid CORS issues
+          await new Promise<void>((resolve) => {
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+              console.error('Could not get canvas context');
+              resolve();
+              return;
+            }
+            
+            const img = new Image();
+            // Use data URL instead of blob URL to avoid cross-origin issues
+            const encodedSvg = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+            
+            img.onload = () => {
+              try {
+                canvas.width = img.width * 2; // 2x resolution
+                canvas.height = img.height * 2;
+                ctx.scale(2, 2);
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                
+                canvas.toBlob((blob) => {
+                  if (blob) {
+                    const pngUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = `${studyName}_${sanitizedCohortName}_${timestamp}.png`;
+                    link.href = pngUrl;
+                    link.click();
+                    URL.revokeObjectURL(pngUrl);
+                  }
+                  resolve();
+                }, 'image/png');
+              } catch (error) {
+                console.error('PNG export failed (likely due to foreignObject/HTML content):', error);
+                alert('PNG export failed. The SVG contains HTML elements that cannot be converted to PNG.\n\nPlease use SVG export instead.');
+                resolve();
+              }
+            };
+            
+            img.onerror = (error) => {
+              console.error('Failed to load SVG for PNG conversion:', error);
+              alert('Failed to load SVG image for PNG conversion');
+              resolve();
+            };
+            
+            img.src = encodedSvg;
+          });
+        }
+        
+        // Small delay between downloads
+        if (i < svgElements.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
+      console.log(`Exported ${svgElements.length} cohort flowcharts as ${format.toUpperCase()}`);
+    };
+
+    // Initial load
+    updateCohortDefinitions();
+
+    // Listen for study data service changes
+    studyDataService.addStudyDataServiceListener(updateCohortDefinitions);
+
+    // Listen for global cohort-added event
+    const handleCohortAdded = (e: Event) => {
+      updateCohortDefinitions();
+    };
+    window.addEventListener('cohort-added', handleCohortAdded);
+
+    // Cleanup listener on unmount
+    return () => {
+      studyDataService.removeStudyDataServiceListener(updateCohortDefinitions);
+      window.removeEventListener('cohort-added', handleCohortAdded);
+    };
+  }, [studyDataService]);
+
+  // Listen to singleton CohortDataService for real-time updates when editing cohorts
+  useEffect(() => {
+    const cohortDataService = CohortDataService.getInstance();
+
+    const handleCohortDataChange = () => {
+      const editedCohortId = studyDataService.cohort_definitions_service.getActiveCohortId();
+      const currentDefinitions = cohortDefinitionsRef.current;
+      if (!editedCohortId || !currentDefinitions) return;
+
+      const cohortIndex = currentDefinitions.findIndex(def => def.cohort.id === editedCohortId);
+      if (cohortIndex === -1) return;
+
+      const updatedDefinitions = [...currentDefinitions];
+      const refreshedData = studyDataService.cohort_definitions_service.refreshSingleCohort(editedCohortId);
+      
+      if (refreshedData) {
+        updatedDefinitions[cohortIndex] = refreshedData;
+        setCohortDefinitions(updatedDefinitions);
+      }
+    };
+
+    cohortDataService.addDataChangeListener(handleCohortDataChange);
+    studyDataService.cohort_definitions_service.addListener(handleCohortDataChange);
+
+    return () => {
+      cohortDataService.removeDataChangeListener(handleCohortDataChange);
+      studyDataService.cohort_definitions_service.removeListener(handleCohortDataChange);
+    };
+  }, [studyDataService]);
+
+  const handleCellValueChanged = async (cohortId: string, rowIndex: number, field: string, value: any) => {
+    console.log(`Cell changed: cohort=${cohortId}, row=${rowIndex}, field=${field}, value=${value}`);
+    
+    // Get the cohort definition
+    const cohortDef = cohortDefinitionsRef.current?.find(def => def.cohort.id === cohortId);
+    if (!cohortDef) {
+      console.warn('Cohort not found:', cohortId);
+      return;
+    }
+
+    // Get the row data
+    const rowData = cohortDef.table_data.rows[rowIndex];
+    if (!rowData) {
+      console.warn('Row not found:', rowIndex);
+      return;
+    }
+
+    // Create an AG Grid-like event object
+    const event = {
+      data: rowData,
+      newValue: value,
+      oldValue: rowData[field],
+      colDef: { field },
+      node: { rowIndex }
+    };
+
+    // Call the service to update the model
+    await studyDataService.cohort_definitions_service.onCellValueChanged(cohortId, event);
+  };
+
+  // Attach wheel listener - directly manipulate DOM, no React re-renders
+  useEffect(() => {
+    const element = viewportRef.current;
+    if (!element) return;
+
+    const centerX = element.clientWidth / 2;
+    const centerY = element.clientHeight / 2;
+
+    const wheelHandler = (e: WheelEvent) => {
+      e.preventDefault();
+
+      // Mark as scrolling to prevent hover
+      setIsScrolling(true);
+      
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 150);
+
+      const current = currentTransform.current;
+      const isShift = e.shiftKey;
+      const isCommand = e.metaKey || e.ctrlKey;
+
+      if (isCommand) {
+        // Zoom
+        lastZoomTime.current = Date.now();
+        const zoomSpeed = 0.01;
+        const delta = -e.deltaY * zoomSpeed;
+        const newScale = Math.max(0.3, Math.min(1.5, current.scale * (1 + delta)));
+        const pointX = (centerX - current.x) / current.scale;
+        const pointY = (centerY - current.y) / current.scale;
+        const newX = centerX - pointX * newScale;
+        const newY = centerY - pointY * newScale;
+        applyTransform(newX, newY, newScale);
+      } else {
+        // Prevent inertia pan immediately after zoom
+        if (Date.now() - lastZoomTime.current < 200) {
+          return;
+        }
+
+        if (isShift) {
+        // Horizontal pan
+        const deltaX = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        applyTransform(current.x - deltaX, current.y, current.scale);
+      } else {
+        // Vertical pan
+        const deltaY = e.deltaY;
+        applyTransform(current.x, current.y - deltaY, current.scale);
+      }
+    }
+    };
+
+    element.addEventListener('wheel', wheelHandler, { passive: false });
+    return () => {
+      element.removeEventListener('wheel', wheelHandler);
+      if (persistTimeout.current) clearTimeout(persistTimeout.current);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    };
+  }, [cohortDefinitions]);
+
+  const handleCreateFirstCohort = async () => {
+    try {
+      const studyId = studyDataService.study_data?.id;
+      if (!studyId) {
+        console.error('No study ID found');
+        return;
+      }
+
+      const { createAndNavigateToNewCohort } = await import('@/views/LeftPanel/studyNavigationHelpers');
+      await createAndNavigateToNewCohort(studyId, navigate);
+
+      // Explicitly refresh cohort definitions in this view
+      const definitions = studyDataService.cohort_definitions_service.getCohortDefinitions();
+      setCohortDefinitions(definitions);
+    } catch (error) {
+      console.error('Failed to create cohort:', error);
+    }
+  };
+
+  const clickedOnCohort = React.useCallback((cohortDef: CohortWithTableData) => {
+    const studyId = cohortDef.cohort.study_id || studyDataService.study_data?.id;
+    const cohortId = cohortDef.cohort.id;
+    
+    if (studyId && cohortId) {
+      navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+    } else {
+      console.error('Missing study_id or cohort_id for navigation');
+    }
+  }, [studyDataService.study_data?.id, navigate]);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    const current = currentTransform.current;
+    setDragStart({ x: e.clientX - current.x, y: e.clientY - current.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isDragging) {
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
+      applyTransform(newX, newY, currentTransform.current.scale);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  // Show loading state or empty state when data is not ready
+  if (!cohortDefinitions || cohortDefinitions.length === 0) {
+    if (cohortDefinitions === null) {
+      return (
+        <div className={styles.cohortsContainer}>
+          <div className={styles.emptyState}>
+            Loading cohort definitions...
+          </div>
+        </div>
+      );
+    }
+    
+    // Empty state with CTA
+    return (
+      <div className={styles.cohortsContainer}>
+        <div className={styles.emptyStateWithCta}>
+          <div className={styles.ctaContent}>
+            <h3 className={styles.ctaTitle}>Create your first cohort</h3>
+            <p className={styles.ctaDescription}>
+              Define patient populations by adding inclusion and exclusion criteria to build your cohort.
+            </p>
+            <button 
+              className={styles.ctaButton}
+              onClick={handleCreateFirstCohort}
+            >
+              Create Your First Cohort
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div 
+        ref={viewportRef}
+        className={styles.content}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        style={{ 
+          overflow: 'hidden',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          touchAction: 'none'
+        }}
+      >
+        <div
+          ref={transformRef}
+          style={{
+            transform: `translate(${viewState.x}px, ${viewState.y}px) scale(${viewState.scale})`,
+            transformOrigin: '0 0',
+            transition: 'none',
+            // @ts-ignore
+            '--zoom-scale': viewState.scale
+          }}
+        >
+          <CohortGroupView 
+            cohortDefinitions={cohortDefinitions}
+            onCardClick={clickedOnCohort}
+            tableContainerRefs={tableContainerRefs}
+            onCellValueChanged={handleCellValueChanged}
+            studyDataService={studyDataService}
+            isDragging={isDragging}
+            isScrolling={isScrolling}
+            isShiftPressed={isShiftPressed}
+            isCommandPressed={isCommandPressed}
+            zoomScale={currentTransform.current.scale}
+          />
+        </div>
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmCohort && (
+        <div className={styles.modalOverlay} onClick={() => setDeleteConfirmCohort(null)}>
+          <div className={styles.alertModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.alertIcon}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <h3 className={styles.alertTitle}>Delete Cohort?</h3>
+            <p className={styles.alertMessage}>
+              Are you sure you want to delete <strong>"{deleteConfirmCohort.cohort.name || 'Unnamed Cohort'}"</strong>?
+            </p>
+            <p className={styles.alertWarning}>
+              This action cannot be undone. All cohort definitions and criteria will be permanently deleted.
+            </p>
+            <div className={styles.alertActions}>
+              <button className={styles.alertCancelButton} onClick={() => setDeleteConfirmCohort(null)}>
+                Cancel
+              </button>
+              <button className={styles.alertDeleteButton} onClick={async () => {
+                if (deleteConfirmCohort) {
+                  await deleteCohort(deleteConfirmCohort.cohort.id);
+                  setDeleteConfirmCohort(null);
+                }
+              }}>
+                Delete Cohort
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+});

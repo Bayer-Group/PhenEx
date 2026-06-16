@@ -1,0 +1,124 @@
+.cohortCardActionsContainer {
+  z-index: 1000;
+    position: absolute;
+    right: calc(-1 * var(--dynamic-button-size) - 12px);
+    top: 0px;
+    transform: translateY(-50%);
+    transition: top 0.15s ease-out;
+    display: flex;
+    flex-direction: column;
+    gap: calc(8px / var(--zoom-scale));
+    margin-left: 0px;
+    /* background: red; */
+    padding: 5px 5px 5px 5px;
+    /* height: calc(var(--dynamic-arrow-size) * 2 + 8px); */
+    background-color: transparent;
+}
+
+.actionButton {
+ background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.2s 0.2s;
+  outline: none;
+  color: var(--color_accent_blue);
+  background-color: transparent;
+  /* background-color: var(--line-color); */
+  border-radius:50%;
+}
+
+.actionButton:hover,
+.actionButton.menuOpen {
+  background: var(--color_accent_dark, #0066cc);
+  border-color: var(--color_accent_dark, #0066cc);
+  color:white;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition-delay: 0.2s;
+}
+
+.actionButton:active {
+  transform: scale(0.95);
+}
+
+.addMenuTabsContainer {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 8px !important;
+  margin-top: 8px;
+  background-color: red;
+
+}
+
+.addButton {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: all 0.2s;
+  outline: none;
+  color: white;
+  background-color: transparent;
+  background-color: var(--color_accent_dark);
+  border-radius:20px;
+
+}
+
+.addMenuTab {
+  font-size: 12px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.addMenuActiveTab {
+  background-color: var(--color_accent_dark) !important;
+  color: white !important;
+  border-color: var(--color_accent_dark) !important;
+}
+
+.addMenuHoverTab:hover {
+  color: var(--color_accent_dark);
+  border-color: var(--color_accent_dark);
+}
+
+.addMenuItem {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 2px 8px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.addMenuItem:hover {
+  background: var(--color_accent_blue);
+  color: white;
+}
+
+.addMenuItem:focus {
+  outline: none;
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
