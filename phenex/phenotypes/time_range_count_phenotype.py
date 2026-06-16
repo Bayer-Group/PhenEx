@@ -10,6 +10,7 @@ from phenex.filters import (
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.phenotypes.functions import (
     select_phenotype_columns,
+    _get_join_keys,
 )
 from ibis.expr.types.relations import Table
 from ibis import _
@@ -148,8 +149,9 @@ class TimeRangeCountPhenotype(Phenotype):
 
     def _perform_count_aggregation(self, table):
         """Count the number of distinct time periods per person."""
-        table = table.select(["PERSON_ID", "START_DATE", "END_DATE"]).distinct()
-        return table.group_by("PERSON_ID").aggregate(VALUE=_.count())
+        group_keys = _get_join_keys(table)
+        table = table.select([*group_keys, "START_DATE", "END_DATE"]).distinct()
+        return table.group_by(group_keys).aggregate(VALUE=_.count())
 
     def _perform_value_filtering(self, table):
         """Filter persons by period count using value_filter."""
@@ -161,8 +163,11 @@ class TimeRangeCountPhenotype(Phenotype):
         """Left-join against the PERSON table to include persons with 0 periods (only when no value_filter is set)."""
         if self.value_filter is not None or "PERSON" not in tables:
             return table
-        persons = tables["PERSON"].select("PERSON_ID").distinct()
-        table = persons.join(
-            table, persons.PERSON_ID == table.PERSON_ID, how="left"
-        ).drop("PERSON_ID_right")
+        join_keys = _get_join_keys(table)
+        persons = (
+            tables["PERSON"]
+            .select([c for c in join_keys if c in tables["PERSON"].columns])
+            .distinct()
+        )
+        table = persons.join(table, _get_join_keys(persons), how="left")
         return table.mutate(VALUE=table.VALUE.fillna(0))
