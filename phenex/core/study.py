@@ -1,6 +1,7 @@
 import os, datetime, json, sys
 from typing import List, Dict, Optional
 
+import pandas as pd
 from phenex.node import Node, NodeGroup
 import ibis
 from phenex.util.serialization.to_dict import to_dict
@@ -254,3 +255,33 @@ class Study:
             description=self.description,
         )
         concatenator.concatenate_all_reports()
+
+    @property
+    def table1(self):
+        """
+        Concatenate every cohort's Table1 report into a single DataFrame.
+
+        Each cohort's Table1 is stacked vertically with an additional ``cohort``
+        column identifying the source cohort by name. This provides a convenient
+        side-by-side view of baseline characteristics across all cohorts in the
+        study.
+
+        Returns:
+            A pandas DataFrame containing all cohorts' Table1 rows, with a
+            ``cohort`` column holding the originating cohort's name.
+
+        Raises:
+            ValueError: If any cohort has not produced a Table1 report (i.e.
+                ``cohort.table1`` is None). Execute the study before accessing
+                this property.
+        """
+        dfs = []
+        for cohort in self.cohorts:
+            df = cohort.table1
+            if df is None:
+                raise ValueError(
+                    f"Cohort '{cohort.name}' has no table1 report; cannot build "
+                    "the study table1. Execute the study before accessing table1."
+                )
+            dfs.append(df.assign(cohort=cohort.name))
+        return pd.concat(dfs, ignore_index=True)
