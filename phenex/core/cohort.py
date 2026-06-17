@@ -574,6 +574,17 @@ class Cohort:
         con = self._prepare_database_connector_for_execution(con)
         tables = self._prepare_tables_for_execution(con, tables)
 
+        # DuckDB does not support concurrent table creation across threads; force
+        # single-threaded execution to avoid ibis/DuckDB concurrency errors.
+        from phenex.ibis_connect import DuckDBConnector
+
+        if isinstance(con, DuckDBConnector) and n_threads != 1:
+            logger.warning(
+                "DuckDBConnector detected: overriding n_threads to 1 "
+                "(DuckDB does not support concurrent table creation)."
+            )
+            n_threads = 1
+
         self.n_persons_in_source_database = (
             tables["PERSON"].distinct().count().execute()
         )
