@@ -256,7 +256,7 @@ class PhenexTable:
                     f"Unable to find unqiue {right_table_class_name} required to join {other.__class__.__name__}"
                 )
             right_table = right_table_search_results[0]
-            print(
+            logger.debug(
                 f"\tJoining : {current_left_table.__class__.__name__} to {right_table.__class__.__name__}"
             )
 

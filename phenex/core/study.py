@@ -201,7 +201,6 @@ class Study:
         now = datetime.datetime.today()
         dirname = now.strftime("D%Y-%m-%d__T%H-%M")
         path = os.path.join(self.path, dirname)
-        print(path)
         if os.path.exists(path):
             logger.warning(f"Output directory {path} already exists!")
         else:
