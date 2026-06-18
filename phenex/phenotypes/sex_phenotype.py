@@ -42,7 +42,7 @@ class SexPhenotype(CategoricalPhenotype):
         name: str = "SEX",
         domain: str = "PERSON",
         categorical_filter: "CategoricalFilter" = None,
-        **kwargs
+        **kwargs,
     ):
         if categorical_filter is None:
             categorical_filter = CategoricalFilter(column_name="SEX")
