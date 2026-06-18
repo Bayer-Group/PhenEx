@@ -177,12 +177,16 @@ class TestStudyOutput(unittest.TestCase):
             frozen = self.exec_dir / name / f"frozen_{name}.json"
             self.assertTrue(frozen.exists(), f"Frozen cohort JSON missing: {frozen}")
 
-    # --- info file ---
+    # --- environment in manifest ---
 
-    def test_info_file_contains_version_info(self):
-        info = (self.exec_dir / "info.txt").read_text()
-        self.assertIn("Python Version", info)
-        self.assertIn("PhenEx Version", info)
+    def test_manifest_environment_contains_version_info(self):
+        manifest = json.loads((self.exec_dir / "manifest.json").read_text())
+        env = manifest.get("environment", {})
+        self.assertIn("python_version", env)
+        self.assertTrue(env["python_version"])
+        self.assertIn("phenex_version", env)
+        self.assertTrue(env["phenex_version"])
+        self.assertFalse((self.exec_dir / "info.txt").exists())
 
     # --- WaterfallDetailed component phenotype rows ---
 
@@ -330,6 +334,78 @@ class TestWaterfallDetailedComponents(unittest.TestCase):
             any("prior drug d1" in v for v in vals),
             "WaterfallDetailed missing component 'prior_drug_d1'",
         )
+
+
+
+
+# ---------------------------------------------------------------------------
+# Manifest and checkpoint loading
+# ---------------------------------------------------------------------------
+
+
+class TestStudyManifest(unittest.TestCase):
+    """Verify manifest.json is written and supports checkpoint reload."""
+
+    COHORT_NAMES = ("CohortWithExclusion", "CohortWithoutExclusion")
+    STUDY_NAME = "manifest_test"
+
+    @classmethod
+    def setUpClass(cls):
+        artifacts = Path(__file__).parent / "artifacts"
+        artifacts.mkdir(parents=True, exist_ok=True)
+
+        cohorts = [
+            _make_cohort(
+                CohortWithContinuousCoverageAndExclusionTestGenerator,
+                "CohortWithExclusion",
+            ),
+            _make_cohort(
+                CohortWithContinuousCoverageTestGenerator,
+                "CohortWithoutExclusion",
+            ),
+        ]
+        cls.study = Study(name=cls.STUDY_NAME, path=str(artifacts), cohorts=cohorts)
+        cls.study.execute(overwrite=True)
+        cls.exec_dir = Path(cls.study.execution_path)
+
+    def test_manifest_written(self):
+        manifest_path = self.exec_dir / "manifest.json"
+        self.assertTrue(manifest_path.exists())
+        manifest = json.loads(manifest_path.read_text())
+        self.assertEqual(manifest["manifest_version"], "1.0")
+        self.assertEqual(manifest["study_name"], self.STUDY_NAME)
+        self.assertEqual(manifest["execution"]["exit_state"], "Success")
+        self.assertEqual(self.study.exit_state, "Success")
+        self.assertIsNotNone(self.study.manifest)
+
+    def test_manifest_lists_cohort_files(self):
+        manifest = json.loads((self.exec_dir / "manifest.json").read_text())
+        cohort_by_name = {c["name"]: c for c in manifest["cohorts"]}
+        for name in self.COHORT_NAMES:
+            self.assertIn(name, cohort_by_name)
+            files = cohort_by_name[name]["files_written"]
+            self.assertTrue(
+                any(f.endswith("table1.json") for f in files),
+                f"{name}: table1.json not listed in manifest",
+            )
+            self.assertTrue(
+                any(f.endswith(f"frozen_{name}.json") for f in files),
+                f"{name}: frozen JSON not listed in manifest",
+            )
+
+    def test_load_from_checkpoint_round_trip(self):
+        loaded = Study.load_from_checkpoint(
+            str(self.exec_dir),
+            database=self.study.cohorts[0].database,
+        )
+        self.assertEqual(loaded.exit_state, "Success")
+        self.assertEqual(loaded.manifest["study_name"], self.STUDY_NAME)
+        df = loaded.table1
+        self.assertFalse(df.empty)
+        self.assertIn("cohort", df.columns)
+        for name in self.COHORT_NAMES:
+            self.assertIn(name, set(df["cohort"]))
+
 
 
 if __name__ == "__main__":

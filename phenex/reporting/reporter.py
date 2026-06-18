@@ -179,6 +179,28 @@ class Reporter:
 
         return str(filepath.absolute())
 
+    @classmethod
+    def from_json_file(cls, path: str) -> "Reporter":
+        """Load a reporter from a JSON file written by ``to_json``."""
+        import json
+        from pathlib import Path
+        from phenex.reporting.table1 import Table1
+        from phenex.reporting.waterfall import Waterfall
+        filepath=Path(path)
+        f=filepath.open()
+        payload=json.load(f)
+        f.close()
+        reporter_type=payload.get("reporter_type", cls.__name__)
+        type_map={"Table1": Table1, "Waterfall": Waterfall, "Reporter": cls}
+        reporter_cls=type_map.get(reporter_type, cls)
+        reporter=reporter_cls()
+        rows=payload.get("rows", [])
+        setattr(reporter, "df", __import__("pandas").DataFrame(rows))
+        if "sections" in payload:
+            setattr(reporter, "characteristic_sections", payload["sections"])
+        if "kdes" in payload:
+            setattr(reporter, "_value_distributions", payload["kdes"])
+        return reporter
     def to_csv(self, filename: str) -> str:
         """
         Export reporter results to CSV format.

@@ -1,4 +1,4 @@
-import os, datetime, json, sys
+import os, datetime, json
 from typing import List, Dict, Optional
 
 import pandas as pd
@@ -56,6 +56,10 @@ class Study:
         self.custom_reporters = custom_reporters
         self.description = description
 
+        self.execution_path = None
+        self.exit_state = None
+        self.manifest = None
+
         self._create_study_output_path()
         self._check_cohort_names_unique()
         self._check_cohorts_have_databases()
@@ -93,47 +97,32 @@ class Study:
         lazy_execution: Optional[bool] = False,
         previous_executions: Optional[Dict[str, str]] = None,
     ):
-        path_exec_dir_study = self._prepare_study_execution_directory()
-        self._freeze_software_versions(path_exec_dir_study)
+        from phenex.core.study_manifest import run_study_execute
 
-        self.custom_reporters = self.custom_reporters or []
-        previous_executions = previous_executions or {}
-        parents_requiring_execution = self._get_parents_requiring_execution(
-            previous_executions
+        run_study_execute(
+            self,
+            overwrite=overwrite,
+            n_threads=n_threads,
+            lazy_execution=lazy_execution,
+            previous_executions=previous_executions,
         )
 
-        for _cohort in self.cohorts:
-            path_exec_dir_cohort = self._prepare_cohort_execution_directory(
-                _cohort, path_exec_dir_study
-            )
+    @classmethod
+    def load_from_checkpoint(
+        cls,
+        execution_path: str,
+        database=None,
+        *,
+        require_success: bool = True,
+    ) -> "Study":
+        from phenex.core.study_manifest import load_study_from_checkpoint
 
-            if self._should_use_previous_execution(
-                _cohort, previous_executions, parents_requiring_execution
-            ):
-                if self._copy_previous_execution(
-                    _cohort, previous_executions[_cohort.name], path_exec_dir_cohort
-                ):
-                    continue
-
-            self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
-
-            # Merge study-level custom reporters into the cohort before execution.
-            # Save and restore so repeated calls to study.execute() don't accumulate duplicates.
-            _original_custom_reporters = _cohort.custom_reporters
-            _cohort.custom_reporters = (
-                _original_custom_reporters or []
-            ) + self.custom_reporters
-
-            _cohort.execute(
-                overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
-            )
-
-            _cohort.custom_reporters = _original_custom_reporters
-
-            _cohort.write_reports_to_json(path_exec_dir_cohort)
-            _cohort.write_reports_to_html(path_exec_dir_cohort)
-
-        self._concatenate_reports(path_exec_dir_study)
+        return load_study_from_checkpoint(
+            cls,
+            execution_path,
+            database,
+            require_success=require_success,
+        )
 
     def _should_use_previous_execution(
         self, cohort, previous_executions, parents_requiring_execution
@@ -208,28 +197,6 @@ class Study:
             os.makedirs(path)
         return path
 
-    def _freeze_software_versions(self, path_exec_dir_study):
-        """Store Python and PhenEx versions in info.txt file for reproducibility."""
-        info_path = os.path.join(path_exec_dir_study, "info.txt")
-
-        # Get Python version
-        python_version = sys.version
-
-        # Get PhenEx version from live source code
-        from phenex import __version__ as phenex_version
-
-        # Write to file
-        with open(info_path, "w") as f:
-            f.write(f"Study Name: {self.name}\n")
-            f.write("Software Environment Information\n")
-            f.write("=" * 50 + "\n\n")
-            f.write(
-                f"Study Execution Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-            )
-            f.write(f"Python Version:\n{python_version}\n\n")
-            f.write(f"PhenEx Version: {phenex_version}\n")
-
-        logger.info(f"Software version information saved to {info_path}")
 
     def _prepare_cohort_execution_directory(self, cohort, path_exec_dir_study):
         _path = os.path.join(path_exec_dir_study, cohort.name)
@@ -243,6 +210,7 @@ class Study:
         _path = os.path.join(path_exec_dir_cohort, "frozen_" + cohort.name + ".json")
         with open(_path, "w") as f:
             dump(cohort, f, indent=4)
+        return _path
 
     def _concatenate_reports(self, path_exec_dir_study):
         """Concatenate all cohort reports into a single Excel file."""
