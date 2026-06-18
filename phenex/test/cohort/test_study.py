@@ -336,8 +336,6 @@ class TestWaterfallDetailedComponents(unittest.TestCase):
         )
 
 
-
-
 # ---------------------------------------------------------------------------
 # Manifest and checkpoint loading
 # ---------------------------------------------------------------------------
@@ -405,7 +403,6 @@ class TestStudyManifest(unittest.TestCase):
         self.assertIn("cohort", df.columns)
         for name in self.COHORT_NAMES:
             self.assertIn(name, set(df["cohort"]))
-
 
 
 if __name__ == "__main__":

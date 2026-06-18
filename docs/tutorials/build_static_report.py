@@ -44,7 +44,6 @@ _DATA_FILES = [
 ]
 
 
-
 def _nan_safe_json(obj):
     """JSON encoder that converts NaN/Inf to None."""
     if isinstance(obj, float):

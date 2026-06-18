@@ -197,7 +197,6 @@ class Study:
             os.makedirs(path)
         return path
 
-
     def _prepare_cohort_execution_directory(self, cohort, path_exec_dir_study):
         _path = os.path.join(path_exec_dir_study, cohort.name)
         if not os.path.exists(_path):

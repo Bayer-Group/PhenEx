@@ -820,8 +820,6 @@ class Cohort:
             return self.waterfall_detailed_node.df_report
         return None
 
-
-
     def write_reports_to_excel(self, path: str):
         """Write all available reports (table1, waterfall, waterfall_detailed) to Excel files in the given directory."""
         if self.table1_node:
@@ -873,7 +871,6 @@ class Cohort:
         for custom_reporter_node in self.custom_reporter_nodes:
             report_filename = custom_reporter_node.reporter.name
             custom_reporter_node.to_json(os.path.join(path, report_filename + ".json"))
-
 
     def load_reports_from_json(self, path: str):
         """Restore report nodes from JSON files in a cohort execution directory."""

@@ -1,4 +1,5 @@
 """Study execution manifest and checkpoint loading."""
+
 from __future__ import annotations
 
 import datetime
@@ -12,6 +13,7 @@ if TYPE_CHECKING:
     from phenex.core.study import Study
 
 MANIFEST_VERSION = "1.0"
+
 
 def _legacy_info_txt_path(study_path) -> str:
     return os.path.join(os.fspath(study_path), "info.txt")
@@ -92,8 +94,6 @@ def execution_info_dict(study_path) -> Dict[str, str]:
     return _parse_legacy_info_txt(study_path)
 
 
-
-
 def _utc_now_iso() -> str:
     return datetime.datetime.now(datetime.timezone.utc).isoformat()
 
@@ -127,7 +127,9 @@ def cohort_manifest_entry(
     return entry
 
 
-def collect_study_level_files(execution_dir: str, track_fn: Callable[[str, Optional[str]], None]) -> None:
+def collect_study_level_files(
+    execution_dir: str, track_fn: Callable[[str, Optional[str]], None]
+) -> None:
     for pattern in ("results_*.xlsx", "*.html"):
         for fpath in glob.glob(os.path.join(execution_dir, pattern)):
             role = "study_results" if fpath.endswith(".xlsx") else "study_html"
@@ -305,8 +307,6 @@ def run_study_execute(
         study.execution_path = path_exec_dir_study
         study.exit_state = exit_state
         study.manifest = manifest
-
-
 
 
 def _ensure_checkpoint_deserializers() -> None:
