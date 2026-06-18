@@ -76,6 +76,7 @@ class OutputConcatenator:
         description: Optional[str] = None,
     ) -> None:
         self.study_path = Path(study_execution_path)
+        self.study_name = study_name
         self.cohort_names = cohort_names
         self.description = description
         timestamp = self.study_path.name
@@ -141,7 +142,12 @@ class OutputConcatenator:
         )
         info_sheet.sheet_view.showGridLines = False
         self._info_writer.write(
-            info_sheet, cohort_dirs, self.study_path, self.description, cohort_groups
+            info_sheet,
+            cohort_dirs,
+            self.study_path,
+            self.description,
+            cohort_groups,
+            study_name=self.study_name,
         )
 
         for report_type in self._sheet_order(reports_by_type):

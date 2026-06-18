@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from phenex.util import create_logger
+from phenex.core.study_manifest import read_phenex_version
 
 logger = create_logger(__name__)
 
@@ -42,12 +43,7 @@ class _BaseHtmlWriter(ABC):
 
     @staticmethod
     def _read_phenex_version(study_path: Path) -> str:
-        info_file = study_path / "info.txt"
-        if info_file.exists():
-            for line in info_file.read_text().splitlines():
-                if line.startswith("PhenEx Version:"):
-                    return line.split(":", 1)[1].strip()
-        return "unknown"
+        return read_phenex_version(study_path)
 
     @staticmethod
     def _get_icon_data_uri() -> str:
