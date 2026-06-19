@@ -245,10 +245,10 @@ class Waterfall(Reporter):
     ):
         if type == "inclusion":
             keys = self._join_keys(table, phenotype.table)
-            table = table.inner_join(phenotype.table, keys)
+            table = table.inner_join(phenotype.table.select(keys).distinct(), keys)
         elif type == "exclusion":
             keys = self._join_keys(table, phenotype.table)
-            table = table.anti_join(phenotype.table, keys)
+            table = table.anti_join(phenotype.table.select(keys).distinct(), keys)
         elif type == "component":
             table = table
         else:
@@ -260,6 +260,19 @@ class Waterfall(Reporter):
 
         table = table.select(self._index_keys(table))
         is_component = type == "component"
+
+        # Components do not modify the running table, so leave it untouched. For
+        # inclusion/exclusion steps, materialize the running table to break the
+        # query lineage. Each step otherwise stacks another phenotype subquery
+        # onto the previous one; after a few criteria (especially in the detailed
+        # waterfall, where phenotype tables are themselves complex multi-joins)
+        # the nested SQL grows large enough to fail compilation on some backends
+        # (e.g. Snowflake's "unexpected 'ANTI'" syntax error). Caching forces the
+        # backend to evaluate and store the intermediate result so the next join
+        # starts from a flat table reference.
+        if not is_component:
+            table = self._materialize(table)
+
         self.ds.append(
             {
                 "Type": type,
@@ -579,6 +592,19 @@ class Waterfall(Reporter):
         """Count distinct events, i.e. distinct (PERSON_ID, INDEX_DATE) pairs when
         INDEX_DATE is present, otherwise distinct patients."""
         return table.select(self._index_keys(table)).distinct().count().execute()
+
+    def _materialize(self, table):
+        """Materialize an intermediate ibis table to break its query lineage.
+
+        Chaining many joins produces deeply nested SQL that can exceed backend
+        compiler limits. ``cache()`` evaluates and stores the result so downstream
+        operations reference a flat table. If the backend does not support caching
+        the original (lazy) expression is returned unchanged."""
+        try:
+            return table.cache()
+        except Exception as e:
+            logger.debug(f"Could not materialize intermediate waterfall table: {e}")
+            return table
 
     def append_delta(self, ds):
         ds[0]["Delta"] = np.nan
