@@ -454,7 +454,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
         case 'leftStacked':
-          return <Layout model={leftPanelModel} factory={leftPanelFactory} />;
+          return <Layout model={leftPanelModel} factory={leftPanelFactory} />
         case 'center':
           return (
             <div className={styles.centerPanel}>
@@ -488,8 +488,10 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div className={styles.page}>
-      <Layout model={layoutModel} factory={factory} />
+    <div className={styles.container}>
+      <div className={styles.page}>
+        <Layout model={layoutModel} factory={factory} />
+      </div>
     </div>
   );
 };

@@ -22,6 +22,7 @@
   --text-color-normal: var(--color-accent-bright);
   --text-color-inactive: hsl(0, 0%, 0%);
   --background-color: #f8f9fa;/*#faf1e5;*/
+  --background_color_dark: #e2d9ca;
   --background_color_focus: #000000d9;
   --background-color-content: white;
   --color_inactive: lightgray;

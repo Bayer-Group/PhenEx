@@ -1,12 +1,26 @@
 .page {
   position: relative;
+  margin-top:20px;
+  height: calc(100vh - 40px);
+  width: 100vw;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color:white; /* BACKGROUND COLOR */
+  user-select: none;
+  background-color: transparent;
+  
+}
+
+.container {
+  position: relative;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
   background-color:white; /* BACKGROUND COLOR */
   user-select: none;
-  background-color: var(--background-color);
+  background-color: var(--background_color_dark);
+  
 }
 
 .runSelector {
@@ -85,6 +99,84 @@
   height: 100%;
   overflow: hidden;
 }
+
+/* ── FlexLayout styling ──────────────────────────────────────────────── */
+.page :global(.flexlayout__layout) {
+  --color-background: transparent;
+  /* --color-tab-content: red; */
+  overflow: hidden;
+}
+
+/* Left border panel */
+.page :global(.flexlayout__border_left) {
+  /* box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  z-index: 1; */
+  border-right:none;
+  background-color: var(--background_color_dark);
+}
+
+/* Right border panel */
+.page :global(.flexlayout__border_right) {
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+/* Nested left-panel splitters */
+:global(.flexlayout__splitter) {
+  background-color: var(--background_color_dark);
+}
+:global(.flexlayout__splitter:hover) {
+  background-color: darkred;
+}
+:global(.flexlayout__splitter_drag) {
+  background-color: darkred;
+  z-index: 1000;
+}
+
+
+
+/* Each tabset inside the left panel renders as a card */
+.page :global(.flexlayout__border_left) :global(.flexlayout__tabset) {
+  border-radius: 8px;
+  background: white !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin: 4px;
+}
+
+/* Tab bar gutter: dark background, no border-bottom */
+:global(.flexlayout__tabset_tabbar_outer) {
+  background-color: var(--background_color_dark) !important;
+  border-bottom: none;
+}
+:global(.flexlayout__tabset_tabbar_outer_top) {
+  border-bottom: none;
+}
+
+/* Tab buttons: black background, white text, IBMPlexSans */
+:global(.flexlayout__tab_button) {
+  font-family: "IBMPlexSans-bold" !important;
+  background-color: green ;
+  color: black;
+  border-radius: 8px 8px 0px 0px;
+  border-bottom: none;
+  border: var(--border);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+}
+:global(.flexlayout__tab_button--selected) {
+  background-color: white ;
+  color: black;
+}
+:global(.flexlayout__tab_button--unselected) {
+  background-color: black;
+  color: white;
+}
+:global(.flexlayout__tab_button:hover) {
+  color: white;
+}
+
+
 /* ── Zoom controls (top-right) ───────────────────────────────────────── */
 .zoomControls {
   position: absolute;

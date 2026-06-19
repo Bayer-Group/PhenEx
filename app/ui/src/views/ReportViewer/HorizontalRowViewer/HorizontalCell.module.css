@@ -13,7 +13,7 @@
   min-width: 100%;
   overflow: hidden;
   transition: opacity 0.2s;
-  background-color: white !important;
+  background-color: transparent !important;
 }
 
 .verticalWrapper {
@@ -42,6 +42,8 @@
   transition: opacity 0.2s, border-color 0.2s;
   opacity: 1;
   height: 100%;
+  background-color: white !important;
+  border-radius:8px;
 }
 
 /* ── Card body + inline comments layout ──────────────────────────────── */
@@ -57,7 +59,7 @@
   padding: 20px 30px;
   border-radius: 0px 10px 10px 0px;
   /* min-height: calc(100vh - 10000px); */
-  background-color: white;
+  background-color: transparent !important;
   margin-right:25px;
   /* border: var(--border); */
   border-left:none;

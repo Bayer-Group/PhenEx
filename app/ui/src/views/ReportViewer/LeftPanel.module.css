@@ -6,6 +6,8 @@
   box-sizing: border-box;
   padding:0px 0px 0px 0px;
   overflow: hidden;
+  background-color: white !important;
+  border-radius:8px;
 }
 
 .tabRegion{
@@ -48,9 +50,8 @@
 
 .actionBarRegion {
   position: absolute;
-  bottom: 60px;
+  top: 100px;
   left: 0;
-  right: 0;
   z-index: 99;
   pointer-events: none;
 }

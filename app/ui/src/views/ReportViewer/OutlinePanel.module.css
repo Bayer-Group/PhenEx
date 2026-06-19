@@ -5,6 +5,8 @@
   box-sizing: border-box;
   overflow-y: auto;
   height: 100%;
+  background-color: white !important;
+  border-radius:8px;
 }
 
 .item {

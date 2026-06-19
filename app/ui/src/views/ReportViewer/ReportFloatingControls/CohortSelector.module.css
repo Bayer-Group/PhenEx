@@ -5,11 +5,10 @@
   align-items: stretch;
   gap: 20px;
   width: 100%;
-  background-color: var(--background-color);
+
   padding-top: 0px;
   position: relative;
-  padding-bottom: 200px;
-  padding-top:100px;
+  padding-top:10px;
 }
 
 .topGradient {
@@ -29,12 +28,12 @@
   flex-direction: column;
   gap: 0px;
   margin-left:0px;
-  margin-right:30px;
-  border: 1px solid var(--line-color, #ddd);
+  margin-right:0px;
+  padding-right:18px;
+  /* border: 1px solid var(--line-color, #ddd); */
   border-left:none;
-  border-radius: 0px 8px 8px 0px;
   padding-bottom:10px;
-  background-color: white;
+  background-color: transparent;
   transition: transform 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, box-shadow 0.5s ease;
 }
 
@@ -239,7 +238,7 @@
   align-items: center;
   gap: 8px;
   padding-bottom: 4px;
-  padding-left: 50px;
+  padding-left: 10px;
   container-type: inline-size;
   container-name: actionbar;
   background-color: transparent;

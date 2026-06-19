@@ -2,7 +2,7 @@
 .overlay {
   position: absolute;
   inset: 0;
-  z-index: 10000;
+  /* z-index: 10000; */
   display: flex;
   flex-direction: column;
   animation: fadeIn 0.15s ease-out;
@@ -348,4 +348,23 @@
 .outlineItemActive {
   background: rgba(0, 0, 0, 0.08);
   font-family: 'IBMPlexSans-bold', sans-serif;
+}
+
+
+/* ── FlexLayout styling ──────────────────────────────────────────────── */
+.page :global(.flexlayout__layout) {
+  --color-background: green;
+  border-radius: 8px;
+  border: 1px solid red;
+  overflow: hidden;
+}
+
+.page :global(.flexlayout__border_left) {
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.page :global(.flexlayout__border_right) {
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  z-index: 1;
 }
