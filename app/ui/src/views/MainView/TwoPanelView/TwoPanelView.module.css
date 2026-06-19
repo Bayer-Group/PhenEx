@@ -63,7 +63,29 @@
   background-color: transparent;
   z-index: 5000;
   top: 0;
-  left: -6px;
+  left: 0;
+  border-left: 1px solid var(--line-color, #e0e0e0);
+}
+
+.divider:hover {
+  border-left: 2px solid var(--color_accent_blue);
+}
+
+/* Thin grab handle shown at the right edge when the slideover is collapsed,
+   letting the user drag it back open. */
+.collapsedGrabber {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5000;
+  border-left: 1px solid var(--line-color, #e0e0e0);
+}
+
+.collapsedGrabber:hover {
+  border-left: 2px solid var(--color_accent_blue);
 }
 
 .leftPanel .leftPanelContent{
@@ -82,7 +104,6 @@
   border-radius: var(--border_radius_right_panel);
   background-color: transparent !important;
   overflow: auto;
-  border-left: var(--border);
 }
 
 .rightPanelContent {
@@ -96,10 +117,6 @@
 .divider.collapsed {
   width: 0;
   border: none;
-}
-
-.divider:hover {
-  /* border-color: var(--color-accent); */
 }
 
 .divider:hover .dividerLine {

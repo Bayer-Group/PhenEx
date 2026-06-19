@@ -53,6 +53,23 @@
   border-right: 2px solid var(--color_accent_blue);
 }
 
+/* Thin grab handle shown at the right edge when comments are collapsed,
+   letting the user drag the comments panel back open. */
+.collapsedGrabber {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 5000;
+  border-right: 1px solid var(--line-color, #e0e0e0);
+}
+
+.collapsedGrabber:hover {
+  border-right: 2px solid var(--color_accent_blue);
+}
+
 [data-dragging='true'] {
   cursor: col-resize;
   user-select: none;

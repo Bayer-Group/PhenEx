@@ -108,6 +108,7 @@ export const LeftPanel: FC<LeftPanelProps> = ({
               marginToEnd={0}
               classNameTrack={styles.scrollBarTrack}
               classNameThumb={styles.scrollBarThumb}
+              showOnHover={true}
             />
           </div>
         )}

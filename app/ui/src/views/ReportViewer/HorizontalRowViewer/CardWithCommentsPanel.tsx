@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import styles from './CardWithCommentsPanel.module.css';
+import { resolveDragCollapse, DEFAULT_COLLAPSE_THRESHOLD } from '../../../hooks/dragCollapse';
 
 interface CardWithCommentsPanelProps {
   initialSizeLeft: number;
@@ -10,7 +11,9 @@ interface CardWithCommentsPanelProps {
   leftContent: React.ReactNode;
   commentsContent: React.ReactNode;
   commentsCollapsed?: boolean;
+  collapseThreshold?: number;
   onRightWidthChange?: (width: number) => void;
+  onCommentsCollapsedChange?: (collapsed: boolean) => void;
 }
 
 export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
@@ -22,12 +25,20 @@ export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
   leftContent,
   commentsContent,
   commentsCollapsed = true,
+  collapseThreshold = DEFAULT_COLLAPSE_THRESHOLD,
   onRightWidthChange,
+  onCommentsCollapsedChange,
 }) => {
   const [rightWidth, setRightWidthLocal] = useState(controlledRightWidth);
   const [leftWidth, setLeftWidth] = useState(initialSizeLeft);
+  const [collapsed, setCollapsed] = useState(commentsCollapsed);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Sync collapsed state from prop when not dragging
+  useEffect(() => {
+    if (!isDragging) setCollapsed(commentsCollapsed);
+  }, [commentsCollapsed, isDragging]);
 
   // Sync from controlled prop when not dragging
   useEffect(() => {
@@ -46,20 +57,11 @@ export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
     } catch { /* ignore */ }
   }, [rightWidth]);
 
-  // Recalculate left width from container
-  useEffect(() => {
-    if (containerRef.current) {
-      const containerWidth = containerRef.current.offsetWidth;
-      const calc = containerWidth - rightWidth;
-      setLeftWidth(minSizeLeft ? Math.max(calc, minSizeLeft) : calc);
-    }
-  }, [rightWidth, minSizeLeft]);
-
   // Resize observer
   useEffect(() => {
     const observer = new ResizeObserver(() => {
       const container = containerRef.current;
-      if (container && !isDragging && !commentsCollapsed) {
+      if (container && !isDragging && !collapsed) {
         const containerWidth = container.offsetWidth;
         let newLeft = containerWidth - rightWidth;
         if (minSizeLeft != null && newLeft < minSizeLeft) {
@@ -73,7 +75,7 @@ export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
     });
     if (containerRef.current) observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [rightWidth, minSizeLeft, minSizeRight, maxSizeRight, isDragging, commentsCollapsed]);
+  }, [rightWidth, minSizeLeft, minSizeRight, maxSizeRight, isDragging, collapsed, setRightWidth]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -86,24 +88,31 @@ export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
     const container = containerRef.current;
     if (!container || container.dataset.dragging !== 'true') return;
 
-    const containerRect = container.getBoundingClientRect();
-    const mouseX = e.clientX - containerRect.left;
+    const desiredRight = container.getBoundingClientRect().right - e.clientX;
 
-    let newLeft = mouseX;
-    let newRight = container.offsetWidth - mouseX;
+    const result = resolveDragCollapse({
+      desiredWidth: desiredRight,
+      isCollapsed: collapsed,
+      minSize: minSizeRight ?? 0,
+      maxSize: maxSizeRight,
+      threshold: collapseThreshold,
+    });
 
-    if (minSizeRight) { newRight = Math.max(newRight, minSizeRight); newLeft = container.offsetWidth - newRight; }
-    if (maxSizeRight) { newRight = Math.min(newRight, maxSizeRight); newLeft = container.offsetWidth - newRight; }
-    if (minSizeLeft)  { newLeft = Math.max(newLeft, minSizeLeft);   newRight = container.offsetWidth - newLeft; }
-
-    setLeftWidth(newLeft);
-    setRightWidth(newRight);
-  }, [minSizeLeft, minSizeRight, maxSizeRight, setRightWidth]);
+    setCollapsed(result.collapsed);
+    if (!result.collapsed) {
+      let newRight = result.width;
+      // Never let the comments panel push the main panel below its minimum.
+      if (minSizeLeft != null) newRight = Math.min(newRight, container.offsetWidth - minSizeLeft);
+      setRightWidth(newRight);
+      setLeftWidth(container.offsetWidth - newRight);
+    }
+  }, [collapsed, minSizeLeft, minSizeRight, maxSizeRight, collapseThreshold, setRightWidth]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
     if (containerRef.current) containerRef.current.dataset.dragging = 'false';
-  }, []);
+    onCommentsCollapsedChange?.(collapsed);
+  }, [collapsed, onCommentsCollapsedChange]);
 
   useEffect(() => {
     if (isDragging) {
@@ -118,10 +127,16 @@ export const CardWithCommentsPanel: React.FC<CardWithCommentsPanelProps> = ({
 
   return (
     <div ref={containerRef} className={styles.container} data-dragging="false">
-      <div className={styles.mainPanel} style={{ width: commentsCollapsed ? '100%' : leftWidth }}>
+      <div className={styles.mainPanel} style={{ width: collapsed ? '100%' : leftWidth }}>
         {leftContent}
       </div>
-      {!commentsCollapsed && (
+      {collapsed ? (
+        <div
+          className={styles.collapsedGrabber}
+          onMouseDown={handleMouseDown}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
         <div className={styles.commentsPanel} style={{ width: rightWidth }}>
           <div
             className={styles.divider}

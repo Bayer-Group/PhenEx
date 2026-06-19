@@ -34,6 +34,7 @@ export interface HorizontalCellProps {
   onVerticalScroll?: (scrollTop: number, threshold: number) => void;
   initialScrollTop?: number;
   commentsCollapsed?: boolean;
+  onCommentsCollapsedChange?: (collapsed: boolean) => void;
   commentsPanelWidth: number;
   onCommentsPanelWidthChange: (width: number) => void;
   studyTitle?: string;
@@ -123,7 +124,7 @@ const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[];
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, commentsCollapsed, commentsPanelWidth, onCommentsPanelWidthChange, studyTitle = '', studyDescription }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, commentsCollapsed, onCommentsCollapsedChange, commentsPanelWidth, onCommentsPanelWidthChange, studyTitle = '', studyDescription }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const { isLeftPanelShown } = useThreePanelCollapse();
     const verticalScrollRef = useRef<HTMLDivElement>(null);
@@ -210,6 +211,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
                   commentsContent={commentsContent}
                   onRightWidthChange={handleRightWidthChange}
                   commentsCollapsed={commentsCollapsed}
+                  onCommentsCollapsedChange={onCommentsCollapsedChange}
                 />
             </div>
           </div>
@@ -220,9 +222,10 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
               // marginBottom={'30vh'}
               marginTop={100}
               marginBottom={0}
-            marginToEnd={commentsCollapsed ? 0 : commentsPanelWidth - 1}
+            marginToEnd={commentsCollapsed ? 0 : commentsPanelWidth-11}
             classNameThumb={styles.scrollBarThumb}
             classNameTrack={styles.scrollBarTrack}
+            showOnHover={true}
           />
         </div>
       </div>

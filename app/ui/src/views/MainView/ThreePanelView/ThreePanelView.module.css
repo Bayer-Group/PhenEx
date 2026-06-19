@@ -5,227 +5,95 @@
   position: relative;
 }
 
+.panel {
+  transition: opacity 0.2s ease;
+  overflow: hidden;
+  opacity: 1;
+  height: 100%;
+}
+
 .leftPanel {
-  background-color: transparent;
+  flex: 0 0 auto;
+  width: var(--initial-left-width);
+  background-color: var(--background-color);
+  position: relative;
+  z-index: 2;
+}
+
+.leftPanelContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .centerPanel {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 500px;
   position: relative;
   height: 100%;
 }
 
 .rightPanel {
+  flex: 0 0 auto;
+  width: var(--initial-right-width);
   background-color: var(--background-color);
+  position: relative;
 }
 
+.panel.collapsed {
+  width: 0 !important;
+  opacity: 0;
+  border: none;
+}
+
+/* ── Dividers ──────────────────────────────────────────────────────────
+   Positioned entirely outside the panel (into the center panel's space)
+   so they never overlap a scrollbar. The 1px border line sits at the
+   panel edge; the remaining width is invisible drag target. */
 .divider {
-  width: 15px;
-  top: 0px;
-  height: 100vh;
-  cursor: col-resize;
-  /* position: absolute; */
-  z-index: 100000;
-  /* display: flex;
-  align-items: center; */
-  /* justify-content: center; */
-}
-
-.divider.left {
   position: absolute;
-  right: 0px;
-  background-color: transparent !important;
-}
-
-.divider.right {
+  top: 0;
+  height: 100%;
+  width: 16px;
+  cursor: col-resize;
+  background-color: transparent;
+  z-index: 100;
 }
 
 .dividerLine {
+  position: absolute;
+  top: 0;
   height: 100%;
+  width: 1px;
+  background-color: var(--line-color, #e0e0e0);
   pointer-events: none;
-  width: 0px;
-  background-color: var(--border-color);
-  transition: background-color 0.2s ease;
-  z-index: 1000;
+  transition: width 0.15s ease, background-color 0.15s ease;
+}
+
+.divider.left .dividerLine {
+  left: 0;
+}
+
+.divider.right .dividerLine {
+  right: 0;
 }
 
 .divider:hover .dividerLine {
-  /* background-color: var(--color-accent); */
-  width: 1px;
+  width: 2px;
+  background-color: var(--color_accent_blue);
 }
 
-.divider:hover .dividerLine.right.collapsed {
-  /* width: 3px;
-  pointer-events: none;
-  cursor: default; */
+/* Disable transitions and text selection while dragging */
+[data-dragging='true'] {
+  cursor: col-resize;
+  user-select: none;
 }
 
-.collapsed {
-  /* width: 0; */
-  /* overflow: hidden; */
+[data-dragging='true'] * {
+  user-select: none;
 }
 
-.collapseButton {
-  z-index: 10002;
-  position: fixed;
-  pointer-events: all;
-  margin-left: 0px;
-  margin-top: 0px;
-  padding: 0px;
-  cursor: pointer;
-  width: 40px !important;
-  height: 40px !important;
-  color: var(--color_inactive);
-  background-color: var(--background-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: transform 0.2s ease, color 0.2s ease;
-}
-
-.collapseButton svg{
-  color: var(--color_accent_dark);
-  stroke-width: 10;
-}
-
-.collapseButtonIcon {
-  display: inline-block;
-}
-
-.collapseButton.left.collapsed .collapseButtonIcon {
-  /* no flip needed for panel icon */
-}
-
-.arrow {
-  width: 80%;
-  height: 80%;
-  object-fit: contain;
-}
-
-.collapseButton:hover {
-  transform: scale(1.4);
-}
-
-.collapseButton:hover svg{
-  color: var(--color_accent_blue);
-}
-
-.collapseButton:focus {
-  outline: none;
-}
-
-.collapseButton.left {
-  left: 10px;
-  top: 10px;
-}
-
-.collapseButton.left:hover {
-  color: var(--color_accent_blue);
-}
-
-.panel.collapsed {
-  width: 0 !important;
-  padding: 0;
-  margin: 0;
-}
-
-.rightDividerPadding {
-  width: 9px;
-  height: 100%;
-  background-color: blue !important; /*var(--background-color);*/
-  /* margin-left: -12px; */
-  pointer-events: none;
-  position: absolute;
-  /* border-right: 1px solid var(--line-color); */
-  /* box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.1); */
-}
-
-
-.leftDividerPadding {
-  width: 8px;
-  height: 100%;
-  background-color: var(--background-color);
-  pointer-events: none;
-  z-index: 100;
-  position: absolute;
-  margin-left: 10px;
-  /* transition: all 0.2s ease; */
-  /* border-left: 1px solid var(--line-color); */
-  /* background-color: red; */
-}
-
-.leftDividerPadding.leftDividercollapsed {
-  background-color: var(--background-color);
-  margin-left: 0px;
-  width: 16px;
-}
-
-.rightDividerPadding.collapsed {
-  background-color: transparent;
-  width: 100px;
-}
-
-.panel {
-  transition:
-    /* max-width 0.2s ease,
-    width 0.2s ease, */
-    opacity 0.2s ease;
-  overflow: hidden;
-  opacity: 1;
-}
-
-.leftPanel {
-  width: 100%;
-  background-color: var(--background-color);
-  max-width: var(--initial-left-width);
-  z-index: 10000;
-  /* padding-right:10px; */
-
-}
-
-.rightPanel {
-  width: 100%;
-  max-width: var(--initial-right-width);
-}
-
-.panel.collapsed {
-  max-width: 0 !important;
-  width: 0 !important;
-  opacity: 0;
-  opacity: 0;
-}
-
-.divider {
-  transition:
-    /* all 0.2s ease,
-    width 0.2s ease, */
-    opacity 0.2s ease;
-  opacity: 1;
-}
-
-/* Remove transitions ONLY during drag */
 [data-dragging='true'] .leftPanel,
 [data-dragging='true'] .rightPanel {
   transition: none !important;
-}
-
-/* Hover trigger area for animated portal */
-.hoverTrigger {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  background-color: transparent;
-  z-index: 50;
-  cursor: pointer;
-}
-
-/* Container for left panel content inside portal - must fill full height */
-.leftPanelWidthAdjustablePortal {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
 }

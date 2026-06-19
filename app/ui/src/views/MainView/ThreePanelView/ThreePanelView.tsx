@@ -1,9 +1,7 @@
-import React, { useState, useRef } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useState, useRef, useCallback } from 'react';
 import styles from './ThreePanelView.module.css';
-import { WidthAdjustedPortal } from '../../../components/Portal/WidthAdjustedPortal';
-import LeftPanelIcon from '../../../assets/icons/left_panel.svg';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
+import { resolveDragCollapse, DEFAULT_COLLAPSE_THRESHOLD } from '../../../hooks/dragCollapse';
 
 interface ThreePanelViewProps {
   split: 'vertical';
@@ -11,15 +9,16 @@ interface ThreePanelViewProps {
   initalSizeLeft: number;
   minSizeLeft: number;
   minSizeRight: number;
+  collapseThreshold?: number;
   children: React.ReactNode[];
 }
 
 export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
-  split,
   initalSizeLeft,
   initalSizeRight,
   minSizeLeft,
   minSizeRight,
+  collapseThreshold = DEFAULT_COLLAPSE_THRESHOLD,
   children,
 }) => {
   const getInitialLeftWidth = () => {
@@ -33,9 +32,17 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
 
   const [leftWidth, setLeftWidth] = useState(getInitialLeftWidth);
   const [rightWidth, setRightWidth] = useState(initalSizeRight);
-  const { isLeftPanelShown, toggleLeftPanel: contextToggleLeftPanel } = useThreePanelCollapse();
+  const { isLeftPanelShown, setLeftPanelShown, toggleLeftPanel } = useThreePanelCollapse();
   const isLeftCollapsed = !isLeftPanelShown;
   const [isRightCollapsed, setIsRightCollapsed] = useState(true);
+
+  const activeDividerRef = useRef<'left' | 'right' | null>(null);
+  const leftCollapsedRef = useRef(isLeftCollapsed);
+  const rightCollapsedRef = useRef(isRightCollapsed);
+  leftCollapsedRef.current = isLeftCollapsed;
+  rightCollapsedRef.current = isRightCollapsed;
+
+  const containerRef = useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     try {
@@ -44,245 +51,103 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
       console.warn('Failed to save left width to localStorage:', error);
     }
   }, [leftWidth]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [wasDragging, setWasDragging] = useState(false);
 
-  const [activeDivider, setActiveDivider] = useState<'left' | 'right' | null>(null);
-  const leftPanelRef = useRef<HTMLDivElement>(null);
-  
-  // Hover animation state
-  const [isHoverAnimating, setIsHoverAnimating] = useState(false);
-  const HOVER_TRIGGER_WIDTH = 20; // pixels
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  const handleHoverTriggerEnter = () => {
-    if (isLeftCollapsed && !isDragging) {
-      // Clear any pending leave timeout
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-        hoverTimeoutRef.current = null;
-      }
-      setIsHoverAnimating(true);
-    }
-  };
-  
-  const handleHoverTriggerLeave = () => {
-    // Add a small delay to prevent flickering
-    hoverTimeoutRef.current = setTimeout(() => {
-      setIsHoverAnimating(false);
-    }, 100);
-  };
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    const container = containerRef.current;
+    const divider = activeDividerRef.current;
+    if (!container || !divider) return;
 
-  const handleMouseDown = (divider: 'left' | 'right') => (e: React.MouseEvent) => {
-    // Check if the click target is a collapse button
-    if ((e.target as HTMLElement).classList.contains(styles.collapseButton)) {
-      return;
-    }
-    setIsDragging(true);
-    setActiveDivider(divider);
-    const container = document.getElementById('three-panel-container');
-    if (container) {
-      container.dataset.dragging = 'true';
-    }
-  };
+    const rect = container.getBoundingClientRect();
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging || !activeDivider) return;
-    setWasDragging(true);
-
-    const container = document.getElementById('three-panel-container');
-    if (!container) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const mouseX = e.clientX - containerRect.left;
-
-    if (activeDivider === 'left') {
-      const newWidth = Math.max(minSizeLeft, mouseX - 10);
-      setLeftWidth(newWidth);
+    if (divider === 'left') {
+      const result = resolveDragCollapse({
+        desiredWidth: e.clientX - rect.left,
+        isCollapsed: leftCollapsedRef.current,
+        minSize: minSizeLeft,
+        threshold: collapseThreshold,
+      });
+      if (result.collapsed !== leftCollapsedRef.current) setLeftPanelShown(!result.collapsed);
+      if (!result.collapsed) setLeftWidth(result.width);
     } else {
-      const newWidth = Math.max(minSizeRight, containerRect.width - mouseX - 7);
-      setRightWidth(newWidth);
+      const result = resolveDragCollapse({
+        desiredWidth: rect.right - e.clientX,
+        isCollapsed: rightCollapsedRef.current,
+        minSize: minSizeRight,
+        threshold: collapseThreshold,
+      });
+      if (result.collapsed !== rightCollapsedRef.current) setIsRightCollapsed(result.collapsed);
+      if (!result.collapsed) setRightWidth(result.width);
     }
-  };
+  }, [minSizeLeft, minSizeRight, collapseThreshold, setLeftPanelShown]);
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    setActiveDivider(null);
-    const container = document.getElementById('three-panel-container');
-    if (container) {
-      container.dataset.dragging = 'false';
-    }
-    // Add a small delay before resetting wasDragging to ensure click handler checks it first
-    setTimeout(() => {
-      setWasDragging(false);
-    }, 50);
-  };
+  const handleMouseUp = useCallback(() => {
+    activeDividerRef.current = null;
+    if (containerRef.current) containerRef.current.dataset.dragging = 'false';
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove]);
+
+  const handleMouseDown = useCallback((divider: 'left' | 'right') => (e: React.MouseEvent) => {
+    e.preventDefault();
+    activeDividerRef.current = divider;
+    if (containerRef.current) containerRef.current.dataset.dragging = 'true';
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove, handleMouseUp]);
 
   React.useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Command+B for left panel
       if (e.metaKey && !e.altKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();
         toggleLeftPanel();
       }
-      // Option+Command+B for right panel
       if (e.metaKey && e.altKey && e.key.toLowerCase() === '∫') {
         e.preventDefault();
-        toggleRightPanel();
+        setIsRightCollapsed(prev => !prev);
       }
     };
-
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, []);
-
-  React.useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging]);
-
-  const toggleLeftPanel = () => {
-    if (!wasDragging) {
-      contextToggleLeftPanel();
-    }
-  };
-
-  const toggleRightPanel = () => {
-    if (!wasDragging) {
-      setIsRightCollapsed(prevState => !prevState);
-    }
-  };
-
-  const renderLeftDivider = () => {
-    return (
-      <div
-        className={`${styles.divider} ${styles.left}`}
-        onMouseDown={handleMouseDown('left')}
-        onClick={toggleLeftPanel}
-      >
-        <div
-          className={`${styles.leftDividerPadding} ${isLeftCollapsed ? styles.leftDividercollapsed : ''}`}
-        ></div>
-
-        <div className={styles.dividerLine} />
-      </div>
-    );
-  };
-
-  const renderLeftCollapseButton = () => {
-    const button = (
-      <div
-        className={`${styles.collapseButton} ${styles.left} ${isLeftCollapsed ? styles.collapsed : ''}`}
-        onClick={toggleLeftPanel}
-      >
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="1" y="1" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="1.4" />
-          <line x1="6.5" y1="1" x2="6.5" y2="17" stroke="currentColor" strokeWidth="1.4" />
-        </svg>
-      </div>
-    );
-    
-    // Render to document.body using portal
-    return ReactDOM.createPortal(button, document.body);
-  };
-
-  const renderRightCollapseButton = () => {
-    return (
-      <div
-        className={`${styles.collapseButton} ${styles.right} ${isRightCollapsed ? styles.collapsed : ''}`}
-      >
-        {'AI'}
-      </div>
-    );
-  };
-  const renderRightDivider = () => {
-    return (
-      <div
-        className={`${styles.divider} ${styles.right}`}
-        onMouseDown={handleMouseDown('right')}
-        onClick={toggleRightPanel}
-      >
-        <div
-          className={`${styles.dividerLine} ${styles.right} ${isRightCollapsed ? styles.collapsed : ''}`}
-        />
-        <div
-          className={`${styles.rightDividerPadding} ${isRightCollapsed ? styles.collapsed : ''}`}
-        ></div>
-      </div>
-    );
-  };
+  }, [toggleLeftPanel]);
 
   return (
     <div
+      ref={containerRef}
       id="three-panel-container"
       className={styles.container}
+      data-dragging="false"
       style={
         {
           '--initial-left-width': isLeftCollapsed ? '0px' : `${leftWidth}px`,
-          '--initial-right-width': `${rightWidth}px`,
+          '--initial-right-width': isRightCollapsed ? '0px' : `${rightWidth}px`,
         } as React.CSSProperties
       }
     >
-      <div
-        ref={leftPanelRef}
-        className={`${styles.panel} ${styles.leftPanel} ${isLeftCollapsed ? styles.collapsed : ''}`}
-      >
-        {/* Left panel is now just a placeholder - content moved to portal */}
-        {renderLeftDivider()}
-      </div>
-      
-      {/* Width-adjusted portal that contains the actual left panel content */}
-      <WidthAdjustedPortal
-        leftPanelRef={leftPanelRef}
-        width={leftWidth}
-        isCollapsed={isLeftCollapsed}
-        allowResize={!isLeftCollapsed || isHoverAnimating}
-        onWidthChange={setLeftWidth}
-        minWidth={minSizeLeft}
-        marginLeft={0}
-        // isHoverAnimating={isHoverAnimating}
-        onHoverEnter={handleHoverTriggerEnter}
-        onHoverLeave={handleHoverTriggerLeave}
-        debug={false}
-      >
-        <div className={styles.leftPanelWidthAdjustablePortal}>
-        {children[0]}
-
-
-        </div>
-      </WidthAdjustedPortal>
-
-      <div className={`${styles.panel} ${styles.centerPanel}`}>
-        {/* Hover trigger area for animating portal when collapsed */}
-        {isLeftCollapsed && (
-          <div 
-            className={styles.hoverTrigger}
-            style={{ width: `${HOVER_TRIGGER_WIDTH}px` }}
-            onMouseEnter={handleHoverTriggerEnter}
-            onMouseLeave={handleHoverTriggerLeave}
-          />
-        )}
-        
-        {children[1]}
+      <div className={`${styles.panel} ${styles.leftPanel} ${isLeftCollapsed ? styles.collapsed : ''}`}>
+        <div className={styles.leftPanelContent}>{children[0]}</div>
       </div>
 
-      {/* {renderRightCollapseButton()} */}
-      <div
-        className={`${styles.panel} ${styles.rightPanel} ${isRightCollapsed ? styles.collapsed : ''}`}
-      >
+      <div className={`${styles.panel} ${styles.centerPanel}`}>{children[1]}</div>
+
+      <div className={`${styles.panel} ${styles.rightPanel} ${isRightCollapsed ? styles.collapsed : ''}`}>
         {children[2]}
-        {renderRightDivider()}
       </div>
-      
-      {renderLeftCollapseButton()}
+
+      <div
+        className={`${styles.divider} ${styles.left}`}
+        style={{ left: isLeftCollapsed ? 0 : leftWidth }}
+        onMouseDown={handleMouseDown('left')}
+      >
+        <div className={styles.dividerLine} />
+      </div>
+
+      <div
+        className={`${styles.divider} ${styles.right}`}
+        style={{ right: isRightCollapsed ? 0 : rightWidth }}
+        onMouseDown={handleMouseDown('right')}
+      >
+        <div className={styles.dividerLine} />
+      </div>
     </div>
   );
 };
-
-//←→

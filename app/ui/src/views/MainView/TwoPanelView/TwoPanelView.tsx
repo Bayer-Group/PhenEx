@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import styles from './TwoPanelView.module.css';
 import { Portal } from '../../../components/Portal/Portal';
+import { resolveDragCollapse, DEFAULT_COLLAPSE_THRESHOLD } from '../../../hooks/dragCollapse';
 
 interface TwoPanelViewProps {
   initialSizeLeft: number;
   minSizeLeft: number;
   minSizeRight?: number;
   maxSizeRight?: number;
+  collapseThreshold?: number;
   leftContent: React.ReactNode;
   slideoverContent?: React.ReactNode;
   popoverContent?: React.ReactNode;
@@ -29,6 +31,7 @@ export const TwoPanelView = React.forwardRef<
     minSizeLeft, 
     minSizeRight,
     maxSizeRight, 
+    collapseThreshold = DEFAULT_COLLAPSE_THRESHOLD,
     leftContent,
     slideoverContent,
     popoverContent,
@@ -110,87 +113,61 @@ export const TwoPanelView = React.forwardRef<
   }));
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    console.log('[TwoPanelView] handleMouseDown triggered', { target: e.target, classList: (e.target as HTMLElement).classList });
-    if ((e.target as HTMLElement).classList.contains(styles.collapseButton)) {
-      console.log('[TwoPanelView] Ignoring - collapse button clicked');
-      return;
-    }
     e.preventDefault();
     e.stopPropagation();
-    console.log('[TwoPanelView] Setting isDragging to true');
     setIsDragging(true);
     const container = containerRef.current;
     if (container) {
       container.dataset.dragging = 'true';
-      console.log('[TwoPanelView] Container dragging set to true');
     }
   };
 
   const handleMouseMove = React.useCallback((e: MouseEvent) => {
     const container = containerRef.current;
-    if (!container) {
-      return;
-    }
-    
-    const draggingState = container.dataset.dragging;
-    
-    if (draggingState !== 'true') {
-      return;
-    }
+    if (!container || container.dataset.dragging !== 'true') return;
 
-    const containerRect = container.getBoundingClientRect();
-    const mouseX = e.clientX - containerRect.left;
-    console.log('[TwoPanelView] Mouse position:', { 
-      clientX: e.clientX, 
-      containerLeft: containerRect.left, 
-      mouseX,
-      containerWidth: container.offsetWidth 
+    // Slideover sits on the right; its width is the distance from the mouse
+    // to the container's right edge.
+    const desiredSlideover = container.getBoundingClientRect().right - e.clientX;
+
+    const result = resolveDragCollapse({
+      desiredWidth: desiredSlideover,
+      isCollapsed: isSlideoverCollapsed,
+      minSize: minSizeRight ?? 0,
+      maxSize: maxSizeRight,
+      threshold: collapseThreshold,
     });
-    
-    // Slideover is on the right: mouseX is the left edge of the slideover (right edge of main content)
-    // leftWidth state = main content width, rightWidth state = slideover width
-    let newMainContentWidth = mouseX;
-    let newSlideoverWidth = container.offsetWidth - mouseX;
-    
-    console.log('[TwoPanelView] Before constraints:', { newSlideoverWidth, newMainContentWidth, minSizeRight, maxSizeRight, minSizeLeft });
-    
-    // Apply constraints: slideover uses minSizeRight/maxSizeRight, main content uses minSizeLeft
-    if (minSizeRight) {
-      newSlideoverWidth = Math.max(newSlideoverWidth, minSizeRight);
-      newMainContentWidth = container.offsetWidth - newSlideoverWidth;
-    }
-    if (maxSizeRight) {
-      newSlideoverWidth = Math.min(newSlideoverWidth, maxSizeRight);
-      newMainContentWidth = container.offsetWidth - newSlideoverWidth;
-    }
-    if (minSizeLeft) {
-      newMainContentWidth = Math.max(newMainContentWidth, minSizeLeft);
-      newSlideoverWidth = container.offsetWidth - newMainContentWidth;
+
+    if (result.collapsed !== isSlideoverCollapsed) {
+      setIsSlideoverCollapsed(result.collapsed);
+      onSlideoverCollapse?.(result.collapsed);
     }
 
-    setLeftWidth(newMainContentWidth);
-    setRightWidth(newSlideoverWidth);
-  }, [minSizeLeft, minSizeRight, maxSizeRight]);
+    if (!result.collapsed) {
+      let newSlideoverWidth = result.width;
+      // Don't let the slideover shrink the main content below its minimum.
+      if (minSizeLeft) {
+        newSlideoverWidth = Math.min(newSlideoverWidth, container.offsetWidth - minSizeLeft);
+      }
+      setLeftWidth(container.offsetWidth - newSlideoverWidth);
+      setRightWidth(newSlideoverWidth);
+    }
+  }, [isSlideoverCollapsed, minSizeLeft, minSizeRight, maxSizeRight, collapseThreshold, onSlideoverCollapse]);
 
   const handleMouseUp = React.useCallback(() => {
-    console.log('[TwoPanelView] handleMouseUp called');
     setIsDragging(false);
     const container = containerRef.current;
     if (container) {
       container.dataset.dragging = 'false';
-      console.log('[TwoPanelView] Container dragging set to false');
     }
   }, []);
 
   React.useEffect(() => {
-    console.log('[TwoPanelView] isDragging changed:', isDragging);
     if (isDragging) {
-      console.log('[TwoPanelView] Adding mousemove and mouseup listeners');
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
-      
+
       return () => {
-        console.log('[TwoPanelView] Removing mousemove and mouseup listeners');
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
       };
@@ -250,20 +227,14 @@ export const TwoPanelView = React.forwardRef<
             />
             <div className={styles.leftPanelContent}>{slideoverContent}</div>
           </div>
-          <div
-            className={`${styles.collapseButton} ${isSlideoverCollapsed ? styles.collapsed : ''}`}
-            onClick={() => {
-              const newCollapsedState = !isSlideoverCollapsed;
-              setIsSlideoverCollapsed(newCollapsedState);
-              onSlideoverCollapse?.(newCollapsedState);
-            }}
-          >
-            <span className={styles.collapseButtonIcon}>
-              <svg width="25" height="28" viewBox="0 0 25 28" fill="none">
-                <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </span>
-          </div>
+          {/* Thin grab handle at the right edge to drag the slideover back open. */}
+          {isSlideoverCollapsed && (
+            <div
+              className={styles.collapsedGrabber}
+              onMouseDown={handleMouseDown}
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
         </>
       )}
       {(isPopoverOpen || popoverContent) && (

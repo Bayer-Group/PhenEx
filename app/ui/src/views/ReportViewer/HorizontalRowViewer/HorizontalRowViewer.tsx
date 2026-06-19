@@ -56,7 +56,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const { isLeftPanelShown } = useThreePanelCollapse();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [closing, setClosing] = useState(false);
-  const [commentsCollapsed, setCommentsCollapsed] = useState(true);
+  const [commentsCollapsed, setCommentsCollapsed] = useState(false);
   const [showRowTitle, setShowRowTitle] = useState(false);
   const [showCommentWindow, setShowCommentWindow] = useState(false);
   const [commentsPanelWidth, setCommentsPanelWidth] = useState(() => {
@@ -351,6 +351,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                     onVerticalScroll={isFocused ? handleVerticalScroll : undefined}
                     initialScrollTop={sharedScrollTopRef.current}
                     commentsCollapsed={commentsCollapsed}
+                    onCommentsCollapsedChange={setCommentsCollapsed}
                     commentsPanelWidth={commentsPanelWidth}
                     onCommentsPanelWidthChange={setCommentsPanelWidth}
                     studyTitle={studyTitle}

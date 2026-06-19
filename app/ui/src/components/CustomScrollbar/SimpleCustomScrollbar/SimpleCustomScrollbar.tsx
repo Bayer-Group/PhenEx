@@ -10,6 +10,7 @@ export interface SimpleCustomScrollbarProps {
   marginTop?: number | string;
   marginBottom?: number | string;
   marginToEnd?: number; // Right margin for vertical, bottom margin for horizontal
+  showOnHover?: boolean; // Only show when the target element is hovered
 }
 
 export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
@@ -20,7 +21,8 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
   height,
   marginTop = 0,
   marginBottom = 0,
-  marginToEnd = 0
+  marginToEnd = 0,
+  showOnHover = false,
 }) => {
   const [scrollInfo, setScrollInfo] = useState({
     scrollTop: 0,
@@ -32,6 +34,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     isScrollable: false
   });
   const [isDragging, setIsDragging] = useState(false);
+  const [isTargetHovered, setIsTargetHovered] = useState(false);
   const dragRef = useRef({ startY: 0, startX: 0, startScrollTop: 0, startScrollLeft: 0 });
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -189,9 +192,21 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
 
     updateScrollInfo(); // Initial update
 
+    // Hover tracking for showOnHover
+    const handleMouseEnter = () => setIsTargetHovered(true);
+    const handleMouseLeave = () => setIsTargetHovered(false);
+    if (showOnHover) {
+      element.addEventListener('mouseenter', handleMouseEnter);
+      element.addEventListener('mouseleave', handleMouseLeave);
+    }
+
     return () => {
       element.removeEventListener('scroll', handleScroll);
       element.classList.remove(styles.hideScrollbars);
+      if (showOnHover) {
+        element.removeEventListener('mouseenter', handleMouseEnter);
+        element.removeEventListener('mouseleave', handleMouseLeave);
+      }
       
       if (resizeObserver) {
         resizeObserver.disconnect();
@@ -200,7 +215,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
         mutationObserver.disconnect();
       }
     };
-  }, [targetRef, orientation, updateScrollInfo]);
+  }, [targetRef, orientation, updateScrollInfo, showOnHover]);
 
   // Calculate thumb size and position
   let scrollbarStyle, thumbStyle;
@@ -264,9 +279,12 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     };
   }
 
+  const [isScrollbarHovered, setIsScrollbarHovered] = useState(false);
+  const hoverHidden = showOnHover && !isTargetHovered && !isScrollbarHovered && !isDragging;
+
   const scrollbarClass = orientation === 'vertical'
-    ? `${styles.scrollbar} ${isDragging ? styles.dragging : ''} ${classNameTrack}`
-    : `${styles.scrollbarHorizontal} ${isDragging ? styles.dragging : ''} ${classNameTrack}`;
+    ? `${styles.scrollbar} ${isDragging ? styles.dragging : ''} ${hoverHidden ? styles.hoverHidden : ''} ${classNameTrack}`
+    : `${styles.scrollbarHorizontal} ${isDragging ? styles.dragging : ''} ${hoverHidden ? styles.hoverHidden : ''} ${classNameTrack}`;
 
   const thumbClass = orientation === 'vertical'
     ? `${styles.thumb} ${classNameThumb}`
@@ -278,6 +296,8 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
       className={scrollbarClass}
       onClick={handleTrackClick}
       onMouseDown={(e) => e.stopPropagation()}
+      onMouseEnter={() => setIsScrollbarHovered(true)}
+      onMouseLeave={() => setIsScrollbarHovered(false)}
       style={scrollbarStyle}
     >
       <div

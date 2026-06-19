@@ -109,3 +109,9 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* When showOnHover is enabled, hide the scrollbar until the target is hovered */
+.hoverHidden {
+  opacity: 0 !important;
+  pointer-events: none;
+}
