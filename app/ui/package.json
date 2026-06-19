@@ -27,6 +27,7 @@
     "antd": "^5.27.6",
     "axios": "^1.15.1",
     "d3": "^7.9.0",
+    "flexlayout-react": "^0.9.1",
     "jwt-decode": "^3.*",
     "lodash": "^4.*",
     "lucide-react": "^0.542.0",

@@ -1,11 +1,11 @@
 import { FC, useState, useEffect, useCallback, useMemo } from 'react';
+import { Layout, Model, IJsonModel } from 'flexlayout-react';
+import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
 import { LeftPanel } from './LeftPanel';
 import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { type OutlineEntry } from './OutlineBar';
-import { ThreePanelView } from '../MainView/ThreePanelView/ThreePanelView';
-import { ThreePanelCollapseProvider } from '../../contexts/ThreePanelCollapseContext';
 import {
   classifyRows,
   parseCohortGroups,
@@ -343,53 +343,92 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     return entries;
   }, [sequentialRows, table2Rows.length, tteRows.length]);
 
+  // ── FlexLayout model ────────────────────────────────────────────────
+  const layoutModel = useMemo(() => {
+    const json: IJsonModel = {
+      global: { tabEnableClose: false, tabEnableRename: false, tabSetEnableMaximize: false },
+      borders: [],
+      layout: {
+        type: 'row',
+        children: [
+          {
+            type: 'tabset',
+            weight: 20,
+            minWidth: 270,
+            children: [{ type: 'tab', name: 'Navigation', component: 'left' }],
+          },
+          {
+            type: 'tabset',
+            weight: 60,
+            children: [{ type: 'tab', name: 'Report', component: 'center' }],
+          },
+          {
+            type: 'tabset',
+            weight: 20,
+            minWidth: 200,
+            children: [{ type: 'tab', name: 'Details', component: 'right' }],
+          },
+        ],
+      },
+    };
+    return Model.fromJson(json);
+  }, []);
+
+  const factory = useCallback(
+    (node: { getComponent: () => string | undefined }) => {
+      switch (node.getComponent()) {
+        case 'left':
+          return (
+            <LeftPanel
+              title={displayTitle}
+              groups={groups}
+              selections={selections}
+              entries={outlineEntries}
+              rows={sequentialRows}
+              activeSection={null}
+              activeRowIndex={viewerIndex}
+              onOpenRow={setViewerIndex}
+              onReplace={handleReplace}
+              onAdd={handleAdd}
+              onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
+              cohortDescriptions={cohortDescriptions}
+              reports={reports}
+              finalCohortSizes={finalCohortSizes}
+            />
+          );
+        case 'center':
+          return (
+            <div className={styles.centerPanel}>
+              <HorizontalRowViewer
+                rows={sequentialRows}
+                initialIndex={viewerIndex}
+                cohortDataMap={cohortDataMap}
+                finalCohortSizes={finalCohortSizes}
+                tteCohorts={tteCohorts}
+                table2Cohorts={table2Cohorts}
+                studyTitle={displayTitle}
+                studyDescription={studyDescription}
+              />
+            </div>
+          );
+        case 'right':
+          return <div className={styles.rightPanel} />;
+        default:
+          return null;
+      }
+    },
+    [
+      displayTitle, groups, selections, outlineEntries, sequentialRows,
+      viewerIndex, handleReplace, handleAdd, updateSelections,
+      cohortDescriptions, reports, finalCohortSizes, cohortDataMap,
+      tteCohorts, table2Cohorts, studyDescription,
+    ],
+  );
+
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
-      <ThreePanelCollapseProvider storageKey="phenex_report_left_shown">
-        <ThreePanelView
-          split="vertical"
-          initalSizeLeft={280}
-          initalSizeRight={300}
-          minSizeLeft={270}
-          minSizeRight={200}
-        >
-          {/* Left panel: navigation */}
-          <LeftPanel
-            title={displayTitle}
-            groups={groups}
-            selections={selections}
-            entries={outlineEntries}
-            rows={sequentialRows}
-            activeSection={null}
-            activeRowIndex={viewerIndex}
-            onOpenRow={setViewerIndex}
-            onReplace={handleReplace}
-            onAdd={handleAdd}
-            onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
-            cohortDescriptions={cohortDescriptions}
-            reports={reports}
-            finalCohortSizes={finalCohortSizes}
-          />
-
-          {/* Center panel */}
-          <div className={styles.centerPanel}>
-            <HorizontalRowViewer
-              rows={sequentialRows}
-              initialIndex={viewerIndex}
-              cohortDataMap={cohortDataMap}
-              finalCohortSizes={finalCohortSizes}
-              tteCohorts={tteCohorts}
-              table2Cohorts={table2Cohorts}
-              studyTitle={displayTitle}
-              studyDescription={studyDescription}
-            />
-          </div>
-
-          {/* Right panel: empty for future use */}
-          <div className={styles.rightPanel} />
-        </ThreePanelView>
-      </ThreePanelCollapseProvider>
+      <Layout model={layoutModel} factory={factory} />
     </div>
   );
 };
