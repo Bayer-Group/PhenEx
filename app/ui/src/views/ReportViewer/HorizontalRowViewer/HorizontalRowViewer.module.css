@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   animation: fadeIn 0.15s ease-out;
-  background-color: var(--background-color);/*rgba(200, 200, 200, 0.2);*/
+  background-color: transparent;/*rgba(200, 200, 200, 0.2);*/
 }
 
 .overlay.closing {
@@ -18,7 +18,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 100px;
+  height: 0px;
   background: linear-gradient(to bottom, var(--background-color), transparent);
   pointer-events: none;
   z-index: 4;
@@ -36,7 +36,7 @@
   flex-direction: row;
   align-items: stretch;
   gap: 6px;
-  background-color: red;
+  /* background-color: red; */
 }
 
 .titleGroup > * {
@@ -298,6 +298,29 @@
   flex-direction: column;
   padding: 10vh 16px 32px 16px;
   box-sizing: border-box;
+  position: relative;
+}
+
+.outlineCloseBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.outlineCloseBtn:hover {
+  background: #eee;
+  color: #333;
 }
 
 .outlineItem {

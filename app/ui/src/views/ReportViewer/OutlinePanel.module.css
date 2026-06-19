@@ -1,0 +1,35 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 6px;
+  transition: background 0.1s;
+}
+
+.item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.itemActive {
+  background: rgba(0, 0, 0, 0.08);
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}

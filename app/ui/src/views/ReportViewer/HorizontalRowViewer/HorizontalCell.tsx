@@ -11,9 +11,10 @@ import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/Ou
 import { StudyInfoCellRenderer } from '../GraphsAndTables/RowRenderers/StudyInfoCellRenderer';
 import { CommentCard } from './CommentCard';
 
+import { Layout, Model, IJsonModel } from 'flexlayout-react';
+import 'flexlayout-react/style/light.css';
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
-import { CardWithCommentsPanel } from './CardWithCommentsPanel';
 import booleanStyles from '../GraphsAndTables/ModalRenderers/BooleanRowModal.module.css';
 import categoricalStyles from '../GraphsAndTables/ModalRenderers/CategoricalRowModal.module.css';
 import styles from './HorizontalCell.module.css';
@@ -124,16 +125,13 @@ const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[];
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, commentsCollapsed, onCommentsCollapsedChange, commentsPanelWidth, onCommentsPanelWidthChange, studyTitle = '', studyDescription }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, commentsPanelWidth, studyTitle = '', studyDescription }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const { isLeftPanelShown } = useThreePanelCollapse();
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const [titleHidden, setTitleHidden] = useState(false);
     const initialScrollTopRef = useRef(initialScrollTop ?? 0);
     initialScrollTopRef.current = initialScrollTop ?? 0;
-    const handleRightWidthChange = useCallback((w: number) => {
-      onCommentsPanelWidthChange(w);
-    }, [onCommentsPanelWidthChange]);
 
     useEffect(() => {
       const el = verticalScrollRef.current;
@@ -165,14 +163,41 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
 
     const comments = useMemo(() => (row.registry?.comments ?? []).filter((c) => c.text), [row.registry]);
 
+    const cardLayoutModel = useMemo(() => {
+      const json: IJsonModel = {
+        global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: false, tabSetEnableMaximize: false, tabSetEnableDrop: false },
+        borders: [
+          {
+            type: 'border',
+            location: 'right',
+            size: commentsPanelWidth,
+            minSize: 300,
+            children: [{ type: 'tab', name: 'Comments', component: 'comments', enableClose: false }],
+          },
+        ],
+        layout: {
+          type: 'row',
+          children: [
+            {
+              type: 'tabset',
+              weight: 100,
+              enableTabStrip: false,
+              children: [{ type: 'tab', name: 'Content', component: 'main' }],
+            },
+          ],
+        },
+      };
+      return Model.fromJson(json);
+    }, [commentsPanelWidth]);
+
     const mainContent = (
       <div className={styles.cardBody}>
-        <div className={styles.contentCard} style={{ marginRight: commentsCollapsed ? 0 : 25, borderRadius: commentsCollapsed ? 0 : '0 10px 10px 0px' }}>
+        <div className={styles.contentCard}>
           <div className={styles.cardTitle} style={{ opacity: titleHidden ? 0 : 1 }}>
             {row.registry?.display_name || row.name}
           </div>
           <CardInfoSection row={row} />
-          <div className={styles.cardContent} style={{ marginRight: commentsCollapsed ? "10%" : 25 }}>
+          <div className={styles.cardContent}>
             {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo studyTitle={studyTitle} studyDescription={studyDescription} /> : null}
           </div>
         </div>
@@ -185,6 +210,20 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
           <CommentCard key={i} comment={comment} />
         ))}
       </div>
+    );
+
+    const cardFactory = useCallback(
+      (node: { getComponent: () => string | undefined }) => {
+        switch (node.getComponent()) {
+          case 'main':
+            return mainContent;
+          case 'comments':
+            return commentsContent;
+          default:
+            return null;
+        }
+      },
+      [mainContent, commentsContent],
     );
 
     return (
@@ -201,28 +240,17 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
               className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
               onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(row.index); }}
             >
-                <CardWithCommentsPanel
-                  initialSizeLeft={500}
-                  minSizeLeft={300}
-                  minSizeRight={300}
-                  maxSizeRight={500}
-                  rightWidth={commentsPanelWidth}
-                  leftContent={mainContent}
-                  commentsContent={commentsContent}
-                  onRightWidthChange={handleRightWidthChange}
-                  commentsCollapsed={commentsCollapsed}
-                  onCommentsCollapsedChange={onCommentsCollapsedChange}
-                />
+              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                <Layout model={cardLayoutModel} factory={cardFactory} />
+              </div>
             </div>
           </div>
           <SimpleCustomScrollbar
             targetRef={verticalScrollRef}
             orientation="vertical"
-             // height={140}
-              // marginBottom={'30vh'}
-              marginTop={100}
-              marginBottom={0}
-            marginToEnd={commentsCollapsed ? 0 : commentsPanelWidth-11}
+            marginTop={100}
+            marginBottom={0}
+            marginToEnd={0}
             classNameThumb={styles.scrollBarThumb}
             classNameTrack={styles.scrollBarTrack}
             showOnHover={true}

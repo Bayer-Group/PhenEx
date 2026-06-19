@@ -3,6 +3,7 @@ import { Layout, Model, IJsonModel } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
 import { LeftPanel } from './LeftPanel';
+import { OutlinePanel } from './OutlinePanel';
 import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { type OutlineEntry } from './OutlineBar';
@@ -346,27 +347,42 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   // ── FlexLayout model ────────────────────────────────────────────────
   const layoutModel = useMemo(() => {
     const json: IJsonModel = {
-      global: { tabEnableClose: false, tabEnableRename: false, tabSetEnableMaximize: false },
-      borders: [],
+      global: { tabEnableClose: true, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: false, tabSetEnableDrop: true, splitterSize: 4 },
+      borders: [
+        {
+          type: 'border',
+          location: 'right',
+          size: 300,
+          minSize: 200,
+          children: [{ type: 'tab', name: 'AI', component: 'right', enableClose: false }],
+        },
+      ],
       layout: {
         type: 'row',
         children: [
           {
-            type: 'tabset',
+            type: 'row',
             weight: 20,
-            minWidth: 270,
-            children: [{ type: 'tab', name: 'Navigation', component: 'left' }],
+            children: [
+              {
+                type: 'tabset',
+                weight: 50,
+                minWidth: 250,
+                enableDrop: true,
+                enableClose: true,
+                children: [
+                  { type: 'tab', name: 'Cohorts', component: 'left', enableClose: true, enableDrag: true },
+                  { type: 'tab', name: 'Outline', component: 'outline', enableClose: true, enableDrag: true },
+                ],
+              },
+            ],
           },
           {
             type: 'tabset',
-            weight: 60,
-            children: [{ type: 'tab', name: 'Report', component: 'center' }],
-          },
-          {
-            type: 'tabset',
-            weight: 20,
-            minWidth: 200,
-            children: [{ type: 'tab', name: 'Details', component: 'right' }],
+            weight: 80,
+            enableTabStrip: false,
+            enableDrop: false,
+            children: [{ type: 'tab', name: 'Report', component: 'center', enableClose: false, enableDrag: false }],
           },
         ],
       },
@@ -413,6 +429,14 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           );
         case 'right':
           return <div className={styles.rightPanel} />;
+        case 'outline':
+          return (
+            <OutlinePanel
+              rows={sequentialRows}
+              currentIndex={viewerIndex}
+              onNavigate={setViewerIndex}
+            />
+          );
         default:
           return null;
       }

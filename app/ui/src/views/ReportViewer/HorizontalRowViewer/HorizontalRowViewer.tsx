@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
@@ -6,17 +6,13 @@ import styles from './HorizontalRowViewer.module.css';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 import { HorizontalCell } from './HorizontalCell';
 import { HorizontalRowTitle } from './HorizontalRowTitle';
-import { CommentBar } from './CommentBar';
-import { CommentWindow } from './CommentWindow';
 import { NavPill } from './NavPill';
-import { TwoPanelView } from '../../MainView/TwoPanelView/TwoPanelView';
 
 // ── Constants ───────────────────────────────────────────────────────────
 
 const ANIM_MS = 150;
-const RENDER_NEIGHBOURS = 3; // only render chart content for cells within this range
-const PRERENDER_NEIGHBOURS = RENDER_NEIGHBOURS + 1; // pre-render one extra so content is ready before scroll lands
-const CELL_GAP = 16;
+const RENDER_NEIGHBOURS = 3;
+const PRERENDER_NEIGHBOURS = RENDER_NEIGHBOURS + 1;
 
 /** Track the last click Y so cards appear at the caller's position. */
 let lastClickY = 0.1;
@@ -58,7 +54,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const [closing, setClosing] = useState(false);
   const [commentsCollapsed, setCommentsCollapsed] = useState(false);
   const [showRowTitle, setShowRowTitle] = useState(false);
-  const [showCommentWindow, setShowCommentWindow] = useState(false);
   const [commentsPanelWidth, setCommentsPanelWidth] = useState(() => {
     try {
       const stored = localStorage.getItem('phenex_two_panel_right_width');
@@ -77,35 +72,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 
   const current = rows[currentIndex];
   const desiredTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;
-
-  // ── Outline entries from rows ──────────────────────────────────────────
-
-  const outlineEntries = useMemo(() => {
-    const entries: { name: string; level: number; rowIndex: number }[] = [];
-    const seenCategories = new Set<string>();
-    const seenSections = new Set<string>();
-    const categoryLabels: Record<string, string> = {
-      attrition: 'Attrition',
-      baseline_characteristics: 'Baseline characteristics',
-      outcomes: 'Outcomes',
-    };
-    for (const row of rows) {
-      if (!seenCategories.has(row.category)) {
-        seenCategories.add(row.category);
-        entries.push({
-          name: categoryLabels[row.category] || row.category,
-          level: 0,
-          rowIndex: row.index,
-        });
-      }
-      const sectionKey = `${row.category}::${row.section}`;
-      if (row.section && !seenSections.has(sectionKey)) {
-        seenSections.add(sectionKey);
-        entries.push({ name: row.section, level: 1, rowIndex: row.index });
-      }
-    }
-    return entries;
-  }, [rows]);
 
   // ── Scroll management ─────────────────────────────────────────────────
 
@@ -263,6 +229,8 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     };
   }, [startClose, currentIndex, rows.length, navigate, startHold, stopHold]);
 
+  // ── FlexLayout removed — outline is now in ReportViewer's left panel ──
+
   if (!current) return null;
 
   // const handleOverlayClick = useCallback(() => {
@@ -304,64 +272,36 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       )}
 
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        <TwoPanelView
-          initialSizeLeft={800}
-          minSizeLeft={400}
-          minSizeRight={200}
-          maxSizeRight={800}
-          slideoverCollapsed={false}
-          slideoverContent={
-            <div className={styles.outlinePanel}>
-              {outlineEntries.map((entry, i) => {
-                const isActive =
-                  currentIndex >= entry.rowIndex &&
-                  (i + 1 >= outlineEntries.length || currentIndex < outlineEntries[i + 1].rowIndex);
-                return (
-                  <button
-                    key={`${entry.name}-${i}`}
-                    className={`${styles.outlineItem} ${isActive ? styles.outlineItemActive : ''}`}
-                    style={{ paddingLeft: entry.level === 0 ? 8 : 20 }}
-                    onClick={() => navigate(entry.rowIndex)}
-                  >
-                    {entry.name}
-                  </button>
-                );
-              })}
-            </div>
-          }
-          leftContent={
-            <div className={styles.scroller} ref={scrollRef} style={{ height: '100%' }}>
-              {rows.map((row) => {
-                const isFocused = row.index === currentIndex;
-                const nearby = Math.abs(row.index - currentIndex) <= PRERENDER_NEIGHBOURS;
-                return (
-                  <HorizontalCell
-                    key={row.index}
-                    ref={isFocused ? focusedRef : null}
-                    row={row}
-                    rows={rows}
-                    isFocused={isFocused}
-                    nearby={nearby}
-                    desiredTop={desiredTop}
-                    cohortDataMap={cohortDataMap}
-                    finalCohortSizes={finalCohortSizes}
-                    tteCohorts={tteCohorts}
-                    table2Cohorts={table2Cohorts}
-                    onNavigate={navigate}
-                    onVerticalScroll={isFocused ? handleVerticalScroll : undefined}
-                    initialScrollTop={sharedScrollTopRef.current}
-                    commentsCollapsed={commentsCollapsed}
-                    onCommentsCollapsedChange={setCommentsCollapsed}
-                    commentsPanelWidth={commentsPanelWidth}
-                    onCommentsPanelWidthChange={setCommentsPanelWidth}
-                    studyTitle={studyTitle}
-                    studyDescription={studyDescription}
-                  />
-                );
-              })}
-            </div>
-          }
-        />
+        <div className={styles.scroller} ref={scrollRef} style={{ height: '100%' }}>
+          {rows.map((row) => {
+            const isFocused = row.index === currentIndex;
+            const nearby = Math.abs(row.index - currentIndex) <= PRERENDER_NEIGHBOURS;
+            return (
+              <HorizontalCell
+                key={row.index}
+                ref={isFocused ? focusedRef : null}
+                row={row}
+                rows={rows}
+                isFocused={isFocused}
+                nearby={nearby}
+                desiredTop={desiredTop}
+                cohortDataMap={cohortDataMap}
+                finalCohortSizes={finalCohortSizes}
+                tteCohorts={tteCohorts}
+                table2Cohorts={table2Cohorts}
+                onNavigate={navigate}
+                onVerticalScroll={isFocused ? handleVerticalScroll : undefined}
+                initialScrollTop={sharedScrollTopRef.current}
+                commentsCollapsed={commentsCollapsed}
+                onCommentsCollapsedChange={setCommentsCollapsed}
+                commentsPanelWidth={commentsPanelWidth}
+                onCommentsPanelWidthChange={setCommentsPanelWidth}
+                studyTitle={studyTitle}
+                studyDescription={studyDescription}
+              />
+            );
+          })}
+        </div>
       </div>
       <div className={styles.navPillContainer}>
         <NavPill currentIndex={currentIndex} total={rows.length} onNavigate={navigate} />
