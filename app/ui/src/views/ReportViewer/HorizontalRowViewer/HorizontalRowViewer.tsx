@@ -34,6 +34,8 @@ interface HorizontalRowViewerProps {
   studyTitle?: string;
   studyDescription?: string;
   onClose?: (finalIndex: number) => void;
+  navigateToIndex?: number;
+  onIndexChange?: (index: number) => void;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -48,6 +50,8 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   studyTitle,
   studyDescription,
   onClose,
+  navigateToIndex,
+  onIndexChange,
 }) => {
   const { isLeftPanelShown } = useThreePanelCollapse();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -69,6 +73,20 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mountY = useRef(lastClickY);
   const sharedScrollTopRef = useRef(0);
+
+  // Sync external navigation requests (e.g. from OutlinePanel)
+  const prevExternalIndex = useRef(initialIndex);
+  useEffect(() => {
+    if (navigateToIndex !== undefined && navigateToIndex !== prevExternalIndex.current) {
+      prevExternalIndex.current = navigateToIndex;
+      setCurrentIndex(navigateToIndex);
+    }
+  }, [navigateToIndex]);
+
+  // Report index changes to parent (for outline highlighting)
+  useEffect(() => {
+    onIndexChange?.(currentIndex);
+  }, [currentIndex, onIndexChange]);
 
   const current = rows[currentIndex];
   const desiredTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;

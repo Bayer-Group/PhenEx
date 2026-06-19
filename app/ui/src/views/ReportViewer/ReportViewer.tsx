@@ -347,8 +347,16 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   // ── FlexLayout model ────────────────────────────────────────────────
   const layoutModel = useMemo(() => {
     const json: IJsonModel = {
-      global: { tabEnableClose: true, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: false, tabSetEnableDrop: true, splitterSize: 4 },
+      global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: false, tabSetEnableMaximize: false, tabSetEnableDrop: false },
       borders: [
+        {
+          type: 'border',
+          location: 'left',
+          size: 300,
+          minSize: 250,
+          selected: 0,
+          children: [{ type: 'tab', name: 'Navigator', component: 'leftStacked', enableClose: false }],
+        },
         {
           type: 'border',
           location: 'right',
@@ -361,25 +369,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         type: 'row',
         children: [
           {
-            type: 'row',
-            weight: 20,
-            children: [
-              {
-                type: 'tabset',
-                weight: 50,
-                minWidth: 250,
-                enableDrop: true,
-                enableClose: true,
-                children: [
-                  { type: 'tab', name: 'Cohorts', component: 'left', enableClose: true, enableDrag: true },
-                  { type: 'tab', name: 'Outline', component: 'outline', enableClose: true, enableDrag: true },
-                ],
-              },
-            ],
-          },
-          {
             type: 'tabset',
-            weight: 80,
             enableTabStrip: false,
             enableDrop: false,
             children: [{ type: 'tab', name: 'Report', component: 'center', enableClose: false, enableDrag: false }],
@@ -390,10 +380,39 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     return Model.fromJson(json);
   }, []);
 
-  const factory = useCallback(
+  // ── Nested layout model for left border (stacked with draggable divider) ──
+  const leftPanelModel = useMemo(() => {
+    const json: IJsonModel = {
+      global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: true, tabSetEnableDrop: true },
+      borders: [],
+      layout: {
+        type: 'row',
+        children: [
+          {
+            type: 'row',
+            children: [
+              {
+                type: 'tabset',
+                weight: 50,
+                children: [{ type: 'tab', name: 'Cohort Selector', component: 'cohortSelector' }],
+              },
+              {
+                type: 'tabset',
+                weight: 50,
+                children: [{ type: 'tab', name: 'Outline', component: 'outline' }],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    return Model.fromJson(json);
+  }, []);
+
+  const leftPanelFactory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
-        case 'left':
+        case 'cohortSelector':
           return (
             <LeftPanel
               title={displayTitle}
@@ -412,12 +431,38 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               finalCohortSizes={finalCohortSizes}
             />
           );
+        case 'outline':
+          return (
+            <OutlinePanel
+              rows={sequentialRows}
+              currentIndex={viewerIndex}
+              onNavigate={setViewerIndex}
+            />
+          );
+        default:
+          return null;
+      }
+    },
+    [
+      displayTitle, groups, selections, outlineEntries, sequentialRows,
+      viewerIndex, handleReplace, handleAdd, updateSelections,
+      cohortDescriptions, reports, finalCohortSizes,
+    ],
+  );
+
+  const factory = useCallback(
+    (node: { getComponent: () => string | undefined }) => {
+      switch (node.getComponent()) {
+        case 'leftStacked':
+          return <Layout model={leftPanelModel} factory={leftPanelFactory} />;
         case 'center':
           return (
             <div className={styles.centerPanel}>
               <HorizontalRowViewer
                 rows={sequentialRows}
                 initialIndex={viewerIndex}
+                navigateToIndex={viewerIndex}
+                onIndexChange={setViewerIndex}
                 cohortDataMap={cohortDataMap}
                 finalCohortSizes={finalCohortSizes}
                 tteCohorts={tteCohorts}
@@ -429,14 +474,6 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           );
         case 'right':
           return <div className={styles.rightPanel} />;
-        case 'outline':
-          return (
-            <OutlinePanel
-              rows={sequentialRows}
-              currentIndex={viewerIndex}
-              onNavigate={setViewerIndex}
-            />
-          );
         default:
           return null;
       }
