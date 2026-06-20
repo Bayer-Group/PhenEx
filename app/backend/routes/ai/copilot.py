@@ -46,7 +46,7 @@ try:
     # Try relative imports first (for normal FastAPI operation)
     from ...database import DatabaseManager, db_manager
     from ...utils import CohortUtils
-    from .rag import query_faiss_index
+    # from .rag import query_faiss_index
 except ImportError:
     # Fallback for direct imports (for testing)
     import sys

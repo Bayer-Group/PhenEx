@@ -26,10 +26,11 @@ RAG_CACHE = os.environ.get("RAG_CACHE", "/app/data/")
 
 
 def main():
-    logger.info("🚀 Starting RAG model download process...")
-    model_cache_dirname = download_model()
-    logger.info(f"🎯 Final model directory: {model_cache_dirname}")
-    print(f"Directory name: {model_cache_dirname}")
+    pass
+    # logger.info("🚀 Starting RAG model download process...")
+    # model_cache_dirname = download_model()
+    # logger.info(f"🎯 Final model directory: {model_cache_dirname}")
+    # print(f"Directory name: {model_cache_dirname}")
 
 
 def download_model(text_model_name=RAG_MODEL_NAME, dir=RAG_CACHE) -> str:
@@ -56,22 +57,23 @@ def load_rag_model(text_model_name: str = RAG_MODEL_NAME, cache_dir: str = RAG_C
     Load RAG model, using cache if available or downloading if needed.
     Let fastembed handle all cache logic internally.
     """
-    logger.info(f"🔍 Loading RAG model: {text_model_name}")
-    logger.info(f"📂 Using cache directory: {cache_dir}")
+    # logger.info(f"🔍 Loading RAG model: {text_model_name}")
+    # logger.info(f"📂 Using cache directory: {cache_dir}")
 
-    try:
-        # Simply let fastembed handle cache detection and loading
-        # It will use cached version if available, download if not
-        embeddings_model = TextEmbedding(
-            model_name=text_model_name, cache_dir=cache_dir
-        )
-        logger.info(f"✅ Successfully loaded RAG model!")
-        logger.info(f"📊 Model details: {embeddings_model.model.model_name}")
-        return embeddings_model
+    # try:
+    #     # Simply let fastembed handle cache detection and loading
+    #     # It will use cached version if available, download if not
+    #     embeddings_model = TextEmbedding(
+    #         model_name=text_model_name, cache_dir=cache_dir
+    #     )
+    #     logger.info(f"✅ Successfully loaded RAG model!")
+    #     logger.info(f"📊 Model details: {embeddings_model.model.model_name}")
+    #     return embeddings_model
 
-    except Exception as e:
-        logger.error(f"� Failed to load RAG model: {type(e).__name__} - {e}")
-        raise
+    # except Exception as e:
+    #     logger.error(f"� Failed to load RAG model: {type(e).__name__} - {e}")
+    #     raise
+    pass
 
 
 if __name__ == "__main__":
