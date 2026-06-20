@@ -4,9 +4,14 @@
   padding: 12px 8px;
   box-sizing: border-box;
   overflow-y: auto;
-  height: 100%;
-  background-color: white !important;
-  border-radius:8px;
+  
+  /* height: calc(100% - 5px); */
+  /* background-color: white !important; */
+  /* border-radius:8px;
+  margin-top:5px; */
+  /* border: var(--border); */
+  /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.); */
+
 }
 
 .item {

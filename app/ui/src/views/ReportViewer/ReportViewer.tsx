@@ -363,10 +363,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           location: 'right',
           size: 300,
           minSize: 200,
-          children: [
-            { type: 'tab', name: 'Comments', component: 'comments', enableClose: false },
-            { type: 'tab', name: 'AI', component: 'right', enableClose: false },
-          ],
+          selected: 0,
+          children: [{ type: 'tab', name: 'Inspector', component: 'rightStacked', enableClose: false }],
         },
       ],
       layout: {
@@ -412,6 +410,54 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     };
     return Model.fromJson(json);
   }, []);
+
+  // ── Nested layout model for right border (stacked with draggable divider) ──
+  const rightPanelModel = useMemo(() => {
+    const json: IJsonModel = {
+      global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: true, tabSetEnableDrop: true },
+      borders: [],
+      layout: {
+        type: 'row',
+        children: [
+          {
+            type: 'row',
+            children: [
+              {
+                type: 'tabset',
+                weight: 50,
+                children: [{ type: 'tab', name: 'Comments', component: 'comments' }],
+              },
+              {
+                type: 'tabset',
+                weight: 50,
+                children: [{ type: 'tab', name: 'AI', component: 'ai' }],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    return Model.fromJson(json);
+  }, []);
+
+  const rightPanelFactory = useCallback(
+    (node: { getComponent: () => string | undefined }) => {
+      switch (node.getComponent()) {
+        case 'comments':
+          return (
+            <CommentsPanel
+              rows={sequentialRows}
+              currentIndex={viewerIndex}
+            />
+          );
+        case 'ai':
+          return <div className={styles.rightPanel} />;
+        default:
+          return null;
+      }
+    },
+    [sequentialRows, viewerIndex],
+  );
 
   const leftPanelFactory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
@@ -469,15 +515,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               />
             </div>
           );
-        case 'right':
-          return <div className={styles.rightPanel} />;
-        case 'comments':
-          return (
-            <CommentsPanel
-              rows={sequentialRows}
-              currentIndex={viewerIndex}
-            />
-          );
+        case 'rightStacked':
+          return <Layout model={rightPanelModel} factory={rightPanelFactory} />;
         default:
           return null;
       }

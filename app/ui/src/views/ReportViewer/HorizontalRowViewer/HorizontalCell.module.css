@@ -36,13 +36,13 @@
 .card {
   position: relative;
   padding: 0px 0px 0px 0px;
-  overflow: hidden;
+  overflow-y: auto;
   /* max-width: 1000px; */
   margin: 0 auto;
   transition: opacity 0.2s, border-color 0.2s;
   opacity: 1;
-  height: 100%;
-  background-color: white !important;
+  min-height: 100%;
+  background-color: transparent !important;
   border-radius:8px;
 }
 
