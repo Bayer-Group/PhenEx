@@ -415,19 +415,12 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         case 'cohortSelector':
           return (
             <LeftPanel
-              title={displayTitle}
               groups={groups}
               selections={selections}
-              entries={outlineEntries}
-              rows={sequentialRows}
-              activeSection={null}
-              activeRowIndex={viewerIndex}
-              onOpenRow={setViewerIndex}
               onReplace={handleReplace}
               onAdd={handleAdd}
               onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
               cohortDescriptions={cohortDescriptions}
-              reports={reports}
               finalCohortSizes={finalCohortSizes}
             />
           );

@@ -10,7 +10,7 @@
   border-radius:8px;
 }
 
-.tabRegion{
+/* .tabRegion{
   position: absolute;
   top: 0;
   left: 0;
@@ -23,10 +23,10 @@
   padding: 10px 10px;
   justify-content: flex-start;
   padding-left: 55px;
-  pointer-events: auto;
+  pointer-events: none;
   background-color: transparent !important;
   opacity: 0;
-}
+} */
 
 .tabsContainer {
   gap: 2px;
@@ -50,7 +50,7 @@
 
 .actionBarRegion {
   position: absolute;
-  top: 100px;
+  top: 10px;
   left: 0;
   z-index: 99;
   pointer-events: none;
