@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo, useState } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 import { Layout, Model, IJsonModel } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import { type CohortClassified, type KdeCurve } from '../types';
@@ -8,7 +8,7 @@ import { NumericChartFrame } from '../GraphsAndTables/RowRenderers/NumericChartF
 import { KDEChartCellRenderer } from '../GraphsAndTables/RowRenderers/KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from '../GraphsAndTables/RowRenderers/BoxPlotCellRenderer';
 import { NumericTableCellRenderer } from '../GraphsAndTables/RowRenderers/NumericTableCellRenderer';
-import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
+import { useSharedLayout } from './CellLayoutStore';
 
 interface NumericCellLayoutProps {
   row: SequentialRow;
@@ -17,13 +17,40 @@ interface NumericCellLayoutProps {
   finalCohortSizes?: Record<string, number | null>;
 }
 
-const DescriptionPanel: FC<{ row: SequentialRow }> = ({ row }) => (
-  <div style={{ padding: 16, fontFamily: '"IBMPlexSans-regular", sans-serif', fontSize: 14, color: '#333' }}>
-    <p style={{ margin: 0 }}>{row.registry?.description || 'No description available.'}</p>
-  </div>
-);
+const DEFAULT_JSON: IJsonModel = {
+  global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: false, tabSetEnableDrop: true },
+  borders: [],
+  layout: {
+    type: 'row',
+    children: [
+      { type: 'tabset', weight: 35, children: [{ type: 'tab', name: 'Coverage', component: 'coverage' }] },
+      { type: 'tabset', weight: 35, children: [{ type: 'tab', name: 'Missingness', component: 'missingness' }] },
+      { type: 'tabset', weight: 30, children: [{ type: 'tab', name: 'Summary Statistics', component: 'summary' }] },
+    ],
+  },
+};
 
-const DistributionPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeData: Record<string, Record<string, KdeCurve>> }> = ({ name, cohortData, kdeData }) => {
+const CoveragePanel: FC<{ name: string; cohortData: CohortClassified[]; finalCohortSizes?: Record<string, number | null> }> = ({ name, cohortData, finalCohortSizes }) => {
+  const { visible } = useCohortVisibility(cohortData.length);
+  const filtered = useFilteredCohortData(cohortData, visible);
+  return (
+    <div style={{ padding: 8, height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+      <NumericTableCellRenderer name={name} cohortData={filtered} finalCohortSizes={finalCohortSizes} showBar statMode="coverage" />
+    </div>
+  );
+};
+
+const MissingnessPanel: FC<{ name: string; cohortData: CohortClassified[]; finalCohortSizes?: Record<string, number | null> }> = ({ name, cohortData, finalCohortSizes }) => {
+  const { visible } = useCohortVisibility(cohortData.length);
+  const filtered = useFilteredCohortData(cohortData, visible);
+  return (
+    <div style={{ padding: 8, height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+      <NumericTableCellRenderer name={name} cohortData={filtered} finalCohortSizes={finalCohortSizes} showBar statMode="missingness" />
+    </div>
+  );
+};
+
+const SummaryPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeData: Record<string, Record<string, KdeCurve>> }> = ({ name, cohortData, kdeData }) => {
   const { visible } = useCohortVisibility(cohortData.length);
   const filtered = useFilteredCohortData(cohortData, visible);
 
@@ -31,10 +58,10 @@ const DistributionPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeD
     let lo = Infinity;
     let hi = -Infinity;
     for (const cd of cohortData) {
-      const row = cd.data.rows.find((r) => r.Name === name);
-      if (!row) continue;
-      if (row.Min != null && row.Min < lo) lo = row.Min;
-      if (row.Max != null && row.Max > hi) hi = row.Max;
+      const r = cd.data.rows.find((r) => r.Name === name);
+      if (!r) continue;
+      if (r.Min != null && r.Min < lo) lo = r.Min;
+      if (r.Max != null && r.Max > hi) hi = r.Max;
     }
     if (!isFinite(lo)) { lo = 0; hi = 1; }
     return { xMin: lo, xMax: hi };
@@ -43,89 +70,30 @@ const DistributionPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeD
   return (
     <div style={{ padding: 8, height: '100%', boxSizing: 'border-box' }}>
       <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
-        <KDEChartCellRenderer
-          name={name}
-          cohortData={filtered}
-          kdeData={kdeData}
-          xMin={xMin}
-          xMax={xMax}
-          showTicks={false}
-        />
-        <BoxPlotCellRenderer
-          name={name}
-          cohortData={filtered}
-          xMin={xMin}
-          xMax={xMax}
-          showLabels
-        />
+        <KDEChartCellRenderer name={name} cohortData={filtered} kdeData={kdeData} xMin={xMin} xMax={xMax} showTicks={false} />
+        <BoxPlotCellRenderer name={name} cohortData={filtered} xMin={xMin} xMax={xMax} showLabels />
       </NumericChartFrame>
     </div>
   );
 };
 
-const MissingnessPanel: FC<{ name: string; cohortData: CohortClassified[]; finalCohortSizes?: Record<string, number | null> }> = ({ name, cohortData, finalCohortSizes }) => {
-  const { visible } = useCohortVisibility(cohortData.length);
-  const filtered = useFilteredCohortData(cohortData, visible);
-  const [statMode, setStatMode] = useState<'coverage' | 'missingness'>('coverage');
-
-  return (
-    <div style={{ padding: 8, height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
-      <Tabs
-        tabs={['Coverage', 'Missingness']}
-        active_tab_index={statMode === 'coverage' ? 0 : 1}
-        onTabChange={(i) => setStatMode(i === 0 ? 'coverage' : 'missingness')}
-      />
-      <NumericTableCellRenderer name={name} cohortData={filtered} finalCohortSizes={finalCohortSizes} showBar statMode={statMode} />
-    </div>
-  );
-};
-
 export const NumericCellLayout: FC<NumericCellLayoutProps> = ({ row, cohortData, kdeData, finalCohortSizes }) => {
-  const model = useMemo(() => {
-    const json: IJsonModel = {
-      global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: false, tabSetEnableMaximize: false, tabSetEnableDrop: false },
-      borders: [],
-      layout: {
-        type: 'row',
-        children: [
-          {
-            type: 'row',
-            children: [
-              {
-                type: 'tabset',
-                weight: 20,
-                enableTabStrip: false,
-                children: [{ type: 'tab', name: 'Description', component: 'description' }],
-              },
-              {
-                type: 'tabset',
-                weight: 50,
-                enableTabStrip: false,
-                children: [{ type: 'tab', name: 'Distribution', component: 'distribution' }],
-              },
-              {
-                type: 'tabset',
-                weight: 30,
-                enableTabStrip: false,
-                children: [{ type: 'tab', name: 'Missingness', component: 'missingness' }],
-              },
-            ],
-          },
-        ],
-      },
-    };
-    return Model.fromJson(json);
-  }, []);
+  const [layoutJson, setLayoutJson] = useSharedLayout('numeric', DEFAULT_JSON);
+  const model = useMemo(() => Model.fromJson(layoutJson), [layoutJson]);
+
+  const handleModelChange = useCallback(() => {
+    setLayoutJson(model.toJson() as IJsonModel);
+  }, [model, setLayoutJson]);
 
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
-        case 'description':
-          return <DescriptionPanel row={row} />;
-        case 'distribution':
-          return <DistributionPanel name={row.name} cohortData={cohortData} kdeData={kdeData} />;
+        case 'coverage':
+          return <CoveragePanel name={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
         case 'missingness':
           return <MissingnessPanel name={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
+        case 'summary':
+          return <SummaryPanel name={row.name} cohortData={cohortData} kdeData={kdeData} />;
         default:
           return null;
       }
@@ -134,8 +102,8 @@ export const NumericCellLayout: FC<NumericCellLayoutProps> = ({ row, cohortData,
   );
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <Layout model={model} factory={factory} />
+    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0 }}>
+      <Layout model={model} factory={factory} onModelChange={handleModelChange} />
     </div>
   );
 };

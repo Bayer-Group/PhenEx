@@ -8,6 +8,7 @@ import { CommentsPanel } from './CommentsPanel';
 import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { HorizontalRowTitle } from './HorizontalRowViewer/HorizontalRowTitle';
+import { CellLayoutStoreProvider } from './CellLayouts';
 import { type OutlineEntry } from './OutlineBar';
 import {
   classifyRows,
@@ -536,6 +537,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   const currentRow = sequentialRows[viewerIndex];
 
   return (
+    <CellLayoutStoreProvider>
     <div className={styles.container}>
  <div className={styles.titleGroup}>
           <div className={`${styles.titleBar} ${showRowTitle ? styles.titleBarScrolled : ''}`}>
@@ -552,5 +554,6 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         <Layout model={layoutModel} factory={factory} />
       </div>
     </div>
+    </CellLayoutStoreProvider>
   );
 };

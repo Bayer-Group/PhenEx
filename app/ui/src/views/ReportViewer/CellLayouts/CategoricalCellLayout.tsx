@@ -5,12 +5,25 @@ import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
 import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
+import { useSharedLayout } from './CellLayoutStore';
 
 interface CategoricalCellLayoutProps {
   row: SequentialRow;
   cohortData: CohortClassified[];
   finalCohortSizes?: Record<string, number | null>;
 }
+
+const DEFAULT_JSON: IJsonModel = {
+  global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: false, tabSetEnableDrop: true },
+  borders: [],
+  layout: {
+    type: 'row',
+    children: [
+      { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Description', component: 'description' }] },
+      { type: 'tabset', weight: 75, children: [{ type: 'tab', name: 'Chart', component: 'chart' }] },
+    ],
+  },
+};
 
 const DescriptionPanel: FC<{ row: SequentialRow }> = ({ row }) => (
   <div style={{ padding: 16, fontFamily: '"IBMPlexSans-regular", sans-serif', fontSize: 14, color: '#333' }}>
@@ -35,35 +48,12 @@ const ChartPanel: FC<{ baseName: string; cohortData: CohortClassified[]; finalCo
 };
 
 export const CategoricalCellLayout: FC<CategoricalCellLayoutProps> = ({ row, cohortData, finalCohortSizes }) => {
-  const model = useMemo(() => {
-    const json: IJsonModel = {
-      global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: false, tabSetEnableMaximize: false, tabSetEnableDrop: false },
-      borders: [],
-      layout: {
-        type: 'row',
-        children: [
-          {
-            type: 'row',
-            children: [
-              {
-                type: 'tabset',
-                weight: 25,
-                enableTabStrip: false,
-                children: [{ type: 'tab', name: 'Description', component: 'description' }],
-              },
-              {
-                type: 'tabset',
-                weight: 75,
-                enableTabStrip: false,
-                children: [{ type: 'tab', name: 'Chart', component: 'chart' }],
-              },
-            ],
-          },
-        ],
-      },
-    };
-    return Model.fromJson(json);
-  }, []);
+  const [layoutJson, setLayoutJson] = useSharedLayout('categorical', DEFAULT_JSON);
+  const model = useMemo(() => Model.fromJson(layoutJson), [layoutJson]);
+
+  const handleModelChange = useCallback(() => {
+    setLayoutJson(model.toJson() as IJsonModel);
+  }, [model, setLayoutJson]);
 
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
@@ -81,7 +71,7 @@ export const CategoricalCellLayout: FC<CategoricalCellLayoutProps> = ({ row, coh
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0 }}>
-      <Layout model={model} factory={factory} />
+      <Layout model={model} factory={factory} onModelChange={handleModelChange} />
     </div>
   );
 };
