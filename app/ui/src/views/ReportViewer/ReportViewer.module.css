@@ -117,7 +117,6 @@
 
 /* Right border panel */
 .page :global(.flexlayout__border_right) {
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
   z-index: 1;
   border-left: none;
   background-color: var(--background_color_dark);
@@ -125,9 +124,7 @@
 
 /* Each tabset inside the right panel renders as a card */
 .page :global(.flexlayout__border_right) :global(.flexlayout__tabset) {
-  border-radius: 8px;
   background: white !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   margin: 4px;
 }
@@ -171,6 +168,7 @@
 /* Tab bar gutter: dark background, no border-bottom */
 :global(.flexlayout__tabset_tabbar_outer) {
   /* background-color: var(--background_color_dark) !important; */
+  background-color: white !important;
   border-bottom: none;
 }
 :global(.flexlayout__tabset_tabbar_outer_top) {

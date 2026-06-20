@@ -117,14 +117,14 @@
 
 .scrollBarTrack{
   background-color: transparent;
-  border-radius: 0px;
+  /* border-radius: 0px; */
 
 }
 
 .scrollBarThumb{
   background-color: rgba(101, 96, 96, 0.2) !important;
-  border-radius: 0px;
-  width:16px;
+  /* border-radius: 0px; */
+  width:12px;
 }
 
 .scrollBarTrack:hover {

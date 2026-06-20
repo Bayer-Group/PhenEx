@@ -184,9 +184,9 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
           <SimpleCustomScrollbar
             targetRef={verticalScrollRef}
             orientation="vertical"
-            marginTop={100}
-            marginBottom={0}
-            marginToEnd={0}
+            marginTop={30}
+            marginBottom={10}
+            marginToEnd={10}
             classNameThumb={styles.scrollBarThumb}
             classNameTrack={styles.scrollBarTrack}
             showOnHover={true}
