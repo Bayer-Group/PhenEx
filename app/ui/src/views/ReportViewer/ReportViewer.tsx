@@ -358,7 +358,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           size: 300,
           minSize: 250,
           selected: 0,
-          children: [{ type: 'tab', name: 'Navigator', component: 'leftStacked', enableClose: false }],
+          children: [{ type: 'tab', name: 'navigate', component: 'leftStacked', enableClose: false }],
         },
         {
           type: 'border',
@@ -366,7 +366,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           size: 300,
           minSize: 200,
           selected: 0,
-          children: [{ type: 'tab', name: 'Inspector', component: 'rightStacked', enableClose: false }],
+          children: [{ type: 'tab', name: 'Interact', component: 'rightStacked', enableClose: false }],
         },
       ],
       layout: {

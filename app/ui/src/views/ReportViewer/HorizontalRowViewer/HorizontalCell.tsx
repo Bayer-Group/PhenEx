@@ -1,19 +1,13 @@
-import { FC, forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { type CohortClassified, type KdeCurve } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
-import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
-import { BarChartCellRenderer } from '../GraphsAndTables/RowRenderers/BarChartCellRenderer';
-import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
-import { NumericContent } from '../GraphsAndTables/ModalRenderers/NumericContent';
 import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEventContent';
 import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { StudyInfoCellRenderer } from '../GraphsAndTables/RowRenderers/StudyInfoCellRenderer';
+import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../CellLayouts';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
-import booleanStyles from '../GraphsAndTables/ModalRenderers/BooleanRowModal.module.css';
-import categoricalStyles from '../GraphsAndTables/ModalRenderers/CategoricalRowModal.module.css';
 import styles from './HorizontalCell.module.css';
 
 // ── Props ───────────────────────────────────────────────────────────────
@@ -34,92 +28,11 @@ export interface HorizontalCellProps {
   studyDescription?: string;
 }
 
-// ── CardInfoSection ─────────────────────────────────────────────────────
-
-const CardInfoSection: FC<{ row: SequentialRow }> = () => {
-  return <div className={styles.cardInfoSection} />;
-};
-
-// ── RowContent dispatcher ───────────────────────────────────────────────
-
-const RowContent: FC<{
-  row: SequentialRow;
-  cohortData: CohortClassified[];
-  kdeData: Record<string, Record<string, KdeCurve>>;
-  finalCohortSizes?: Record<string, number | null>;
-  tteCohorts?: TimeToEventCohort[];
-  table2Cohorts?: Table2Cohort[];
-  availableTteOutcomes?: string[];
-  showCohortInfo?: boolean;
-  studyTitle?: string;
-  studyDescription?: string;
-}> = ({ row, cohortData, kdeData, finalCohortSizes, tteCohorts, table2Cohorts, availableTteOutcomes, showCohortInfo = true, studyTitle, studyDescription }) => {
-  switch (row.rowType) {
-    case 'boolean':
-      return <BooleanContent name={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} showCohortInfo={showCohortInfo} />;
-    case 'categorical':
-      return <CategoricalContent baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
-    case 'numeric':
-      return <NumericContent name={row.name} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} />;
-    case 'time_to_event':
-      return <TimeToEventContent outcome={row.name} cohorts={tteCohorts ?? []} availableOutcomes={availableTteOutcomes} />;
-    case 'table2':
-      return <Table2Content outcome={row.name} cohorts={table2Cohorts ?? []} />;
-    case 'study_info':
-      return <StudyInfoContent title={studyTitle ?? ''} description={studyDescription} />;
-    default:
-      return <div style={{ padding: 20, color: '#999' }}>No detail view for {row.rowType} rows yet.</div>;
-  }
-};
-
-// ── StudyInfoContent ────────────────────────────────────────────────────
-
-const StudyInfoContent: FC<{ title: string; description?: string }> = ({ title, description }) => {
-  return <StudyInfoCellRenderer title={title} description={description} />;
-};
-
-// ── BooleanContent ──────────────────────────────────────────────────────
-
-const BooleanContent: FC<{ name: string; cohortData: CohortClassified[]; finalCohortSizes?: Record<string, number | null>; showCohortInfo?: boolean }> = ({ name, cohortData, finalCohortSizes, showCohortInfo = true }) => {
-  const { visible } = useCohortVisibility(cohortData.length);
-  const filtered = useFilteredCohortData(cohortData, visible);
-
-  return (
-    <div className={booleanStyles.container}>
-      <BarChartCellRenderer
-        data={{ name, _meta: { cohortData: filtered, finalCohortSizes } }}
-        isModal
-        mode={showCohortInfo ? 'presentation' : 'compact'}
-        pctDecimals={1}
-      />
-    </div>
-  );
-};
-
-// ── CategoricalContent ──────────────────────────────────────────────────
-
-const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[]; finalCohortSizes?: Record<string, number | null> }> = ({ baseName, cohortData, finalCohortSizes }) => {
-  const { visible } = useCohortVisibility(cohortData.length);
-  const filtered = useFilteredCohortData(cohortData, visible);
-
-  return (
-    <div className={categoricalStyles.container}>
-      <CategoricalBarChartCellRenderer
-        baseName={baseName}
-        cohortData={filtered}
-        finalCohortSizes={finalCohortSizes}
-        orientation="vertical"
-      />
-    </div>
-  );
-};
-
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
   ({ row, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, studyTitle = '', studyDescription }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
-    const { isLeftPanelShown } = useThreePanelCollapse();
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const [titleHidden, setTitleHidden] = useState(false);
     const initialScrollTopRef = useRef(initialScrollTop ?? 0);
@@ -139,12 +52,14 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
       handler();
       return () => el.removeEventListener('scroll', handler);
     }, [isFocused, onVerticalScroll]);
+
     const availableTteOutcomes = useMemo(
       () => rows
         .filter((c) => c.reporter === row.reporter && c.rowType === 'time_to_event')
         .map((c) => c.name),
       [rows, row.reporter],
     );
+
     const kdeData = useMemo(() => {
       const result: Record<string, Record<string, KdeCurve>> = {};
       for (const cd of cohortData) {
@@ -153,29 +68,39 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
       return result;
     }, [cohortData]);
 
-    return (
-      <div
-        ref={ref}
-        className={styles.cell}
-      >
+    const renderContent = () => {
+      if (!nearby) return null;
+      switch (row.rowType) {
+        case 'boolean':
+          return <BooleanCellLayout row={row} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
+        case 'categorical':
+          return <CategoricalCellLayout row={row} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
+        case 'numeric':
+          return <NumericCellLayout row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} />;
+        case 'time_to_event':
+          return <TimeToEventContent outcome={row.name} cohorts={tteCohorts ?? []} availableOutcomes={availableTteOutcomes} />;
+        case 'table2':
+          return <Table2Content outcome={row.name} cohorts={table2Cohorts ?? []} />;
+        case 'study_info':
+          return <StudyInfoCellRenderer title={studyTitle} description={studyDescription} />;
+        default:
+          return null;
+      }
+    };
 
+    return (
+      <div ref={ref} className={styles.cell}>
         <div className={styles.cardColumnInner}>
           <div ref={verticalScrollRef} className={styles.verticalWrapper}>
-
             <div
               className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
               onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(row.index); }}
             >
-              <div className={styles.cardBody}>
-                <div className={styles.contentCard}>
-                  <div className={styles.cardTitle} style={{ opacity: titleHidden ? 0 : 1 }}>
-                    {row.registry?.display_name || row.name}
-                  </div>
-                  <CardInfoSection row={row} />
-                  <div className={styles.cardContent}>
-                    {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo studyTitle={studyTitle} studyDescription={studyDescription} /> : null}
-                  </div>
-                </div>
+              <div className={styles.cardTitle} style={{ opacity: titleHidden ? 0 : 1 }}>
+                {row.registry?.display_name || row.name}
+              </div>
+              <div className={styles.cardContent}>
+                {renderContent()}
               </div>
             </div>
           </div>
