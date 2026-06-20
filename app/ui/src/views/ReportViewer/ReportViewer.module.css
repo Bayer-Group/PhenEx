@@ -123,13 +123,18 @@
 
 /* Nested left-panel splitters */
 :global(.flexlayout__splitter) {
-  background-color: var(--background_color_dark);
+  background-color: var(--background_color_dark);;
+  /* background-color: white; */
+  /* border-right: 1px solid var(--line-color); */
+  /* box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1); */
+
+
 }
 :global(.flexlayout__splitter:hover) {
-  background-color: darkred;
+  background-color: gray;
 }
 :global(.flexlayout__splitter_drag) {
-  background-color: darkred;
+  background-color: gray;
   z-index: 1000;
 }
 

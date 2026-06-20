@@ -4,6 +4,7 @@ import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
 import { LeftPanel } from './LeftPanel';
 import { OutlinePanel } from './OutlinePanel';
+import { CommentsPanel } from './CommentsPanel';
 import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { type OutlineEntry } from './OutlineBar';
@@ -362,7 +363,10 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           location: 'right',
           size: 300,
           minSize: 200,
-          children: [{ type: 'tab', name: 'AI', component: 'right', enableClose: false }],
+          children: [
+            { type: 'tab', name: 'Comments', component: 'comments', enableClose: false },
+            { type: 'tab', name: 'AI', component: 'right', enableClose: false },
+          ],
         },
       ],
       layout: {
@@ -467,6 +471,13 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           );
         case 'right':
           return <div className={styles.rightPanel} />;
+        case 'comments':
+          return (
+            <CommentsPanel
+              rows={sequentialRows}
+              currentIndex={viewerIndex}
+            />
+          );
         default:
           return null;
       }

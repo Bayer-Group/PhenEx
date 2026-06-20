@@ -56,15 +56,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const { isLeftPanelShown } = useThreePanelCollapse();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [closing, setClosing] = useState(false);
-  const [commentsCollapsed, setCommentsCollapsed] = useState(false);
   const [showRowTitle, setShowRowTitle] = useState(false);
-  const [commentsPanelWidth, setCommentsPanelWidth] = useState(() => {
-    try {
-      const stored = localStorage.getItem('phenex_two_panel_right_width');
-      if (stored) return parseInt(stored, 10) || 300;
-    } catch { /* ignore */ }
-    return 300;
-  });
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
@@ -310,10 +302,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 onNavigate={navigate}
                 onVerticalScroll={isFocused ? handleVerticalScroll : undefined}
                 initialScrollTop={sharedScrollTopRef.current}
-                commentsCollapsed={commentsCollapsed}
-                onCommentsCollapsedChange={setCommentsCollapsed}
-                commentsPanelWidth={commentsPanelWidth}
-                onCommentsPanelWidthChange={setCommentsPanelWidth}
                 studyTitle={studyTitle}
                 studyDescription={studyDescription}
               />

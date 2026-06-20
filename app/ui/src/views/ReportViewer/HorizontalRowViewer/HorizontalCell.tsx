@@ -1,4 +1,4 @@
-import { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FC, forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { type CohortClassified, type KdeCurve } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
@@ -9,10 +9,7 @@ import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEven
 import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { StudyInfoCellRenderer } from '../GraphsAndTables/RowRenderers/StudyInfoCellRenderer';
-import { CommentCard } from './CommentCard';
 
-import { Layout, Model, IJsonModel } from 'flexlayout-react';
-import 'flexlayout-react/style/light.css';
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 import booleanStyles from '../GraphsAndTables/ModalRenderers/BooleanRowModal.module.css';
@@ -34,10 +31,6 @@ export interface HorizontalCellProps {
   onNavigate: (index: number) => void;
   onVerticalScroll?: (scrollTop: number, threshold: number) => void;
   initialScrollTop?: number;
-  commentsCollapsed?: boolean;
-  onCommentsCollapsedChange?: (collapsed: boolean) => void;
-  commentsPanelWidth: number;
-  onCommentsPanelWidthChange: (width: number) => void;
   studyTitle?: string;
   studyDescription?: string;
 }
@@ -125,7 +118,7 @@ const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[];
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, commentsPanelWidth, studyTitle = '', studyDescription }, ref) => {
+  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, studyTitle = '', studyDescription }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const { isLeftPanelShown } = useThreePanelCollapse();
     const verticalScrollRef = useRef<HTMLDivElement>(null);
@@ -161,71 +154,6 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
       return result;
     }, [cohortData]);
 
-    const comments = useMemo(() => (row.registry?.comments ?? []).filter((c) => c.text), [row.registry]);
-
-    const cardLayoutModel = useMemo(() => {
-      const json: IJsonModel = {
-        global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: false, tabSetEnableMaximize: false, tabSetEnableDrop: false },
-        borders: [
-          {
-            type: 'border',
-            location: 'right',
-            size: commentsPanelWidth,
-            minSize: 300,
-            children: [{ type: 'tab', name: 'Comments', component: 'comments', enableClose: false }],
-          },
-        ],
-        layout: {
-          type: 'row',
-          children: [
-            {
-              type: 'tabset',
-              weight: 100,
-              enableTabStrip: false,
-              children: [{ type: 'tab', name: 'Content', component: 'main' }],
-            },
-          ],
-        },
-      };
-      return Model.fromJson(json);
-    }, [commentsPanelWidth]);
-
-    const mainContent = (
-      <div className={styles.cardBody}>
-        <div className={styles.contentCard}>
-          <div className={styles.cardTitle} style={{ opacity: titleHidden ? 0 : 1 }}>
-            {row.registry?.display_name || row.name}
-          </div>
-          <CardInfoSection row={row} />
-          <div className={styles.cardContent}>
-            {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo studyTitle={studyTitle} studyDescription={studyDescription} /> : null}
-          </div>
-        </div>
-      </div>
-    );
-
-    const commentsContent = (
-      <div className={styles.inlineComments}>
-        {comments.map((comment, i) => (
-          <CommentCard key={i} comment={comment} />
-        ))}
-      </div>
-    );
-
-    const cardFactory = useCallback(
-      (node: { getComponent: () => string | undefined }) => {
-        switch (node.getComponent()) {
-          case 'main':
-            return mainContent;
-          case 'comments':
-            return commentsContent;
-          default:
-            return null;
-        }
-      },
-      [mainContent, commentsContent],
-    );
-
     return (
       <div
         ref={ref}
@@ -240,8 +168,16 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
               className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
               onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(row.index); }}
             >
-              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-                <Layout model={cardLayoutModel} factory={cardFactory} />
+              <div className={styles.cardBody}>
+                <div className={styles.contentCard}>
+                  <div className={styles.cardTitle} style={{ opacity: titleHidden ? 0 : 1 }}>
+                    {row.registry?.display_name || row.name}
+                  </div>
+                  <CardInfoSection row={row} />
+                  <div className={styles.cardContent}>
+                    {nearby ? <RowContent row={row} cohortData={cohortData} kdeData={kdeData} finalCohortSizes={finalCohortSizes} tteCohorts={tteCohorts} table2Cohorts={table2Cohorts} availableTteOutcomes={availableTteOutcomes} showCohortInfo studyTitle={studyTitle} studyDescription={studyDescription} /> : null}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
