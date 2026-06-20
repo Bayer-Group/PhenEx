@@ -27,8 +27,6 @@ export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs, on
   const modalRef = useRef<HTMLDivElement>(null);
   const [modalH, setModalH] = useState(400);
 
-  const desiredTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;
-
   useEffect(() => {
     const el = modalRef.current;
     if (!el) return;
@@ -75,7 +73,6 @@ export const RowModal: FC<RowModalProps> = ({ children, onClose, breadcrumbs, on
         <div
           ref={modalRef}
           className={styles.modal}
-          style={{ '--desired-top': desiredTop, '--modal-h': `${modalH}px` } as React.CSSProperties}
         >
           {bcItems.length > 0 && (
             <SmartBreadcrumbs

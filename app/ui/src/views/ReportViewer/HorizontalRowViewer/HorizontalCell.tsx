@@ -23,7 +23,6 @@ export interface HorizontalCellProps {
   rows: SequentialRow[];
   isFocused: boolean;
   nearby: boolean;
-  desiredTop: string;
   cohortDataMap: Record<string, CohortClassified[]>;
   finalCohortSizes?: Record<string, number | null>;
   tteCohorts?: TimeToEventCohort[];
@@ -118,7 +117,7 @@ const CategoricalContent: FC<{ baseName: string; cohortData: CohortClassified[];
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ row, rows, isFocused, nearby, desiredTop, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, studyTitle = '', studyDescription }, ref) => {
+  ({ row, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, studyTitle = '', studyDescription }, ref) => {
     const cohortData = cohortDataMap[row.reporter] ?? [];
     const { isLeftPanelShown } = useThreePanelCollapse();
     const verticalScrollRef = useRef<HTMLDivElement>(null);
@@ -158,7 +157,6 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
       <div
         ref={ref}
         className={styles.cell}
-        style={{ '--desired-top': desiredTop, paddingLeft: isLeftPanelShown ? undefined : 100 } as React.CSSProperties}
       >
 
         <div className={styles.cardColumnInner}>

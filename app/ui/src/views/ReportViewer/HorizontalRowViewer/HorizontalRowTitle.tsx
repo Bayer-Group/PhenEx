@@ -19,7 +19,6 @@ const CAT_KEYS = ['attrition', 'baseline_characteristics', 'outcomes'] as const;
 interface HorizontalRowTitleProps {
   rows: SequentialRow[];
   currentIndex: number;
-  desiredTop: string;
   studyTitle?: string;
   onNavigate: (index: number) => void;
 }
@@ -151,7 +150,7 @@ const CrumbMenu: FC<CrumbMenuProps> = ({
 /* ── Main component ──────────────────────────────────────────────────── */
 
 export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
-  rows, currentIndex, desiredTop, studyTitle = 'Loading study...', onNavigate,
+  rows, currentIndex, studyTitle = 'Loading study...', onNavigate,
 }) => {
   const current = rows[currentIndex];
   if (!current) return null;
@@ -197,7 +196,6 @@ export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
   return (
     <div
       className={styles.container}
-    //   style={{ paddingTop: desiredTop }}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Level 1: Study name — menu shows categories */}

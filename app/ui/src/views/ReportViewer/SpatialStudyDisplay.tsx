@@ -237,7 +237,6 @@ export const SpatialStudyDisplay: FC<SpatialStudyDisplayProps> = ({
         <HorizontalRowTitle
           rows={sequentialRows}
           currentIndex={activeTitleIndex}
-          desiredTop="0"
           studyTitle={title}
           onNavigate={onOpenRow}
         />

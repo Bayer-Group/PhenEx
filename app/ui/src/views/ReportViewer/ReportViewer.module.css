@@ -1,7 +1,7 @@
 .page {
   position: relative;
-  margin-top:20px;
-  height: calc(100vh - 35px);
+  margin-top:50px;
+  height: calc(100vh - 50px);
   width: 100vw;
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
@@ -98,6 +98,64 @@
 .rightPanel {
   height: 100%;
   overflow: hidden;
+}
+
+/* ── Title bar (breadcrumb navigation) ───────────────────────────────── */
+.titleGroup {
+  position: absolute;
+  top: 5px;
+  left: -0px;
+  right: 12px;
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.titleGroup > * {
+  pointer-events: auto;
+}
+
+.titleBar {
+  padding: 5px 10px;
+  margin-left: 40px;
+  pointer-events: auto;
+  background-color: transparent;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  transition: background-color 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.titleBarScrolled {
+  background-color: white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  border: var(--border);
+}
+
+.rowTitleLabel {
+  position: absolute;
+  top: 60px;
+  left: 22px;
+  z-index: 10;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: black;
+  font-size: var(--font_size_pagetitle, 18px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0px 10px;
+  pointer-events: auto;
+  background-color: white;
+  border: var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
 }
 
 /* ── FlexLayout styling ──────────────────────────────────────────────── */

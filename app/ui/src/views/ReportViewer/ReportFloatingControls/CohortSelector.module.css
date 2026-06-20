@@ -5,10 +5,8 @@
   align-items: stretch;
   gap: 20px;
   width: 100%;
-
-  padding-top: 0px;
   position: relative;
-  padding-top:10px;
+  padding-top:50px;
 }
 
 .topGradient {

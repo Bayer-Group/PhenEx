@@ -198,20 +198,6 @@
   overflow: hidden;
 }
 
-/* Breadcrumbs sit above the card */
-.breadcrumbs {
-  margin-bottom: 6px;
-}
-
-.crumb {
-  color: black;
-  font-size: var(--font_size_breadcrumb, 11px);
-}
-
-.crumbLast {
-  display: none;
-}
-
 /* Horizontal layout: card on the left, comments on the right */
 .cellInner {
   flex: 1;

@@ -20,7 +20,7 @@
   background: none;
   border: none;
   padding: 1px 6px;
-  font-size: var(--font_size_breadcrumb, 11px);
+  font-size: var(--font_size_phenotypename, 11px);
   color: black;
   cursor: default;
   text-align: left;
@@ -44,22 +44,23 @@
 
 /* Level: study name */
 .crumb_study {
-  font-size: var(--font_size_infotext, 14px);
+  font-size: var(--font_size_phenotypename, 14px);
   color: black;
+  font-family: "IBMPlexSans-bold", sans-serif;
+
   cursor: pointer;
 }
 
 /* Level: category (Baseline Characteristics, Outcomes, etc.) */
 .crumb_category {
-  font-size: var(--font_size_infotext, 14px);
+  font-size: var(--font_size_phenotypename, 14px);
   color: black;
   cursor: pointer;
 }
 
 /* Level: section (Demographics, etc.) */
 .crumb_section {
-  font-size: var(--font_size_infotext, 14px);
-  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: var(--font_size_phenotypename, 14px);
   color: black;
   cursor: pointer;
   padding: 1px 6px;

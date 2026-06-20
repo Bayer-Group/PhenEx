@@ -5,7 +5,6 @@ import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/Ou
 import styles from './HorizontalRowViewer.module.css';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 import { HorizontalCell } from './HorizontalCell';
-import { HorizontalRowTitle } from './HorizontalRowTitle';
 import { NavPill } from './NavPill';
 
 // ── Constants ───────────────────────────────────────────────────────────
@@ -36,6 +35,7 @@ interface HorizontalRowViewerProps {
   onClose?: (finalIndex: number) => void;
   navigateToIndex?: number;
   onIndexChange?: (index: number) => void;
+  onScrolledPastTitle?: (scrolled: boolean) => void;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -52,11 +52,11 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   onClose,
   navigateToIndex,
   onIndexChange,
+  onScrolledPastTitle,
 }) => {
   const { isLeftPanelShown } = useThreePanelCollapse();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [closing, setClosing] = useState(false);
-  const [showRowTitle, setShowRowTitle] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedRef = useRef<HTMLDivElement>(null);
   const didInitialScroll = useRef(false);
@@ -81,7 +81,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   }, [currentIndex, onIndexChange]);
 
   const current = rows[currentIndex];
-  const desiredTop = `${Math.min(Math.round(mountY.current * 60), 40)}vh`;
 
   // ── Scroll management ─────────────────────────────────────────────────
 
@@ -196,9 +195,9 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   }, []);
 
   const handleVerticalScroll = useCallback((scrollTop: number, threshold: number) => {
-    setShowRowTitle(scrollTop > threshold);
+    onScrolledPastTitle?.(scrollTop > threshold);
     sharedScrollTopRef.current = scrollTop;
-  }, []);
+  }, [onScrolledPastTitle]);
 
   const startClose = useCallback(() => {
     if (!onClose || closing) return;
@@ -257,30 +256,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     >
       <div className={styles.topGradient} />
 
-      <div className={styles.titleGroup} style={{ marginLeft: isLeftPanelShown ? undefined : 50 }} onClick={(e) => e.stopPropagation()}>
-        {onClose && (
-          <button className={styles.backButton} onClick={(e) => { e.stopPropagation(); startClose(); }} title="Back">
-            <svg width="20" height="22" viewBox="0 0 25 28" fill="none">
-              <path d="M17 25L10.34772 14.0494C10.15571 13.8507 10.16118 13.534 10.35992 13.3422L17 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </button>
-        )}
-        <div className={`${styles.titleBar} ${showRowTitle ? styles.titleBarScrolled : ''}`}>
-          <HorizontalRowTitle
-            rows={rows}
-            currentIndex={currentIndex}
-            desiredTop={desiredTop}
-            studyTitle={studyTitle}
-            onNavigate={navigate}
-          />
-        </div>
-      </div>
-      {showRowTitle && (
-        <div className={styles.rowTitleLabel} style={{ marginLeft: isLeftPanelShown ? 22 : 62 }} onClick={(e) => e.stopPropagation()}>
-          {current.registry?.display_name || current.name}
-        </div>
-      )}
-
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <div className={styles.scroller} ref={scrollRef} style={{ height: '100%' }}>
           {rows.map((row) => {
@@ -294,7 +269,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 rows={rows}
                 isFocused={isFocused}
                 nearby={nearby}
-                desiredTop={desiredTop}
                 cohortDataMap={cohortDataMap}
                 finalCohortSizes={finalCohortSizes}
                 tteCohorts={tteCohorts}

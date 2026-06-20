@@ -13,7 +13,6 @@
   min-width: 100%;
   overflow: hidden;
   transition: opacity 0.2s;
-  background-color: transparent !important;
 }
 
 .verticalWrapper {
@@ -51,45 +50,22 @@
 .cardBody {
   flex: 1;
   min-width: 0;
-  margin-top:70px;
-  min-height: calc(100vh - 72px);
 }
 
 .contentCard {
-  padding: 20px 30px;
+  padding: 0px 30px;
   border-radius: 0px 10px 10px 0px;
-  /* min-height: calc(100vh - 10000px); */
-  background-color: transparent !important;
   margin-right:25px;
-  /* border: var(--border); */
   border-left:none;
-margin-bottom: 200px;
+  margin-bottom: 200px;
 }
-
-.inlineComments {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  overflow-y: auto;
-  scrollbar-width: none;
-  padding: 70px 0px 100px 20px;
-  font-family: "IBMPlexSans-regular", sans-serif;
-  height: 100%;
-  box-sizing: border-box;
-  background-color: var(--background-color) !important;
-
-}
-
-.inlineComments::-webkit-scrollbar {
-  display: none;
-}
-
 
 .cardTitle {
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;
   font-size: var(--font_size_pagetitle, 18px);
   margin-bottom: 0px;
+  margin-top:10px;
 }
 
 .breadcrumbs {

@@ -7,6 +7,7 @@ import { OutlinePanel } from './OutlinePanel';
 import { CommentsPanel } from './CommentsPanel';
 import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
+import { HorizontalRowTitle } from './HorizontalRowViewer/HorizontalRowTitle';
 import { type OutlineEntry } from './OutlineBar';
 import {
   classifyRows,
@@ -252,6 +253,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
 
   // ── HorizontalRowViewer state ─────────────────────────────────────────
   const [viewerIndex, setViewerIndex] = useState(0);
+  const [showRowTitle, setShowRowTitle] = useState(false);
 
   // ── Table2 + TimeToEvent ──────────────────────────────────────────────
   const table2Cohorts: Table2Cohort[] = useMemo(
@@ -396,7 +398,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               {
                 type: 'tabset',
                 weight: 50,
-                children: [{ type: 'tab', name: 'Cohort Selector', component: 'cohortSelector' }],
+                children: [{ type: 'tab', name: 'Select cohorts', component: 'cohortSelector' }],
               },
               {
                 type: 'tabset',
@@ -506,6 +508,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
                 initialIndex={viewerIndex}
                 navigateToIndex={viewerIndex}
                 onIndexChange={setViewerIndex}
+                onScrolledPastTitle={setShowRowTitle}
                 cohortDataMap={cohortDataMap}
                 finalCohortSizes={finalCohortSizes}
                 tteCohorts={tteCohorts}
@@ -530,9 +533,22 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   );
 
   // ── Render ────────────────────────────────────────────────────────────
+  const currentRow = sequentialRows[viewerIndex];
+
   return (
     <div className={styles.container}>
+ <div className={styles.titleGroup}>
+          <div className={`${styles.titleBar} ${showRowTitle ? styles.titleBarScrolled : ''}`}>
+            <HorizontalRowTitle
+              rows={sequentialRows}
+              currentIndex={viewerIndex}
+              studyTitle={displayTitle}
+              onNavigate={setViewerIndex}
+            />
+          </div>
+        </div>
       <div className={styles.page}>
+       
         <Layout model={layoutModel} factory={factory} />
       </div>
     </div>
