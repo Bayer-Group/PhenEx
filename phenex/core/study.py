@@ -220,6 +220,7 @@ class Study:
 
         # Write to file
         with open(info_path, "w") as f:
+            f.write(f"Study Name: {self.name}\n")
             f.write("Software Environment Information\n")
             f.write("=" * 50 + "\n\n")
             f.write(

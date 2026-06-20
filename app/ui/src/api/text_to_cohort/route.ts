@@ -18,11 +18,12 @@ export const getPublicCohort = async (cohort_id: string, provisional: boolean = 
 
     // Parse the cohort_data field if it exists and is a string
     if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
-      return JSON.parse(response.data.cohort_data);
+      response.data.cohort_data = JSON.parse(response.data.cohort_data);
     }
 
-    // Fallback to return the original data if cohort_data is not present or already parsed
-    return response.data.cohort_data || response.data;
+    // Return the full response data (same shape as getUserCohort) so that
+    // fields like study_id are available to the caller.
+    return response.data;
   } catch (error) {
     console.error('Error in getPublicCohort:', error);
     throw error;

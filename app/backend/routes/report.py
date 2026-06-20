@@ -30,6 +30,7 @@ def _nan_to_none(obj: Any) -> Any:
 
 # ── List available runs ──────────────────────────────────────────────────
 
+
 @router.get("/report/runs")
 def list_runs() -> List[str]:
     """Return the names of available run directories (timestamp folders)."""
@@ -46,6 +47,7 @@ def list_run_files(run_id: str) -> List[str]:
 
 # ── List cohorts inside a run ────────────────────────────────────────────
 
+
 @router.get("/report/runs/{run_id}/cohorts")
 def list_cohorts(run_id: str) -> List[str]:
     """Return cohort directory names within a run."""
@@ -54,6 +56,7 @@ def list_cohorts(run_id: str) -> List[str]:
 
 # ── Run metadata ─────────────────────────────────────────────────────────
 
+
 @router.get("/report/runs/{run_id}/info")
 def get_run_info(run_id: str) -> Dict[str, str]:
     """Return the info.txt content as key-value pairs."""
@@ -61,6 +64,7 @@ def get_run_info(run_id: str) -> Dict[str, str]:
 
 
 # ── Table1 data (rows + sections, no distributions) ─────────────────────
+
 
 @router.get("/report/runs/{run_id}/cohorts/{cohort_name}/table1")
 def get_table1(
@@ -82,6 +86,7 @@ def get_table1(
 
 
 # ── Value distributions (lazy-loaded per variable) ───────────────────────
+
 
 @router.get("/report/runs/{run_id}/cohorts/{cohort_name}/table1/distributions")
 def get_distributions(
@@ -107,7 +112,9 @@ def get_distributions(
 
     if variable is not None:
         if variable not in distributions:
-            raise HTTPException(status_code=404, detail=f"Variable '{variable}' not found")
+            raise HTTPException(
+                status_code=404, detail=f"Variable '{variable}' not found"
+            )
         return _nan_to_none({variable: distributions[variable]})
 
     return _nan_to_none(distributions)

@@ -168,6 +168,7 @@ export class CohortModel {
         this._cohort_data.phenotypes = [];
       }
       
+      const hadNoPhenotypes = this._cohort_data.phenotypes.length === 0;
       this.createEmptyCohortDefaultPhenotypes();
 
       // IMPORTANT: Ensure study_id is in _cohort_data for backend saves
@@ -196,6 +197,14 @@ export class CohortModel {
       this._table_data = this.tableDataFromCohortData();
       this.constants_service.refreshConstants();
       this.notifyListeners(); // Notify listeners after loading data
+
+      // If default phenotypes were just created, persist them to the backend so the AI
+      // chat and other backend consumers see the same state as the frontend.
+      if (hadNoPhenotypes && this._cohort_data.phenotypes.length > 0 && this._cohort_data.study_id) {
+        this.saveChangesToCohort(false, false).catch((err: any) => {
+          console.error('[CohortModel] Failed to persist default phenotypes to backend:', err);
+        });
+      }
   }
 
   public setDatabaseSettings(databaseConfig: any) {

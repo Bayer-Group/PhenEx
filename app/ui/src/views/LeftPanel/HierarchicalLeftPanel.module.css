@@ -77,7 +77,8 @@
 /* Level-based styling */
 .level0 {
   /* Root level: mystudies, publicstudies */
-  font-size: var(--font_size_infotext);
+  font-size: 15px;
+  font-weight: 600;
   font-family: "IBMPlexSans-regular";
 }
 
@@ -85,13 +86,13 @@
   /* Study level */
   font-weight: 500;
   font-family: "IBMPlexSans-regular";
-  font-size: var(--font_size_breadcrumbs);
+  font-size: 14px;
 
 }
 
 .level2 {
   /* Cohort level */
-  font-size: var(--font_size_infotext);
+  font-size: 13px;
   font-weight: 400;
   font-family: "IBMPlexSans-regular";
   min-height: 28px;
@@ -99,7 +100,7 @@
 
 .level3 {
   /* Deeper nesting if needed */
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
   font-family: "IBMPlexSans-regular";
   min-height: 28px;

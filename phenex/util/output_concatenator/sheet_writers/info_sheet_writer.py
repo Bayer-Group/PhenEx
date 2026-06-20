@@ -67,9 +67,17 @@ class InfoSheetWriter(_BaseSheetWriter):
         sheet.column_dimensions["C"].width = 14
         sheet.column_dimensions["D"].width = 80
 
-        current_row = 1
+        # Padding row 1 + col A
+        current_row = 2
 
-        # Description at the top
+        # Study name at the top
+        study_name = self._read_study_name(study_path)
+        if study_name:
+            self._write_cell(sheet, current_row, 2, study_name, bold=True, size=20)
+            current_row += 1
+            current_row += 1  # blank row after study name
+
+        # Description
         if description:
             for line in description.splitlines():
                 text, font_size, bold = self._parse_markdown_line(line)
@@ -186,13 +194,21 @@ class InfoSheetWriter(_BaseSheetWriter):
             sheet,
             current_row,
             2,
-            f"Executed with PhenEx v{phenex_version}",
+            f"Executed with PhenEx {phenex_version}",
             bold=False,
             size=11,
             font_color=self._GRAY_TEXT,
         )
 
     # ------------------------------------------------------------------
+
+    def _read_study_name(self, study_path: Path) -> Optional[str]:
+        info_file = study_path / "info.txt"
+        if info_file.exists():
+            for line in info_file.read_text().splitlines():
+                if line.startswith("Study Name:"):
+                    return line.split(":", 1)[1].strip()
+        return None
 
     def _read_phenex_version(self, study_path: Path) -> str:
         info_file = study_path / "info.txt"

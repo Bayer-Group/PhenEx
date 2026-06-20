@@ -11,6 +11,7 @@ from .html_writers import SankeyWriter, Table1HtmlWriter, TimeToEventWriter
 from .sheet_writers import (
     GenericSheetWriter,
     InfoSheetWriter,
+    SimplifiedAttritionTable,
     Table1NumericSheetWriter,
     Table1SheetWriter,
 )
@@ -83,7 +84,7 @@ class OutputConcatenator:
         self._generic_writer = GenericSheetWriter()
         self._table1_writer = Table1SheetWriter()
         self._numeric_writer = Table1NumericSheetWriter()
-        self._attrition_writer = GenericSheetWriter()
+        self._attrition_writer = SimplifiedAttritionTable()
         self._tte_writer = TimeToEventWriter()
         self._sankey_writer = SankeyWriter()
         self._table1_html_writer = Table1HtmlWriter()
