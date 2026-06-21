@@ -23,9 +23,10 @@ const DEFAULT_JSON: IJsonModel = {
   layout: {
     type: 'row',
     children: [
-      { type: 'tabset', weight: 35, children: [{ type: 'tab', name: 'Coverage', component: 'coverage' }] },
-      { type: 'tabset', weight: 35, children: [{ type: 'tab', name: 'Missingness', component: 'missingness' }] },
-      { type: 'tabset', weight: 30, children: [{ type: 'tab', name: 'Summary Statistics', component: 'summary' }] },
+      { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Coverage', component: 'coverage' }] },
+      { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Missingness', component: 'missingness' }] },
+      { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Summary Statistics', component: 'summary' }] },
+      { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Distribution', component: 'distribution' }] },
     ],
   },
 };
@@ -35,7 +36,7 @@ const CoveragePanel: FC<{ name: string; cohortData: CohortClassified[]; finalCoh
   const filtered = useFilteredCohortData(cohortData, visible);
   return (
     <div style={{ padding: 8, height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
-      <NumericTableCellRenderer name={name} cohortData={filtered} finalCohortSizes={finalCohortSizes} showBar statMode="coverage" />
+      <NumericTableCellRenderer name={name} cohortData={filtered} finalCohortSizes={finalCohortSizes} showBar hideStats statMode="coverage" />
     </div>
   );
 };
@@ -45,12 +46,22 @@ const MissingnessPanel: FC<{ name: string; cohortData: CohortClassified[]; final
   const filtered = useFilteredCohortData(cohortData, visible);
   return (
     <div style={{ padding: 8, height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
-      <NumericTableCellRenderer name={name} cohortData={filtered} finalCohortSizes={finalCohortSizes} showBar statMode="missingness" />
+      <NumericTableCellRenderer name={name} cohortData={filtered} finalCohortSizes={finalCohortSizes} showBar hideStats statMode="missingness" />
     </div>
   );
 };
 
-const SummaryPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeData: Record<string, Record<string, KdeCurve>> }> = ({ name, cohortData, kdeData }) => {
+const SummaryStatsPanel: FC<{ name: string; cohortData: CohortClassified[] }> = ({ name, cohortData }) => {
+  const { visible } = useCohortVisibility(cohortData.length);
+  const filtered = useFilteredCohortData(cohortData, visible);
+  return (
+    <div style={{ padding: 8, height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
+      <NumericTableCellRenderer name={name} cohortData={filtered} hideNPct />
+    </div>
+  );
+};
+
+const DistributionPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeData: Record<string, Record<string, KdeCurve>> }> = ({ name, cohortData, kdeData }) => {
   const { visible } = useCohortVisibility(cohortData.length);
   const filtered = useFilteredCohortData(cohortData, visible);
 
@@ -93,7 +104,9 @@ export const NumericCellLayout: FC<NumericCellLayoutProps> = ({ row, cohortData,
         case 'missingness':
           return <MissingnessPanel name={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
         case 'summary':
-          return <SummaryPanel name={row.name} cohortData={cohortData} kdeData={kdeData} />;
+          return <SummaryStatsPanel name={row.name} cohortData={cohortData} />;
+        case 'distribution':
+          return <DistributionPanel name={row.name} cohortData={cohortData} kdeData={kdeData} />;
         default:
           return null;
       }

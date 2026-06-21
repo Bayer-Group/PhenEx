@@ -16,6 +16,7 @@ interface NumericTableCellRendererProps {
   cohortData: CohortClassified[];
   finalCohortSizes?: Record<string, number | null>;
   hideNPct?: boolean;
+  hideStats?: boolean;
   showBar?: boolean;
   pctDecimals?: number;
   statMode?: 'coverage' | 'missingness';
@@ -26,6 +27,7 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
   cohortData,
   finalCohortSizes = {},
   hideNPct,
+  hideStats,
   showBar,
   pctDecimals = 1,
   statMode = 'coverage',
@@ -42,7 +44,7 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
           {!hideNPct && <div className={styles.statsPctHeaderCell}>%</div>}
           {!hideNPct && showBar && <div className={styles.statsBarHeaderCell} />}
           {!hideNPct && <div className={styles.statsNHeaderCell}>N</div>}
-          {STAT_KEYS.map((k) => (
+          {!hideStats && STAT_KEYS.map((k) => (
             <div key={k} className={styles.statsHeaderCell}>{k}</div>
           ))}
         </div>
@@ -103,7 +105,7 @@ export const NumericTableCellRenderer: FC<NumericTableCellRendererProps> = ({
                   ) : '–'}
                 </div>
               )}
-              {STAT_KEYS.map((k) => (
+              {!hideStats && STAT_KEYS.map((k) => (
                 <div key={k} className={styles.statsValueCell}>
                   {fmt(row[k] as number | null | undefined)}
                 </div>
