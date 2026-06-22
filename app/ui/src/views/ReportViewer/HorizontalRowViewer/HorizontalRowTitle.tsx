@@ -1,7 +1,7 @@
 import { FC, useCallback, useMemo, useRef, useState } from 'react';
 import { Portal } from '../../../components/Portal/Portal';
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import { type SequentialRow } from '../studyRegistryUtils';
+import { type ViewerEntry, getEntryCategory, getEntrySection, getEntryLabel } from '../studyRegistryUtils';
 import styles from './HorizontalRowTitle.module.css';
 
 /* ── Display names for raw category keys ─────────────────────────────── */
@@ -17,7 +17,7 @@ const CAT_KEYS = ['attrition', 'baseline_characteristics', 'outcomes'] as const;
 /* ── Props ───────────────────────────────────────────────────────────── */
 
 interface HorizontalRowTitleProps {
-  rows: SequentialRow[];
+  entries: ViewerEntry[];
   currentIndex: number;
   studyTitle?: string;
   onNavigate: (index: number) => void;
@@ -150,48 +150,48 @@ const CrumbMenu: FC<CrumbMenuProps> = ({
 /* ── Main component ──────────────────────────────────────────────────── */
 
 export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
-  rows, currentIndex, studyTitle = 'Loading study...', onNavigate,
+  entries, currentIndex, studyTitle = 'Loading study...', onNavigate,
 }) => {
-  const current = rows[currentIndex];
-  if (!current) return null;
+  const current = entries[currentIndex];
 
-  const categoryLabel = CATEGORY_LABELS[current.category] ?? current.category;
-  const sectionLabel = current.section;
-
-  // Build option lists for each level
+  // Build option lists for each level (entry-index based navigation targets)
   const { categoryOptions, sectionOptions, rowOptions } = useMemo(() => {
-    // Categories: first row index per category key
+    const currentCategory = current ? getEntryCategory(current) : null;
+    const currentSection = current ? getEntrySection(current) : null;
+
+    // Categories: first entry index per category key
     const catMap = new Map<string, number>();
-    for (const r of rows) {
-      if (!catMap.has(r.category)) catMap.set(r.category, r.index);
+    for (const e of entries) {
+      const cat = getEntryCategory(e);
+      if (!catMap.has(cat)) catMap.set(cat, e.index);
     }
     const catEntries = CAT_KEYS
       .filter((key) => catMap.has(key))
-      .map((key) => ({
-        label: CATEGORY_LABELS[key] ?? key,
-        index: catMap.get(key)!,
-      }));
+      .map((key) => ({ label: CATEGORY_LABELS[key] ?? key, index: catMap.get(key)! }));
 
-    // Sections within the current category
+    // Sections within the current category: first entry index per section
     const secMap = new Map<string, number>();
-    for (const r of rows) {
-      if (r.category === current.category && r.section && !secMap.has(r.section)) {
-        secMap.set(r.section, r.index);
+    for (const e of entries) {
+      const sec = getEntrySection(e);
+      if (getEntryCategory(e) === currentCategory && sec && !secMap.has(sec)) {
+        secMap.set(sec, e.index);
       }
     }
     const secOpts = Array.from(secMap, ([label, index]) => ({ label, index }));
 
-    // Rows within the current section
-    const curSec = current.section;
-    const rOpts = rows
-      .filter((r) => r.section === curSec)
-      .map((r) => ({
-        label: r.registry?.display_name || r.name,
-        index: r.index,
-      }));
+    // Individual rows within the current section
+    const rOpts = entries
+      .filter((e) => e.kind === 'row' && getEntrySection(e) === currentSection && currentSection !== null)
+      .map((e) => ({ label: getEntryLabel(e), index: e.index }));
 
     return { categoryOptions: catEntries, sectionOptions: secOpts, rowOptions: rOpts };
-  }, [rows, currentIndex, current]);
+  }, [entries, current]);
+
+  if (!current) return null;
+
+  const categoryLabel = CATEGORY_LABELS[getEntryCategory(current)] ?? getEntryCategory(current);
+  const sectionLabel = getEntrySection(current);
+  const activeRowLabel = current.kind === 'row' ? getEntryLabel(current) : '';
 
   return (
     <div
@@ -223,7 +223,7 @@ export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
           <span className={styles.separator}>/</span>
           <Crumb
             label={sectionLabel}
-            activeLabel={current.registry?.display_name || current.name}
+            activeLabel={activeRowLabel}
             options={rowOptions}
             level="section"
             onNavigate={onNavigate}

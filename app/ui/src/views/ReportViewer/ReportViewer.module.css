@@ -216,7 +216,7 @@
 }
 
 :global(.flexlayout__tabset){
-  background-color: white;
+  background-color: white !important;
     /* box-shadow: 0 1px 4px rgba(0, 0, 0, .3); */
     border: var(--border);
     border-radius: 8px;

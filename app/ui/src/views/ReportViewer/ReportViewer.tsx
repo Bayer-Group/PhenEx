@@ -23,7 +23,7 @@ import {
   type CohortDescriptions,
   type Report,
 } from './types';
-import { buildSequentialRowList, getSectionNames, type StudyRegistry } from './studyRegistryUtils';
+import { buildSequentialRowList, buildViewerEntries, getSectionNames, type StudyRegistry } from './studyRegistryUtils';
 
 interface WaterfallInfoRow {
   Name: string;
@@ -230,6 +230,9 @@ export const ReportViewer: FC<ReportViewerProps> = ({
       Object.keys(filteredTTE ?? {}).length ? filteredTTE : undefined,
     );
   }, [studyRegistry, cohortEntries, outcomesEntries, waterfallData, table2Data, timeToEventData, selectedCohortNames]);
+
+  // ── Viewer entries (single rows + multi-row section cells) ────────────
+  const viewerEntries = useMemo(() => buildViewerEntries(sequentialRows), [sequentialRows]);
 
   // Map of reporter → cohort data so HorizontalRowViewer can render any reporter
   const cohortDataMap = useMemo(() => {
@@ -449,7 +452,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         case 'comments':
           return (
             <CommentsPanel
-              rows={sequentialRows}
+              entries={viewerEntries}
               currentIndex={viewerIndex}
             />
           );
@@ -459,7 +462,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           return null;
       }
     },
-    [sequentialRows, viewerIndex],
+    [viewerEntries, viewerIndex],
   );
 
   const leftPanelFactory = useCallback(
@@ -480,7 +483,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         case 'outline':
           return (
             <OutlinePanel
-              rows={sequentialRows}
+              entries={viewerEntries}
               currentIndex={viewerIndex}
               onNavigate={setViewerIndex}
             />
@@ -490,7 +493,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
       }
     },
     [
-      displayTitle, groups, selections, outlineEntries, sequentialRows,
+      displayTitle, groups, selections, outlineEntries, sequentialRows, viewerEntries,
       viewerIndex, handleReplace, handleAdd, updateSelections,
       cohortDescriptions, reports, finalCohortSizes,
     ],
@@ -505,6 +508,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           return (
             <div className={styles.centerPanel}>
               <HorizontalRowViewer
+                entries={viewerEntries}
                 rows={sequentialRows}
                 initialIndex={viewerIndex}
                 navigateToIndex={viewerIndex}
@@ -526,7 +530,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
       }
     },
     [
-      displayTitle, groups, selections, outlineEntries, sequentialRows,
+      displayTitle, groups, selections, outlineEntries, sequentialRows, viewerEntries,
       viewerIndex, handleReplace, handleAdd, updateSelections,
       cohortDescriptions, reports, finalCohortSizes, cohortDataMap,
       tteCohorts, table2Cohorts, studyDescription,
@@ -534,7 +538,6 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   );
 
   // ── Render ────────────────────────────────────────────────────────────
-  const currentRow = sequentialRows[viewerIndex];
 
   return (
     <CellLayoutStoreProvider>
@@ -542,7 +545,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
  <div className={styles.titleGroup}>
           <div className={`${styles.titleBar} ${showRowTitle ? styles.titleBarScrolled : ''}`}>
             <HorizontalRowTitle
-              rows={sequentialRows}
+              entries={viewerEntries}
               currentIndex={viewerIndex}
               studyTitle={displayTitle}
               onNavigate={setViewerIndex}

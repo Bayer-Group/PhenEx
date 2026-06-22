@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { type CohortClassified } from '../types';
-import { type SequentialRow } from '../studyRegistryUtils';
+import { type SequentialRow, type ViewerEntry } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import styles from './HorizontalRowViewer.module.css';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
@@ -24,6 +24,9 @@ if (typeof window !== 'undefined') {
 // ── Props ───────────────────────────────────────────────────────────────
 
 interface HorizontalRowViewerProps {
+  /** Navigable units: single rows and multi-row section cells. */
+  entries: ViewerEntry[];
+  /** Flat sequential rows, used for cross-row lookups (e.g. TTE outcomes). */
   rows: SequentialRow[];
   initialIndex: number;
   cohortDataMap: Record<string, CohortClassified[]>;
@@ -41,6 +44,7 @@ interface HorizontalRowViewerProps {
 // ── Component ───────────────────────────────────────────────────────────
 
 export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
+  entries,
   rows,
   initialIndex,
   cohortDataMap,
@@ -80,7 +84,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     onIndexChange?.(currentIndex);
   }, [currentIndex, onIndexChange]);
 
-  const current = rows[currentIndex];
+  const current = entries[currentIndex];
 
   // ── Scroll management ─────────────────────────────────────────────────
 
@@ -134,9 +138,9 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     const dir = holdDir.current;
     if (dir === 0) return;
     const next = currentIndex + dir;
-    if (next < 0 || next >= rows.length) { holdDir.current = 0; return; }
+    if (next < 0 || next >= entries.length) { holdDir.current = 0; return; }
     setCurrentIndex(next);
-  }, [currentIndex, rows.length]);
+  }, [currentIndex, entries.length]);
 
   // When currentIndex changes while holding, animate to card then schedule next step
   useEffect(() => {
@@ -220,7 +224,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
         e.preventDefault();
         if (e.repeat) {
           if (holdDir.current === 0) startHold(1);
-        } else if (currentIndex < rows.length - 1) {
+        } else if (currentIndex < entries.length - 1) {
           navigate(currentIndex + 1);
         }
       }
@@ -236,7 +240,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       document.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('keyup', onKeyUp);
     };
-  }, [startClose, currentIndex, rows.length, navigate, startHold, stopHold]);
+  }, [startClose, currentIndex, entries.length, navigate, startHold, stopHold]);
 
   // ── FlexLayout removed — outline is now in ReportViewer's left panel ──
 
@@ -258,14 +262,14 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <div className={styles.scroller} ref={scrollRef} style={{ height: '100%' }}>
-          {rows.map((row) => {
-            const isFocused = row.index === currentIndex;
-            const nearby = Math.abs(row.index - currentIndex) <= PRERENDER_NEIGHBOURS;
+          {entries.map((entry) => {
+            const isFocused = entry.index === currentIndex;
+            const nearby = Math.abs(entry.index - currentIndex) <= PRERENDER_NEIGHBOURS;
             return (
               <HorizontalCell
-                key={row.index}
+                key={entry.index}
                 ref={isFocused ? focusedRef : null}
-                row={row}
+                entry={entry}
                 rows={rows}
                 isFocused={isFocused}
                 nearby={nearby}
@@ -284,7 +288,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
         </div>
       </div>
       <div className={styles.navPillContainer}>
-        <NavPill currentIndex={currentIndex} total={rows.length} onNavigate={navigate} />
+        <NavPill currentIndex={currentIndex} total={entries.length} onNavigate={navigate} />
       </div>
       {/* <div className={styles.commentBarContainer}>
         <CommentBar

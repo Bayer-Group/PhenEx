@@ -63,6 +63,64 @@ export interface SequentialSection {
   rows: SequentialRow[];
 }
 
+// ── Viewer entries (single row or multi-row section) ────────────────────
+
+export type ViewerEntry =
+  | { kind: 'row'; index: number; row: SequentialRow }
+  | { kind: 'section'; index: number; section: string; rows: SequentialRow[]; reporter: string; category: string };
+
+/**
+ * Builds a flat list of ViewerEntries from sequential rows.
+ * Each section with 2+ rows becomes a multi-row entry followed by its individual row entries.
+ * Single-row sections or rows without a section are just individual entries.
+ *
+ * `index` is the entry's position in the returned array — this is the unit the
+ * HorizontalRowViewer scrolls/navigates through (it replaces SequentialRow.index).
+ */
+export function buildViewerEntries(sequentialRows: SequentialRow[]): ViewerEntry[] {
+  const entries: ViewerEntry[] = [];
+  const sections = groupRowsBySection(sequentialRows);
+
+  const push = (entry: Omit<ViewerEntry, 'index'>) => {
+    entries.push({ ...entry, index: entries.length } as ViewerEntry);
+  };
+
+  for (const { section, rows } of sections) {
+    if (section && rows.length >= 2) {
+      push({ kind: 'section', section, rows, reporter: rows[0].reporter, category: rows[0].category });
+    }
+    for (const row of rows) {
+      push({ kind: 'row', row });
+    }
+  }
+
+  return entries;
+}
+
+// ── ViewerEntry accessors ───────────────────────────────────────────────
+
+/** Top-level category for an entry (works for both row and section entries). */
+export function getEntryCategory(entry: ViewerEntry): string {
+  return entry.kind === 'row' ? entry.row.category : entry.category;
+}
+
+/** Section name for an entry, or null. */
+export function getEntrySection(entry: ViewerEntry): string | null {
+  return entry.kind === 'row' ? entry.row.section : entry.section;
+}
+
+/** Human-readable label for an entry (row display name or section name). */
+export function getEntryLabel(entry: ViewerEntry): string {
+  if (entry.kind === 'section') return entry.section;
+  return entry.row.registry?.display_name || entry.row.name;
+}
+
+/** All registry comments attached to an entry (aggregated across rows for sections). */
+export function getEntryComments(entry: ViewerEntry): RegistryComment[] {
+  const rows = entry.kind === 'row' ? [entry.row] : entry.rows;
+  return rows.flatMap((r) => r.registry?.comments ?? []).filter((c) => c.text);
+}
+
 /** Group sequential rows by their `section` field, preserving order. */
 export function groupRowsBySection(rows: SequentialRow[]): SequentialSection[] {
   const groups: SequentialSection[] = [];

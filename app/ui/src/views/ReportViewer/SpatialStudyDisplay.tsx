@@ -13,7 +13,7 @@ import { type OutlineEntry } from './OutlineBar';
 import { useVisibleSection } from './useVisibleSection';
 import { HorizontalRowTitle } from './HorizontalRowViewer/HorizontalRowTitle';
 import { type CohortClassified, type CohortGroup, type CohortDescriptions } from './types';
-import { type SequentialRow, getSectionNames } from './studyRegistryUtils';
+import { type SequentialRow, getSectionNames, buildViewerEntries } from './studyRegistryUtils';
 
 // ── Props ───────────────────────────────────────────────────────────────
 
@@ -197,6 +197,21 @@ export const SpatialStudyDisplay: FC<SpatialStudyDisplayProps> = ({
     return 0;
   }, [activeSection, sequentialRows]);
 
+  // Map the active sequential-row index to a viewer-entry index for the title.
+  const viewerEntries = useMemo(() => buildViewerEntries(sequentialRows), [sequentialRows]);
+  const activeEntryIndex = useMemo(() => {
+    const idx = viewerEntries.findIndex((e) => e.kind === 'row' && e.row.index === activeTitleIndex);
+    return idx >= 0 ? idx : 0;
+  }, [viewerEntries, activeTitleIndex]);
+  const handleTitleNavigate = useCallback(
+    (entryIndex: number) => {
+      const e = viewerEntries[entryIndex];
+      if (!e) return;
+      onOpenRow(e.kind === 'row' ? e.row.index : e.rows[0].index);
+    },
+    [viewerEntries, onOpenRow],
+  );
+
   // ── Floating title visibility ─────────────────────────────────────────
   const [showFloatingTitle, setShowFloatingTitle] = useState(false);
 
@@ -235,10 +250,10 @@ export const SpatialStudyDisplay: FC<SpatialStudyDisplayProps> = ({
     <div className={styles.container}>
       <div className={`${styles.floatingTitle} ${showFloatingTitle ? styles.floatingTitleVisible : ''}`}>
         <HorizontalRowTitle
-          rows={sequentialRows}
-          currentIndex={activeTitleIndex}
+          entries={viewerEntries}
+          currentIndex={activeEntryIndex}
           studyTitle={title}
-          onNavigate={onOpenRow}
+          onNavigate={handleTitleNavigate}
         />
       </div>
 

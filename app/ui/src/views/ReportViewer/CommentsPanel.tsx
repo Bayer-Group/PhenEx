@@ -1,17 +1,17 @@
 import { FC, useMemo } from 'react';
-import { type SequentialRow, type RegistryComment } from './studyRegistryUtils';
+import { type ViewerEntry, type RegistryComment, getEntryComments } from './studyRegistryUtils';
 import { CommentCard } from './HorizontalRowViewer/CommentCard';
 
 interface CommentsPanelProps {
-  rows: SequentialRow[];
+  entries: ViewerEntry[];
   currentIndex: number;
 }
 
-export const CommentsPanel: FC<CommentsPanelProps> = ({ rows, currentIndex }) => {
-  const currentRow = rows[currentIndex];
+export const CommentsPanel: FC<CommentsPanelProps> = ({ entries, currentIndex }) => {
+  const currentEntry = entries[currentIndex];
   const comments: RegistryComment[] = useMemo(
-    () => (currentRow?.registry?.comments ?? []).filter((c) => c.text),
-    [currentRow],
+    () => (currentEntry ? getEntryComments(currentEntry) : []),
+    [currentEntry],
   );
 
   if (!comments.length) {

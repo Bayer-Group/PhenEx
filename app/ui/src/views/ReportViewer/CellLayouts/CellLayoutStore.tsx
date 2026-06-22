@@ -1,19 +1,26 @@
 import { createContext, useContext, useCallback, useRef, useSyncExternalStore, FC, ReactNode } from 'react';
-import { type IJsonModel } from 'flexlayout-react';
+import { Model, type IJsonModel } from 'flexlayout-react';
 
 type RowType = string;
 type Listener = () => void;
 
+interface LayoutEntry {
+  json: IJsonModel;
+  version: number;
+}
+
 class CellLayoutStore {
-  private layouts = new Map<RowType, IJsonModel>();
+  private layouts = new Map<RowType, LayoutEntry>();
   private listeners = new Set<Listener>();
 
-  getLayout(rowType: RowType): IJsonModel | undefined {
+  getEntry(rowType: RowType): LayoutEntry | undefined {
     return this.layouts.get(rowType);
   }
 
   setLayout(rowType: RowType, json: IJsonModel) {
-    this.layouts.set(rowType, json);
+    const prev = this.layouts.get(rowType);
+    const version = (prev?.version ?? 0) + 1;
+    this.layouts.set(rowType, { json, version });
     this.notify();
   }
 
@@ -25,10 +32,6 @@ class CellLayoutStore {
   private notify() {
     for (const l of this.listeners) l();
   }
-
-  getSnapshot() {
-    return this.layouts;
-  }
 }
 
 const StoreContext = createContext<CellLayoutStore | null>(null);
@@ -39,24 +42,45 @@ export const CellLayoutStoreProvider: FC<{ children: ReactNode }> = ({ children 
   return <StoreContext.Provider value={storeRef.current}>{children}</StoreContext.Provider>;
 };
 
-export function useCellLayoutStore() {
+function useCellLayoutStore() {
   const store = useContext(StoreContext);
   if (!store) throw new Error('useCellLayoutStore must be used within CellLayoutStoreProvider');
   return store;
 }
 
-export function useSharedLayout(rowType: RowType, defaultJson: IJsonModel): [IJsonModel, (json: IJsonModel) => void] {
+export function useSharedModel(rowType: RowType, defaultJson: IJsonModel): [Model, (model: Model) => void] {
   const store = useCellLayoutStore();
+  const modelRef = useRef<Model | null>(null);
+  const versionRef = useRef<number>(-1);
 
   const subscribe = useCallback((cb: Listener) => store.subscribe(cb), [store]);
-  const getSnapshot = useCallback(() => store.getLayout(rowType) ?? defaultJson, [store, rowType, defaultJson]);
+  const getSnapshot = useCallback(() => store.getEntry(rowType)?.version ?? -1, [store, rowType]);
 
-  const currentJson = useSyncExternalStore(subscribe, getSnapshot);
+  const storeVersion = useSyncExternalStore(subscribe, getSnapshot);
 
-  const updateLayout = useCallback(
-    (json: IJsonModel) => { store.setLayout(rowType, json); },
+  // Create or update model only when store version changes from an external source
+  if (modelRef.current === null) {
+    const entry = store.getEntry(rowType);
+    modelRef.current = Model.fromJson(entry?.json ?? defaultJson);
+    versionRef.current = entry?.version ?? -1;
+  } else if (storeVersion !== versionRef.current) {
+    const entry = store.getEntry(rowType);
+    if (entry) {
+      modelRef.current = Model.fromJson(entry.json);
+      versionRef.current = entry.version;
+    }
+  }
+
+  const propagateChange = useCallback(
+    (model: Model) => {
+      const json = model.toJson() as IJsonModel;
+      store.setLayout(rowType, json);
+      // Immediately track our own version so we don't rebuild from it
+      const entry = store.getEntry(rowType);
+      if (entry) versionRef.current = entry.version;
+    },
     [store, rowType],
   );
 
-  return [currentJson, updateLayout];
+  return [modelRef.current, propagateChange];
 }

@@ -1,11 +1,11 @@
-import { FC, useCallback, useMemo } from 'react';
-import { Layout, Model, IJsonModel } from 'flexlayout-react';
+import { FC, useCallback } from 'react';
+import { Layout } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
 import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
-import { useSharedLayout } from './CellLayoutStore';
+import { useSharedModel } from './CellLayoutStore';
 
 interface CategoricalCellLayoutProps {
   row: SequentialRow;
@@ -48,12 +48,11 @@ const ChartPanel: FC<{ baseName: string; cohortData: CohortClassified[]; finalCo
 };
 
 export const CategoricalCellLayout: FC<CategoricalCellLayoutProps> = ({ row, cohortData, finalCohortSizes }) => {
-  const [layoutJson, setLayoutJson] = useSharedLayout('categorical', DEFAULT_JSON);
-  const model = useMemo(() => Model.fromJson(layoutJson), [layoutJson]);
+  const [model, propagateChange] = useSharedModel('categorical', DEFAULT_JSON);
 
   const handleModelChange = useCallback(() => {
-    setLayoutJson(model.toJson() as IJsonModel);
-  }, [model, setLayoutJson]);
+    propagateChange(model);
+  }, [model, propagateChange]);
 
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {

@@ -1,5 +1,5 @@
 import { FC, useCallback, useMemo } from 'react';
-import { Layout, Model, IJsonModel } from 'flexlayout-react';
+import { Layout } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import { type CohortClassified, type KdeCurve } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
@@ -8,7 +8,8 @@ import { NumericChartFrame } from '../GraphsAndTables/RowRenderers/NumericChartF
 import { KDEChartCellRenderer } from '../GraphsAndTables/RowRenderers/KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from '../GraphsAndTables/RowRenderers/BoxPlotCellRenderer';
 import { NumericTableCellRenderer } from '../GraphsAndTables/RowRenderers/NumericTableCellRenderer';
-import { useSharedLayout } from './CellLayoutStore';
+import { useSharedModel } from './CellLayoutStore';
+import { DescriptionPanel } from './DescriptionPanel';
 
 interface NumericCellLayoutProps {
   row: SequentialRow;
@@ -18,16 +19,33 @@ interface NumericCellLayoutProps {
 }
 
 const DEFAULT_JSON: IJsonModel = {
-  global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: false, tabSetEnableDrop: true },
+  global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: true, tabSetEnableDrop: true, rootOrientationVertical: true },
   borders: [],
   layout: {
     type: 'row',
     children: [
-      { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Coverage', component: 'coverage' }] },
-      { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Missingness', component: 'missingness' }] },
-      { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Summary Statistics', component: 'summary' }] },
-      { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Distribution', component: 'distribution' }] },
-    ],
+      {
+        type: 'row',
+        children: [
+
+          {
+            type: 'row',
+            children: [
+            { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Description', component: 'description' }] },
+            { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Distribution', component: 'distribution' }] },
+
+            ]
+          },
+          { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Box Plots', component: 'boxplot' }] },
+        ],
+      },
+      {
+        type: 'row',
+        children: [
+          { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Summary Statistics', component: 'summary' }] },
+        ],
+      }
+    ]
   },
 };
 
@@ -56,7 +74,7 @@ const SummaryStatsPanel: FC<{ name: string; cohortData: CohortClassified[] }> = 
   const filtered = useFilteredCohortData(cohortData, visible);
   return (
     <div style={{ padding: 8, height: '100%', boxSizing: 'border-box', overflow: 'auto' }}>
-      <NumericTableCellRenderer name={name} cohortData={filtered} hideNPct />
+      <NumericTableCellRenderer name={name} cohortData={filtered} />
     </div>
   );
 };
@@ -82,23 +100,50 @@ const DistributionPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeD
     <div style={{ padding: 8, height: '100%', boxSizing: 'border-box' }}>
       <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
         <KDEChartCellRenderer name={name} cohortData={filtered} kdeData={kdeData} xMin={xMin} xMax={xMax} showTicks={false} />
+      </NumericChartFrame>
+    </div>
+  );
+};
+
+const BoxplotPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeData: Record<string, Record<string, KdeCurve>> }> = ({ name, cohortData, kdeData }) => {
+  const { visible } = useCohortVisibility(cohortData.length);
+  const filtered = useFilteredCohortData(cohortData, visible);
+
+  const { xMin, xMax } = useMemo(() => {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const cd of cohortData) {
+      const r = cd.data.rows.find((r) => r.Name === name);
+      if (!r) continue;
+      if (r.Min != null && r.Min < lo) lo = r.Min;
+      if (r.Max != null && r.Max > hi) hi = r.Max;
+    }
+    if (!isFinite(lo)) { lo = 0; hi = 1; }
+    return { xMin: lo, xMax: hi };
+  }, [name, cohortData]);
+
+  return (
+    <div style={{ padding: 8, height: '100%', boxSizing: 'border-box' }}>
+      <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
         <BoxPlotCellRenderer name={name} cohortData={filtered} xMin={xMin} xMax={xMax} showLabels />
       </NumericChartFrame>
     </div>
   );
 };
 
+
 export const NumericCellLayout: FC<NumericCellLayoutProps> = ({ row, cohortData, kdeData, finalCohortSizes }) => {
-  const [layoutJson, setLayoutJson] = useSharedLayout('numeric', DEFAULT_JSON);
-  const model = useMemo(() => Model.fromJson(layoutJson), [layoutJson]);
+  const [model, propagateChange] = useSharedModel('numeric', DEFAULT_JSON);
 
   const handleModelChange = useCallback(() => {
-    setLayoutJson(model.toJson() as IJsonModel);
-  }, [model, setLayoutJson]);
+    propagateChange(model);
+  }, [model, propagateChange]);
 
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
+        case 'description':
+          return <DescriptionPanel row={row} />;
         case 'coverage':
           return <CoveragePanel name={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
         case 'missingness':
@@ -107,6 +152,8 @@ export const NumericCellLayout: FC<NumericCellLayoutProps> = ({ row, cohortData,
           return <SummaryStatsPanel name={row.name} cohortData={cohortData} />;
         case 'distribution':
           return <DistributionPanel name={row.name} cohortData={cohortData} kdeData={kdeData} />;
+        case 'boxplot':
+          return <BoxplotPanel name={row.name} cohortData={cohortData} kdeData={kdeData} />;
         default:
           return null;
       }

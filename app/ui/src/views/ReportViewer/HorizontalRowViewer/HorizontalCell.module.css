@@ -2,6 +2,8 @@
   display: flex;
   height: 100%;
   position: relative;
+  width: calc(100% - 20px);
+  margin-left:10px;
 }
 
 .cell {
@@ -42,12 +44,57 @@
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;
   font-size: var(--font_size_pagetitle, 18px);
-  padding: 10px 30px 0;
+  padding: 5px 5px ;
   flex-shrink: 0;
   transition: opacity 0.15s;
 }
 
 .cardContent {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+/* ── Section (multi-row) cell ─────────────────────────────────────────── */
+
+.cardTitleSection {
+  font-size: calc(var(--font_size_pagetitle, 18px) + 4px);
+}
+
+.cardContentSection {
+  position: relative;
+}
+
+.multiRowList {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 40px;
+}
+
+.multiRowBlock {
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+  min-height: 420px;
+}
+
+.multiRowTitle {
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: black;
+  font-size: var(--font_size_pagetitle, 18px);
+  padding: 5px 5px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.1s;
+}
+
+.multiRowTitle:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.multiRowContent {
   flex: 1;
   position: relative;
   min-height: 0;
@@ -65,4 +112,26 @@
 
 .scrollBarTrack:hover {
   background-color: transparent;
+}
+
+/* Nested left-panel splitters */
+.cell :global(.flexlayout__splitter) {
+  background-color: white;
+
+}
+.cell :global(.flexlayout__splitter:hover) {
+  background-color: gray;
+}
+:global(.flexlayout__splitter_drag) {
+  background-color: gray;
+  z-index: 1000;
+}
+
+
+.cell :global(.flexlayout__tabset){
+  background-color: white !important;
+    /* box-shadow: 0 1px 4px rgba(0, 0, 0, .3); */
+    border: var(--border);
+    border-radius: 14px;
+
 }
