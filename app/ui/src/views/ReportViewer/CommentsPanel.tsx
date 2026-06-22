@@ -1,17 +1,16 @@
 import { FC, useMemo } from 'react';
-import { type ViewerEntry, type RegistryComment, getEntryComments } from './studyRegistryUtils';
+import { type SequentialRow, type RegistryComment } from './studyRegistryUtils';
 import { CommentCard } from './HorizontalRowViewer/CommentCard';
 
 interface CommentsPanelProps {
-  entries: ViewerEntry[];
-  currentIndex: number;
+  row: SequentialRow;
 }
 
-export const CommentsPanel: FC<CommentsPanelProps> = ({ entries, currentIndex }) => {
-  const currentEntry = entries[currentIndex];
+/** Comments for a single row, rendered as the right-hand panel of a cell layout. */
+export const CommentsPanel: FC<CommentsPanelProps> = ({ row }) => {
   const comments: RegistryComment[] = useMemo(
-    () => (currentEntry ? getEntryComments(currentEntry) : []),
-    [currentEntry],
+    () => (row.registry?.comments ?? []).filter((c) => c.text),
+    [row],
   );
 
   if (!comments.length) {
@@ -23,7 +22,17 @@ export const CommentsPanel: FC<CommentsPanelProps> = ({ entries, currentIndex })
   }
 
   return (
-    <div style={{ padding: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div
+      style={{
+        padding: 8,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        height: '100%',
+        overflow: 'auto',
+        boxSizing: 'border-box',
+      }}
+    >
       {comments.map((comment, i) => (
         <CommentCard key={i} comment={comment} />
       ))}

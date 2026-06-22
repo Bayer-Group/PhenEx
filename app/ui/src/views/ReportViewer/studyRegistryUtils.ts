@@ -115,12 +115,6 @@ export function getEntryLabel(entry: ViewerEntry): string {
   return entry.row.registry?.display_name || entry.row.name;
 }
 
-/** All registry comments attached to an entry (aggregated across rows for sections). */
-export function getEntryComments(entry: ViewerEntry): RegistryComment[] {
-  const rows = entry.kind === 'row' ? [entry.row] : entry.rows;
-  return rows.flatMap((r) => r.registry?.comments ?? []).filter((c) => c.text);
-}
-
 /** Group sequential rows by their `section` field, preserving order. */
 export function groupRowsBySection(rows: SequentialRow[]): SequentialSection[] {
   const groups: SequentialSection[] = [];

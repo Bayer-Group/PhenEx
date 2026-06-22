@@ -4,7 +4,6 @@ import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
 import { LeftPanel } from './LeftPanel';
 import { OutlinePanel } from './OutlinePanel';
-import { CommentsPanel } from './CommentsPanel';
 import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { HorizontalRowTitle } from './HorizontalRowViewer/HorizontalRowTitle';
@@ -426,19 +425,8 @@ export const ReportViewer: FC<ReportViewerProps> = ({
         type: 'row',
         children: [
           {
-            type: 'row',
-            children: [
-              {
-                type: 'tabset',
-                weight: 50,
-                children: [{ type: 'tab', name: 'Comments', component: 'comments' }],
-              },
-              {
-                type: 'tabset',
-                weight: 50,
-                children: [{ type: 'tab', name: 'AI', component: 'ai' }],
-              },
-            ],
+            type: 'tabset',
+            children: [{ type: 'tab', name: 'AI', component: 'ai' }],
           },
         ],
       },
@@ -449,20 +437,13 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   const rightPanelFactory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
-        case 'comments':
-          return (
-            <CommentsPanel
-              entries={viewerEntries}
-              currentIndex={viewerIndex}
-            />
-          );
         case 'ai':
           return <div className={styles.rightPanel} />;
         default:
           return null;
       }
     },
-    [viewerEntries, viewerIndex],
+    [],
   );
 
   const leftPanelFactory = useCallback(

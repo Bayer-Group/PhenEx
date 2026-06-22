@@ -1,5 +1,5 @@
 import { FC, useCallback } from 'react';
-import { Layout } from 'flexlayout-react';
+import { Layout, type IJsonModel } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
@@ -7,6 +7,7 @@ import { DescriptionPanel } from './DescriptionPanel';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
 import { BarChartCellRenderer } from '../GraphsAndTables/RowRenderers/BarChartCellRenderer';
 import { useSharedModel } from './CellLayoutStore';
+import { CommentsPanel } from '../CommentsPanel';
 
 interface BooleanCellLayoutProps {
   row: SequentialRow;
@@ -22,12 +23,14 @@ const DEFAULT_JSON: IJsonModel = {
     children: [
       {
         type: 'row',
+        weight: 30,
         children: [
           { type: 'tabset', weight: 30, children: [{ type: 'tab', name: 'Description', component: 'description' }] },
           { type: 'tabset', weight: 70, children: [{ type: 'tab', name: 'Legend', component: 'legend' }] },
         ],
       },
-      { type: 'tabset', weight: 70, children: [{ type: 'tab', name: 'Visualization', component: 'visualization' }] },
+      { type: 'tabset', weight: 50, children: [{ type: 'tab', name: 'Visualization', component: 'visualization' }] },
+      { type: 'tabset', weight: 20, children: [{ type: 'tab', name: 'Comments', component: 'comments' }] },
     ],
   },
 };
@@ -63,6 +66,8 @@ export const BooleanCellLayout: FC<BooleanCellLayoutProps> = ({ row, cohortData,
           return <DescriptionPanel row={row} />;
         case 'visualization':
           return <VisualizationPanel name={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
+        case 'comments':
+          return <CommentsPanel row={row} />;
         default:
           return null;
       }

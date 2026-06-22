@@ -1,11 +1,12 @@
 import { FC, useCallback } from 'react';
-import { Layout } from 'flexlayout-react';
+import { Layout, type IJsonModel } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
 import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
 import { useSharedModel } from './CellLayoutStore';
+import { CommentsPanel } from '../CommentsPanel';
 
 interface CategoricalCellLayoutProps {
   row: SequentialRow;
@@ -20,7 +21,8 @@ const DEFAULT_JSON: IJsonModel = {
     type: 'row',
     children: [
       { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Description', component: 'description' }] },
-      { type: 'tabset', weight: 75, children: [{ type: 'tab', name: 'Chart', component: 'chart' }] },
+      { type: 'tabset', weight: 55, children: [{ type: 'tab', name: 'Chart', component: 'chart' }] },
+      { type: 'tabset', weight: 20, children: [{ type: 'tab', name: 'Comments', component: 'comments' }] },
     ],
   },
 };
@@ -61,6 +63,8 @@ export const CategoricalCellLayout: FC<CategoricalCellLayoutProps> = ({ row, coh
           return <DescriptionPanel row={row} />;
         case 'chart':
           return <ChartPanel baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
+        case 'comments':
+          return <CommentsPanel row={row} />;
         default:
           return null;
       }

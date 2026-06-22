@@ -1,5 +1,5 @@
 import { FC, useCallback, useMemo } from 'react';
-import { Layout } from 'flexlayout-react';
+import { Layout, type IJsonModel } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import { type CohortClassified, type KdeCurve } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
@@ -10,6 +10,7 @@ import { BoxPlotCellRenderer } from '../GraphsAndTables/RowRenderers/BoxPlotCell
 import { NumericTableCellRenderer } from '../GraphsAndTables/RowRenderers/NumericTableCellRenderer';
 import { useSharedModel } from './CellLayoutStore';
 import { DescriptionPanel } from './DescriptionPanel';
+import { CommentsPanel } from '../CommentsPanel';
 
 interface NumericCellLayoutProps {
   row: SequentialRow;
@@ -19,33 +20,38 @@ interface NumericCellLayoutProps {
 }
 
 const DEFAULT_JSON: IJsonModel = {
-  global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: true, tabSetEnableDrop: true, rootOrientationVertical: true },
+  global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: true, tabSetEnableDrop: true },
   borders: [],
   layout: {
     type: 'row',
     children: [
       {
         type: 'row',
+        weight: 80,
         children: [
-
           {
             type: 'row',
             children: [
-            { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Description', component: 'description' }] },
-            { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Distribution', component: 'distribution' }] },
-
-            ]
+              {
+                type: 'row',
+                children: [
+                  { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Description', component: 'description' }] },
+                  { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Distribution', component: 'distribution' }] },
+                ],
+              },
+              { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Box Plots', component: 'boxplot' }] },
+            ],
           },
-          { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Box Plots', component: 'boxplot' }] },
+          {
+            type: 'row',
+            children: [
+              { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Summary Statistics', component: 'summary' }] },
+            ],
+          },
         ],
       },
-      {
-        type: 'row',
-        children: [
-          { type: 'tabset', weight: 25, children: [{ type: 'tab', name: 'Summary Statistics', component: 'summary' }] },
-        ],
-      }
-    ]
+      { type: 'tabset', weight: 20, children: [{ type: 'tab', name: 'Comments', component: 'comments' }] },
+    ],
   },
 };
 
@@ -154,6 +160,8 @@ export const NumericCellLayout: FC<NumericCellLayoutProps> = ({ row, cohortData,
           return <DistributionPanel name={row.name} cohortData={cohortData} kdeData={kdeData} />;
         case 'boxplot':
           return <BoxplotPanel name={row.name} cohortData={cohortData} kdeData={kdeData} />;
+        case 'comments':
+          return <CommentsPanel row={row} />;
         default:
           return null;
       }

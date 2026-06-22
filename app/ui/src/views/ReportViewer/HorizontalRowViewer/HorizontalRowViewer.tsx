@@ -290,26 +290,6 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       <div className={styles.navPillContainer}>
         <NavPill currentIndex={currentIndex} total={entries.length} onNavigate={navigate} />
       </div>
-      {/* <div className={styles.commentBarContainer}>
-        <CommentBar
-          commentsCollapsed={commentsCollapsed}
-          onToggleCollapsed={() => setCommentsCollapsed(!commentsCollapsed)}
-          onNewComment={() => setShowCommentWindow(true)}
-        />
-      </div>
-      {showCommentWindow && (
-        <CommentWindow
-          onClose={() => setShowCommentWindow(false)}
-          onSave={(text) => {
-            console.log('Comment saved:', text);
-            setShowCommentWindow(false);
-          }}
-          onAskAI={(text) => {
-            console.log('Ask AI:', text);
-          }}
-        />
-      )} */}
-      {/* <div className={styles.fakeDataLabel}>FAKE DATA</div> */}
     </div>
   );
 };

@@ -75,8 +75,9 @@
 .multiRowBlock {
   display: flex;
   flex-direction: column;
-  height: 70vh;
-  min-height: 420px;
+  width: calc(100% - 20px);
+  height: 400px;
+  /* min-height: 420px; */
 }
 
 .multiRowTitle {
