@@ -1,6 +1,5 @@
 import { FC, useCallback, useMemo } from 'react';
-import { Layout, type IJsonModel } from 'flexlayout-react';
-import 'flexlayout-react/style/light.css';
+import { type IJsonModel } from 'flexlayout-react';
 import { type CohortClassified, type KdeCurve } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
@@ -8,9 +7,9 @@ import { NumericChartFrame } from '../GraphsAndTables/RowRenderers/NumericChartF
 import { KDEChartCellRenderer } from '../GraphsAndTables/RowRenderers/KDEChartCellRenderer';
 import { BoxPlotCellRenderer } from '../GraphsAndTables/RowRenderers/BoxPlotCellRenderer';
 import { NumericTableCellRenderer } from '../GraphsAndTables/RowRenderers/NumericTableCellRenderer';
-import { useSharedModel } from './CellLayoutStore';
 import { DescriptionPanel } from './DescriptionPanel';
 import { CommentsPanel } from '../CommentsPanel';
+import { CellLayoutFrame } from './CellLayoutFrame';
 
 interface NumericCellLayoutProps {
   row: SequentialRow;
@@ -139,11 +138,10 @@ const BoxplotPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeData: 
 
 
 export const NumericCellLayout: FC<NumericCellLayoutProps> = ({ row, cohortData, kdeData, finalCohortSizes }) => {
-  const [model, propagateChange] = useSharedModel('numeric', DEFAULT_JSON);
-
-  const handleModelChange = useCallback(() => {
-    propagateChange(model);
-  }, [model, propagateChange]);
+  const hasComments = useMemo(
+    () => (row.registry?.comments ?? []).some((c) => c.text),
+    [row],
+  );
 
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
@@ -170,8 +168,11 @@ export const NumericCellLayout: FC<NumericCellLayoutProps> = ({ row, cohortData,
   );
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0 }}>
-      <Layout model={model} factory={factory} onModelChange={handleModelChange} />
-    </div>
+    <CellLayoutFrame
+      rowType="numeric"
+      defaultJson={DEFAULT_JSON}
+      showCommentsToggle={hasComments}
+      factory={factory}
+    />
   );
 };

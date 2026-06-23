@@ -1,5 +1,6 @@
 import { createContext, useContext, useCallback, useRef, useSyncExternalStore, FC, ReactNode } from 'react';
 import { Model, type IJsonModel } from 'flexlayout-react';
+import { hasCommentsTabset, removeCommentsTabset } from './cellLayoutComments';
 
 type RowType = string;
 type Listener = () => void;
@@ -11,10 +12,20 @@ interface LayoutEntry {
 
 class CellLayoutStore {
   private layouts = new Map<RowType, LayoutEntry>();
+  private commentsVisible = new Map<RowType, boolean>();
   private listeners = new Set<Listener>();
 
   getEntry(rowType: RowType): LayoutEntry | undefined {
     return this.layouts.get(rowType);
+  }
+
+  getCommentsVisible(rowType: RowType): boolean {
+    return this.commentsVisible.get(rowType) ?? true;
+  }
+
+  setCommentsVisible(rowType: RowType, visible: boolean) {
+    this.commentsVisible.set(rowType, visible);
+    this.notify();
   }
 
   setLayout(rowType: RowType, json: IJsonModel) {
@@ -48,6 +59,8 @@ function useCellLayoutStore() {
   return store;
 }
 
+export { useCellLayoutStore };
+
 export function useSharedModel(rowType: RowType, defaultJson: IJsonModel): [Model, (model: Model) => void] {
   const store = useCellLayoutStore();
   const modelRef = useRef<Model | null>(null);
@@ -58,15 +71,22 @@ export function useSharedModel(rowType: RowType, defaultJson: IJsonModel): [Mode
 
   const storeVersion = useSyncExternalStore(subscribe, getSnapshot);
 
+  const resolveJson = useCallback((json: IJsonModel): IJsonModel => {
+    if (!store.getCommentsVisible(rowType) && hasCommentsTabset(json)) {
+      return removeCommentsTabset(json);
+    }
+    return json;
+  }, [store, rowType]);
+
   // Create or update model only when store version changes from an external source
   if (modelRef.current === null) {
     const entry = store.getEntry(rowType);
-    modelRef.current = Model.fromJson(entry?.json ?? defaultJson);
+    modelRef.current = Model.fromJson(resolveJson(entry?.json ?? defaultJson));
     versionRef.current = entry?.version ?? -1;
   } else if (storeVersion !== versionRef.current) {
     const entry = store.getEntry(rowType);
     if (entry) {
-      modelRef.current = Model.fromJson(entry.json);
+      modelRef.current = Model.fromJson(resolveJson(entry.json));
       versionRef.current = entry.version;
     }
   }

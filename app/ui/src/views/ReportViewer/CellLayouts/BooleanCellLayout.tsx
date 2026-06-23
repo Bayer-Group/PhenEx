@@ -1,13 +1,12 @@
-import { FC, useCallback } from 'react';
-import { Layout, type IJsonModel } from 'flexlayout-react';
-import 'flexlayout-react/style/light.css';
+import { FC, useCallback, useMemo } from 'react';
+import { type IJsonModel } from 'flexlayout-react';
 import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { DescriptionPanel } from './DescriptionPanel';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
 import { BarChartCellRenderer } from '../GraphsAndTables/RowRenderers/BarChartCellRenderer';
-import { useSharedModel } from './CellLayoutStore';
 import { CommentsPanel } from '../CommentsPanel';
+import { CellLayoutFrame } from './CellLayoutFrame';
 
 interface BooleanCellLayoutProps {
   row: SequentialRow;
@@ -52,11 +51,10 @@ const VisualizationPanel: FC<{ name: string; cohortData: CohortClassified[]; fin
 };
 
 export const BooleanCellLayout: FC<BooleanCellLayoutProps> = ({ row, cohortData, finalCohortSizes }) => {
-  const [model, propagateChange] = useSharedModel('boolean', DEFAULT_JSON);
-
-  const handleModelChange = useCallback(() => {
-    propagateChange(model);
-  }, [model, propagateChange]);
+  const hasComments = useMemo(
+    () => (row.registry?.comments ?? []).some((c) => c.text),
+    [row],
+  );
 
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
@@ -75,8 +73,11 @@ export const BooleanCellLayout: FC<BooleanCellLayoutProps> = ({ row, cohortData,
   );
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0 }}>
-      <Layout model={model} factory={factory} onModelChange={handleModelChange} />
-    </div>
+    <CellLayoutFrame
+      rowType="boolean"
+      defaultJson={DEFAULT_JSON}
+      showCommentsToggle={hasComments}
+      factory={factory}
+    />
   );
 };

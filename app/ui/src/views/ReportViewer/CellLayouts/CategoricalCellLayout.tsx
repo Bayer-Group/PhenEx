@@ -1,12 +1,11 @@
-import { FC, useCallback } from 'react';
-import { Layout, type IJsonModel } from 'flexlayout-react';
-import 'flexlayout-react/style/light.css';
+import { FC, useCallback, useMemo } from 'react';
+import { type IJsonModel } from 'flexlayout-react';
 import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
 import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
-import { useSharedModel } from './CellLayoutStore';
 import { CommentsPanel } from '../CommentsPanel';
+import { CellLayoutFrame } from './CellLayoutFrame';
 
 interface CategoricalCellLayoutProps {
   row: SequentialRow;
@@ -50,11 +49,10 @@ const ChartPanel: FC<{ baseName: string; cohortData: CohortClassified[]; finalCo
 };
 
 export const CategoricalCellLayout: FC<CategoricalCellLayoutProps> = ({ row, cohortData, finalCohortSizes }) => {
-  const [model, propagateChange] = useSharedModel('categorical', DEFAULT_JSON);
-
-  const handleModelChange = useCallback(() => {
-    propagateChange(model);
-  }, [model, propagateChange]);
+  const hasComments = useMemo(
+    () => (row.registry?.comments ?? []).some((c) => c.text),
+    [row],
+  );
 
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
@@ -73,8 +71,11 @@ export const CategoricalCellLayout: FC<CategoricalCellLayoutProps> = ({ row, coh
   );
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 0 }}>
-      <Layout model={model} factory={factory} onModelChange={handleModelChange} />
-    </div>
+    <CellLayoutFrame
+      rowType="categorical"
+      defaultJson={DEFAULT_JSON}
+      showCommentsToggle={hasComments}
+      factory={factory}
+    />
   );
 };
