@@ -50,7 +50,7 @@
 
 .actionBarRegion {
   position: absolute;
-  top: 10px;
+  top: 5px;
   left: 0;
   z-index: 99;
   pointer-events: none;

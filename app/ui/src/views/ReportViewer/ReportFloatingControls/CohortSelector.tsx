@@ -165,7 +165,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
   return (
     <div ref={legendBarRef} className={styles.legendBar}>
-      {/* <div className={styles.topGradient} /> */}
+      <div className={styles.topGradient} />
 
       {/* {allDescKeys.length > 0 && (
         <button className={styles.toggleAllDescsBtn} onClick={toggleAllDescs}>
@@ -295,14 +295,14 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         />
       )}
 
-      <PhenExNavBarTooltip
+      {/* <PhenExNavBarTooltip
         isVisible={hoveredDescName != null && !expandedDescs.has(hoveredDescName!)}
         anchorElement={hoveredDescName ? labelRefs.current.get(hoveredDescName) ?? null : null}
         label={hoveredDescName && cohortDescriptions?.[hoveredDescName]?.description ? cohortDescriptions[hoveredDescName].description! : ''}
         verticalPosition="below"
         horizontalAlignment="left"
         delay={400}
-      />
+      /> */}
     </div>
   );
 };

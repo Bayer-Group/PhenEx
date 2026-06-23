@@ -55,7 +55,6 @@ export const LeftPanel: FC<LeftPanelProps> = ({
             finalCohortSizes={finalCohortSizes}
           />
         </div>
-        {isLeftPanelShown && (
           <div className={styles.scrollbarRegion}>
             <SimpleCustomScrollbar
               targetRef={scrollRef}
@@ -68,7 +67,6 @@ export const LeftPanel: FC<LeftPanelProps> = ({
               showOnHover={true}
             />
           </div>
-        )}
       </div>
     </div>
   );

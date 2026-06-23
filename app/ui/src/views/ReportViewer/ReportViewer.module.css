@@ -1,7 +1,7 @@
 .page {
   position: relative;
   margin-top:50px;
-  height: calc(100vh - 50px);
+  height: calc(100vh - 60px);
   width: 100vw;
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
@@ -75,7 +75,7 @@
 }
 
 .floatingTitle {
-  padding: 5px 10px;
+  padding: 5px 0px;
   z-index: 3;
   pointer-events: auto;
   height: fit-content;
@@ -104,7 +104,7 @@
 .titleGroup {
   position: absolute;
   top: 5px;
-  left: -0px;
+  left: 0px;
   right: 12px;
   z-index: 1000;
   pointer-events: none;
@@ -120,7 +120,7 @@
 
 .titleBar {
   padding: 5px 10px;
-  margin-left: 40px;
+  margin-left: 10px;
   pointer-events: auto;
   background-color: transparent;
   border-radius: 10px;
@@ -131,12 +131,13 @@
   align-items: center;
   z-index: 10;
   transition: background-color 0.15s, box-shadow 0.15s, border-color 0.15s;
-}
-
-.titleBarScrolled {
   background-color: white;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   border: var(--border);
+
+}
+
+.titleBarScrolled {
 }
 
 .rowTitleLabel {
@@ -188,14 +189,15 @@
 }
 
 /* Nested left-panel splitters */
-:global(.flexlayout__splitter) {
-  background-color: var(--background_color_dark);;
-  /* background-color: white; */
+.page :global(.flexlayout__splitter) {
+  background-color: var(--background_color_dark);
+  border-radius:0px !important;
+  background-color: white;
   /* border-right: 1px solid var(--line-color); */
-  /* box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1); */
-
-
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  clip-path: inset(0 -15px 0 0);
 }
+
 :global(.flexlayout__splitter:hover) {
   background-color: gray;
 }
@@ -216,10 +218,10 @@
 }
 
 :global(.flexlayout__tabset){
-  background-color: white !important;
+  /* background-color: white !important; */
     /* box-shadow: 0 1px 4px rgba(0, 0, 0, .3); */
-    border: var(--border);
-    border-radius: 8px;
+    /* border: var(--border); */
+    /* border-radius: 8px; */
 
 }
 
@@ -235,10 +237,10 @@
 
 /* Tab buttons: black background, white text, IBMPlexSans */
 :global(.flexlayout__tab_button) {
-  font-family: "IBMPlexSans-bold" !important;
+  font-family: "IBMPlexSans-regular" !important;
   background-color: white !important;
   color: black;
-  border-radius: 8px;
+  /* border-radius: 8px; */
   border-bottom: none;
     /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); */
 

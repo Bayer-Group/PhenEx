@@ -26,7 +26,6 @@ const DEFAULT_JSON: IJsonModel = {
         weight: 30,
         children: [
           { type: 'tabset', weight: 30, children: [{ type: 'tab', name: 'Description', component: 'description' }] },
-          { type: 'tabset', weight: 70, children: [{ type: 'tab', name: 'Legend', component: 'legend' }] },
         ],
       },
       { type: 'tabset', weight: 50, children: [{ type: 'tab', name: 'Visualization', component: 'visualization' }] },
