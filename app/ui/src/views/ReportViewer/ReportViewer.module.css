@@ -150,6 +150,7 @@
 .page :global(.flexlayout__border_left) :global(.flexlayout__border_button--selected) {
   color: black;
   background-color: white;
+  font-family: "IBMPlexSans-bold", sans-serif;
 }
 
 .page :global(.flexlayout__border_left) :global(.flexlayout__border_button:hover) {
