@@ -188,25 +188,43 @@
   margin: 4px;
 }
 
-/* Nested left-panel splitters */
-.page :global(.flexlayout__splitter) {
+/* Internal splitters (cohort/outline, cell layouts) */
+.page :global(.flexlayout__splitter:not(.flexlayout__splitter_border)) {
   background-color: var(--background_color_dark);
-  border-radius:0px !important;
-  background-color: white;
-  /* border-right: 1px solid var(--line-color); */
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 0 !important;
+  box-shadow: none;
+}
+
+.page :global(.flexlayout__splitter:not(.flexlayout__splitter_border):hover),
+.page :global(.flexlayout__splitter:not(.flexlayout__splitter_border).flexlayout__splitter_drag) {
+  background-color: gray;
+}
+
+/* Left panel ↔ center: FlexLayout renders [border_tab_contents][splitter_border][layout_main] */
+.page :global(.flexlayout__layout_border_container),
+.page :global(.flexlayout__layout_border_container_inner) {
+  overflow: visible;
+}
+
+.page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border) {
+  position: relative;
+  z-index: 3;
+  background-color: var(--background_color_dark) !important;
+  border-radius: 0 !important;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.08);
   clip-path: inset(0 -15px 0 0);
-}
-
-:global(.flexlayout__splitter:hover) {
-  background-color: gray;
-}
-:global(.flexlayout__splitter_drag) {
-  background-color: gray;
-  z-index: 1000;
-}
 
 
+}
+
+.page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border:hover) {
+  background-color: gray !important;
+}
+
+/* Fallback shadow on center panel edge (visible even if splitter shadow is clipped) */
+.page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border + .flexlayout__layout_main) {
+  /* box-shadow: inset 10px 0 10px -10px rgba(0, 0, 0, 0.08); */
+}
 
 /* Each tabset inside the left panel renders as a card */
 .page :global(.flexlayout__border_left) :global(.flexlayout__tabset) {
