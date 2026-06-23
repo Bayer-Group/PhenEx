@@ -224,6 +224,20 @@
   background-color: lightgray !important;
 }
 
+/* Center ↔ right: FlexLayout renders [layout_main][splitter_border][border_tab_contents] */
+.page :global(.flexlayout__layout_main + .flexlayout__splitter_border) {
+  position: relative;
+  z-index: 3;
+  background-color: var(--background_color_dark) !important;
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.08);
+  clip-path: inset(0 0 0 -15px);
+  border-left: 1px solid var(--line-color);
+}
+
+.page :global(.flexlayout__layout_main + .flexlayout__splitter_border:hover) {
+  background-color: lightgray !important;
+}
+
 /* Fallback shadow on center panel edge (visible even if splitter shadow is clipped) */
 .page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border + .flexlayout__layout_main) {
   /* box-shadow: inset 10px 0 10px -10px rgba(0, 0, 0, 0.08); */
