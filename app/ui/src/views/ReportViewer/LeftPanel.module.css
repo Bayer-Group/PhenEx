@@ -6,7 +6,7 @@
   box-sizing: border-box;
   padding:0px 0px 0px 0px;
   overflow: hidden;
-  background-color: white !important;
+  background-color: transparent !important;
   border-radius:8px;
 }
 

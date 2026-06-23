@@ -162,50 +162,43 @@
 /* ── FlexLayout styling ──────────────────────────────────────────────── */
 .page :global(.flexlayout__layout) {
   --color-background: transparent;
-  /* --color-tab-content: red; */
   overflow: hidden;
 }
 
-/* Left border panel */
+/* Left gutter */
 .page :global(.flexlayout__border_left) {
-  /* box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-  z-index: 1; */
   border-right:none;
   background-color: var(--background_color_dark);
 }
 
-/* Right border panel */
+/* Right gutter */
 .page :global(.flexlayout__border_right) {
   z-index: 1;
   border-left: none;
   background-color: var(--background_color_dark);
 }
 
-/* Each tabset inside the right panel renders as a card */
-.page :global(.flexlayout__border_right) :global(.flexlayout__tabset) {
-  background: white !important;
-  overflow: hidden;
-  margin: 4px;
-}
 
-/* Internal splitters (cohort/outline, cell layouts) */
+/* Internal dividers (splitters) within left/ center/ right panels*/
 .page :global(.flexlayout__splitter:not(.flexlayout__splitter_border)) {
-  background-color: var(--background_color_dark);
+  background-color: transparent !important;
   border-radius: 0 !important;
   box-shadow: none;
 }
 
+/* Internal dividers (splitters) within left/ center/ right panels hover */
 .page :global(.flexlayout__splitter:not(.flexlayout__splitter_border):hover),
 .page :global(.flexlayout__splitter:not(.flexlayout__splitter_border).flexlayout__splitter_drag) {
-  background-color: gray;
+  /* background-color: blue !important; */
 }
 
 /* Left panel ↔ center: FlexLayout renders [border_tab_contents][splitter_border][layout_main] */
-.page :global(.flexlayout__layout_border_container),
+/* .page :global(.flexlayout__layout_border_container),
 .page :global(.flexlayout__layout_border_container_inner) {
   overflow: visible;
-}
+} */
 
+/* Border between left panel and center panel; has drop shadow */
 .page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border) {
   position: relative;
   z-index: 3;
@@ -213,12 +206,12 @@
   border-radius: 0 !important;
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.08);
   clip-path: inset(0 -15px 0 0);
-
-
+  border-right: 1px solid var(--line-color);
 }
 
+/* Border between left panel and center panel hover */
 .page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border:hover) {
-  background-color: gray !important;
+  /* background-color: red !important; */
 }
 
 /* Fallback shadow on center panel edge (visible even if splitter shadow is clipped) */
@@ -240,7 +233,6 @@
     /* box-shadow: 0 1px 4px rgba(0, 0, 0, .3); */
     /* border: var(--border); */
     /* border-radius: 8px; */
-
 }
 
 /* Tab bar gutter: dark background, no border-bottom */
