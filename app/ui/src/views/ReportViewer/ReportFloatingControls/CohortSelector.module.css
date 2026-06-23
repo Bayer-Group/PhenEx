@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0px;
+  gap: 5px;
   width: 100%;
   position: relative;
   padding-top:0px;
@@ -15,7 +15,7 @@
   top: 0;
   margin-bottom:-10px;
   height: 50px;
-  background: linear-gradient(to bottom, white 0 5px, transparent 50px);
+  background: linear-gradient(to bottom, var(--background_color_dark) 0 5px, transparent 50px);
   pointer-events: none;
   z-index: 2;
 }
@@ -27,12 +27,12 @@
   flex-direction: column;
   gap: 0px;
   margin-left:0px;
-  margin-right:0px;
-  padding-right:18px;
-  /* border: 1px solid var(--line-color, #ddd); */
-  border-left:none;
+  margin-right:22px;
+  padding-right:5px;
+  border: 1px solid var(--line-color, #ddd);
   padding-bottom:10px;
-  background-color: transparent;
+  border-radius: 10px;
+  background-color: white;
   transition: transform 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, box-shadow 0.5s ease;
 }
 
@@ -49,18 +49,20 @@
 .legendGroupTitle {
   display: flex;
   align-items: flex-start;
-  gap: 15px;
-  font-size: var(--font_size_phenotypename, 11px);
+  gap: 10px;
+  font-size: var(--font_size_items, 11px);
   font-weight: 700;
   color: white;
-  padding: 20px 4px 5px 17px;
+  padding: 5px 4px 5px 5px;
   overflow-wrap: break-word;
   word-break: break-word;
   height: fit-content;
+  /* background-color: red; */
 }
 
 .legendGroupDot{
-  margin-top:3px;
+  margin-top:6px;
+  margin-left:10px;
 }
 
 
@@ -71,7 +73,8 @@
   /* line-height: 1.9; */
   background-color: transparent !important;
   color: black;
-  padding-right:10px;
+  padding-right:0px;
+  padding-left:4px;
 
 }
 
@@ -94,11 +97,11 @@
 .groupCaret {
   display: flex;
   align-items: center;
-  color: var(--color_inactive, #999);
+  color: black;
   opacity: 0;
   transition: opacity 0.15s, transform 0.2s ease;
-  margin-top: 3px;
-  margin-right: 8px;
+  margin-top: 8px;
+  margin-right: 0px;
   flex-shrink: 0;
 }
 
@@ -116,11 +119,11 @@
   flex-direction: row;
   align-items: flex-start;
   gap: 4px;
-  padding: 2px 8px 2px 5px;
+  padding: 0px 8px 0px 20px;
   user-select: none;
   transition: background 0.15s, border-color 0.15s;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: default;
   margin-left:10px;
   margin-right:10px;

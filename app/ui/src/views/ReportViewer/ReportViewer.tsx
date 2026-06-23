@@ -523,16 +523,14 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   return (
     <CellLayoutStoreProvider>
     <div className={styles.container}>
- <div className={styles.titleGroup}>
-          <div className={`${styles.titleBar} ${showRowTitle ? styles.titleBarScrolled : ''}`}>
-            <HorizontalRowTitle
-              entries={viewerEntries}
-              currentIndex={viewerIndex}
-              studyTitle={displayTitle}
-              onNavigate={setViewerIndex}
-            />
-          </div>
-        </div>
+      <div className={styles.titleGroup}>
+          <HorizontalRowTitle
+            entries={viewerEntries}
+            currentIndex={viewerIndex}
+            studyTitle={displayTitle}
+            onNavigate={setViewerIndex}
+          />
+      </div>
       <div className={styles.page}>
        
         <Layout model={layoutModel} factory={factory} />

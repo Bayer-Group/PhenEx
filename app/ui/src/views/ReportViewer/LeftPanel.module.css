@@ -7,7 +7,6 @@
   padding:0px 0px 0px 0px;
   overflow: hidden;
   background-color: transparent !important;
-  border-radius:8px;
 }
 
 /* .tabRegion{
@@ -124,7 +123,7 @@
 .scrollBarThumb{
   background-color: rgba(101, 96, 96, 0.2) !important;
   /* border-radius: 0px; */
-  width:12px;
+  width:10px;
 }
 
 .scrollBarTrack:hover {
