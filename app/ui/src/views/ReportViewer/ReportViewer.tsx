@@ -8,7 +8,6 @@ import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/Out
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { HorizontalRowTitle } from './HorizontalRowViewer/HorizontalRowTitle';
 import { CellLayoutStoreProvider } from './CellLayouts';
-import { type OutlineEntry } from './OutlineBar';
 import { ThreePanelCollapseProvider, useThreePanelCollapse } from '../../contexts/ThreePanelCollapseContext';
 import {
   classifyRows,
@@ -23,7 +22,7 @@ import {
   type CohortDescriptions,
   type Report,
 } from './types';
-import { buildSequentialRowList, buildViewerEntries, getSectionNames, type StudyRegistry } from './studyRegistryUtils';
+import { buildSequentialRowList, buildAccordionEntries, keyMatchesRow, sectionKey, categoryKey, type SequentialRow, type StudyRegistry } from './studyRegistryUtils';
 
 interface WaterfallInfoRow {
   Name: string;
@@ -288,8 +287,14 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     );
   }, [studyRegistry, cohortEntries, outcomesEntries, waterfallData, table2Data, timeToEventData, selectedCohortNames]);
 
-  // ── Viewer entries (single rows + multi-row section cells) ────────────
-  const viewerEntries = useMemo(() => buildViewerEntries(sequentialRows), [sequentialRows]);
+  // ── Outline accordion + viewer entries ───────────────────────────────
+  // `expandedKeys` is the single source of truth shared by the outline and the
+  // viewer: it decides which sections are expanded into individual row cells.
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => new Set());
+  const viewerEntries = useMemo(
+    () => buildAccordionEntries(sequentialRows, expandedKeys),
+    [sequentialRows, expandedKeys],
+  );
 
   // Map of reporter → cohort data so HorizontalRowViewer can render any reporter
   const cohortDataMap = useMemo(() => {
@@ -308,13 +313,44 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     ) as Record<string, number | null>;
   }, [waterfallData]);
 
-  // ── Reporter rows (for outline and cohort computations) ──────────────
-  const table2Rows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'Table2'), [sequentialRows]);
-  const tteRows = useMemo(() => sequentialRows.filter((r) => r.reporter === 'TimeToEvent'), [sequentialRows]);
-
   // ── HorizontalRowViewer state ─────────────────────────────────────────
   const [viewerIndex, setViewerIndex] = useState(0);
   const [showRowTitle, setShowRowTitle] = useState(false);
+
+  // Expand/collapse a section (or sectionless category) in the outline. This
+  // adds/removes its row cells from the viewer. Because the entry list is
+  // re-indexed, we re-anchor the viewer onto a stable entry key:
+  //  - expanding: stay on the current cell,
+  //  - collapsing while viewing one of the removed rows: jump to that section.
+  const handleToggleExpand = useCallback((key: string) => {
+    const wasExpanded = expandedKeys.has(key);
+    const nextExpanded = new Set(expandedKeys);
+    if (wasExpanded) nextExpanded.delete(key);
+    else nextExpanded.add(key);
+
+    const nextEntries = buildAccordionEntries(sequentialRows, nextExpanded);
+    const current = viewerEntries[viewerIndex];
+    let targetKey = current?.key;
+    if (wasExpanded && current?.kind === 'row' && keyMatchesRow(key, current.row)) {
+      targetKey = key;
+    }
+    const nextIndex = targetKey ? nextEntries.findIndex((e) => e.key === targetKey) : -1;
+
+    setExpandedKeys(nextExpanded);
+    setViewerIndex(nextIndex >= 0 ? nextIndex : Math.min(viewerIndex, Math.max(0, nextEntries.length - 1)));
+  }, [expandedKeys, sequentialRows, viewerEntries, viewerIndex]);
+
+  // Expand a row's section (if collapsed) and focus that row's individual cell.
+  // Used when clicking a row title inside a multi-row section cell.
+  const handleNavigateToRow = useCallback((row: SequentialRow) => {
+    const key = row.section ? sectionKey(row.category, row.section) : categoryKey(row.category);
+    const nextExpanded = new Set(expandedKeys);
+    nextExpanded.add(key);
+    const nextEntries = buildAccordionEntries(sequentialRows, nextExpanded);
+    const idx = nextEntries.findIndex((e) => e.kind === 'row' && e.row.index === row.index);
+    setExpandedKeys(nextExpanded);
+    if (idx >= 0) setViewerIndex(idx);
+  }, [expandedKeys, sequentialRows]);
 
   // ── FlexLayout + left border collapse ─────────────────────────────────
   const { isLeftPanelShown, setLeftPanelShown, toggleLeftPanel } = useThreePanelCollapse();
@@ -466,32 +502,6 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
 
   const studyDescription = "This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints.";
 
-  // ── Outline entries (for LeftPanel) ───────────────────────────────────
-  const outlineEntries: OutlineEntry[] = useMemo(() => {
-    const entries: OutlineEntry[] = [];
-    const baselineSectionNames = getSectionNames(sequentialRows, 'table1');
-    const outcomesSectionNames = getSectionNames(sequentialRows, 'table1_outcomes');
-
-    entries.push({ name: 'Attrition', level: 0, onClick: () => {} });
-    entries.push({ name: 'Baseline characteristics', level: 0, onClick: () => {} });
-    for (const name of baselineSectionNames) {
-      entries.push({ name, level: 1, onClick: () => {} });
-    }
-    if (outcomesSectionNames.length > 0 || table2Rows.length > 0 || tteRows.length > 0) {
-      entries.push({ name: 'Outcomes', level: 0, onClick: () => {} });
-      for (const name of outcomesSectionNames) {
-        entries.push({ name, level: 1, onClick: () => {} });
-      }
-      if (table2Rows.length > 0) {
-        entries.push({ name: 'Incidence Rates', level: 1, onClick: () => {} });
-      }
-      if (tteRows.length > 0) {
-        entries.push({ name: 'Time to Event', level: 1, onClick: () => {} });
-      }
-    }
-    return entries;
-  }, [sequentialRows, table2Rows.length, tteRows.length]);
-
   // ── Nested layout model for right border ──
   const rightPanelModel = useMemo(() => {
     const json: IJsonModel = {
@@ -543,6 +553,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               entries={viewerEntries}
               currentIndex={viewerIndex}
               onNavigate={setViewerIndex}
+              expandedKeys={expandedKeys}
+              onToggleExpand={handleToggleExpand}
             />
           );
         case 'center':
@@ -554,6 +566,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
                 initialIndex={viewerIndex}
                 navigateToIndex={viewerIndex}
                 onIndexChange={setViewerIndex}
+                onNavigateToRow={handleNavigateToRow}
                 onScrolledPastTitle={setShowRowTitle}
                 cohortDataMap={cohortDataMap}
                 finalCohortSizes={finalCohortSizes}
@@ -572,7 +585,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     },
     [
       displayTitle, groups, selections, sequentialRows, viewerEntries,
-      viewerIndex, handleReplace, handleAdd, updateSelections,
+      viewerIndex, expandedKeys, handleToggleExpand, handleNavigateToRow, handleReplace, handleAdd, updateSelections,
       cohortDescriptions, finalCohortSizes, cohortDataMap,
       tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,
     ],

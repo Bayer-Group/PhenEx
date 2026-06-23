@@ -38,6 +38,7 @@ interface HorizontalRowViewerProps {
   onClose?: (finalIndex: number) => void;
   navigateToIndex?: number;
   onIndexChange?: (index: number) => void;
+  onNavigateToRow?: (row: SequentialRow) => void;
   onScrolledPastTitle?: (scrolled: boolean) => void;
 }
 
@@ -56,6 +57,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   onClose,
   navigateToIndex,
   onIndexChange,
+  onNavigateToRow,
   onScrolledPastTitle,
 }) => {
   const { isLeftPanelShown } = useThreePanelCollapse();
@@ -179,6 +181,12 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     requestAnimationFrame(() => centerOnCard(currentIndex, 'instant'));
   }, [isLeftPanelShown, centerOnCard, currentIndex]);
 
+  // The set of cells changes as the outline accordion expands/collapses; the
+  // focused card's offset shifts, so snap it back to center instantly.
+  useEffect(() => {
+    requestAnimationFrame(() => centerOnCard(currentIndex, 'instant'));
+  }, [entries, centerOnCard, currentIndex]);
+
   // Block horizontal wheel scrolling of the scroller — vertical scroll
   // is handled natively by the overflow-y:auto verticalWrapper elements.
   useEffect(() => {
@@ -267,9 +275,10 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
             const nearby = Math.abs(entry.index - currentIndex) <= PRERENDER_NEIGHBOURS;
             return (
               <HorizontalCell
-                key={entry.index}
+                key={entry.key}
                 ref={isFocused ? focusedRef : null}
                 entry={entry}
+                entries={entries}
                 rows={rows}
                 isFocused={isFocused}
                 nearby={nearby}
@@ -278,6 +287,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
                 tteCohorts={tteCohorts}
                 table2Cohorts={table2Cohorts}
                 onNavigate={navigate}
+                onNavigateToRow={onNavigateToRow}
                 onVerticalScroll={isFocused ? handleVerticalScroll : undefined}
                 initialScrollTop={sharedScrollTopRef.current}
                 studyTitle={studyTitle}

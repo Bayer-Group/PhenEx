@@ -63,34 +63,188 @@ export interface SequentialSection {
   rows: SequentialRow[];
 }
 
-// ── Viewer entries (single row or multi-row section) ────────────────────
+// ── Viewer entries (category / multi-row section / single row) ──────────
 
 export type ViewerEntry =
-  | { kind: 'row'; index: number; row: SequentialRow }
-  | { kind: 'section'; index: number; section: string; rows: SequentialRow[]; reporter: string; category: string };
+  | { kind: 'row'; index: number; key: string; row: SequentialRow }
+  | { kind: 'section'; index: number; key: string; section: string; rows: SequentialRow[]; reporter: string; category: string }
+  | { kind: 'category'; index: number; key: string; category: string; reporter: string; sectionNames: string[]; hasSectionlessRows: boolean };
+
+/** Distributive `Omit` so each union member keeps its own discriminated props. */
+type ViewerEntryDraft = ViewerEntry extends infer T ? (T extends ViewerEntry ? Omit<T, 'index'> : never) : never;
+
+// ── Category presentation ───────────────────────────────────────────────
+
+export const STUDY_INFO_CATEGORY = 'study_info';
+
+export const CATEGORY_LABELS: Record<string, string> = {
+  attrition: 'Attrition',
+  baseline_characteristics: 'Baseline characteristics',
+  outcomes: 'Outcomes',
+};
+
+export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
+  attrition: 'How the study population was derived — the sequence of inclusion and exclusion criteria applied and the number of patients remaining at each step.',
+  baseline_characteristics: 'Demographic, clinical, and treatment characteristics of each cohort measured at baseline, grouped into the sections below.',
+  outcomes: 'Clinical endpoints observed during follow-up, including incidence rates and time-to-event analyses, grouped into the sections below.',
+};
+
+export function getCategoryLabel(category: string): string {
+  return CATEGORY_LABELS[category] ?? category;
+}
+
+// ── Stable entry keys (used to track identity across expand/collapse) ────
+
+export function categoryKey(category: string): string {
+  return `cat::${category}`;
+}
+
+export function sectionKey(category: string, section: string): string {
+  return `sec::${category}::${section}`;
+}
+
+export function rowKey(row: SequentialRow): string {
+  return `row::${row.index}`;
+}
 
 /**
- * Builds a flat list of ViewerEntries from sequential rows.
- * Each section with 2+ rows becomes a multi-row entry followed by its individual row entries.
- * Single-row sections or rows without a section are just individual entries.
- *
- * `index` is the entry's position in the returned array — this is the unit the
- * HorizontalRowViewer scrolls/navigates through (it replaces SequentialRow.index).
+ * Does the accordion `key` (a section or sectionless-category key) own `row`?
+ * Used to find the parent cell to jump to when a section is collapsed.
  */
-export function buildViewerEntries(sequentialRows: SequentialRow[]): ViewerEntry[] {
-  const entries: ViewerEntry[] = [];
-  const sections = groupRowsBySection(sequentialRows);
+export function keyMatchesRow(key: string, row: SequentialRow): boolean {
+  if (key.startsWith('sec::')) {
+    const rest = key.slice('sec::'.length);
+    const sep = rest.indexOf('::');
+    if (sep === -1) return false;
+    return row.category === rest.slice(0, sep) && row.section === rest.slice(sep + 2);
+  }
+  if (key.startsWith('cat::')) {
+    return row.category === key.slice('cat::'.length) && row.section === null;
+  }
+  return false;
+}
 
-  const push = (entry: Omit<ViewerEntry, 'index'>) => {
+// ── Category → section grouping ─────────────────────────────────────────
+
+interface CategoryGroup {
+  category: string;
+  reporter: string;
+  sections: SequentialSection[];
+}
+
+/** Group sequential rows by category (then section), preserving order. */
+function groupRowsByCategory(rows: SequentialRow[]): CategoryGroup[] {
+  const groups: CategoryGroup[] = [];
+  for (const row of rows) {
+    let group = groups[groups.length - 1];
+    if (!group || group.category !== row.category) {
+      group = { category: row.category, reporter: row.reporter, sections: [] };
+      groups.push(group);
+    }
+    let section = group.sections[group.sections.length - 1];
+    if (!section || section.section !== row.section) {
+      section = { section: row.section, rows: [] };
+      group.sections.push(section);
+    }
+    section.rows.push(row);
+  }
+  return groups;
+}
+
+/**
+ * Builds the navigable list of cells for the HorizontalRowViewer.
+ *
+ * The list is hierarchical and driven by the outline's accordion state:
+ *  - every category renders a `category` cell (overview + its sections),
+ *  - every named section renders a `section` (multi-row) cell,
+ *  - individual `row` cells appear only for accordion keys present in
+ *    `expandedKeys` (a named section, or a category that holds sectionless rows).
+ *
+ * With an empty `expandedKeys` the result contains no single-row cells, so the
+ * scrollable items mirror exactly what the collapsed outline shows.
+ */
+export function buildAccordionEntries(
+  sequentialRows: SequentialRow[],
+  expandedKeys: Set<string>,
+): ViewerEntry[] {
+  const entries: ViewerEntry[] = [];
+  const push = (entry: ViewerEntryDraft) => {
     entries.push({ ...entry, index: entries.length } as ViewerEntry);
   };
 
-  for (const { section, rows } of sections) {
+  for (const group of groupRowsByCategory(sequentialRows)) {
+    // study_info is a standalone intro cell, not part of the accordion.
+    if (group.category === STUDY_INFO_CATEGORY) {
+      for (const section of group.sections) {
+        for (const row of section.rows) push({ kind: 'row', key: rowKey(row), row });
+      }
+      continue;
+    }
+
+    const namedSections = group.sections.filter(
+      (s): s is { section: string; rows: SequentialRow[] } => s.section !== null,
+    );
+    const sectionlessRows = group.sections
+      .filter((s) => s.section === null)
+      .flatMap((s) => s.rows);
+
+    push({
+      kind: 'category',
+      key: categoryKey(group.category),
+      category: group.category,
+      reporter: group.reporter,
+      sectionNames: namedSections.map((s) => s.section),
+      hasSectionlessRows: sectionlessRows.length > 0,
+    });
+
+    for (const section of namedSections) {
+      const key = sectionKey(group.category, section.section);
+      push({
+        kind: 'section',
+        key,
+        section: section.section,
+        rows: section.rows,
+        reporter: section.rows[0].reporter,
+        category: group.category,
+      });
+      // Only multi-row sections expand into individual row cells.
+      if (section.rows.length >= 2 && expandedKeys.has(key)) {
+        for (const row of section.rows) push({ kind: 'row', key: rowKey(row), row });
+      }
+    }
+
+    if (sectionlessRows.length > 0 && expandedKeys.has(categoryKey(group.category))) {
+      for (const row of sectionlessRows) push({ kind: 'row', key: rowKey(row), row });
+    }
+  }
+
+  return entries;
+}
+
+/**
+ * Flat list of section + row entries (no category cells, no accordion).
+ * Used by the spatial study display, where every row is always present and is
+ * mapped 1:1 to a navigable target.
+ */
+export function buildViewerEntries(sequentialRows: SequentialRow[]): ViewerEntry[] {
+  const entries: ViewerEntry[] = [];
+  const push = (entry: ViewerEntryDraft) => {
+    entries.push({ ...entry, index: entries.length } as ViewerEntry);
+  };
+
+  for (const { section, rows } of groupRowsBySection(sequentialRows)) {
     if (section && rows.length >= 2) {
-      push({ kind: 'section', section, rows, reporter: rows[0].reporter, category: rows[0].category });
+      push({
+        kind: 'section',
+        key: sectionKey(rows[0].category, section),
+        section,
+        rows,
+        reporter: rows[0].reporter,
+        category: rows[0].category,
+      });
     }
     for (const row of rows) {
-      push({ kind: 'row', row });
+      push({ kind: 'row', key: rowKey(row), row });
     }
   }
 
@@ -99,19 +253,22 @@ export function buildViewerEntries(sequentialRows: SequentialRow[]): ViewerEntry
 
 // ── ViewerEntry accessors ───────────────────────────────────────────────
 
-/** Top-level category for an entry (works for both row and section entries). */
+/** Top-level category for an entry. */
 export function getEntryCategory(entry: ViewerEntry): string {
   return entry.kind === 'row' ? entry.row.category : entry.category;
 }
 
 /** Section name for an entry, or null. */
 export function getEntrySection(entry: ViewerEntry): string | null {
-  return entry.kind === 'row' ? entry.row.section : entry.section;
+  if (entry.kind === 'row') return entry.row.section;
+  if (entry.kind === 'section') return entry.section;
+  return null;
 }
 
-/** Human-readable label for an entry (row display name or section name). */
+/** Human-readable label for an entry (row display name, section, or category). */
 export function getEntryLabel(entry: ViewerEntry): string {
   if (entry.kind === 'section') return entry.section;
+  if (entry.kind === 'category') return getCategoryLabel(entry.category);
   return entry.row.registry?.display_name || entry.row.name;
 }
 

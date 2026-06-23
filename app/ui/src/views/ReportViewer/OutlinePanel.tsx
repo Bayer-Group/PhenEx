@@ -1,62 +1,95 @@
-import { FC, useMemo } from 'react';
-import { type ViewerEntry, getEntryCategory, getEntrySection } from './studyRegistryUtils';
+import { FC } from 'react';
+import {
+  type ViewerEntry,
+  STUDY_INFO_CATEGORY,
+  categoryKey,
+  getCategoryLabel,
+  getEntryLabel,
+} from './studyRegistryUtils';
 import styles from './OutlinePanel.module.css';
 
 interface OutlinePanelProps {
+  /** The exact list of navigable cells currently in the viewer. */
   entries: ViewerEntry[];
   currentIndex: number;
   onNavigate: (index: number) => void;
+  /** Accordion keys (section / sectionless-category) that are expanded. */
+  expandedKeys: Set<string>;
+  onToggleExpand: (key: string) => void;
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  attrition: 'Attrition',
-  baseline_characteristics: 'Baseline characteristics',
-  outcomes: 'Outcomes',
-};
-
-export const OutlinePanel: FC<OutlinePanelProps> = ({ entries, currentIndex, onNavigate }) => {
-  // Outline items navigate to the entry index of the first entry in each
-  // category/section. For multi-row sections this is the section (multi-row) cell.
-  const items = useMemo(() => {
-    const result: { name: string; level: number; entryIndex: number }[] = [];
-    const seenCategories = new Set<string>();
-    const seenSections = new Set<string>();
-    for (const entry of entries) {
-      const category = getEntryCategory(entry);
-      const section = getEntrySection(entry);
-      if (!seenCategories.has(category)) {
-        seenCategories.add(category);
-        result.push({
-          name: CATEGORY_LABELS[category] || category,
-          level: 0,
-          entryIndex: entry.index,
-        });
-      }
-      const sectionKey = `${category}::${section}`;
-      if (section && !seenSections.has(sectionKey)) {
-        seenSections.add(sectionKey);
-        result.push({ name: section, level: 1, entryIndex: entry.index });
-      }
-    }
-    return result;
-  }, [entries]);
+/**
+ * An accordion outline whose items map 1:1 to the cells the user can scroll
+ * through. Categories and sections are always shown; expanding a section (or a
+ * sectionless category) reveals its individual rows — which simultaneously adds
+ * those rows as scrollable cells in the viewer.
+ */
+export const OutlinePanel: FC<OutlinePanelProps> = ({
+  entries,
+  currentIndex,
+  onNavigate,
+  expandedKeys,
+  onToggleExpand,
+}) => {
+  const renderItem = (
+    key: string,
+    label: string,
+    level: number,
+    entryIndex: number,
+    toggleKey: string | null,
+  ) => {
+    const isActive = currentIndex === entryIndex;
+    const isExpanded = toggleKey ? expandedKeys.has(toggleKey) : false;
+    return (
+      <div key={key} className={styles.row} style={{ paddingLeft: level * 14 }}>
+        {toggleKey ? (
+          <button
+            type="button"
+            className={styles.chevron}
+            aria-label={isExpanded ? 'Collapse' : 'Expand'}
+            onClick={() => onToggleExpand(toggleKey)}
+          >
+            <span className={`${styles.chevronIcon} ${isExpanded ? styles.chevronOpen : ''}`}>▸</span>
+          </button>
+        ) : (
+          <span className={styles.chevronSpacer} />
+        )}
+        <button
+          type="button"
+          className={`${styles.item} ${isActive ? styles.itemActive : ''} ${styles[`level${level}`] ?? ''}`}
+          onClick={() => onNavigate(entryIndex)}
+        >
+          {label}
+        </button>
+      </div>
+    );
+  };
 
   return (
     <div className={styles.panel}>
-      {items.map((item, i) => {
-        const isActive =
-          currentIndex >= item.entryIndex &&
-          (i + 1 >= items.length || currentIndex < items[i + 1].entryIndex);
-        return (
-          <button
-            key={`${item.name}-${i}`}
-            className={`${styles.item} ${isActive ? styles.itemActive : ''}`}
-            style={{ paddingLeft: item.level === 0 ? 8 : 20 }}
-            onClick={() => onNavigate(item.entryIndex)}
-          >
-            {item.name}
-          </button>
-        );
+      {entries.map((entry) => {
+        if (entry.kind === 'category') {
+          return renderItem(
+            entry.key,
+            getCategoryLabel(entry.category),
+            0,
+            entry.index,
+            entry.hasSectionlessRows ? categoryKey(entry.category) : null,
+          );
+        }
+        if (entry.kind === 'section') {
+          return renderItem(
+            entry.key,
+            entry.section,
+            1,
+            entry.index,
+            entry.rows.length >= 2 ? entry.key : null,
+          );
+        }
+        // Individual rows: only appear when their parent is expanded. The
+        // study_info intro cell has no outline entry.
+        if (entry.row.category === STUDY_INFO_CATEGORY) return null;
+        return renderItem(entry.key, getEntryLabel(entry), 2, entry.index, null);
       })}
     </div>
   );

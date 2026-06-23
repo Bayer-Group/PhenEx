@@ -14,13 +14,54 @@
 
 }
 
-.item {
-  display: block;
+.row {
+  display: flex;
+  align-items: center;
   width: 100%;
+}
+
+.chevron {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #888;
+  cursor: pointer;
+}
+
+.chevron:hover {
+  color: #333;
+}
+
+.chevronIcon {
+  display: inline-block;
+  font-size: 10px;
+  line-height: 1;
+  transition: transform 0.12s ease;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.chevronSpacer {
+  flex-shrink: 0;
+  width: 18px;
+}
+
+.item {
+  flex: 1;
+  min-width: 0;
+  display: block;
   text-align: left;
   border: none;
   background: none;
-  padding: 5px 12px;
+  padding: 5px 8px;
   font-size: 12px;
   font-family: 'IBMPlexSans-regular', sans-serif;
   color: #333;
@@ -39,4 +80,12 @@
 .itemActive {
   background: rgba(0, 0, 0, 0.08);
   font-family: 'IBMPlexSans-bold', sans-serif;
+}
+
+.level0 {
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}
+
+.level2 {
+  color: #666;
 }

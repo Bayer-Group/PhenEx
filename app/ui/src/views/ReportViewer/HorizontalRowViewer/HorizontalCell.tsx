@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { type CohortClassified, type KdeCurve } from '../types';
-import { type SequentialRow, type ViewerEntry } from '../studyRegistryUtils';
+import { type SequentialRow, type ViewerEntry, CATEGORY_DESCRIPTIONS, getCategoryLabel } from '../studyRegistryUtils';
 import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEventContent';
 import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
@@ -14,6 +14,7 @@ import styles from './HorizontalCell.module.css';
 
 export interface HorizontalCellProps {
   entry: ViewerEntry;
+  entries: ViewerEntry[];
   rows: SequentialRow[];
   isFocused: boolean;
   nearby: boolean;
@@ -22,6 +23,7 @@ export interface HorizontalCellProps {
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
+  onNavigateToRow?: (row: SequentialRow) => void;
   onVerticalScroll?: (scrollTop: number, threshold: number) => void;
   initialScrollTop?: number;
   studyTitle?: string;
@@ -31,11 +33,15 @@ export interface HorizontalCellProps {
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ entry, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onVerticalScroll, initialScrollTop, studyTitle = '', studyDescription }, ref) => {
+  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, onVerticalScroll, initialScrollTop, studyTitle = '', studyDescription }, ref) => {
     const isSection = entry.kind === 'section';
+    const isCategory = entry.kind === 'category';
     const reporter = entry.kind === 'row' ? entry.row.reporter : entry.reporter;
-    const cellRows = entry.kind === 'row' ? [entry.row] : entry.rows;
-    const title = entry.kind === 'row' ? (entry.row.registry?.display_name || entry.row.name) : entry.section;
+    const cellRows = entry.kind === 'section' ? entry.rows : entry.kind === 'row' ? [entry.row] : [];
+    const title =
+      entry.kind === 'row' ? (entry.row.registry?.display_name || entry.row.name)
+        : entry.kind === 'section' ? entry.section
+          : getCategoryLabel(entry.category);
 
     const cohortData = cohortDataMap[reporter] ?? [];
     const verticalScrollRef = useRef<HTMLDivElement>(null);
@@ -92,20 +98,50 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
       }
     };
 
+    const renderCategoryContent = () => {
+      if (entry.kind !== 'category') return null;
+      const description = CATEGORY_DESCRIPTIONS[entry.category] ?? '';
+      const sectionEntries = entries.filter(
+        (e): e is Extract<ViewerEntry, { kind: 'section' }> =>
+          e.kind === 'section' && e.category === entry.category,
+      );
+      return (
+        <div className={styles.categoryBody}>
+          {description && <p className={styles.categoryDescription}>{description}</p>}
+          {sectionEntries.length > 0 && (
+            <div className={styles.categorySectionList}>
+              {sectionEntries.map((se) => (
+                <button
+                  key={se.key}
+                  type="button"
+                  className={styles.categorySectionLink}
+                  onClick={(e) => { e.stopPropagation(); onNavigate(se.index); }}
+                >
+                  <span className={styles.categorySectionName}>{se.section}</span>
+                  <span className={styles.categorySectionCount}>{se.rows.length}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    };
+
     const renderContent = () => {
       if (!nearby) return null;
+      if (isCategory) return renderCategoryContent();
       if (!isSection) return renderRowContent(cellRows[0]);
       // Multi-row cell: stack each row of the section vertically, each in a
       // bounded block so its FlexLayout-based content renders at full size.
-      // A section entry is immediately followed by its row entries, so the
-      // i-th row's entry index is entry.index + 1 + i.
+      // Clicking a row title expands the section (if needed) and focuses that
+      // row's own cell.
       return (
         <div className={styles.multiRowList}>
-          {cellRows.map((row, i) => (
+          {cellRows.map((row) => (
             <div key={row.index} className={styles.multiRowBlock}>
               <div
                 className={styles.multiRowTitle}
-                onClick={(e) => { e.stopPropagation(); onNavigate(entry.index + 1 + i); }}
+                onClick={(e) => { e.stopPropagation(); onNavigateToRow?.(row); }}
               >
                 {row.registry?.display_name || row.name}
               </div>
@@ -127,7 +163,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
               onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(entry.index); }}
             >
               <div
-                className={`${styles.cardTitle} ${isSection ? styles.cardTitleSection : ''}`}
+                className={`${styles.cardTitle} ${isSection || isCategory ? styles.cardTitleSection : ''}`}
                 style={{ opacity: titleHidden ? 0 : 1 }}
               >
                 {title}

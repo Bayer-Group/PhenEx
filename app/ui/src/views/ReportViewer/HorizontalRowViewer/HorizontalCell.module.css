@@ -101,6 +101,65 @@
   min-height: 0;
 }
 
+/* ── Category (overview) cell ─────────────────────────────────────────── */
+
+.categoryBody {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px 8px 40px;
+  max-width: 720px;
+}
+
+.categoryDescription {
+  margin: 0;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #444;
+}
+
+.categorySectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.categorySectionLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border: var(--border);
+  background: white;
+  padding: 12px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.1s, box-shadow 0.1s;
+}
+
+.categorySectionLink:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.categorySectionName {
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-size: 15px;
+  color: black;
+}
+
+.categorySectionCount {
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: 12px;
+  color: #888;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  padding: 2px 10px;
+}
+
 .scrollBarTrack {
   background-color: transparent;
   border-radius: 0px;
