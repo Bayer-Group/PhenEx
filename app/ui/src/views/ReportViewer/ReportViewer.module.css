@@ -127,10 +127,60 @@
   overflow: hidden;
 }
 
-/* Left gutter */
+/* Left gutter — vertical tab bar */
 .page :global(.flexlayout__border_left) {
-  border-right:none;
+  border-right: none;
   background-color: var(--background_color_dark);
+  width:40px;
+}
+
+/* Vertical border tab labels */
+.page :global(.flexlayout__border_left) :global(.flexlayout__border_button) {
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: var(--font_size_items, 14px);
+  /* writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg); */
+  padding: 3px 6px;
+  color: #666;
+  background-color: var(--background_color_dark);
+  border: none;
+}
+
+.page :global(.flexlayout__border_left) :global(.flexlayout__border_button--selected) {
+  color: black;
+  background-color: white;
+}
+
+.page :global(.flexlayout__border_left) :global(.flexlayout__border_button:hover) {
+  color: black;
+}
+
+/* Left border panel content (Cohorts / Outline) */
+.page :global(.flexlayout__border_tab_contents) {
+  background: transparent;
+  overflow: hidden;
+}
+
+/* Collapse toggle in the left border toolbar */
+.leftBorderCollapseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px 4px;
+  border: none;
+  background: var(--background_color_dark);
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.leftBorderCollapseBtn:hover {
+  color: black;
+  background-color: rgba(0, 0, 0, 0.06);
 }
 
 /* Right gutter */

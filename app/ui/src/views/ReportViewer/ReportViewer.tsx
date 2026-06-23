@@ -1,5 +1,5 @@
-import { FC, useState, useEffect, useCallback, useMemo } from 'react';
-import { Layout, Model, IJsonModel } from 'flexlayout-react';
+import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Layout, Model, IJsonModel, Actions, BorderNode, TabSetNode, DockLocation, type Action, type ITabSetRenderValues } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
 import { LeftPanel } from './LeftPanel';
@@ -9,6 +9,7 @@ import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { HorizontalRowTitle } from './HorizontalRowViewer/HorizontalRowTitle';
 import { CellLayoutStoreProvider } from './CellLayouts';
 import { type OutlineEntry } from './OutlineBar';
+import { ThreePanelCollapseProvider, useThreePanelCollapse } from '../../contexts/ThreePanelCollapseContext';
 import {
   classifyRows,
   parseCohortGroups,
@@ -64,9 +65,66 @@ export interface ReportViewerProps {
   onSelectionsChange?: (selections: LegendSelection[]) => void;
 }
 
+// ── Layout constants ────────────────────────────────────────────────────
+
+const LEFT_BORDER_SIZE = 300;
+const LEFT_BORDER_MIN = 250;
+
+function createLayoutModel(): Model {
+  const json: IJsonModel = {
+    global: {
+      tabEnableClose: false,
+      tabEnableRename: false,
+      tabEnableDrag: true,
+      tabSetEnableMaximize: false,
+      tabSetEnableDrop: true,
+      borderEnableDrop: true,
+    },
+    borders: [
+      {
+        type: 'border',
+        location: 'left',
+        size: LEFT_BORDER_SIZE,
+        minSize: LEFT_BORDER_MIN,
+        selected: 0,
+        children: [
+          { type: 'tab', name: 'Cohorts', component: 'cohortSelector', enableClose: false, enableDrag: true },
+          { type: 'tab', name: 'Outline', component: 'outline', enableClose: false, enableDrag: true },
+        ],
+      },
+      {
+        type: 'border',
+        location: 'right',
+        size: 300,
+        minSize: 200,
+        selected: 0,
+        children: [{ type: 'tab', name: 'Interact', component: 'rightStacked', enableClose: false }],
+      },
+    ],
+    layout: {
+      type: 'row',
+      children: [
+        {
+          type: 'tabset',
+          enableTabStrip: false,
+          enableDrop: false,
+          children: [{ type: 'tab', name: 'Report', component: 'center', enableClose: false, enableDrag: false }],
+        },
+      ],
+    },
+  };
+  return Model.fromJson(json);
+}
+
 // ── Component ───────────────────────────────────────────────────────────
 
-export const ReportViewer: FC<ReportViewerProps> = ({
+export const ReportViewer: FC<ReportViewerProps> = (props) => (
+  <ThreePanelCollapseProvider storageKey={props.storageKey ? `${props.storageKey}-left-panel` : undefined}>
+    <ReportViewerInner {...props} />
+  </ThreePanelCollapseProvider>
+);
+
+const ReportViewerInner: FC<ReportViewerProps> = ({
   allCohortEntries,
   allOutcomesEntries,
   waterfallData,
@@ -258,6 +316,90 @@ export const ReportViewer: FC<ReportViewerProps> = ({
   const [viewerIndex, setViewerIndex] = useState(0);
   const [showRowTitle, setShowRowTitle] = useState(false);
 
+  // ── FlexLayout + left border collapse ─────────────────────────────────
+  const { isLeftPanelShown, setLeftPanelShown, toggleLeftPanel } = useThreePanelCollapse();
+  const layoutModelRef = useRef<Model>(createLayoutModel());
+  const lastBorderSizeRef = useRef(LEFT_BORDER_SIZE);
+  const lastSelectedTabRef = useRef(0);
+  const syncingBorderRef = useRef(false);
+
+  const getLeftBorder = useCallback(
+    () => layoutModelRef.current.getBorderSet().getBorderMap().get(DockLocation.LEFT),
+    [],
+  );
+
+  const isBorderOpen = useCallback((border: BorderNode) => border.getSelected() !== -1, []);
+
+  // Sync collapse context → FlexLayout border
+  useEffect(() => {
+    const border = getLeftBorder();
+    if (!border) return;
+    const open = isBorderOpen(border);
+    if (isLeftPanelShown === open) return;
+
+    syncingBorderRef.current = true;
+    if (!isLeftPanelShown) {
+      if (border.getSize() > 0) lastBorderSizeRef.current = border.getSize();
+      if (border.getSelected() >= 0) lastSelectedTabRef.current = border.getSelected();
+      layoutModelRef.current.doAction(Actions.updateNodeAttributes(border.getId(), { selected: -1 }));
+    } else {
+      layoutModelRef.current.doAction(Actions.updateNodeAttributes(border.getId(), {
+        size: lastBorderSizeRef.current,
+        selected: lastSelectedTabRef.current,
+      }));
+    }
+    syncingBorderRef.current = false;
+  }, [isLeftPanelShown, getLeftBorder, isBorderOpen]);
+
+  const handleLayoutModelChange = useCallback((model: Model, _action: Action) => {
+    if (syncingBorderRef.current) return;
+    const border = model.getBorderSet().getBorderMap().get(DockLocation.LEFT);
+    if (!border) return;
+
+    const open = border.getSelected() !== -1;
+    if (open) {
+      if (border.getSize() > 0) lastBorderSizeRef.current = border.getSize();
+      if (border.getSelected() >= 0) lastSelectedTabRef.current = border.getSelected();
+    }
+
+    if (open !== isLeftPanelShown) {
+      setLeftPanelShown(open);
+    }
+  }, [isLeftPanelShown, setLeftPanelShown]);
+
+  const handleRenderTabSet = useCallback((
+    node: BorderNode | TabSetNode,
+    renderValues: ITabSetRenderValues,
+  ) => {
+    if (!(node instanceof BorderNode) || node.getLocation() !== DockLocation.LEFT) return;
+    renderValues.stickyButtons.push(
+      <button
+        key="collapse-left"
+        type="button"
+        className={`${styles.leftBorderCollapseBtn} flexlayout__border_toolbar_button`}
+        title={isLeftPanelShown ? 'Collapse panel (⌘B)' : 'Expand panel (⌘B)'}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleLeftPanel();
+        }}
+      >
+        {isLeftPanelShown ? '◂' : '▸'}
+      </button>,
+    );
+  }, [isLeftPanelShown, toggleLeftPanel]);
+
+  // ⌘B toggles left panel (same as ThreePanelView)
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey && !e.altKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        toggleLeftPanel();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [toggleLeftPanel]);
+
   // ── Table2 + TimeToEvent ──────────────────────────────────────────────
   const table2Cohorts: Table2Cohort[] = useMemo(
     () =>
@@ -350,73 +492,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     return entries;
   }, [sequentialRows, table2Rows.length, tteRows.length]);
 
-  // ── FlexLayout model ────────────────────────────────────────────────
-  const layoutModel = useMemo(() => {
-    const json: IJsonModel = {
-      global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: false, tabSetEnableMaximize: false, tabSetEnableDrop: false },
-      borders: [
-        {
-          type: 'border',
-          location: 'left',
-          size: 300,
-          minSize: 250,
-          selected: 0,
-          children: [{ type: 'tab', name: 'navigate', component: 'leftStacked', enableClose: false }],
-        },
-        {
-          type: 'border',
-          location: 'right',
-          size: 300,
-          minSize: 200,
-          selected: 0,
-          children: [{ type: 'tab', name: 'Interact', component: 'rightStacked', enableClose: false }],
-        },
-      ],
-      layout: {
-        type: 'row',
-        children: [
-          {
-            type: 'tabset',
-            enableTabStrip: false,
-            enableDrop: false,
-            children: [{ type: 'tab', name: 'Report', component: 'center', enableClose: false, enableDrag: false }],
-          },
-        ],
-      },
-    };
-    return Model.fromJson(json);
-  }, []);
-
-  // ── Nested layout model for left border (stacked with draggable divider) ──
-  const leftPanelModel = useMemo(() => {
-    const json: IJsonModel = {
-      global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: true, tabSetEnableDrop: true },
-      borders: [],
-      layout: {
-        type: 'row',
-        children: [
-          {
-            type: 'row',
-            children: [
-              {
-                type: 'tabset',
-                weight: 50,
-                children: [{ type: 'tab', name: 'Select cohorts', component: 'cohortSelector' }],
-              },
-              {
-                type: 'tabset',
-                weight: 50,
-                children: [{ type: 'tab', name: 'Outline', component: 'outline' }],
-              },
-            ],
-          },
-        ],
-      },
-    };
-    return Model.fromJson(json);
-  }, []);
-
-  // ── Nested layout model for right border (stacked with draggable divider) ──
+  // ── Nested layout model for right border ──
   const rightPanelModel = useMemo(() => {
     const json: IJsonModel = {
       global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: true, tabSetEnableDrop: true },
@@ -446,7 +522,7 @@ export const ReportViewer: FC<ReportViewerProps> = ({
     [],
   );
 
-  const leftPanelFactory = useCallback(
+  const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
         case 'cohortSelector':
@@ -469,22 +545,6 @@ export const ReportViewer: FC<ReportViewerProps> = ({
               onNavigate={setViewerIndex}
             />
           );
-        default:
-          return null;
-      }
-    },
-    [
-      displayTitle, groups, selections, outlineEntries, sequentialRows, viewerEntries,
-      viewerIndex, handleReplace, handleAdd, updateSelections,
-      cohortDescriptions, reports, finalCohortSizes,
-    ],
-  );
-
-  const factory = useCallback(
-    (node: { getComponent: () => string | undefined }) => {
-      switch (node.getComponent()) {
-        case 'leftStacked':
-          return <Layout model={leftPanelModel} factory={leftPanelFactory} />
         case 'center':
           return (
             <div className={styles.centerPanel}>
@@ -511,10 +571,10 @@ export const ReportViewer: FC<ReportViewerProps> = ({
       }
     },
     [
-      displayTitle, groups, selections, outlineEntries, sequentialRows, viewerEntries,
+      displayTitle, groups, selections, sequentialRows, viewerEntries,
       viewerIndex, handleReplace, handleAdd, updateSelections,
-      cohortDescriptions, reports, finalCohortSizes, cohortDataMap,
-      tteCohorts, table2Cohorts, studyDescription,
+      cohortDescriptions, finalCohortSizes, cohortDataMap,
+      tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,
     ],
   );
 
@@ -532,8 +592,12 @@ export const ReportViewer: FC<ReportViewerProps> = ({
           />
       </div>
       <div className={styles.page}>
-       
-        <Layout model={layoutModel} factory={factory} />
+        <Layout
+          model={layoutModelRef.current}
+          factory={factory}
+          onModelChange={handleLayoutModelChange}
+          onRenderTabSet={handleRenderTabSet}
+        />
       </div>
     </div>
     </CellLayoutStoreProvider>
