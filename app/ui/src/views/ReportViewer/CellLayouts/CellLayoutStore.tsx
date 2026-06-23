@@ -1,6 +1,6 @@
 import { createContext, useContext, useCallback, useRef, useSyncExternalStore, FC, ReactNode } from 'react';
 import { Model, type IJsonModel } from 'flexlayout-react';
-import { hasCommentsTabset, removeCommentsTabset } from './cellLayoutComments';
+import { hasCommentsTabset, removeCommentsTabset, addCommentsTabset } from './cellLayoutComments';
 
 type RowType = string;
 type Listener = () => void;
@@ -12,19 +12,35 @@ interface LayoutEntry {
 
 class CellLayoutStore {
   private layouts = new Map<RowType, LayoutEntry>();
-  private commentsVisible = new Map<RowType, boolean>();
+  /** Shared across boolean / categorical / numeric layouts. */
+  private commentsVisible = true;
+  private commentsRevision = 0;
   private listeners = new Set<Listener>();
 
   getEntry(rowType: RowType): LayoutEntry | undefined {
     return this.layouts.get(rowType);
   }
 
-  getCommentsVisible(rowType: RowType): boolean {
-    return this.commentsVisible.get(rowType) ?? true;
+  getCommentsVisible(): boolean {
+    return this.commentsVisible;
   }
 
-  setCommentsVisible(rowType: RowType, visible: boolean) {
-    this.commentsVisible.set(rowType, visible);
+  getCommentsRevision(): number {
+    return this.commentsRevision;
+  }
+
+  /** Toggle comments panel visibility for every cell layout type. */
+  setCommentsVisible(visible: boolean) {
+    if (this.commentsVisible === visible) return;
+    this.commentsVisible = visible;
+    this.commentsRevision++;
+
+    for (const [rowType, entry] of this.layouts) {
+      const nextJson = visible
+        ? (hasCommentsTabset(entry.json) ? entry.json : addCommentsTabset(entry.json))
+        : removeCommentsTabset(entry.json);
+      this.layouts.set(rowType, { json: nextJson, version: entry.version + 1 });
+    }
     this.notify();
   }
 
@@ -64,40 +80,39 @@ export { useCellLayoutStore };
 export function useSharedModel(rowType: RowType, defaultJson: IJsonModel): [Model, (model: Model) => void] {
   const store = useCellLayoutStore();
   const modelRef = useRef<Model | null>(null);
-  const versionRef = useRef<number>(-1);
+  const snapshotRef = useRef('');
 
   const subscribe = useCallback((cb: Listener) => store.subscribe(cb), [store]);
-  const getSnapshot = useCallback(() => store.getEntry(rowType)?.version ?? -1, [store, rowType]);
-
-  const storeVersion = useSyncExternalStore(subscribe, getSnapshot);
-
-  const resolveJson = useCallback((json: IJsonModel): IJsonModel => {
-    if (!store.getCommentsVisible(rowType) && hasCommentsTabset(json)) {
-      return removeCommentsTabset(json);
-    }
-    return json;
+  const getSnapshot = useCallback(() => {
+    const entry = store.getEntry(rowType);
+    return `${entry?.version ?? -1}:${store.getCommentsRevision()}`;
   }, [store, rowType]);
 
-  // Create or update model only when store version changes from an external source
+  const storeSnapshot = useSyncExternalStore(subscribe, getSnapshot);
+
+  const resolveJson = useCallback((json: IJsonModel): IJsonModel => {
+    if (store.getCommentsVisible()) {
+      return hasCommentsTabset(json) ? json : addCommentsTabset(json);
+    }
+    return hasCommentsTabset(json) ? removeCommentsTabset(json) : json;
+  }, [store]);
+
   if (modelRef.current === null) {
     const entry = store.getEntry(rowType);
     modelRef.current = Model.fromJson(resolveJson(entry?.json ?? defaultJson));
-    versionRef.current = entry?.version ?? -1;
-  } else if (storeVersion !== versionRef.current) {
+    snapshotRef.current = storeSnapshot;
+  } else if (storeSnapshot !== snapshotRef.current) {
     const entry = store.getEntry(rowType);
-    if (entry) {
-      modelRef.current = Model.fromJson(resolveJson(entry.json));
-      versionRef.current = entry.version;
-    }
+    const json = entry?.json ?? (modelRef.current.toJson() as IJsonModel);
+    modelRef.current = Model.fromJson(resolveJson(json));
+    snapshotRef.current = storeSnapshot;
   }
 
   const propagateChange = useCallback(
     (model: Model) => {
       const json = model.toJson() as IJsonModel;
       store.setLayout(rowType, json);
-      // Immediately track our own version so we don't rebuild from it
-      const entry = store.getEntry(rowType);
-      if (entry) versionRef.current = entry.version;
+      snapshotRef.current = `${store.getEntry(rowType)?.version ?? -1}:${store.getCommentsRevision()}`;
     },
     [store, rowType],
   );

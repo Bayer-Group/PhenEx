@@ -138,11 +138,6 @@ const BoxplotPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeData: 
 
 
 export const NumericCellLayout: FC<NumericCellLayoutProps> = ({ row, cohortData, kdeData, finalCohortSizes }) => {
-  const hasComments = useMemo(
-    () => (row.registry?.comments ?? []).some((c) => c.text),
-    [row],
-  );
-
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
@@ -168,11 +163,6 @@ export const NumericCellLayout: FC<NumericCellLayoutProps> = ({ row, cohortData,
   );
 
   return (
-    <CellLayoutFrame
-      rowType="numeric"
-      defaultJson={DEFAULT_JSON}
-      showCommentsToggle={hasComments}
-      factory={factory}
-    />
+    <CellLayoutFrame rowType="numeric" defaultJson={DEFAULT_JSON} factory={factory} />
   );
 };

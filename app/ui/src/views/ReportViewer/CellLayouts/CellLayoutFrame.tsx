@@ -1,7 +1,6 @@
 import { FC, useCallback, useSyncExternalStore } from 'react';
 import { Layout, type IJsonModel } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
-import 'flexlayout-react/style/light.css';
 import { useSharedModel, useCellLayoutStore } from './CellLayoutStore';
 import { addCommentsTabset, removeCommentsTabset } from './cellLayoutComments';
 import styles from './CellLayoutFrame.module.css';
@@ -25,7 +24,7 @@ export const CellLayoutFrame: FC<CellLayoutFrameProps> = ({
 
   const commentsVisible = useSyncExternalStore(
     (cb) => store.subscribe(cb),
-    () => store.getCommentsVisible(rowType),
+    () => store.getCommentsVisible(),
   );
 
   const handleModelChange = useCallback(() => {
@@ -33,10 +32,11 @@ export const CellLayoutFrame: FC<CellLayoutFrameProps> = ({
   }, [model, propagateChange]);
 
   const toggleComments = useCallback(() => {
-    const json = model.toJson() as IJsonModel;
     const nextVisible = !commentsVisible;
-    const nextJson = nextVisible ? addCommentsTabset(json) : removeCommentsTabset(json);
-    store.setCommentsVisible(rowType, nextVisible);
+    const nextJson = nextVisible
+      ? addCommentsTabset(model.toJson() as IJsonModel)
+      : removeCommentsTabset(model.toJson() as IJsonModel);
+    store.setCommentsVisible(nextVisible);
     store.setLayout(rowType, nextJson);
   }, [model, commentsVisible, rowType, store]);
 

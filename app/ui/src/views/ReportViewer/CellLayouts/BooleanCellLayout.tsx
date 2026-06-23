@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo } from 'react';
+import { FC, useCallback } from 'react';
 import { type IJsonModel } from 'flexlayout-react';
 import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
@@ -51,11 +51,6 @@ const VisualizationPanel: FC<{ name: string; cohortData: CohortClassified[]; fin
 };
 
 export const BooleanCellLayout: FC<BooleanCellLayoutProps> = ({ row, cohortData, finalCohortSizes }) => {
-  const hasComments = useMemo(
-    () => (row.registry?.comments ?? []).some((c) => c.text),
-    [row],
-  );
-
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
@@ -73,11 +68,6 @@ export const BooleanCellLayout: FC<BooleanCellLayoutProps> = ({ row, cohortData,
   );
 
   return (
-    <CellLayoutFrame
-      rowType="boolean"
-      defaultJson={DEFAULT_JSON}
-      showCommentsToggle={hasComments}
-      factory={factory}
-    />
+    <CellLayoutFrame rowType="boolean" defaultJson={DEFAULT_JSON} factory={factory} />
   );
 };
