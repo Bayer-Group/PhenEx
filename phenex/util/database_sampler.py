@@ -20,9 +20,6 @@ class DatabaseSampler:
                   Different seeds produce different cohorts of the same size.
 
     Attributes:
-        fraction: Proportion of patients to include.
-        seed:     Integer controlling which patients are selected.
-        denom:    Denominator used in the hash filter (round(1 / fraction)).
         person_ids: Sorted list of sampled PERSON_IDs. Set after fetch_person_ids().
         person_id_count: Number of sampled patients. Set after fetch_person_ids().
 
