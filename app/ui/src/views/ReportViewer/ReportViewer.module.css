@@ -1,7 +1,9 @@
 .page {
   position: relative;
-  margin-top:40px;
-  height: calc(100vh - 40px);
+  /* margin-top:50px;
+  height: calc(100vh - 50px); */
+  margin-top:0px;
+  height: 100vh;
   width: 100vw;
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
@@ -85,7 +87,10 @@
   /* padding: 5px 10px; */
   padding-left: 10px;
   pointer-events: auto;
-  background-color: transparent;
+  background-color: rgba(249, 240, 231, 0.7);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--text_color_notfocus, red);
   border-bottom: 1px solid var(--line-color);
   font-family: "IBMPlexSans-regular", sans-serif;
   box-shadow: none;
@@ -94,8 +99,7 @@
   z-index: 10;
   /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05); */
   width: 100%;
-  height:40px;
-  background-color: var(--background_color_dark) !important;
+  height:50px;
 
 }
 
@@ -131,7 +135,9 @@
 .page :global(.flexlayout__border_left) {
   border-right: none;
   background-color: var(--background_color_dark);
-  width:40px;
+  width:42px;
+  margin-left:5px;
+  margin-top:100px;
 }
 
 /* Vertical border tab labels */
@@ -142,14 +148,15 @@
   text-orientation: mixed;
   transform: rotate(180deg); */
   padding: 3px 6px;
-  color: #666;
+  color: var(--text_color_notfocus, #333);
   background-color: var(--background_color_dark);
-  border: none;
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 8px;
 }
 
 .page :global(.flexlayout__border_left) :global(.flexlayout__border_button--selected) {
-  color: black;
-  background-color: white;
+  color: var(--text_color_focus, black);
+  background-color: var(--background_color_light, white);
   font-family: "IBMPlexSans-bold", sans-serif;
 }
 
@@ -177,11 +184,18 @@
   cursor: pointer;
   font-family: "IBMPlexSans-regular", sans-serif;
   transition: color 0.15s, background-color 0.15s;
+  transform: rotate(90deg);
+  margin-right: 20px;
 }
 
 .leftBorderCollapseBtn:hover {
   color: black;
   background-color: rgba(0, 0, 0, 0.06);
+}
+
+.leftBorderCollapseBtn:focus {
+  outline: none;
+  border: none;
 }
 
 /* Right gutter */
@@ -214,15 +228,19 @@
 .page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border) {
   position: relative;
   z-index: 3;
-  background-color: var(--background_color_dark) !important;
+  /* background-color: var(--background_color_dark) !important;
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.08);
   clip-path: inset(0 -15px 0 0);
-  border-right: 1px solid var(--line-color);
+  border-right: 1px solid var(--line-color); */
+  background-color: var(--background_color_light) !important;
+  box-shadow: -4px 0 8px rgba(191, 182, 180, 0.08);
+  clip-path: inset(0 0 0 -15px);
+  border-left: 1px solid var(--line-color);
 }
 
 /* Border between left panel and center panel hover */
 .page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border:hover) {
-  background-color: lightgray !important;
+  background-color: var(--gray) !important;
 }
 
 /* Center ↔ right: FlexLayout renders [layout_main][splitter_border][border_tab_contents] */
@@ -247,7 +265,7 @@
 /* Each tabset inside the left panel renders as a card */
 .page :global(.flexlayout__border_left) :global(.flexlayout__tabset) {
   border-radius: 8px;
-  background: white !important;
+  background-color: var(--background_color_light) !important;
   /* box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); */
   overflow: hidden;
   margin: 4px;
@@ -262,7 +280,6 @@
 
 /* Tab bar gutter: dark background, no border-bottom */
 :global(.flexlayout__tabset_tabbar_outer) {
-  /* background-color: var(--background_color_dark) !important; */
   background-color: var(--background_color_dark) !important;
   border-bottom: none;
 }
@@ -289,7 +306,7 @@
   color: gray;
 }
 :global(.flexlayout__tab_button:hover) {
-  color: red;
+  color: green;
 }
 
 

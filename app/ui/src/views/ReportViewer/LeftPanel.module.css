@@ -49,10 +49,11 @@
 
 .actionBarRegion {
   position: absolute;
-  top: 5px;
+  top: 70px;
   left: 0px;
   z-index: 99;
   pointer-events: none;
+  opacity: 0;
 }
 
 .actionBarRegion > * {

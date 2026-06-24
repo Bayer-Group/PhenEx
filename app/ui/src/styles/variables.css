@@ -2,7 +2,9 @@
   --accent-color: #aaa;
   --accent-text-color: white;
   --accent-color-hover: #bf1b1b;
-  --line-color: hsl(0, 0%, 88%);
+  /* --line-color: hsl(0, 0%, 88%); */
+  --line-color: hsl(24, 19%, 85%);
+
   --color_scrollbar_thumb: #514655f3;
   --line-color-grid: hsl(0, 0%, 88%);
   --line-width-grid: 1px;
@@ -22,7 +24,14 @@
   --text-color-normal: var(--color-accent-bright);
   --text-color-inactive: hsl(0, 0%, 0%);
   --background-color: #f8f9fa;/*#faf1e5;*/
-  --background_color_dark: var(--background-color); /*hsl(20, 50%, 95%)*/
+/*background_color_dark hsl(20, 50%, 95%)*/
+  /* --background_color_dark: hsl(30, 60%, 94%);
+  --background_color_light: hsl(25, 35%, 90%); */
+  --background_color_dark: hsl(25, 35%, 90%); 
+  --background_color_light: hsl(30, 60%, 94%);
+  --text_color_notfocus: hsl(11, 8%, 30%);
+
+
   --background_color_focus: #000000d9;
   --background-color-content: white;
   --color_inactive: lightgray;

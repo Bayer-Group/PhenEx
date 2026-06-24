@@ -28,7 +28,6 @@ export const LeftPanel: FC<LeftPanelProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
   const [showAll, setShowAll] = useState(false);
-  const { isLeftPanelShown } = useThreePanelCollapse();
 
   return (
     <div className={styles.container}>
@@ -59,9 +58,9 @@ export const LeftPanel: FC<LeftPanelProps> = ({
             <SimpleCustomScrollbar
               targetRef={scrollRef}
               orientation="vertical"
-              marginTop={10}
-              marginBottom={5}
-              marginToEnd={3}
+              marginTop={60}
+              marginBottom={10}
+              marginToEnd={10}
               classNameTrack={styles.scrollBarTrack}
               classNameThumb={styles.scrollBarThumb}
               showOnHover={true}

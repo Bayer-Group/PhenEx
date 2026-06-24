@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   animation: fadeIn 0.15s ease-out;
-  background-color: white;/*rgba(200, 200, 200, 0.2);*/
+  background-color: var(--background_color_light);/*rgba(200, 200, 200, 0.2);*/
 }
 
 .overlay.closing {
@@ -19,7 +19,7 @@
   left: 0;
   right: 0;
   height: 0px;
-  background: linear-gradient(to bottom, var(--background-color), transparent);
+  background: linear-gradient(to bottom, var(--background_color_light), transparent);
   pointer-events: none;
   z-index: 4;
 }
@@ -59,7 +59,7 @@
 }
 
 .titleBarScrolled {
-  background-color: white;
+  background-color: var(--background_color_light);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
   border: var(--border);
 }
@@ -260,7 +260,7 @@
   border-radius: 10px;
   font-family: "IBMPlexSans-bold", sans-serif;
   font-size: var(--font_size_breadcrumb, 14px);
-  color: red;
+  color: blue;
   letter-spacing: 0.1em;
   border: var(--border);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
@@ -341,7 +341,7 @@
 .page :global(.flexlayout__layout) {
   --color-background: green;
   border-radius: 8px;
-  border: 1px solid red;
+  border: 1px solid green;
   overflow: hidden;
 }
 

@@ -4,6 +4,7 @@
   position: relative;
   width: calc(100% - 60px);
   margin-left:30px;
+  padding-top: 0px;
 }
 
 .cell {
@@ -24,6 +25,7 @@
   box-sizing: border-box;
   overflow-y: auto;
   scrollbar-width: none;
+  padding-top: 100px;
 }
 
 .verticalWrapper::-webkit-scrollbar {
@@ -83,12 +85,13 @@
 .multiRowTitle {
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;
-  font-size: var(--font_size_pagetitle, 18px);
+  font-size: var(--font_size_phenotypename, 18px);
   padding: 5px 5px;
   flex-shrink: 0;
   cursor: pointer;
   border-radius: 6px;
   transition: background-color 0.1s;
+  margin-top:0px;
 }
 
 .multiRowTitle:hover {
@@ -176,7 +179,7 @@
 
 /* Nested left-panel splitters */
 .cell :global(.flexlayout__splitter) {
-  background-color: white;
+  background-color: aqua;
 
 }
 .cell :global(.flexlayout__splitter:hover) {
@@ -189,7 +192,7 @@
 
 
 .cell :global(.flexlayout__tabset){
-  background-color: white !important;
+  background-color: transparent !important;
     /* box-shadow: 0 1px 4px rgba(0, 0, 0, .3); */
     border: var(--border);
     border-radius: 14px;

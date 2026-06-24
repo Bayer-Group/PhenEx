@@ -164,9 +164,33 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   const showSizes = barWidth > 200 && finalCohortSizes != null;
 
   return (
-    <div ref={legendBarRef} className={styles.legendBar}>
-      <div className={styles.topGradient} />
+    <div className={styles.legendBarContainer}>
+            <div className={styles.topGradient} />
 
+    <div ref={legendBarRef} className={styles.legendBar}>
+      <div className={styles.legendBarHeader}>
+        <div className={styles.headerText}>
+          <div className={styles.legendBarHeaderLabel}>
+            This study contains <span className={styles.legendBarHeaderCount}>{groups.length}</span> main cohorts, each with several stratifications.<br></br><br></br>
+            Select the cohorts and stratifications you want to view from the list below. You can rearrange display order in the Legend tab. <br></br><br></br>
+          {/* </div> */}
+          {/* <div className={styles.legendBarHeaderSubLabel}> */}
+            <span className={styles.legendBarHeaderCount}>{selections.length}</span> of <span className={styles.legendBarHeaderCount}>{groups.length}</span> are currently selected.
+            </div>
+        </div>
+        <div className={styles.headerActionButton}>
+          Show all available
+        </div>
+        <div className={styles.headerActionButton}>
+          Select all available
+        </div>
+        <div className={styles.headerActionButton}>
+          Deselect all
+        </div>
+        <div className={styles.headerActionButton}>
+          Show cohort descriptions
+        </div>
+      </div>
       {/* {allDescKeys.length > 0 && (
         <button className={styles.toggleAllDescsBtn} onClick={toggleAllDescs}>
           {allDescsExpanded ? 'Hide all descriptions' : 'Show all descriptions'}
@@ -303,6 +327,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         horizontalAlignment="left"
         delay={400}
       /> */}
+    </div>
     </div>
   );
 };

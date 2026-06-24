@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useRef, useState } from 'react';
 import {
   type ViewerEntry,
   STUDY_INFO_CATEGORY,
@@ -7,6 +7,7 @@ import {
   getEntryLabel,
 } from './studyRegistryUtils';
 import styles from './OutlinePanel.module.css';
+import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
 interface OutlinePanelProps {
   /** The exact list of navigable cells currently in the viewer. */
@@ -41,7 +42,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
     const isActive = currentIndex === entryIndex;
     const isExpanded = toggleKey ? expandedKeys.has(toggleKey) : false;
     return (
-      <div key={key} className={styles.row} style={{ paddingLeft: level * 14 }}>
+      <div key={key} className={styles.row} style={{ paddingLeft: level * 8 }}>
         {toggleKey ? (
           <button
             type="button"
@@ -64,33 +65,48 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
       </div>
     );
   };
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className={styles.panel}>
-      {entries.map((entry) => {
-        if (entry.kind === 'category') {
-          return renderItem(
-            entry.key,
-            getCategoryLabel(entry.category),
-            0,
-            entry.index,
-            entry.hasSectionlessRows ? categoryKey(entry.category) : null,
-          );
-        }
-        if (entry.kind === 'section') {
-          return renderItem(
-            entry.key,
-            entry.section,
-            1,
-            entry.index,
-            entry.rows.length >= 2 ? entry.key : null,
-          );
-        }
-        // Individual rows: only appear when their parent is expanded. The
-        // study_info intro cell has no outline entry.
-        if (entry.row.category === STUDY_INFO_CATEGORY) return null;
-        return renderItem(entry.key, getEntryLabel(entry), 2, entry.index, null);
-      })}
+        <div ref={scrollRef} className={styles.scrollContent}>
+        {entries.map((entry) => {
+          if (entry.kind === 'category') {
+            return renderItem(
+              entry.key,
+              getCategoryLabel(entry.category),
+              0,
+              entry.index,
+              entry.hasSectionlessRows ? categoryKey(entry.category) : null,
+            );
+          }
+          if (entry.kind === 'section') {
+            return renderItem(
+              entry.key,
+              entry.section,
+              1,
+              entry.index,
+              entry.rows.length >= 2 ? entry.key : null,
+            );
+          }
+          // Individual rows: only appear when their parent is expanded. The
+          // study_info intro cell has no outline entry.
+          if (entry.row.category === STUDY_INFO_CATEGORY) return null;
+          return renderItem(entry.key, getEntryLabel(entry), 2, entry.index, null);
+        })}
+      </div>
+      <div className={styles.scrollbarRegion}>
+            <SimpleCustomScrollbar
+              targetRef={scrollRef}
+              orientation="vertical"
+              marginTop={60}
+              marginBottom={5}
+              marginToEnd={7}
+              classNameTrack={styles.scrollBarTrack}
+              classNameThumb={styles.scrollBarThumb}
+              showOnHover={true}
+            />
+          </div>
     </div>
   );
 };

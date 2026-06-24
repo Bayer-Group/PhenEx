@@ -1,10 +1,9 @@
 .panel {
   display: flex;
   flex-direction: column;
-  padding: 12px 8px;
   box-sizing: border-box;
-  overflow-y: auto;
-  
+  overflow-y: hidden;
+  height: 100%;
   /* height: calc(100% - 5px); */
   /* background-color: white !important; */
   /* border-radius:8px;
@@ -17,7 +16,7 @@
 .row {
   display: flex;
   align-items: center;
-  width: 100%;
+  /* width: 100%; */
 }
 
 .chevron {
@@ -26,8 +25,9 @@
   align-items: center;
   justify-content: center;
   width: 18px;
-  height: 22px;
+  height: 18px;
   padding: 0;
+  
   border: none;
   background: none;
   color: #888;
@@ -36,6 +36,11 @@
 
 .chevron:hover {
   color: #333;
+  background-color: var(--background_color_light);
+}
+
+.chevron:focus{
+  outline: none;
 }
 
 .chevronIcon {
@@ -55,31 +60,41 @@
 }
 
 .item {
-  flex: 1;
+  /* flex: 1; */
   min-width: 0;
   display: block;
   text-align: left;
   border: none;
   background: none;
-  padding: 5px 8px;
-  font-size: 12px;
+  padding: 3px 8px;
+  font-size: var(--font_size_items, 12px);
   font-family: 'IBMPlexSans-regular', sans-serif;
-  color: #333;
+  color: var(--text_color_notfocus, #333);
+  margin-bottom: 0px;
+  margin-right: 23px;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 6px;
   transition: background 0.1s;
+  border: 1px solid transparent;
+  /* background-color: red !important; */
 }
 
 .item:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--background_color_light, #f0f0f0);
+  border: var(--border);
+}
+
+.item:focus {
+  outline: none;
+  border: var(--border);
 }
 
 .itemActive {
-  background: rgba(0, 0, 0, 0.08);
-  font-family: 'IBMPlexSans-bold', sans-serif;
+  background: var(--background_color_light, #f0f0f0);
+  border: var(--border);
 }
 
 .level0 {
@@ -88,4 +103,27 @@
 
 .level2 {
   color: #666;
+}
+
+.scrollContent{
+  scrollbar-width: none;
+  overflow-y: auto;
+  padding-top: 100px;
+  padding-bottom: 100px;
+
+}
+
+
+.scrollBarTrack {
+  background-color: transparent;
+  border-radius: 0px;
+}
+
+.scrollBarThumb {
+  background-color: rgba(101, 96, 96, 0.2) !important;
+  width: 10px;
+}
+
+.scrollBarTrack:hover {
+  background-color: transparent;
 }

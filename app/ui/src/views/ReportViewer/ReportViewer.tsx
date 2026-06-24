@@ -96,7 +96,7 @@ function createLayoutModel(): Model {
         location: 'right',
         size: 300,
         minSize: 200,
-        selected: 0,
+        selected: -1,
         children: [{ type: 'tab', name: 'Interact', component: 'rightStacked', enableClose: false }],
       },
     ],
@@ -560,7 +560,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         case 'center':
           return (
             <div className={styles.centerPanel}>
-              <HorizontalRowViewer
+              {/* <HorizontalRowViewer
                 entries={viewerEntries}
                 rows={sequentialRows}
                 initialIndex={viewerIndex}
@@ -574,7 +574,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
                 table2Cohorts={table2Cohorts}
                 studyTitle={displayTitle}
                 studyDescription={studyDescription}
-              />
+              /> */}
             </div>
           );
         case 'rightStacked':

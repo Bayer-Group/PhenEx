@@ -176,7 +176,7 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
           <SimpleCustomScrollbar
             targetRef={verticalScrollRef}
             orientation="vertical"
-            marginTop={30}
+            marginTop={80}
             marginBottom={10}
             marginToEnd={-20}
             classNameThumb={styles.scrollBarThumb}
