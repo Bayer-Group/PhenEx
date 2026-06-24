@@ -9,6 +9,11 @@ logger = create_logger(__name__)
 
 
 def attach_anchor_and_get_reference_date(table, anchor_phenotype=None):
+    # Unwrap PhenexTable so all joins are done at the raw ibis level.
+    # PhenexTable.join would re-wrap the join result through __init__ which
+    # calls .mutate(), triggering ibis's collision check on PERSON_ID_right.
+    raw = table.table if isinstance(table, PhenexTable) else table
+
     if anchor_phenotype is not None:
         if anchor_phenotype.table is None:
             raise ValueError(
@@ -16,16 +21,31 @@ def attach_anchor_and_get_reference_date(table, anchor_phenotype=None):
             )
         else:
             anchor_table = anchor_phenotype.table
-            reference_column = anchor_table.EVENT_DATE
-            # Left join so patients without an anchor record are kept (reference_column=null)
-            table = table.join(anchor_table, "PERSON_ID", how="left")
+            # Rename EVENT_DATE to a unique name before joining to avoid collisions
+            # when this function is called multiple times on the same table.
+            # If the column is already present (same anchor used in a previous filter),
+            # skip the join and reuse the existing column.
+            ref_col_name = f"_ref_date_{anchor_phenotype.name}"
+            if ref_col_name not in raw.columns:
+                anchor_slim = anchor_table.select(
+                    anchor_table.PERSON_ID,
+                    anchor_table.EVENT_DATE.name(ref_col_name),
+                )
+                # Join at raw ibis level using an explicit predicate so we can
+                # drop the duplicate PERSON_ID_right immediately afterwards.
+                raw = raw.join(
+                    anchor_slim,
+                    raw.PERSON_ID == anchor_slim.PERSON_ID,
+                    how="left",
+                ).select([c for c in raw.columns] + [ref_col_name])
+            reference_column = raw[ref_col_name]
     else:
         assert (
-            "INDEX_DATE" in table.columns
+            "INDEX_DATE" in raw.columns
         ), f"INDEX_DATE column not found in table {table}"
-        reference_column = table.INDEX_DATE
+        reference_column = raw.INDEX_DATE
 
-    return table, reference_column
+    return raw, reference_column
 
 
 def hstack(phenotypes: List["Phenotype"], join_table: Table = None) -> Table:

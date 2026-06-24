@@ -94,7 +94,7 @@ class TimeToEvent(Reporter):
             ]
             missing = set(self.phenotype_names) - {p.name for p in self._outcomes}
             if missing:
-                raise ValueError(
+                logger.warning(
                     f"No matching outcome phenotypes found for: {sorted(missing)}"
                 )
         else:
