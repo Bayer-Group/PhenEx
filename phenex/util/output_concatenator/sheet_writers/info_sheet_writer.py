@@ -7,6 +7,7 @@ from openpyxl.styles import Alignment, Border, Side
 
 from .base_sheet_writer import _BaseSheetWriter
 from ..cohort_group import CohortGroup
+from phenex.core.study_manifest import read_phenex_version, read_study_name
 
 
 class InfoSheetWriter(_BaseSheetWriter):
@@ -60,6 +61,7 @@ class InfoSheetWriter(_BaseSheetWriter):
         study_path: Path,
         description: Optional[str],
         cohort_groups: Optional[List[CohortGroup]] = None,
+        study_name: Optional[str] = None,
     ) -> None:
         self._set_default_row_height(sheet)
         sheet.column_dimensions["A"].width = self._SPACING_SIZE
@@ -71,7 +73,8 @@ class InfoSheetWriter(_BaseSheetWriter):
         current_row = 2
 
         # Study name at the top
-        study_name = self._read_study_name(study_path)
+        if study_name is None:
+            study_name = self._read_study_name(study_path)
         if study_name:
             self._write_cell(sheet, current_row, 2, study_name, bold=True, size=20)
             current_row += 1
@@ -203,20 +206,10 @@ class InfoSheetWriter(_BaseSheetWriter):
     # ------------------------------------------------------------------
 
     def _read_study_name(self, study_path: Path) -> Optional[str]:
-        info_file = study_path / "info.txt"
-        if info_file.exists():
-            for line in info_file.read_text().splitlines():
-                if line.startswith("Study Name:"):
-                    return line.split(":", 1)[1].strip()
-        return None
+        return read_study_name(study_path)
 
     def _read_phenex_version(self, study_path: Path) -> str:
-        info_file = study_path / "info.txt"
-        if info_file.exists():
-            for line in info_file.read_text().splitlines():
-                if line.startswith("PhenEx Version:"):
-                    return line.split(":", 1)[1].strip()
-        return "unknown"
+        return read_phenex_version(study_path)
 
     def _read_final_n(self, cohort_dir: Path):
         """Return the final cohort size from Waterfall.json ('Remaining' of last row)."""

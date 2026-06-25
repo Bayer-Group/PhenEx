@@ -7,6 +7,7 @@ import ibis
 from ibis.expr.types.relations import Table
 from phenex.tables import PhenexTable
 from phenex.reporting import Table1
+from phenex.reporting.reporter import Reporter
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 from phenex.filters import DateFilter
@@ -25,6 +26,51 @@ from phenex.core.reporter_nodes import (
 from phenex.core.database import Database
 
 logger = create_logger(__name__)
+
+
+class _RehydratedReportNode:
+    """Node stand-in populated from checkpoint JSON report files."""
+
+    def __init__(self, reporter, *, waterfall: bool = False):
+        self.reporter = reporter
+        self.table = reporter.df
+        self._waterfall = waterfall
+
+    @property
+    def df_report(self):
+        if self.table is None:
+            return None
+        self.reporter.df = self.table
+        if self._waterfall:
+            result = self.reporter.get_pretty_display(color=False)
+            return result.drop(columns=["_color"], errors="ignore")
+        return self.reporter.get_pretty_display()
+
+
+class _RehydratedCustomReporterNode:
+    """Custom reporter node restored from JSON (no execution graph)."""
+
+    def __init__(self, reporter):
+        self.reporter = reporter
+        self.table = reporter.df
+
+    @property
+    def df_report(self):
+        if self.table is None:
+            return None
+        if hasattr(self.reporter, "get_pretty_display"):
+            return self.reporter.get_pretty_display()
+        return self.table
+
+
+_COHORT_REPORT_JSON_FILES = {
+    "table1.json": ("table1_node", False),
+    "table1_detailed.json": ("table1_detailed_node", False),
+    "table1_outcomes.json": ("table1_outcomes_node", False),
+    "table1_outcomes_detailed.json": ("table1_outcomes_detailed_node", False),
+    "waterfall.json": ("waterfall_node", True),
+    "waterfall_detailed.json": ("waterfall_detailed_node", True),
+}
 
 
 class Cohort:
@@ -574,6 +620,17 @@ class Cohort:
         con = self._prepare_database_connector_for_execution(con)
         tables = self._prepare_tables_for_execution(con, tables)
 
+        # DuckDB does not support concurrent table creation across threads; force
+        # single-threaded execution to avoid ibis/DuckDB concurrency errors.
+        from phenex.ibis_connect import DuckDBConnector
+
+        if isinstance(con, DuckDBConnector) and n_threads != 1:
+            logger.warning(
+                "DuckDBConnector detected: overriding n_threads to 1 "
+                "(DuckDB does not support concurrent table creation)."
+            )
+            n_threads = 1
+
         self.n_persons_in_source_database = (
             tables["PERSON"].distinct().count().execute()
         )
@@ -814,6 +871,25 @@ class Cohort:
         for custom_reporter_node in self.custom_reporter_nodes:
             report_filename = custom_reporter_node.reporter.name
             custom_reporter_node.to_json(os.path.join(path, report_filename + ".json"))
+
+    def load_reports_from_json(self, path: str):
+        """Restore report nodes from JSON files in a cohort execution directory."""
+        import os
+
+        for filename, (attr, is_waterfall) in _COHORT_REPORT_JSON_FILES.items():
+            fpath = os.path.join(path, filename)
+            if not os.path.isfile(fpath):
+                continue
+            reporter = Reporter.from_json_file(fpath)
+            setattr(self, attr, _RehydratedReportNode(reporter, waterfall=is_waterfall))
+
+        self.custom_reporter_nodes = []
+        known = set(_COHORT_REPORT_JSON_FILES) | {f"frozen_{self.name}.json"}
+        for fname in sorted(os.listdir(path)):
+            if not fname.endswith(".json") or fname in known:
+                continue
+            reporter = Reporter.from_json_file(os.path.join(path, fname))
+            self.custom_reporter_nodes.append(_RehydratedCustomReporterNode(reporter))
 
     def write_reports_to_html(self, path: str):
         """Write HTML reports for custom reporters that implement to_html."""

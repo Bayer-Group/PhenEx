@@ -461,16 +461,16 @@ def _write_json(path: Path, data: dict) -> None:
         json.dump(data, f, indent=2, default=default)
 
 
-def _write_info(study_dir: Path) -> None:
-    info = study_dir / "info.txt"
-    info.write_text(
-        "Study Name: test_study\n"
-        "Software Environment Information\n"
-        "==================================================\n\n"
-        "Study Execution Date: 2026-04-01 12:00:00\n\n"
-        "Python Version: 3.12.0\n\n"
-        "PhenEx Version: 0.1.0\n"
-    )
+def _write_manifest(study_dir: Path) -> None:
+    manifest = {
+        "manifest_version": "1.0",
+        "study_name": "test_study",
+        "environment": {
+            "python_version": "3.12.0",
+            "phenex_version": "0.1.0",
+        },
+    }
+    (study_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
 
 
 # ---------------------------------------------------------------------------
@@ -482,7 +482,7 @@ def build_dummy_study() -> Path:
     """Create dummy study directory tree and return the study exec path."""
     study_dir = STUDY_EXEC_DIR
     study_dir.mkdir(parents=True, exist_ok=True)
-    _write_info(study_dir)
+    _write_manifest(study_dir)
 
     # Cache parent waterfalls so subcohorts can copy them
     parent_waterfalls: dict = {}
