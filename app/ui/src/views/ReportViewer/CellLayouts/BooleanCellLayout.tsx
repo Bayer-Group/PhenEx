@@ -4,7 +4,7 @@ import { type CohortClassified } from '../types';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { DescriptionPanel } from './DescriptionPanel';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
-import { BarChartCellRenderer } from '../GraphsAndTables/RowRenderers/BarChartCellRenderer';
+import { BarChartCellRendererPresentation } from '../GraphsAndTables/RowRenderers/BarChartCellRendererPresentation';
 import { CommentsPanel } from '../CommentsPanel';
 import { CellLayoutFrame } from './CellLayoutFrame';
 
@@ -40,10 +40,9 @@ const VisualizationPanel: FC<{ name: string; cohortData: CohortClassified[]; fin
 
   return (
     <div style={{ padding: 8, height: '100%', boxSizing: 'border-box' }}>
-      <BarChartCellRenderer
+      <BarChartCellRendererPresentation
         data={{ name, _meta: { cohortData: filtered, finalCohortSizes } }}
         isModal
-        mode="presentation"
         pctDecimals={1}
       />
     </div>

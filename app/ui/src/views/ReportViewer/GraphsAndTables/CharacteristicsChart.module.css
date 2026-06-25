@@ -8,8 +8,9 @@
 
 .row {
   display: flex;
+  align-items: stretch;
   position: relative;
-  padding-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 20px);
+  margin-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 20px);
   padding-right: min(calc(max(200px * var(--pz-scale, 1), 10px) + 40px), 200px);
   border: calc(1px / var(--pz-scale, 1)) solid transparent;
   border-radius: calc(8px / var(--pz-scale, 1));

@@ -5,7 +5,7 @@ import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEven
 import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { StudyInfoCellRenderer } from '../GraphsAndTables/RowRenderers/StudyInfoCellRenderer';
-import { BarChartCellRenderer } from '../GraphsAndTables/RowRenderers/BarChartCellRenderer';
+import { BarChartCellRendererCompact } from '../GraphsAndTables/RowRenderers/BarChartCellRendererCompact';
 import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
 import { NumericGraphCellRenderer } from '../GraphsAndTables/RowRenderers/NumericGraphCellRenderer';
 import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../CellLayouts';
@@ -159,7 +159,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
     const renderSectionRow = (row: SequentialRow) => {
       switch (row.rowType) {
         case 'boolean':
-          return <BarChartCellRenderer data={{ name: row.name, _meta: { cohortData, finalCohortSizes } }} isModal />;
+          return <BarChartCellRendererCompact data={{ name: row.name, _meta: { cohortData, finalCohortSizes } }} isModal />;
         case 'categorical':
           return <CategoricalBarChartCellRenderer baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes}/>;
         case 'numeric':

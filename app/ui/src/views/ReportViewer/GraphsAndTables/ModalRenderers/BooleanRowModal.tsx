@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { type CohortClassified } from '../../types';
 import { RowModal } from './RowModal';
 import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
-import { BarChartCellRenderer } from '../RowRenderers/BarChartCellRenderer';
+import { BarChartCellRendererPresentation } from '../RowRenderers/BarChartCellRendererPresentation';
 import styles from './BooleanRowModal.module.css';
 
 interface BooleanRowModalProps {
@@ -27,10 +27,9 @@ export const BooleanRowModal: FC<BooleanRowModalProps> = ({
     <RowModal onClose={onClose} breadcrumbs={breadcrumbs}>
       <div className={styles.container}>
         {/* <ModalLegend cohortData={cohortData} visible={visible} onToggle={toggle} /> */}
-        <BarChartCellRenderer
+        <BarChartCellRendererPresentation
           data={{ name, _meta: { cohortData: filteredCohortData, finalCohortSizes } }}
           isModal
-          mode="presentation"
           pctDecimals={1}
         />
       </div>

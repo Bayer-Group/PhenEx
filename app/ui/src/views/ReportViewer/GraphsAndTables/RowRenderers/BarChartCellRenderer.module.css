@@ -16,6 +16,7 @@
   height: 100%;
   box-sizing: border-box;
   font-family: "IBMPlexSans-regular", sans-serif;
+  background-color: green;
 }
 
 .containerPresentation {
@@ -42,6 +43,8 @@
   width: calc(100% - var(--BOOLEAN_PCT_COL) - var(--BOOLEAN_N_COL) - var(--BOOLEAN_COL_GAP) * 2);
   z-index: 0;
   pointer-events: none;
+  background-color: blue;
+  height: 100%;
 }
 
 .gridOverlayPresentation {
@@ -178,7 +181,7 @@
 
 .groupRows {
   position: relative;
-  padding-top: 20px;
+  padding-top:0px;
 }
 
 .cohortRow {

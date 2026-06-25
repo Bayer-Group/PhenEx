@@ -4,7 +4,7 @@ import {
   type KdeCurve,
 } from '../types';
 import { type SequentialRow, groupRowsBySection } from '../studyRegistryUtils';
-import { BarChartCellRenderer } from './RowRenderers/BarChartCellRenderer';
+import { BarChartCellRendererCompact } from './RowRenderers/BarChartCellRendererCompact';
 import { CategoricalBarChartCellRenderer } from './RowRenderers/CategoricalBarChartCellRenderer';
 import { NumericGraphCellRenderer } from './RowRenderers/NumericGraphCellRenderer';
 import { SectionCard } from './SectionCard';
@@ -108,7 +108,7 @@ const BooleanRow: FC<{ row: SequentialRow; cohortData: CohortClassified[]; onOpe
       <span className={styles.rowTooltip}>click to open</span>
       <div className={styles.nameCell}>{row.registry?.display_name || row.name}</div>
       <div className={styles.booleanChartCell}>
-        <BarChartCellRenderer data={{ name: row.name, _meta: { cohortData, finalCohortSizes } }} isModal />
+        <BarChartCellRendererCompact data={{ name: row.name, _meta: { cohortData, finalCohortSizes } }} isModal />
       </div>
     </div>
   );
