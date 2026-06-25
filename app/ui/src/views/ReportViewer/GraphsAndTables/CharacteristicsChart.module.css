@@ -120,9 +120,8 @@
 }
 
 .booleanChartCell {
-  width: clamp(100px, calc(200px / var(--pz-scale, 1)), 1500px);
-  padding-right: clamp(200px, calc(100px / var(--pz-scale, 1)), 1000px);
-
+  flex: 1;
+  min-width: clamp(100px, calc(200px / var(--pz-scale, 1)), 1500px);
 }
 /* ── Categorical group ───────────────────────────────────────────────── */
 

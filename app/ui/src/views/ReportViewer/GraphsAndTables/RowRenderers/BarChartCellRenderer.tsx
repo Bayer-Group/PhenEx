@@ -150,35 +150,31 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
         onMouseLeave={!isPresentation ? () => setHover(null) : undefined}
         style={{ cursor: 'pointer' }}
       >
-        {/* {isPresentation && (
+        {isPresentation && (
           <div
             className={`${styles.cohortLabelCell} ${labelClassName}`.trim()}
             style={options?.labelStyle}
           >
             {label}
           </div>
-        )} */}
-        <div
-          className={styles.dataCells}
-        >
-          <div
-            className={styles.barCell}
-            style={{ opacity: dimmed ? 0.25 : 1 }}
-          >
+        )}
+        <div className={styles.dataCells}>
+          <div className={styles.barCell} style={{ opacity: dimmed ? 0.25 : 1 }}>
             <div
               className={styles.barFill}
               style={{ width: `${Math.max(0, pct)}%`, backgroundColor: entry.cohort.color }}
             />
           </div>
           {!hideCompactLabels && (
-            <div
-              className={styles.pctCell}
-            >
+            <div className={styles.pctCell}>
               <strong>{pct.toFixed(pctDecimals)}</strong>
             </div>
           )}
           {!hideCompactLabels && (
-            <div className={styles.nCell} style={{ opacity: dimmed ? 0.25 : 1, color: activeIndex === entry.originalIndex ? '#000' : undefined }}>
+            <div
+              className={styles.nCell}
+              style={{ opacity: dimmed ? 0.25 : 1, color: activeIndex === entry.originalIndex ? '#000' : undefined }}
+            >
               {isPresentation && finalCohortSize != null ? (
                 <>
                   <span className={styles.nValuePrimary}>{n.toLocaleString()}</span>
@@ -236,12 +232,13 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
       {/* Header row */}
       <div className={`${styles.headerRow} ${isPresentation ? styles.headerRowPresentation : ''}`}>
         {isPresentation && <div className={styles.headerCohort}>Cohort</div>}
-        <div className={styles.headerPct}>%</div>
         <div className={styles.headerBar}>
-          {[0, 20, 40, 60, 80, 100].map((t) => (
+          {/* {[0, 20, 40, 60, 80, 100].map((t) => ( */}
+          {[0,50,100].map((t) => (
             <span key={t} className={styles.headerTick} style={{ left: `${t}%` }}>{t}</span>
           ))}
         </div>
+        <div className={styles.headerPct}>%</div>
         <div className={styles.headerN}>N</div>
       </div>
 
@@ -250,7 +247,7 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
           groupedRows.map(renderPresentationGroup)
         ) : (
           <>
-            <div className={styles.gridOverlay} style={{ left: '0%', width: '100%' }}>
+            <div className={styles.gridOverlay}>
               {allTicks.map((t) => (
                 <div key={t} className={styles.gridLine} style={{ left: `${t}%` }} />
               ))}

@@ -70,29 +70,37 @@
 .multiRowList {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding-bottom: 40px;
+  gap: 0px;
+  padding-bottom: 200px;
 }
 
 .multiRowBlock {
   display: flex;
-  flex-direction: column;
-  width: calc(100% - 20px);
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
   height: fit-content;
-  /* width: fit-content; */
-  /* min-height: 420px; */
+  width: fit-content;
+  max-width: 100%;
+  border: var(--border);
 }
 
 .multiRowTitle {
+  width: 140px;
+  flex-shrink: 0;
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;
   font-size: var(--font_size_phenotypename, 18px);
-  padding: 5px 5px;
-  flex-shrink: 0;
+  padding: 8px 4px 5px 5px;
   cursor: pointer;
   border-radius: 6px;
   transition: background-color 0.1s;
-  margin-top:0px;
+  box-sizing: border-box;
+  line-height: 1.25;
+  text-align: right;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .multiRowTitle:hover {
@@ -100,13 +108,16 @@
 }
 
 .multiRowContent {
-  border: var(--border);
+  /* border: var(--border); */
   border-radius: 10px;
   flex: 1;
+  min-width: 0;
   position: relative;
-  min-height: 0;
   height: fit-content;
-  max-width: 300px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0 12px 15px 12px;
+  box-sizing: border-box;
 }
 
 /* ── Category (overview) cell ─────────────────────────────────────────── */
