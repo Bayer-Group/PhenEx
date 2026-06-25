@@ -18,7 +18,7 @@ class CombineOverlappingPeriods(Node):
         self,
         domain: str,
         categorical_filter: Optional["CategoricalFilter"] = None,
-        **kwargs
+        **kwargs,
     ):
         self.domain = domain
         self.categorical_filter = categorical_filter
