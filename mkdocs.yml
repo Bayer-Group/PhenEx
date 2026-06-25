@@ -74,6 +74,7 @@ nav:
       - Util:
           - Pipeline Utilities: api/pipe.md
           - Serialization: api/util/serialization.md
+          - DatabaseSampler: api/util/database_sampler.md
   - License: LICENSE.md
 
 site_url: https://bayer-group.github.io/PhenEx/
