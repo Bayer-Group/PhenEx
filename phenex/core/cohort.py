@@ -1,4 +1,5 @@
 import os
+import re
 from typing import List, Dict, Optional
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.node import Node, NodeGroup
@@ -92,7 +93,18 @@ class Cohort:
 
         self.derived_tables = derived_tables
         self.derived_tables_post_entry = derived_tables_post_entry
-        self.outcomes = self._flatten(outcomes)
+
+        # outcomes may be a flat list or a dict of {section_name: [phenotypes]}
+        if isinstance(outcomes, dict):
+            self.outcome_sections = {
+                section: [p.display_name for p in phenos]
+                for section, phenos in outcomes.items()
+            }
+            self.outcomes = [p for phenos in outcomes.values() for p in phenos]
+        else:
+            self.outcome_sections = None
+            self.outcomes = self._flatten(outcomes)
+
         self.custom_reporters = custom_reporters or []
         self.n_persons_in_source_database = None
 
@@ -131,6 +143,8 @@ class Cohort:
         self.waterfall_detailed_node = None
         self.custom_reporter_nodes = []
 
+        self._apply_table_name_prefix(self.phenotypes)
+
         logger.info(
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
         )
@@ -147,6 +161,48 @@ class Cohort:
             else:
                 result.append(item)
         return result
+
+    def _apply_table_name_prefix(self, phenotypes):
+        """Set _table_name_prefix on phenotypes and their dependencies so get_table_name() works before execute()."""
+        prefix = re.sub(r"[^A-Za-z0-9_]", "_", self.name).upper()
+        if not isinstance(phenotypes, list):
+            phenotypes = [phenotypes]
+        for p in phenotypes:
+            p._table_name_prefix = prefix
+            for dep in p.dependencies:
+                dep._table_name_prefix = prefix
+
+    def add_inclusions(self, phenotypes):
+        """Add phenotypes to the inclusion criteria."""
+        if not isinstance(phenotypes, list):
+            phenotypes = [phenotypes]
+        self._apply_table_name_prefix(phenotypes)
+        self.inclusions.extend(phenotypes)
+        self.phenotypes.extend(phenotypes)
+
+    def add_exclusions(self, phenotypes):
+        """Add phenotypes to the exclusion criteria."""
+        if not isinstance(phenotypes, list):
+            phenotypes = [phenotypes]
+        self._apply_table_name_prefix(phenotypes)
+        self.exclusions.extend(phenotypes)
+        self.phenotypes.extend(phenotypes)
+
+    def add_characteristics(self, phenotypes):
+        """Add phenotypes to the baseline characteristics."""
+        if not isinstance(phenotypes, list):
+            phenotypes = [phenotypes]
+        self._apply_table_name_prefix(phenotypes)
+        self.characteristics.extend(phenotypes)
+        self.phenotypes.extend(phenotypes)
+
+    def add_outcomes(self, phenotypes):
+        """Add phenotypes to the outcomes."""
+        if not isinstance(phenotypes, list):
+            phenotypes = [phenotypes]
+        self._apply_table_name_prefix(phenotypes)
+        self.outcomes.extend(phenotypes)
+        self.phenotypes.extend(phenotypes)
 
     def _validate_node_uniqueness(self):
         # Use Node's capability to check for node uniqueness rather than reimplementing it here
@@ -758,6 +814,115 @@ class Cohort:
         for custom_reporter_node in self.custom_reporter_nodes:
             report_filename = custom_reporter_node.reporter.name
             custom_reporter_node.to_json(os.path.join(path, report_filename + ".json"))
+
+    def write_reports_to_html(self, path: str):
+        """Write HTML reports for custom reporters that implement to_html."""
+        for custom_reporter_node in self.custom_reporter_nodes:
+            if hasattr(custom_reporter_node.reporter, "to_html"):
+                report_filename = custom_reporter_node.reporter.name
+                custom_reporter_node.to_html(
+                    os.path.join(path, report_filename + ".html")
+                )
+
+    def delete_tables(self, con, sections=None):
+        """
+        Delete materialized tables from the destination database.
+
+        Parameters:
+            con: Database connector.
+            sections: List of section names to delete. If None, deletes all sections.
+                Valid section names: 'entry_inclusion_exclusion', 'subset_tables_entry',
+                'subset_tables_index', 'characteristics', 'outcomes', 'reporters'.
+        """
+        all_sections = {
+            "entry_inclusion_exclusion": self.delete_entry_inclusion_exclusion,
+            "subset_tables_entry": self.delete_subset_tables_entry,
+            "subset_tables_index": self.delete_subset_tables_index,
+            "characteristics": self.delete_characteristics,
+            "outcomes": self.delete_outcomes,
+            "reporters": self.delete_reporters,
+        }
+        if sections is None:
+            sections = list(all_sections.keys())
+        for section in sections:
+            if section not in all_sections:
+                raise ValueError(
+                    f"Unknown section '{section}'. Valid sections: {list(all_sections.keys())}"
+                )
+            all_sections[section](con)
+
+    def delete_entry_inclusion_exclusion(self, con):
+        """Delete entry criterion, inclusion, and exclusion phenotype tables."""
+        nodes = [self.entry_criterion] + self.inclusions + self.exclusions
+
+        for node in nodes:
+            node.delete_table(con)
+            for dep in node.dependencies:
+                dep.delete_table(con)
+        if self.inclusions_table_node:
+            self.inclusions_table_node.delete_table(con)
+        if self.exclusions_table_node:
+            self.exclusions_table_node.delete_table(con)
+        if self.index_table_node:
+            self.index_table_node.delete_table(con)
+
+    def _get_tables_and_build_stages(self, con, tables=None):
+        con = self._prepare_database_connector_for_execution(con)
+        tables = self._prepare_tables_for_execution(con, tables)
+        self.build_stages(tables)
+        return con, tables
+
+    def delete_subset_tables_entry(self, con):
+        """Delete subset tables created after entry filtering."""
+        if not self.subset_tables_entry_nodes:
+            self._get_tables_and_build_stages(con)
+
+        for node in self.subset_tables_entry_nodes:
+            node.delete_table(con)
+
+    def delete_subset_tables_index(self, con):
+        """Delete subset tables created after index filtering."""
+        if not self.subset_tables_index_nodes:
+            self._get_tables_and_build_stages(con)
+
+        for node in self.subset_tables_index_nodes:
+            node.delete_table(con)
+
+    def delete_characteristics(self, con):
+        """Delete baseline characteristics phenotype tables."""
+        for node in self.characteristics:
+            node.delete_table(con)
+            for dep in node.dependencies:
+                dep.delete_table(con)
+        if self.characteristics_table_node:
+            self.characteristics_table_node.delete_table(con)
+
+    def delete_outcomes(self, con):
+        """Delete outcome phenotype tables."""
+        for node in self.outcomes:
+            node.delete_table(con)
+            for dep in node.dependencies:
+                dep.delete_table(con)
+        if self.outcomes_table_node:
+            self.outcomes_table_node.delete_table(con)
+
+    def delete_reporters(self, con):
+        """Delete reporter tables (table1, waterfall, custom reporters)."""
+
+        if not self.waterfall_node:
+            self._get_tables_and_build_stages(con)
+
+        reporter_nodes = [
+            self.table1_node,
+            self.table1_detailed_node,
+            self.table1_outcomes_node,
+            self.table1_outcomes_detailed_node,
+            self.waterfall_node,
+            self.waterfall_detailed_node,
+        ] + self.custom_reporter_nodes
+        for node in reporter_nodes:
+            if node:
+                node.delete_table(con)
 
     def to_dict(self):
         """

@@ -186,6 +186,8 @@ class Codelist:
     def _rename_code_types(self, codelist, rename_code_type=None, code_type_info=None):
         def rename_codelist_with_mapping(_codelist, rename_code_type):
             for current, renamed in rename_code_type.items():
+                if current == renamed:
+                    continue
                 if _codelist.get(current) is not None:
                     _codelist[renamed] = _codelist[current]
                     del _codelist[current]

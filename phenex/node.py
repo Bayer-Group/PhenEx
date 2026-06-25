@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import json
 import re
@@ -67,6 +68,7 @@ class Node:
         self._name = name or type(self).__name__
         self._children = []
         self.table = None  # populated upon call to execute()
+        self._table_name_prefix = None
         self.lastexecution_start_time = None
         self.lastexecution_end_time = None
         self.lastexecution_duration = None
@@ -225,6 +227,43 @@ class Node:
         # Convert hex string to integer for consistent hashing
         return self._get_current_hash()
 
+    def get_table_name(self, table_name_prefix: Optional[str] = None) -> str:
+        """
+        Get the table name used in the destination database for this node.
+
+        Parameters:
+            table_name_prefix: Optional prefix. If None, uses the prefix from the last execution.
+
+        Returns:
+            str: The table name in the destination database.
+        """
+        prefix = table_name_prefix or self._table_name_prefix
+        if prefix:
+            prefix = re.sub(r"[^A-Za-z0-9_]", "_", prefix).upper()
+            if not self.name.startswith(prefix):
+                return f"{prefix}__{self.name}"
+        return self.name
+
+    def delete_table(self, con, table_name_prefix: Optional[str] = None) -> bool:
+        """
+        Delete this node's materialized table from the destination database.
+
+        Parameters:
+            con: Database connector.
+            table_name_prefix: Optional prefix. If None, uses the prefix from the last execution.
+
+        Returns:
+            bool: True if the table was dropped, False if it didn't exist.
+        """
+        db_name = self.get_table_name(table_name_prefix)
+        try:
+            con.drop_table(db_name)
+            logger.info(f"Node '{self.name}': dropped table '{db_name}'")
+            return True
+        except Exception as e:
+            logger.warning(f"Node '{self.name}': could not drop table '{db_name}': {e}")
+            return False
+
     def clear_cache(self, con: Optional[object] = None, recursive: bool = False):
         """
         Clear the cached state for this node, forcing re-execution on the next call to execute().
@@ -298,6 +337,13 @@ class Node:
         """
         if table_name_prefix:
             table_name_prefix = re.sub(r"[^A-Za-z0-9_]", "_", table_name_prefix).upper()
+
+        # Store prefix on all nodes so get_table_name() works after execution
+        all_deps = self.dependencies
+        for dep in all_deps:
+            dep._table_name_prefix = table_name_prefix
+        self._table_name_prefix = table_name_prefix
+
         # Handle None tables
         if tables is None:
             tables = {}
@@ -337,11 +383,7 @@ class Node:
 
         def _run_and_materialise(node, node_name):
             """Execute *node*, materialise the result, record timing, and update the run hash."""
-            db_name = (
-                f"{table_name_prefix}__{node_name}"
-                if table_name_prefix and not node_name.startswith(table_name_prefix)
-                else node_name
-            )
+            db_name = node.get_table_name(table_name_prefix)
             node.lastexecution_start_time = datetime.now()
             table = node._execute(tables)
             if table is not None:
@@ -385,12 +427,7 @@ class Node:
                         if Node._node_manager.should_rerun(node, con):
                             table = _run_and_materialise(node, node_name)
                         else:
-                            db_name = (
-                                f"{table_name_prefix}__{node_name}"
-                                if table_name_prefix
-                                and not node_name.startswith(table_name_prefix)
-                                else node_name
-                            )
+                            db_name = node.get_table_name(table_name_prefix)
                             try:
                                 table = con.get_dest_table(db_name)
                             except Exception:
@@ -407,12 +444,7 @@ class Node:
                         if (
                             con and table is not None
                         ):  # Only create table if _execute returns something
-                            db_name = (
-                                f"{table_name_prefix}__{node_name}"
-                                if table_name_prefix
-                                and not node_name.startswith(table_name_prefix)
-                                else node_name
-                            )
+                            db_name = node.get_table_name(table_name_prefix)
                             logger.info(
                                 f"Thread {threading.current_thread().name}: materializing '{node_name}' to database ..."
                             )
@@ -553,6 +585,14 @@ class Node:
             NotImplementedError: This method should be implemented by subclasses.
         """
         raise NotImplementedError()
+
+    def copy(self):
+        """Return a deep copy of this node with _table_name_prefix cleared on all nodes."""
+        clone = copy.deepcopy(self)
+        clone._table_name_prefix = None
+        for dep in clone.dependencies:
+            dep._table_name_prefix = None
+        return clone
 
     def __eq__(self, other: "Node") -> bool:
         return hash(self) == hash(other)

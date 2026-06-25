@@ -21,6 +21,12 @@ class Reporter(Node):
         super(Reporter, self).__init__(name=name)
         self.cohort = cohort
 
+    # def to_dict(self):
+    #     """Exclude cohort from serialization to avoid hashing the entire Cohort object."""
+    #     d = super().to_dict()
+    #     # d.pop("cohort", None)
+    #     return d
+
     def _execute(self, tables: Dict[str, Table]):
         """
         Execute the Table1 report generation.
@@ -146,11 +152,23 @@ class Table1OutcomesNode(Reporter):
             f"Generating {self.name} outcomes report for cohort '{self.cohort.name}'..."
         )
         self.reporter.execute(self.cohort, phenotypes=self.cohort.outcomes)
+        self.reporter.characteristic_sections = getattr(
+            self.cohort, "outcome_sections", None
+        )
         df = self.reporter.df
         logger.debug(
             f"{self.name} outcomes report generated for cohort '{self.cohort.name}'."
         )
         return ibis.memtable(self._normalize_df(df))
+
+    def to_json(self, path: str):
+        """Export Table1 outcomes to JSON, propagating outcome section metadata."""
+        if self.table is not None:
+            _ = self.df_report  # populates self.reporter.df
+            self.reporter.characteristic_sections = getattr(
+                self.cohort, "outcome_sections", None
+            )
+            self.reporter.to_json(path)
 
 
 class WaterfallNode(Reporter):
@@ -249,3 +267,15 @@ class CustomReporterNode(Reporter):
         """Delegate to the wrapped reporter's to_json."""
         self._ensure_reporter_executed()
         self.reporter.to_json(path)
+
+    def to_html(self, path: str):
+        """Delegate to the wrapped reporter's to_html, if implemented."""
+        if hasattr(self.reporter, "to_html"):
+            self._ensure_reporter_executed()
+            self.reporter.to_html(path)
+
+    def to_png(self, path: str):
+        """Delegate to the wrapped reporter's to_png, if implemented."""
+        if hasattr(self.reporter, "to_png"):
+            self._ensure_reporter_executed()
+            self.reporter.to_png(path)

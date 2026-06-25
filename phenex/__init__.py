@@ -31,6 +31,13 @@ from .phenotypes import (
     ScorePhenotype,
     ArithmeticPhenotype,
     LogicPhenotype,
+    TreatmentPatternAnalysis,
+    CHADSVASCPhenotype,
+    CHADSVASCComponents,
+    SmartCodelistPhenotype,
+    StackableRegimen,
+    ISTHMajorBleedPhenotype,
+    ISTHBleedComponents,
 )
 
 # Filters
@@ -82,6 +89,8 @@ from .reporting import (
     TimeToEvent,
     CohortExplorer,
     ReportDrafter,
+    TreatmentPatternAnalysisSankeyReporter,
+    SankeyGenerator,
 )
 
 # Codelists
@@ -141,6 +150,13 @@ __all__ = [
     "ScorePhenotype",
     "ArithmeticPhenotype",
     "LogicPhenotype",
+    "TreatmentPatternAnalysis",
+    "CHADSVASCPhenotype",
+    "CHADSVASCComponents",
+    "SmartCodelistPhenotype",
+    "StackableRegimen",
+    "ISTHMajorBleedPhenotype",
+    "ISTHBleedComponents",
     # Filters
     "CategoricalFilter",
     "CodelistFilter",
@@ -183,6 +199,8 @@ __all__ = [
     "TimeToEvent",
     "CohortExplorer",
     "ReportDrafter",
+    "TreatmentPatternAnalysisSankeyReporter",
+    "SankeyGenerator",
     # Codelists
     "Codelist",
     "LocalFileCodelistFactory",

@@ -124,6 +124,8 @@ class Table1(Reporter):
         self.df_booleans = self._report_boolean_columns()
         logger.debug("Starting with value columns for table1")
         self.df_values = self._report_value_columns()
+        logger.debug("Collecting value distributions for histogram visualization")
+        self._value_distributions = self._collect_value_distributions()
 
         # add the full cohort size as the first row
         df_n = pd.DataFrame(
@@ -277,6 +279,51 @@ class Table1(Reporter):
         df.index = names
         return df
 
+    def _collect_value_distributions(self):
+        """Compute KDE curves for numeric phenotypes.
+
+        Stores ``{"x": [...], "y": [...]}`` per phenotype where *y* is
+        normalised so the peak equals 100.  This is far more compact than
+        raw patient-level values and avoids binning decisions at display time.
+        """
+        import numpy as np
+        from scipy.stats import gaussian_kde
+
+        N_POINTS = 200
+        PADDING = 0.10  # 10% range padding on each side
+
+        value_phenotypes = self._get_value_characteristics()
+        distributions = {}
+        for phenotype in value_phenotypes:
+            try:
+                values = np.array(
+                    phenotype.table.select(["PERSON_ID", "VALUE"])
+                    .distinct()["VALUE"]
+                    .execute()
+                    .dropna()
+                    .tolist(),
+                    dtype=float,
+                )
+                if len(values) < 2:
+                    continue
+                # For integer-valued data, widen the bandwidth to avoid
+                # spiky peaks at each integer and produce smooth plateaus.
+                is_integer = np.allclose(values, np.round(values))
+                bw = 1.5 if is_integer else None
+                kde = gaussian_kde(values, bw_method=bw)
+                lo, hi = float(values.min()), float(values.max())
+                pad = (hi - lo) * PADDING if hi > lo else 1.0
+                x = np.linspace(lo - pad, hi + pad, N_POINTS)
+                y = kde(x)
+                y = y / y.max() * 100  # normalise peak to 100
+                distributions[phenotype.display_name] = {
+                    "x": np.round(x, 4).tolist(),
+                    "y": np.round(y, 2).tolist(),
+                }
+            except Exception:
+                pass
+        return distributions
+
     def get_pretty_display(self) -> pd.DataFrame:
         """
         Return a formatted version of the Table1 results for display.
@@ -336,6 +383,9 @@ class Table1(Reporter):
         }
         if self.characteristic_sections:
             payload["sections"] = self.characteristic_sections
+
+        if hasattr(self, "_value_distributions") and self._value_distributions:
+            payload["kdes"] = self._value_distributions
 
         with filepath.open("w") as f:
             json.dump(payload, f, indent=2, default=str)

@@ -56,6 +56,7 @@ class _SubcohortProxy:
         parent_cohort: "Cohort",
         index_table,
         outcomes: list = None,
+        outcome_sections: dict = None,
     ):
         self.index_table = index_table
         index_patient_ids = index_table.filter(index_table.BOOLEAN == True).select(
@@ -68,10 +69,47 @@ class _SubcohortProxy:
         self.outcomes = [
             _FilteredPhenotypeView(p, index_patient_ids) for p in (outcomes or [])
         ]
+        self.outcome_sections = outcome_sections
         self.characteristics_table = None
         self.characteristic_sections = getattr(
             parent_cohort, "characteristic_sections", None
         )
+        parent_subset = getattr(parent_cohort, "subset_tables_index", None)
+        if parent_subset is not None:
+            self.subset_tables_index = {}
+            for domain, ptable in parent_subset.items():
+                if "PERSON_ID" in ptable._table.columns:
+                    self.subset_tables_index[domain] = type(ptable)(
+                        ptable._table.semi_join(index_patient_ids, "PERSON_ID")
+                    )
+                else:
+                    self.subset_tables_index[domain] = ptable
+        else:
+            self.subset_tables_index = None
+
+
+class _CustomReporterPseudoNode:
+    """Lightweight stand-in for a CustomReporterNode in a Subcohort.
+
+    Wraps an already-executed custom reporter so that the subcohort's
+    ``write_reports_to_json`` / ``write_reports_to_html`` /
+    ``write_reports_to_excel`` methods can delegate uniformly."""
+
+    def __init__(self, name: str, reporter):
+        self.name = name
+        self.reporter = reporter
+
+    def to_json(self, path: str):
+        if hasattr(self.reporter, "df") and self.reporter.df is not None:
+            self.reporter.to_json(path)
+
+    def to_html(self, path: str):
+        if hasattr(self.reporter, "to_html"):
+            self.reporter.to_html(path)
+
+    def to_excel(self, path: str):
+        if hasattr(self.reporter, "df") and self.reporter.df is not None:
+            self.reporter.to_excel(path)
 
 
 class _PseudoReporterNode:
@@ -143,7 +181,21 @@ class Subcohort(Cohort):
     ):
         self.additional_inclusions = inclusions or []
         self.additional_exclusions = exclusions or []
-        self.additional_outcomes = outcomes or []
+
+        # outcomes may be a flat list or a dict of {section_name: [phenotypes]}
+        if isinstance(outcomes, dict):
+            self._additional_outcome_sections = {
+                section: [p.display_name for p in phenos]
+                for section, phenos in outcomes.items()
+            }
+            self.additional_outcomes = [
+                p for phenos in outcomes.values() for p in phenos
+            ]
+        else:
+            self._additional_outcome_sections = None
+            self.additional_outcomes = outcomes or []
+
+        parent_sections = getattr(cohort, "outcome_sections", None) or {}
 
         super(Subcohort, self).__init__(
             name=f"{cohort.name}__{name}",
@@ -157,6 +209,14 @@ class Subcohort(Cohort):
             custom_reporters=custom_reporters,
         )
         self.cohort = cohort
+
+        # super().__init__() overwrites _table_name_prefix on shared phenotype objects;
+        # restore the parent cohort's prefix on its phenotypes.
+        cohort._apply_table_name_prefix(cohort.phenotypes)
+
+        additional_sections = self._additional_outcome_sections or {}
+        merged = {**parent_sections, **additional_sections}
+        self.outcome_sections = merged if merged else None
 
     def execute(
         self,
@@ -247,9 +307,19 @@ class Subcohort(Cohort):
         self._build_waterfall(include_component_phenotypes_level=None)
         self._build_waterfall(include_component_phenotypes_level=100)
 
-        # Execute custom reporters
+        # Execute custom reporters using a filtered proxy so phenotype tables
+        # are scoped to the subcohort's patient population, mirroring how
+        # Table1 and other built-in reporters are handled.
+        _proxy = _SubcohortProxy(self.cohort, self.index_table, outcomes=self.outcomes)
+        self.custom_reporter_nodes = []
         for reporter in self.custom_reporters:
-            reporter.execute(self)
+            reporter.execute(_proxy)
+            self.custom_reporter_nodes.append(
+                _CustomReporterPseudoNode(
+                    name=f"{self.name}__custom__{reporter.name}".upper(),
+                    reporter=reporter,
+                )
+            )
 
         return self.index_table
 
@@ -460,8 +530,14 @@ class Subcohort(Cohort):
         reporter = Table1(
             include_component_phenotypes_level=include_component_phenotypes_level
         )
-        proxy = _SubcohortProxy(self.cohort, self.index_table, outcomes=self.outcomes)
+        proxy = _SubcohortProxy(
+            self.cohort,
+            self.index_table,
+            outcomes=self.outcomes,
+            outcome_sections=self.outcome_sections,
+        )
         reporter.execute(proxy, phenotypes=proxy.outcomes)
+        reporter.characteristic_sections = proxy.outcome_sections
         return reporter
 
     def _make_table1_outcomes_detailed_reporter(self) -> Optional["Table1"]:

@@ -120,6 +120,7 @@ class TestStudyOutput(unittest.TestCase):
     def test_each_sheet_has_cohort_headers(self):
         """Every data sheet must mention each cohort name somewhere in the sheet."""
         _NUMERIC_SHEETS = {"CHARACTERISTICS numeric", "CHARACTERISTICS num (detailed)"}
+        _ATTRITION_SHEETS = {"INCLUSION EXCLUSION", "INCLUSION EXCLUSION (detailed)"}
         for sheet_name in self.wb.sheetnames:
             if sheet_name == "OVERVIEW":
                 continue
@@ -131,6 +132,14 @@ class TestStudyOutput(unittest.TestCase):
                     val = sheet.cell(row=r, column=2).value
                     if val is not None:
                         all_values.add(str(val))
+            elif sheet_name in _ATTRITION_SHEETS:
+                # Attrition sheets have cohort names in title/subtitle rows
+                # throughout the sheet, not just in the first few rows
+                for r in range(1, sheet.max_row + 1):
+                    for c in range(1, sheet.max_column + 1):
+                        val = sheet.cell(row=r, column=c).value
+                        if val is not None:
+                            all_values.add(str(val))
             else:
                 for row in range(1, 5):  # rows 1-4 are header rows
                     for c in range(1, sheet.max_column + 1):
