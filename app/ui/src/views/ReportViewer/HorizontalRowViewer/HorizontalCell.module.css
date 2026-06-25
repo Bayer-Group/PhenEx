@@ -77,12 +77,10 @@
 .multiRowBlock {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 12px;
-  height: fit-content;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
-  /* border: var(--border); */
 }
 
 .multiRowTitle {
@@ -112,12 +110,19 @@
   border-radius: 10px;
   flex: 1;
   min-width: 0;
+  min-height: fit-content;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  height: 100%;
   width: 500px;
   max-width: 100%;
   padding: 0 12px 0px 12px;
   box-sizing: border-box;
+}
+
+.multiRowContent > * {
+  flex: 1 1 auto;
+  min-height: fit-content;
 }
 
 /* ── Category (overview) cell ─────────────────────────────────────────── */
