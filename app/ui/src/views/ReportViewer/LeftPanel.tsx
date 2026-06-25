@@ -1,4 +1,4 @@
-import { FC, useRef, useState } from 'react';
+import { FC, useRef, useState, useEffect } from 'react';
 import { CohortSelector } from './ReportFloatingControls/CohortSelector';
 import { CohortActionBar } from './ReportFloatingControls/CohortActionBar';
 import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
@@ -27,12 +27,27 @@ export const LeftPanel: FC<LeftPanelProps> = ({
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
+  const headerActionsRef = useRef<HTMLDivElement>(null);
   const [showAll, setShowAll] = useState(false);
+  const [showFloatingActions, setShowFloatingActions] = useState(false);
+
+  useEffect(() => {
+    const root = scrollRef.current;
+    const target = headerActionsRef.current;
+    if (!root || !target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowFloatingActions(!entry.isIntersecting),
+      { root, threshold: 0 },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className={styles.container}>
       <div ref={scrollRegionRef} className={styles.scrollRegion}>
-        <div className={styles.actionBarRegion}>
+        <div className={`${styles.actionBarRegion} ${showFloatingActions ? styles.actionBarRegionVisible : ''}`}>
           <CohortActionBar
             groups={groups}
             selections={selections}
@@ -47,11 +62,13 @@ export const LeftPanel: FC<LeftPanelProps> = ({
             groups={groups}
             selections={selections}
             showAll={showAll}
+            onToggleShowAll={() => setShowAll((v) => !v)}
             onReplace={onReplace}
             onAdd={onAdd}
             onRemove={onRemove}
             cohortDescriptions={cohortDescriptions}
             finalCohortSizes={finalCohortSizes}
+            headerActionsRef={headerActionsRef}
           />
         </div>
           <div className={styles.scrollbarRegion}>

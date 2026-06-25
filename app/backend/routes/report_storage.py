@@ -15,6 +15,7 @@ AWS credentials are expected via the standard boto3 chain
 import json
 import logging
 import os
+import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -37,10 +38,31 @@ def _get_s3_prefix() -> str:
     return os.environ.get("REPORT_S3_PREFIX", "").strip("/")
 
 
+_s3_client_instance = None
+_s3_client_lock = threading.Lock()
+
+
 def _s3_client():
-    """Lazily create a boto3 S3 client."""
-    import boto3  # imported here so the dep is optional in local mode
-    return boto3.client("s3")
+    """Return a process-wide, thread-safe boto3 S3 client.
+
+    The client is created exactly once. Creating a new ``boto3.client`` on every
+    request is both wasteful and *not thread-safe at construction* — under the
+    concurrent threadpool requests FastAPI uses for sync routes, concurrent
+    creation intermittently raises, which manifested as random "blank report"
+    loads that a restart appeared to fix.
+    """
+    global _s3_client_instance
+    if _s3_client_instance is None:
+        with _s3_client_lock:
+            if _s3_client_instance is None:
+                import boto3  # imported here so the dep is optional in local mode
+                from botocore.config import Config
+
+                _s3_client_instance = boto3.client(
+                    "s3",
+                    config=Config(max_pool_connections=32),
+                )
+    return _s3_client_instance
 
 
 def _s3_prefix(*parts: str) -> str:

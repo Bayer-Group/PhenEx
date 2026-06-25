@@ -54,6 +54,11 @@
   z-index: 99;
   pointer-events: none;
   opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.actionBarRegionVisible {
+  opacity: 1;
 }
 
 .actionBarRegion > * {

@@ -55,15 +55,23 @@ def _load_frozen_cohort(run_id: str, cohort_name: str) -> Dict[str, Any] | None:
     return _strip_codelists(data)
 
 
-def _load_table1_summary(run_id: str, cohort_name: str) -> Dict[str, Any] | None:
-    """Load table1 rows + sections (no distributions)."""
-    try:
-        data = storage.read_json(run_id, cohort_name, "table1.json")
-    except HTTPException:
+def _load_combined_table1(run_id: str) -> Dict[str, Any]:
+    """Load the run-level combined table1 (cohort_name -> table1 data).
+
+    Reports are stored as a single ``combined_table1.json`` at the run level,
+    not as per-cohort ``table1.json`` files, so read it once per request.
+    """
+    data = storage.read_run_file(run_id, "combined_table1.json")
+    return data if isinstance(data, dict) else {}
+
+
+def _table1_summary(table1: Any) -> Dict[str, Any] | None:
+    """Extract rows + sections (no distributions) from a cohort's table1 data."""
+    if not isinstance(table1, dict):
         return None
     return {
-        "rows": data.get("rows", []),
-        "sections": data.get("sections", {}),
+        "rows": table1.get("rows", []),
+        "sections": table1.get("sections", {}),
     }
 
 
@@ -130,15 +138,16 @@ async def analyze_report(request: AnalyzeRequest):
     # Validate that the run exists (raises 404 via storage)
     storage.list_cohorts(safe_run)
 
+    combined_table1 = _load_combined_table1(safe_run)
+
     # Gather data for each cohort
     cohort_summaries = {}
     for name in request.cohort_names:
         safe_name = Path(name).name
-        frozen = _load_frozen_cohort(safe_run, safe_name)
-        table1 = _load_table1_summary(safe_run, safe_name)
+        table1 = _table1_summary(combined_table1.get(safe_name))
         if table1:
             cohort_summaries[safe_name] = {
-                "definition": frozen,
+                "definition": _load_frozen_cohort(safe_run, safe_name),
                 "table1": table1,
             }
 

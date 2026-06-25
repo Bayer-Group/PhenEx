@@ -157,7 +157,6 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
     };
 
     const renderSectionRow = (row: SequentialRow) => {
-      console.log(cohortData, "this is cohort data")
       switch (row.rowType) {
         case 'boolean':
           return <BarChartCellRenderer data={{ name: row.name, _meta: { cohortData, finalCohortSizes } }} isModal />;

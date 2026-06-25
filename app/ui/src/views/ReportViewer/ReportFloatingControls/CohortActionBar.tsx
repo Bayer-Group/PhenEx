@@ -68,7 +68,10 @@ export const CohortActionBar: FC<CohortActionBarProps> = ({
         <button
           ref={clearRef}
           className={styles.clearBtn}
-          onClick={() => { for (let i = selections.length - 1; i >= 0; i--) onRemove(i); }}
+          onClick={() => {
+            for (let i = selections.length - 1; i >= 0; i--) onRemove(i);
+            if (!showAll) onToggleShowAll();
+          }}
           disabled={selections.length === 0}
           onMouseEnter={() => setHoveredBtn('clear')}
           onMouseLeave={() => setHoveredBtn(null)}

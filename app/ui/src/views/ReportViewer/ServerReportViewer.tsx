@@ -136,10 +136,10 @@ export const ServerReportViewer: FC = () => {
     }
 
     Promise.all([
-      fetchCombinedTable1(runId),
+      fetchCombinedTable1(runId).catch(() => []),
       fetchCombinedTable1(runId, 'table1_outcomes').catch(() => []),
-      fetchFrozenCohortsCombined(runId),
-      fetchRunInfo(runId),
+      fetchFrozenCohortsCombined(runId).catch(() => []),
+      fetchRunInfo(runId).catch(() => ({})),
       fetchWaterfallCombined(runId).catch(() => ({})),
       fetchKdeCombined(runId).catch(() => ({})),
       fetchKdeCombined(runId, 'table1_outcomes').catch(() => ({})),
@@ -161,7 +161,9 @@ export const ServerReportViewer: FC = () => {
           info: info as Record<string, string>,
           waterfall,
         };
-        setCache(runId, runData);
+        // Don't cache an empty load (e.g. a transient fetch failure) — that
+        // would make the blank state sticky until the cache is cleared.
+        if (entries.length) setCache(runId, runData);
         if (t2) setCachedTable2(runId, t2);
         if (tte) setCachedTimeToEvent(runId, tte);
         if (registry) setStudyRegistry(registry as unknown as StudyRegistry);
@@ -251,8 +253,14 @@ export const ServerReportViewer: FC = () => {
 
 
   // ── AI analysis ───────────────────────────────────────────────────────
+  // Run at most once per run. `allCohortEntries` is set several times during a
+  // single load (initial apply, then again after KDE merge), so keying the
+  // effect on it would re-fire the analysis request multiple times.
+  const analyzedRunRef = useRef<string | null>(null);
   useEffect(() => {
     if (!selectedRun || !allCohortEntries.length) return;
+    if (analyzedRunRef.current === selectedRun) return;
+    analyzedRunRef.current = selectedRun;
     const names = allCohortEntries.map((e) => e.cohortName);
     fetchReportAnalysis(selectedRun, names).catch(() => {});
   }, [selectedRun, allCohortEntries]);

@@ -35,6 +35,12 @@
   margin-top:2px;
   margin-bottom:20px;
 }
+.headerActions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .headerActionButton{
   font-size: var(--font_size_items, 12px);
   width: fit-content;
@@ -42,12 +48,25 @@
   padding: 2px 12px;
   border-radius: 8px;
   border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
 }
 
-.headerActionButton:hover{
+.headerActionButton:hover:not(:disabled){
   background-color: var(--background_color_light);
   color: var(--text_color_notfocus, #333);
   border: var(--border);
+}
+
+.headerActionButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.headerActionButton:focus {
+  outline: none;
 }
 
 .topGradient {
@@ -160,7 +179,7 @@
   flex-direction: row;
   align-items: flex-start;
   gap: 4px;
-  padding: 0px 8px 1px 10px;
+  padding: 0px 8px 3px 5px;
   user-select: none;
   transition: background 0.15s, border-color 0.15s;
   border: 1px solid transparent;
@@ -188,7 +207,7 @@
   font-size: var(--font_size_infotext, 11px);
   color: #333;
   line-height: 1.3;
-  padding: 3px 5px 0px 0px;
+  padding: 3px 5px 0px 5px;
   border-radius: 4px;
   /* background-color: red !important; */
 }
@@ -197,13 +216,13 @@
 }
 
 .cohortSize {
-  margin-left: auto;
-  font-size: 10px;
+  position:absolute;
+  right:55px;
+  margin-top:2px;
+  font-size: var(--font_size_infotext, 11px);
   color: #999;
   font-family: "IBMPlexSans-regular", sans-serif;
   white-space: nowrap;
-  padding-right: 10px;
-  padding-top:3px;
 }
 
 /* ── Accordion descriptions ──────────────────────────────────────────── */
@@ -245,7 +264,7 @@
 
 
 .subcohortLegendDot{
-    margin-top:3px;
+    margin-top:4px;
 
 }
 .removeBtn {

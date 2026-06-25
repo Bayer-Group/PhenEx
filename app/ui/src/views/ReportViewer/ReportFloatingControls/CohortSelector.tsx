@@ -10,22 +10,26 @@ interface CohortSelectorProps {
   groups: CohortGroup[];
   selections: LegendSelection[];
   showAll: boolean;
+  onToggleShowAll: () => void;
   onReplace: (index: number, fullName: string) => void;
   onAdd: (fullName: string) => void;
   onRemove: (index: number) => void;
   cohortDescriptions?: CohortDescriptions;
   finalCohortSizes?: Record<string, number | null>;
+  headerActionsRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export const CohortSelector: FC<CohortSelectorProps> = ({
   groups,
   selections,
   showAll,
+  onToggleShowAll,
   onReplace,
   onAdd,
   onRemove,
   cohortDescriptions,
   finalCohortSizes,
+  headerActionsRef,
 }) => {
   const { activeIndex } = useBarHoverStore();
   const [barWidth, setBarWidth] = useState(0);
@@ -33,6 +37,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   const [hoveredItem, setHoveredItem] = useState<{ el: HTMLElement; isActive: boolean } | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const legendBarRef = useRef<HTMLDivElement>(null);
+  const totalCount = useMemo(() => groups.reduce((n, g) => n + g.subcohorts.length, 0), [groups]);
 
   const startItemHover = useCallback((el: HTMLElement, isActive: boolean) => {
     if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
@@ -163,6 +168,21 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
   const showSizes = barWidth > 200 && finalCohortSizes != null;
 
+  const allSelected = groups.every((g) => g.subcohorts.every((s) => activeSet.has(s.fullName)));
+
+  const handleSelectAll = useCallback(() => {
+    for (const group of groups) {
+      for (const sub of group.subcohorts) {
+        if (!activeSet.has(sub.fullName)) onAdd(sub.fullName);
+      }
+    }
+  }, [groups, activeSet, onAdd]);
+
+  const handleDeselectAll = useCallback(() => {
+    for (let i = selections.length - 1; i >= 0; i--) onRemove(i);
+    if (!showAll) onToggleShowAll();
+  }, [selections.length, onRemove, showAll, onToggleShowAll]);
+
   return (
     <div className={styles.legendBarContainer}>
             <div className={styles.topGradient} />
@@ -175,20 +195,41 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
             Select the cohorts and stratifications you want to view from the list below. You can rearrange display order in the Legend tab. <br></br><br></br>
           {/* </div> */}
           {/* <div className={styles.legendBarHeaderSubLabel}> */}
-            <span className={styles.legendBarHeaderCount}>{selections.length}</span> of <span className={styles.legendBarHeaderCount}>{groups.length}</span> are currently selected.
+            <span className={styles.legendBarHeaderCount}>{selections.length}</span> of <span className={styles.legendBarHeaderCount}>{totalCount}</span> are currently selected.
             </div>
         </div>
-        <div className={styles.headerActionButton}>
-          Show all available
-        </div>
-        <div className={styles.headerActionButton}>
-          Select all available
-        </div>
-        <div className={styles.headerActionButton}>
-          Deselect all
-        </div>
-        <div className={styles.headerActionButton}>
-          Show cohort descriptions
+        <div ref={headerActionsRef} className={styles.headerActions}>
+          <button
+            type="button"
+            className={styles.headerActionButton}
+            onClick={onToggleShowAll}
+          >
+            {showAll ? 'Show selected only' : 'Show all available'}
+          </button>
+          <button
+            type="button"
+            className={styles.headerActionButton}
+            onClick={handleSelectAll}
+            disabled={allSelected}
+          >
+            Select all available
+          </button>
+          <button
+            type="button"
+            className={styles.headerActionButton}
+            onClick={handleDeselectAll}
+            disabled={selections.length === 0}
+          >
+            Deselect all
+          </button>
+          <button
+            type="button"
+            className={styles.headerActionButton}
+            onClick={toggleAllDescs}
+            disabled={allDescKeys.length === 0}
+          >
+            {allDescsExpanded ? 'Hide cohort descriptions' : 'Show cohort descriptions'}
+          </button>
         </div>
       </div>
       {/* {allDescKeys.length > 0 && (
