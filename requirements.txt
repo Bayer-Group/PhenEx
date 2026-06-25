@@ -1,6 +1,6 @@
 psycopg2-binary==2.9.11
 ibis-framework[snowflake,duckdb,examples]==9.5.0
-black==24.10.0
+black==26.3.1
 python-dotenv
 pytest
 snowflake-connector-python
