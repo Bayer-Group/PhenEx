@@ -1,10 +1,13 @@
-import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react';
 import { type CohortClassified, type KdeCurve } from '../types';
 import { type SequentialRow, type ViewerEntry, CATEGORY_DESCRIPTIONS, getCategoryLabel } from '../studyRegistryUtils';
 import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEventContent';
 import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { StudyInfoCellRenderer } from '../GraphsAndTables/RowRenderers/StudyInfoCellRenderer';
+import { BarChartCellRenderer } from '../GraphsAndTables/RowRenderers/BarChartCellRenderer';
+import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
+import { NumericGraphCellRenderer } from '../GraphsAndTables/RowRenderers/NumericGraphCellRenderer';
 import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../CellLayouts';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
@@ -32,7 +35,7 @@ export interface HorizontalCellProps {
 
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
-export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
+const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
   ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, onVerticalScroll, initialScrollTop, studyTitle = '', studyDescription }, ref) => {
     const isSection = entry.kind === 'section';
     const isCategory = entry.kind === 'category';
@@ -131,27 +134,40 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
       if (!nearby) return null;
       if (isCategory) return renderCategoryContent();
       if (!isSection) return renderRowContent(cellRows[0]);
-      // Multi-row cell: stack each row of the section vertically, each in a
-      // bounded block so its FlexLayout-based content renders at full size.
-      // Clicking a row title expands the section (if needed) and focuses that
-      // row's own cell.
+      // Multi-row section card: lightweight rendering using the same chart
+      // renderers as CharacteristicsChart (no FlexLayout per row).
       return (
         <div className={styles.multiRowList}>
           {cellRows.map((row) => (
-            <div key={row.index} className={styles.multiRowBlock}>
-              <div
-                className={styles.multiRowTitle}
-                onClick={(e) => { e.stopPropagation(); onNavigateToRow?.(row); }}
-              >
+            <div
+              key={row.index}
+              className={styles.multiRowBlock}
+              onClick={(e) => { e.stopPropagation(); onNavigateToRow?.(row); }}
+            >
+              <div className={styles.multiRowTitle}>
                 {row.registry?.display_name || row.name}
               </div>
               <div className={styles.multiRowContent}>
-                {renderRowContent(row)}
+                {renderSectionRow(row)}
               </div>
             </div>
           ))}
         </div>
       );
+    };
+
+    const renderSectionRow = (row: SequentialRow) => {
+      console.log(cohortData, "this is cohort data")
+      switch (row.rowType) {
+        case 'boolean':
+          return <BarChartCellRenderer data={{ name: row.name, _meta: { cohortData, finalCohortSizes } }} isModal />;
+        case 'categorical':
+          return <CategoricalBarChartCellRenderer baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes}/>;
+        case 'numeric':
+          return <NumericGraphCellRenderer name={row.name} cohortData={cohortData} kdeData={kdeData} />;
+        default:
+          return null;
+      }
     };
 
     return (
@@ -188,3 +204,5 @@ export const HorizontalCell = forwardRef<HTMLDivElement, HorizontalCellProps>(
     );
   },
 );
+
+export const HorizontalCell = memo(HorizontalCellInner);

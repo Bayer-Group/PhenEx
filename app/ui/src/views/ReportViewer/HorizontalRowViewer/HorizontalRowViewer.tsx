@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { type CohortClassified } from '../types';
 import { type SequentialRow, type ViewerEntry } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
@@ -44,7 +44,7 @@ interface HorizontalRowViewerProps {
 
 // ── Component ───────────────────────────────────────────────────────────
 
-export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
+export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
   entries,
   rows,
   initialIndex,
@@ -71,6 +71,7 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const mountY = useRef(lastClickY);
   const sharedScrollTopRef = useRef(0);
+  const cachedScrollerWidth = useRef(0);
 
   // Sync external navigation requests (e.g. from OutlinePanel)
   const prevExternalIndex = useRef(initialIndex);
@@ -89,13 +90,16 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   const current = entries[currentIndex];
 
   // ── Scroll management ─────────────────────────────────────────────────
+  // Each cell is exactly 100% width of the scroller, so we can compute
+  // positions mathematically without reading DOM offsets (avoids forced reflow).
 
   const centerOnCard = useCallback((idx: number, mode: 'instant' | 'smooth' | 'fast') => {
     const scroller = scrollRef.current;
     if (!scroller) return;
-    const child = scroller.children[idx] as HTMLElement | undefined;
-    if (!child) return;
-    const target = Math.max(0, child.offsetLeft - (scroller.clientWidth - child.offsetWidth) / 2);
+    // Use cached width to avoid forced reflow; fallback to reading if not yet set
+    const cellWidth = cachedScrollerWidth.current || scroller.clientWidth;
+    if (cellWidth === 0) return;
+    const target = idx * cellWidth;
     if (mode === 'instant') {
       scroller.scrollLeft = target;
     } else if (mode === 'smooth') {
@@ -116,15 +120,16 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
     }
   }, []);
 
-  // Fast scroll on single-press navigate
-  useEffect(() => {
+  // Fast scroll on single-press navigate — use layoutEffect to set scroll
+  // position before paint, avoiding visual flash from spacer width changes.
+  useLayoutEffect(() => {
     if (!didInitialScroll.current) return;
     if (holdDir.current !== 0) return;
-    requestAnimationFrame(() => centerOnCard(currentIndex, 'fast'));
+    centerOnCard(currentIndex, 'fast');
   }, [currentIndex, centerOnCard]);
 
   // Instant scroll on mount
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (didInitialScroll.current) return;
     didInitialScroll.current = true;
     centerOnCard(currentIndex, 'instant');
@@ -167,25 +172,40 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
   // Clean up on unmount
   useEffect(() => () => clearTimeout(holdTimer.current), []);
 
+  // Keep a ref to currentIndex for use in ResizeObserver (avoids re-creating it on nav)
+  const currentIndexRef = useRef(currentIndex);
+  currentIndexRef.current = currentIndex;
+
   // Re-center when the scroller (center panel) resizes or window resizes
   useEffect(() => {
     const scroller = scrollRef.current;
     if (!scroller) return;
-    const ro = new ResizeObserver(() => centerOnCard(currentIndex, 'instant'));
+    const ro = new ResizeObserver((roEntries) => {
+      const roEntry = roEntries[0];
+      if (roEntry) cachedScrollerWidth.current = roEntry.contentRect.width;
+      centerOnCard(currentIndexRef.current, 'instant');
+    });
     ro.observe(scroller);
+    // Initialize cached width
+    cachedScrollerWidth.current = scroller.clientWidth;
     return () => ro.disconnect();
-  }, [currentIndex, centerOnCard]);
+  }, [centerOnCard]);
 
   // Re-center when switching between Focus/Compact (left panel toggle)
+  // The ResizeObserver handles width changes, but there's a timing issue
+  // where the panel collapses with an animation, so also re-center here.
   useEffect(() => {
-    requestAnimationFrame(() => centerOnCard(currentIndex, 'instant'));
-  }, [isLeftPanelShown, centerOnCard, currentIndex]);
+    centerOnCard(currentIndexRef.current, 'instant');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLeftPanelShown, centerOnCard]);
 
   // The set of cells changes as the outline accordion expands/collapses; the
   // focused card's offset shifts, so snap it back to center instantly.
   useEffect(() => {
-    requestAnimationFrame(() => centerOnCard(currentIndex, 'instant'));
-  }, [entries, centerOnCard, currentIndex]);
+    centerOnCard(currentIndexRef.current, 'instant');
+  // Only re-run when entries change (accordion toggle), not on every navigation
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, centerOnCard]);
 
   // Block horizontal wheel scrolling of the scroller — vertical scroll
   // is handled natively by the overflow-y:auto verticalWrapper elements.
@@ -270,31 +290,51 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
 
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <div className={styles.scroller} ref={scrollRef} style={{ height: '100%' }}>
-          {entries.map((entry) => {
-            const isFocused = entry.index === currentIndex;
-            const nearby = Math.abs(entry.index - currentIndex) <= PRERENDER_NEIGHBOURS;
+          {/* Virtualized: only render cells within the visible window */}
+          {(() => {
+            const windowStart = Math.max(0, currentIndex - PRERENDER_NEIGHBOURS);
+            const windowEnd = Math.min(entries.length - 1, currentIndex + PRERENDER_NEIGHBOURS);
+            const cells = [];
+            for (let i = windowStart; i <= windowEnd; i++) {
+              const entry = entries[i];
+              const isFocused = i === currentIndex;
+              const nearby = true; // all rendered cells are nearby by definition
+              cells.push(
+                <HorizontalCell
+                  key={entry.key}
+                  ref={isFocused ? focusedRef : null}
+                  entry={entry}
+                  entries={entries}
+                  rows={rows}
+                  isFocused={isFocused}
+                  nearby={nearby}
+                  cohortDataMap={cohortDataMap}
+                  finalCohortSizes={finalCohortSizes}
+                  tteCohorts={tteCohorts}
+                  table2Cohorts={table2Cohorts}
+                  onNavigate={navigate}
+                  onNavigateToRow={onNavigateToRow}
+                  onVerticalScroll={isFocused ? handleVerticalScroll : undefined}
+                  initialScrollTop={sharedScrollTopRef.current}
+                  studyTitle={studyTitle}
+                  studyDescription={studyDescription}
+                />
+              );
+            }
             return (
-              <HorizontalCell
-                key={entry.key}
-                ref={isFocused ? focusedRef : null}
-                entry={entry}
-                entries={entries}
-                rows={rows}
-                isFocused={isFocused}
-                nearby={nearby}
-                cohortDataMap={cohortDataMap}
-                finalCohortSizes={finalCohortSizes}
-                tteCohorts={tteCohorts}
-                table2Cohorts={table2Cohorts}
-                onNavigate={navigate}
-                onNavigateToRow={onNavigateToRow}
-                onVerticalScroll={isFocused ? handleVerticalScroll : undefined}
-                initialScrollTop={sharedScrollTopRef.current}
-                studyTitle={studyTitle}
-                studyDescription={studyDescription}
-              />
+              <>
+                {/* Left spacer: represents all cells before the window */}
+                {windowStart > 0 && (
+                  <div style={{ flexShrink: 0, width: `${windowStart * 100}%`, minWidth: `${windowStart * 100}%` }} />
+                )}
+                {cells}
+                {/* Right spacer: represents all cells after the window */}
+                {windowEnd < entries.length - 1 && (
+                  <div style={{ flexShrink: 0, width: `${(entries.length - 1 - windowEnd) * 100}%`, minWidth: `${(entries.length - 1 - windowEnd) * 100}%` }} />
+                )}
+              </>
             );
-          })}
+          })()}
         </div>
       </div>
       <div className={styles.navPillContainer}>
@@ -302,5 +342,5 @@ export const HorizontalRowViewer: FC<HorizontalRowViewerProps> = ({
       </div>
     </div>
   );
-};
+});
 

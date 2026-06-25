@@ -24,8 +24,10 @@ export const CategoricalBarChartCellRenderer: FC<CategoricalBarChartCellRenderer
   finalCohortSizes = {},
   orientation = 'horizontal',
 }) => {
-  const { activeIndex } = useBarHoverStore();
+  console.log("in here the cohortData", cohortData)
 
+  const { activeIndex } = useBarHoverStore();
+  console.log("in here the cohortData", cohortData)
   const categories = useMemo<CategoryData[]>(() => {
     const catSet = new Set<string>();
     const catOrder: string[] = [];

@@ -11,6 +11,7 @@
   position: relative;
   width: 100%;
   height: 100%;
+  padding-left:20px;
   box-sizing: border-box;
   font-family: "IBMPlexSans-regular", sans-serif;
 }
@@ -103,28 +104,30 @@
   width: 100%;
   flex-shrink: 0;
   position: relative;
+  color:red;
+
 }
 
 .headerTick {
   position: absolute;
   top: 0;
   transform: translate(-50%, 10%);
-  font-size: 8px;
-  color: rgba(200, 200, 200, 0.8);
+  font-size: var(--font_size_infotext, 10px);
+  color: var(--text_color_default, #666);
   white-space: nowrap;
   padding: 0px 2px;
-  background-color: rgba(255,255,255,.7);
   border-radius: 3px;
   z-index: 100;
+  
 }
 
 .headerN {
   flex: 1;
   text-align: left;
   padding-left: 20px;
-  font-size: 11px;
+  font-size: 20px;
   font-weight: bold;
-  color: rgba(200, 200, 200, 0.8);
+  color: var(--text_color_default);
   white-space: nowrap;
 }
 
@@ -193,7 +196,7 @@
   display: flex;
   align-items: center;
   position: relative;
-  height: calc(4px / var(--pz-scale, 1));
+  height: 10px;
   cursor: default;
   width:100%;
   border-radius: 5px;
@@ -259,18 +262,21 @@
 
 /* ── Pct cell (left) ──────────────────────────────────────────────────── */
 .pctCell {
-  position: absolute;
-  right: 100%;
-  top: 50%;
-  transform: translateY(-50%);
+  /* position: absolute; */
+  /* right: 100%;
+  top: 50%; */
+  /* transform: translateY(-50%); */
   box-sizing: border-box;
-  padding: 0 6px;
-  font-size: calc(10px / var(--pz-scale, 1));
+  padding: 0 6px 0px 20px;
+  margin-right: 20px;
+  font-size: var(--font_size_infotext, 10px);
   color: #666;
   white-space: nowrap;
   line-height: 1;
   transition: opacity 0.15s ease;
   text-align: right;
+  width:fit-content;
+  background-color: red;
 }
 
 .cohortRowPresentation .pctCell {
@@ -300,7 +306,7 @@
 }
 
 .barFill {
-  border-radius: 0px clamp(4px, calc(12px / var(--pz-scale, 1)), 5px) clamp(4px, calc(12px / var(--pz-scale, 1)), 5px) 0px;
+  border-radius: 0px 3px 3px 0px;
 
   /* flex-shrink: 0; */
   height: 100%;

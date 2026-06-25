@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { FC, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import { Layout, Model, IJsonModel, Actions, BorderNode, TabSetNode, DockLocation, type Action, type ITabSetRenderValues } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
@@ -22,7 +22,7 @@ import {
   type CohortDescriptions,
   type Report,
 } from './types';
-import { buildSequentialRowList, buildAccordionEntries, keyMatchesRow, sectionKey, categoryKey, type SequentialRow, type StudyRegistry } from './studyRegistryUtils';
+import { buildSequentialRowList, buildAccordionEntries, keyMatchesRow, sectionKey, categoryKey, type SequentialRow, type ViewerEntry, type StudyRegistry } from './studyRegistryUtils';
 
 interface WaterfallInfoRow {
   Name: string;
@@ -116,6 +116,25 @@ function createLayoutModel(): Model {
 }
 
 // ── Component ───────────────────────────────────────────────────────────
+
+/** Lightweight store so the OutlinePanel can subscribe to index changes
+ *  without the factory callback needing to be recreated on each navigation. */
+class IndexStore {
+  private _index = 0;
+  private _listeners = new Set<() => void>();
+
+  get index() { return this._index; }
+  set(index: number) {
+    if (index === this._index) return;
+    this._index = index;
+    this._listeners.forEach((l) => l());
+  }
+  subscribe = (listener: () => void) => {
+    this._listeners.add(listener);
+    return () => { this._listeners.delete(listener); };
+  };
+  getSnapshot = () => this._index;
+}
 
 export const ReportViewer: FC<ReportViewerProps> = (props) => (
   <ThreePanelCollapseProvider storageKey={props.storageKey ? `${props.storageKey}-left-panel` : undefined}>
@@ -315,6 +334,19 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
 
   // ── HorizontalRowViewer state ─────────────────────────────────────────
   const [viewerIndex, setViewerIndex] = useState(0);
+  const viewerIndexRef = useRef(viewerIndex);
+  viewerIndexRef.current = viewerIndex;
+  // Store for OutlinePanel to subscribe to without factory recreation
+  const indexStoreRef = useRef(new IndexStore());
+  useEffect(() => { indexStoreRef.current.set(viewerIndex); }, [viewerIndex]);
+  // External navigation: only updated by outline clicks / accordion changes,
+  // NOT by the onIndexChange feedback from HorizontalRowViewer itself.
+  // This prevents the factory→HorizontalRowViewer→onIndexChange→factory loop.
+  const [externalNavIndex, setExternalNavIndex] = useState(0);
+  const handleOutlineNavigate = useCallback((index: number) => {
+    setViewerIndex(index);
+    setExternalNavIndex(index);
+  }, []);
   const [showRowTitle, setShowRowTitle] = useState(false);
 
   // Expand/collapse a section (or sectionless category) in the outline. This
@@ -329,16 +361,19 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     else nextExpanded.add(key);
 
     const nextEntries = buildAccordionEntries(sequentialRows, nextExpanded);
-    const current = viewerEntries[viewerIndex];
+    const idx = viewerIndexRef.current;
+    const current = viewerEntries[idx];
     let targetKey = current?.key;
     if (wasExpanded && current?.kind === 'row' && keyMatchesRow(key, current.row)) {
       targetKey = key;
     }
     const nextIndex = targetKey ? nextEntries.findIndex((e) => e.key === targetKey) : -1;
+    const finalIndex = nextIndex >= 0 ? nextIndex : Math.min(idx, Math.max(0, nextEntries.length - 1));
 
     setExpandedKeys(nextExpanded);
-    setViewerIndex(nextIndex >= 0 ? nextIndex : Math.min(viewerIndex, Math.max(0, nextEntries.length - 1)));
-  }, [expandedKeys, sequentialRows, viewerEntries, viewerIndex]);
+    setViewerIndex(finalIndex);
+    setExternalNavIndex(finalIndex);
+  }, [expandedKeys, sequentialRows, viewerEntries]);
 
   // Expand a row's section (if collapsed) and focus that row's individual cell.
   // Used when clicking a row title inside a multi-row section cell.
@@ -349,7 +384,10 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     const nextEntries = buildAccordionEntries(sequentialRows, nextExpanded);
     const idx = nextEntries.findIndex((e) => e.kind === 'row' && e.row.index === row.index);
     setExpandedKeys(nextExpanded);
-    if (idx >= 0) setViewerIndex(idx);
+    if (idx >= 0) {
+      setViewerIndex(idx);
+      setExternalNavIndex(idx);
+    }
   }, [expandedKeys, sequentialRows]);
 
   // ── FlexLayout + left border collapse ─────────────────────────────────
@@ -532,6 +570,30 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [],
   );
 
+  // Wrapper that subscribes to viewerIndex changes without factory recreation
+  const OutlinePanelConnected = useMemo(() => {
+    const store = indexStoreRef.current;
+    const Connected: FC<{
+      entries: ViewerEntry[];
+      onNavigate: (index: number) => void;
+      expandedKeys: Set<string>;
+      onToggleExpand: (key: string) => void;
+    }> = ({ entries, onNavigate, expandedKeys: ek, onToggleExpand: ote }) => {
+      const currentIndex = useSyncExternalStore(store.subscribe, store.getSnapshot);
+      return (
+        <OutlinePanel
+          entries={entries}
+          currentIndex={currentIndex}
+          onNavigate={onNavigate}
+          expandedKeys={ek}
+          onToggleExpand={ote}
+        />
+      );
+    };
+    return Connected;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
@@ -549,10 +611,9 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           );
         case 'outline':
           return (
-            <OutlinePanel
+            <OutlinePanelConnected
               entries={viewerEntries}
-              currentIndex={viewerIndex}
-              onNavigate={setViewerIndex}
+              onNavigate={handleOutlineNavigate}
               expandedKeys={expandedKeys}
               onToggleExpand={handleToggleExpand}
             />
@@ -560,11 +621,11 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         case 'center':
           return (
             <div className={styles.centerPanel}>
-              {/* <HorizontalRowViewer
+              <HorizontalRowViewer
                 entries={viewerEntries}
                 rows={sequentialRows}
-                initialIndex={viewerIndex}
-                navigateToIndex={viewerIndex}
+                initialIndex={0}
+                navigateToIndex={externalNavIndex}
                 onIndexChange={setViewerIndex}
                 onNavigateToRow={handleNavigateToRow}
                 onScrolledPastTitle={setShowRowTitle}
@@ -574,7 +635,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
                 table2Cohorts={table2Cohorts}
                 studyTitle={displayTitle}
                 studyDescription={studyDescription}
-              /> */}
+              />
             </div>
           );
         case 'rightStacked':
@@ -584,8 +645,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       }
     },
     [
-      displayTitle, groups, selections, sequentialRows, viewerEntries,
-      viewerIndex, expandedKeys, handleToggleExpand, handleNavigateToRow, handleReplace, handleAdd, updateSelections,
+      displayTitle, groups, selections, sequentialRows, viewerEntries, externalNavIndex,
+      expandedKeys, handleToggleExpand, handleNavigateToRow, handleOutlineNavigate, handleReplace, handleAdd, updateSelections,
       cohortDescriptions, finalCohortSizes, cohortDataMap,
       tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,
     ],
@@ -601,7 +662,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
             entries={viewerEntries}
             currentIndex={viewerIndex}
             studyTitle={displayTitle}
-            onNavigate={setViewerIndex}
+            onNavigate={handleOutlineNavigate}
           />
       </div>
       <div className={styles.page}>

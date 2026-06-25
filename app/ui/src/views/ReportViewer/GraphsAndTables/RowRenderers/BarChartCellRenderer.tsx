@@ -150,25 +150,17 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
         onMouseLeave={!isPresentation ? () => setHover(null) : undefined}
         style={{ cursor: 'pointer' }}
       >
-        {isPresentation && (
+        {/* {isPresentation && (
           <div
             className={`${styles.cohortLabelCell} ${labelClassName}`.trim()}
             style={options?.labelStyle}
           >
             {label}
           </div>
-        )}
+        )} */}
         <div
           className={styles.dataCells}
         >
-          {!hideCompactLabels && (
-            <div
-              className={styles.pctCell}
-              style={{ opacity: dimmed ? 0.25 : 1 }}
-            >
-              <strong>{pct.toFixed(pctDecimals)}</strong>
-            </div>
-          )}
           <div
             className={styles.barCell}
             style={{ opacity: dimmed ? 0.25 : 1 }}
@@ -178,6 +170,13 @@ export const BarChartCellRenderer: FC<BarChartCellRendererProps> = ({ data, isMo
               style={{ width: `${Math.max(0, pct)}%`, backgroundColor: entry.cohort.color }}
             />
           </div>
+          {!hideCompactLabels && (
+            <div
+              className={styles.pctCell}
+            >
+              <strong>{pct.toFixed(pctDecimals)}</strong>
+            </div>
+          )}
           {!hideCompactLabels && (
             <div className={styles.nCell} style={{ opacity: dimmed ? 0.25 : 1, color: activeIndex === entry.originalIndex ? '#000' : undefined }}>
               {isPresentation && finalCohortSize != null ? (
