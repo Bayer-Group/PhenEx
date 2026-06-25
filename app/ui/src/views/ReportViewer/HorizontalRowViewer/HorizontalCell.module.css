@@ -80,6 +80,7 @@
   align-items: stretch;
   gap: 12px;
   width: fit-content;
+  border: var(--border);
   max-width: 100%;
 }
 

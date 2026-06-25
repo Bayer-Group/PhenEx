@@ -17,6 +17,7 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
   isModal,
   breadcrumbs,
   pctDecimals = 0,
+  hideHeader = false,
 }) => {
   const { cohortData, finalCohortSizes = {} } = data._meta;
   const { name } = data;
@@ -33,6 +34,7 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
 
   const renderRow = (entry: RenderRow) => {
     const { pct, n } = getCohortRowValues(entry, name, finalCohortSizes);
+    const barPct = Math.max(0, pct);
 
     return (
       <div
@@ -51,32 +53,33 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
         onMouseLeave={() => setHover(null)}
         style={{ cursor: 'pointer' }}
       >
-        <div className={styles.dataCells}>
-          <div className={styles.barCell}>
+        <div className={`${styles.dataCells} ${styles.dataCellsCompact}`}>
+          <div className={styles.barCellCompact}>
             <div
               className={styles.barFill}
-              style={{ width: `${Math.max(0, pct)}%`, backgroundColor: entry.cohort.color }}
+              style={{ width: `${barPct}%`, backgroundColor: entry.cohort.color }}
             />
+            {!hideLabels && (
+              <span
+                className={styles.barEndLabel}
+                style={{ left: `calc(${barPct}% + var(--BOOLEAN_BAR_LABEL_GAP, 6px))` }}
+              >
+                <strong>{pct.toFixed(pctDecimals)}%</strong> ({n.toLocaleString()})
+              </span>
+            )}
           </div>
-          {!hideLabels && (
-            <div className={styles.pctCell}>
-              <strong>{pct.toFixed(pctDecimals)}</strong>
-            </div>
-          )}
-          {!hideLabels && (
-            <div className={styles.nCell}>
-              {n.toLocaleString()}
-            </div>
-          )}
         </div>
       </div>
     );
   };
 
   return (
-    <div className={styles.container} style={{ '--cohort-count': cohortData.length } as React.CSSProperties}>
-      <BarChartHeader />
-      <BarChartGridOverlay lines={COMPACT_GRID_LINES} />
+    <div
+      className={styles.container}
+      style={{ '--cohort-count': cohortData.length } as React.CSSProperties}
+    >
+      <BarChartHeader compact hidden={hideHeader} />
+      <BarChartGridOverlay lines={COMPACT_GRID_LINES} compact />
       <div className={styles.rows}>
         {flatRows.map(renderRow)}
       </div>

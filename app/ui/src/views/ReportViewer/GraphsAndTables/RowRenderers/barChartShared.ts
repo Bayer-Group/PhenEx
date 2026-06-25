@@ -20,6 +20,8 @@ export interface BarChartBaseProps {
   breadcrumbs?: string[];
   /** Number of decimal places for the % column (default 0). */
   pctDecimals?: number;
+  /** Hide tick/%/N header when stacked directly under another compact bar chart. */
+  hideHeader?: boolean;
 }
 
 export interface RenderRow {

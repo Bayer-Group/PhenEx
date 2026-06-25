@@ -138,7 +138,12 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
       // renderers as CharacteristicsChart (no FlexLayout per row).
       return (
         <div className={styles.multiRowList}>
-          {cellRows.map((row) => (
+          {cellRows.map((row, index) => {
+            const hideBarChartHeader = row.rowType === 'boolean'
+              && index > 0
+              && cellRows[index - 1].rowType === 'boolean';
+
+            return (
             <div
               key={row.index}
               className={styles.multiRowBlock}
@@ -148,18 +153,25 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
                 {row.registry?.display_name || row.name}
               </div>
               <div className={styles.multiRowContent}>
-                {renderSectionRow(row)}
+                {renderSectionRow(row, hideBarChartHeader)}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       );
     };
 
-    const renderSectionRow = (row: SequentialRow) => {
+    const renderSectionRow = (row: SequentialRow, hideBarChartHeader = false) => {
       switch (row.rowType) {
         case 'boolean':
-          return <BarChartCellRendererCompact data={{ name: row.name, _meta: { cohortData, finalCohortSizes } }} isModal />;
+          return (
+            <BarChartCellRendererCompact
+              data={{ name: row.name, _meta: { cohortData, finalCohortSizes } }}
+              isModal
+              hideHeader={hideBarChartHeader}
+            />
+          );
         case 'categorical':
           return <CategoricalBarChartCellRenderer baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes}/>;
         case 'numeric':
