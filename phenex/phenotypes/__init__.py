@@ -8,6 +8,7 @@ from .sex_phenotype import SexPhenotype
 from .event_count_phenotype import EventCountPhenotype
 from .measurement_phenotype import MeasurementPhenotype
 from .measurement_change_phenotype import MeasurementChangePhenotype
+from .further_value_filter_phenotype import FurtherValueFilterPhenotype
 from .death_phenotype import DeathPhenotype
 from .categorical_phenotype import CategoricalPhenotype
 from .time_range_count_phenotype import TimeRangeCountPhenotype

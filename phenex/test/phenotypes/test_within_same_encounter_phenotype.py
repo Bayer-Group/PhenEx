@@ -40,6 +40,7 @@ class WithinSameEncounterPhenotypeTestGenerator(PhenotypeTestGenerator):
             None,
             "v1",
         ]
+        df_proc["INDEX_DATE"] = datetime.date(2022, 1, 1)
         df_proc["EVENT_DATE"] = [
             index_date - one_day,
             index_date - one_day,

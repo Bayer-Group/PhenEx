@@ -20,6 +20,7 @@ nav:
           - EventPhenotype: api/phenotypes/event_phenotype.md
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
           - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
+          - FurtherValueFilterPhenotype: api/phenotypes/further_value_filter_phenotype.md
           - AgePhenotype: api/phenotypes/age_phenotype.md
           - SexPhenotype: api/phenotypes/sex_phenotype.md
           - DeathPhenotype: api/phenotypes/death_phenotype.md
