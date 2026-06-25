@@ -167,3 +167,6 @@ phenex/test/phenotypes/artifacts/
 phenex/test/cohort/artifacts/
 phenex/test/serialization/artifacts
 r-package/man/
+
+# MCP codelist data (may contain sensitive medical codes)
+mcp/codelists/
