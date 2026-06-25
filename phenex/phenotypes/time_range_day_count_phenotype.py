@@ -10,6 +10,7 @@ from phenex.filters import (
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.phenotypes.functions import (
     select_phenotype_columns,
+    _get_join_keys,
 )
 from ibis.expr.types.relations import Table
 from ibis import _
@@ -150,7 +151,10 @@ class TimeRangeDayCountPhenotype(Phenotype):
 
     def _perform_day_count_aggregation(self, table):
         """Count the total number of days across all distinct time periods per person."""
-        table = table.select(["PERSON_ID", "START_DATE", "END_DATE"]).distinct()
+        cols = ["PERSON_ID", "START_DATE", "END_DATE"]
+        if "INDEX_DATE" in table.columns:
+            cols.append("INDEX_DATE")
+        table = table.select(cols).distinct()
         table = table.mutate(
             START_DATE=table.START_DATE.cast("date"),
             END_DATE=table.END_DATE.cast("date"),
@@ -158,7 +162,9 @@ class TimeRangeDayCountPhenotype(Phenotype):
         table = table.mutate(
             DAYS_IN_RANGE=table.END_DATE.delta(table.START_DATE, "day") + 1
         )
-        return table.group_by("PERSON_ID").aggregate(VALUE=_.DAYS_IN_RANGE.sum())
+        return table.group_by(_get_join_keys(table)).aggregate(
+            VALUE=_.DAYS_IN_RANGE.sum()
+        )
 
     def _perform_value_filtering(self, table):
         """Filter persons by total day count using value_filter."""
@@ -170,8 +176,11 @@ class TimeRangeDayCountPhenotype(Phenotype):
         """Left-join against the PERSON table to include persons with 0 days (only when no value_filter is set)."""
         if self.value_filter is not None or "PERSON" not in tables:
             return table
-        persons = tables["PERSON"].select("PERSON_ID").distinct()
-        table = persons.join(
-            table, persons.PERSON_ID == table.PERSON_ID, how="left"
-        ).drop("PERSON_ID_right")
+        join_keys = _get_join_keys(table)
+        persons = (
+            tables["PERSON"]
+            .select([c for c in join_keys if c in tables["PERSON"].columns])
+            .distinct()
+        )
+        table = persons.join(table, _get_join_keys(persons), how="left")
         return table.mutate(VALUE=table.VALUE.fillna(0))
