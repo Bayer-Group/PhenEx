@@ -9,7 +9,7 @@ from phenex.filters.value import *
 
 class RelativeTimeRangeFilter(Filter):
     """
-    Use RelativeTimeRangeFilter to restrict events to a time window relative to an anchor date (e.g. "within 365 days before index date", "any time after index"). The anchor is either a specified phenotype's event date or the INDEX_DATE column if no anchor phenotype is provided (the latter is only possible in the context of a cohort which has defined an entry phenotype; when in doubt, specify the anchor phenotype explicitly).
+    Filters events based on a time range relative to an anchor date.
 
     Every time-relative operation in PhenEx requires an **anchor date** — the reference point from which "before" and "after" are measured. The anchor date is resolved as follows:
 

@@ -5,11 +5,7 @@ from phenex.filters import CategoricalFilter
 
 class SexPhenotype(CategoricalPhenotype):
     """
-    Use SexPhenotype to retrieve patient sex as a baseline characteristic or to filter a cohort by sex (e.g. "female patients only"). Returns the sex value from the PERSON table. Use categorical_filter to restrict to specific sex values.
-
-    This phenotype returns:
-        DATE: Not populated (null).
-        VALUE: The sex value from the PERSON table.
+    SexPhenotype represents a sex-based phenotype. It returns the sex of individuals in the VALUE column and optionally filters based on identified sex. DATE is not defined for SexPhenotype.
 
     Parameters:
         name: Name of the phenotype, default is 'SEX'.
