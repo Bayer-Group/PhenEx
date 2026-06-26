@@ -88,9 +88,7 @@ function createLayoutModel(): Model {
         minSize: LEFT_BORDER_MIN,
         selected: 0,
         children: [
-          { type: 'tab', name: 'Cohorts', component: 'cohortSelector', enableClose: false, enableDrag: true },
-          { type: 'tab', name: 'Outline', component: 'outline', enableClose: false, enableDrag: true },
-          { type: 'tab', name: 'Legend', component: 'figureLegend', enableClose: false, enableDrag: true },
+          { type: 'tab', name: '◧', component: 'leftPanel', enableClose: false, enableDrag: false },
         ],
       },
       {
@@ -395,6 +393,36 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   // ── FlexLayout + left border collapse ─────────────────────────────────
   const { isLeftPanelShown, setLeftPanelShown, toggleLeftPanel } = useThreePanelCollapse();
   const layoutModelRef = useRef<Model>(createLayoutModel());
+
+  // Stable inner layout for the left panel — supports full drag/drop within the panel
+  const leftPanelModelRef = useRef<Model | null>(null);
+  if (!leftPanelModelRef.current) {
+    leftPanelModelRef.current = Model.fromJson({
+      global: {
+        tabEnableClose: false,
+        tabEnableRename: false,
+        tabEnableDrag: true,
+        tabSetEnableMaximize: false,
+        tabSetEnableDrop: true,
+        splitterSize: 4,
+      },
+      borders: [],
+      layout: {
+        type: 'row',
+        children: [
+          {
+            type: 'tabset',
+            children: [
+              { type: 'tab', name: 'Cohorts', component: 'cohortSelector', enableClose: false },
+              { type: 'tab', name: 'Outline', component: 'outline', enableClose: false },
+              { type: 'tab', name: 'Legend', component: 'figureLegend', enableClose: false },
+            ],
+          },
+        ],
+      },
+    } as Parameters<typeof Model.fromJson>[0]);
+  }
+
   const lastBorderSizeRef = useRef(LEFT_BORDER_SIZE);
   const lastSelectedTabRef = useRef(0);
   const syncingBorderRef = useRef(false);
@@ -604,7 +632,9 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const factory = useCallback(
+  // Factory for the inner left-panel layout (Cohorts / Outline / Legend).
+  // Kept separate so leftPanel case in the outer factory can pass it as a stable prop.
+  const leftPanelFactory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
         case 'cohortSelector':
@@ -636,6 +666,26 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               cohortDescriptions={cohortDescriptions}
             />
           );
+        default:
+          return null;
+      }
+    },
+    [
+      groups, selections, handleReplace, handleAdd, updateSelections,
+      cohortDescriptions, finalCohortSizes, viewerEntries, handleOutlineNavigate,
+      expandedKeys, handleToggleExpand, handleReorder, OutlinePanelConnected,
+    ],
+  );
+
+  const factory = useCallback(
+    (node: { getComponent: () => string | undefined }) => {
+      switch (node.getComponent()) {
+        case 'leftPanel':
+          return (
+            <div className={styles.leftPanel}>
+              <Layout model={leftPanelModelRef.current!} factory={leftPanelFactory} />
+            </div>
+          );
         case 'center':
           return (
             <div className={styles.centerPanel}>
@@ -663,10 +713,11 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       }
     },
     [
-      displayTitle, groups, selections, sequentialRows, viewerEntries, externalNavIndex,
-      expandedKeys, handleToggleExpand, handleNavigateToRow, handleOutlineNavigate, handleReplace, handleAdd, updateSelections,
-      handleReorder, cohortDescriptions, finalCohortSizes, cohortDataMap,
+      displayTitle, sequentialRows, viewerEntries, externalNavIndex,
+      handleNavigateToRow, handleOutlineNavigate,
+      finalCohortSizes, cohortDataMap,
       tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,
+      leftPanelFactory,
     ],
   );
 

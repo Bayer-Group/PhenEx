@@ -74,7 +74,7 @@ export const FullCohortSelector: FC<FullCohortSelectorProps> = ({
             <SimpleCustomScrollbar
               targetRef={scrollRef}
               orientation="vertical"
-              marginTop={60}
+              marginTop={10}
               marginBottom={10}
               marginToEnd={10}
               classNameTrack={styles.scrollBarTrack}

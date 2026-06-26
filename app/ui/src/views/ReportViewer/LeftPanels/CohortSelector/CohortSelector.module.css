@@ -72,10 +72,8 @@
 .topGradient {
   position: sticky;
   top: 0px;
-  height: 90px;
-  background: linear-gradient(to bottom, var(--background_color_dark, #f0f0f0) 0 50px, transparent 80px);
-  /* background: linear-gradient(to bottom, var(--background_color_dark, #f0f0f0) 0 50px, transparent 50px); */
-
+  height: 20px;
+  background: linear-gradient(to bottom, var(--background_color_dark, #f0f0f0), transparent);
   pointer-events: none;
   z-index: 2;
 }

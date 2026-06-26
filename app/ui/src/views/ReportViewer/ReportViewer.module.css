@@ -1,9 +1,9 @@
 .page {
   position: relative;
-  /* margin-top:50px;
-  height: calc(100vh - 50px); */
-  margin-top:0px;
-  height: 100vh;
+  margin-top:50px;
+  height: calc(100vh - 50px);
+  /* margin-top:0px;
+  height: 100vh; */
   width: 100vw;
   overflow: hidden;
   font-family: Arial, Helvetica, sans-serif;
@@ -80,6 +80,14 @@
   overflow: hidden;
 }
 
+/* Container for the nested left-panel FlexLayout */
+.leftPanel {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
 /* ── Title bar (breadcrumb navigation) ───────────────────────────────── */
 
 .titleGroup {
@@ -137,7 +145,7 @@
   background-color: var(--background_color_dark);
   width:42px;
   margin-left:5px;
-  margin-top:100px;
+  margin-top:0px;
 }
 
 /* Vertical border tab labels */
@@ -147,11 +155,12 @@
   /* writing-mode: vertical-rl;
   text-orientation: mixed;
   transform: rotate(180deg); */
-  padding: 3px 6px;
+  padding: 1px 10px 2px 10px;
   color: var(--text_color_notfocus, #333);
   background-color: var(--background_color_dark);
   border: 1px solid var(--line-color, #ddd);
   border-radius: 8px;
+  transform: rotate(90deg);
 }
 
 .page :global(.flexlayout__border_left) :global(.flexlayout__border_button--selected) {
@@ -184,7 +193,7 @@
   cursor: pointer;
   font-family: "IBMPlexSans-regular", sans-serif;
   transition: color 0.15s, background-color 0.15s;
-  transform: rotate(90deg);
+  /* transform: rotate(90deg); */
   margin-right: 20px;
 }
 
@@ -281,7 +290,11 @@
 /* Tab bar gutter: dark background, no border-bottom */
 :global(.flexlayout__tabset_tabbar_outer) {
   background-color: var(--background_color_dark) !important;
-  border-bottom: none;
+  border-bottom: var(--border) !important;
+  border-top: var(--border) !important;
+
+  padding-bottom: 5px;
+  padding-top: 10px;
 }
 :global(.flexlayout__tabset_tabbar_outer_top) {
   border-bottom: none;
@@ -290,23 +303,26 @@
 /* Tab buttons: black background, white text, IBMPlexSans */
 :global(.flexlayout__tab_button) {
   font-family: "IBMPlexSans-regular" !important;
-  background-color: white !important;
-  color: black;
-  /* border-radius: 8px; */
+  background-color: var(--background_color_dark) !important;
+  color: var(--text_color_notfocus, #333);
+  border-radius: 8px;
   border-bottom: none;
+  border: 1px solid var(--line-color, #ddd);
     /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); */
 
 }
 :global(.flexlayout__tab_button--selected) {
-  background-color: white ;
-  color: black;
+  background-color: var(--background_color_light) !important;
+  color: var(--text_color_focus, black);
+  font-family: "IBMPlexSans-bold", sans-serif !important  ;
 }
 :global(.flexlayout__tab_button--unselected) {
-  background-color: var(--background-color-delected) !important;
-  color: gray;
+  background-color: var(--background_color_dark) !important;
+  color: var(--text_color_notfocus, #333);
 }
 :global(.flexlayout__tab_button:hover) {
-  color: green;
+  color: var(--text_color_focus, black);
+  background-color: var(--background_color_light, white);
 }
 
 
