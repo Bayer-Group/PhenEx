@@ -47,7 +47,7 @@
   color: var(--text_color_notfocus, #333);
   padding: 2px 12px;
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 1px solid var(--line-color, #ddd);
   background: none;
   cursor: pointer;
   font-family: inherit;
@@ -347,12 +347,14 @@
   margin-right: 20px;
   flex-shrink: 0;
   padding-right: 10px;
-  background-color: white;
+  background-color: var(--background_color_light);
   border-radius: 10px;
   font-size: var(--font_size_items, 12px);
   border: var(--border);
   color:black;
-  font-family: "IBMPlexSans-bold", sans-serif;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+
 }
 
 .actionButtons > * {

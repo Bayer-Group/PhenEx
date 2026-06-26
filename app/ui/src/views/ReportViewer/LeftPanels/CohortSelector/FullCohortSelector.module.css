@@ -49,8 +49,8 @@
 
 .actionBarRegion {
   position: absolute;
-  top: 70px;
-  left: 0px;
+  top: 10px;
+  left: 20px;
   z-index: 99;
   pointer-events: none;
   opacity: 0;

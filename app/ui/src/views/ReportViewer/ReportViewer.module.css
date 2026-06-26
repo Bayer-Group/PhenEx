@@ -145,7 +145,7 @@
   background-color: var(--background_color_dark);
   width:42px;
   margin-left:5px;
-  margin-top:0px;
+  margin-top:6px;
 }
 
 /* Vertical border tab labels */
@@ -294,7 +294,7 @@
   border-top: var(--border) !important;
 
   padding-bottom: 5px;
-  padding-top: 10px;
+  padding-top: 5px;
 }
 :global(.flexlayout__tabset_tabbar_outer_top) {
   border-bottom: none;

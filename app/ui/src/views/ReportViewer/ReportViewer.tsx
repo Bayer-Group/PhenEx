@@ -471,26 +471,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     }
   }, [isLeftPanelShown, setLeftPanelShown]);
 
-  const handleRenderTabSet = useCallback((
-    node: BorderNode | TabSetNode,
-    renderValues: ITabSetRenderValues,
-  ) => {
-    if (!(node instanceof BorderNode) || node.getLocation() !== DockLocation.LEFT) return;
-    renderValues.stickyButtons.push(
-      <button
-        key="collapse-left"
-        type="button"
-        className={`${styles.leftBorderCollapseBtn} flexlayout__border_toolbar_button`}
-        title={isLeftPanelShown ? 'Collapse panel (⌘B)' : 'Expand panel (⌘B)'}
-        onClick={(e) => {
-          e.stopPropagation();
-          toggleLeftPanel();
-        }}
-      >
-        {isLeftPanelShown ? '◂' : '▸'}
-      </button>,
-    );
-  }, [isLeftPanelShown, toggleLeftPanel]);
+
 
   // ⌘B toggles left panel (same as ThreePanelView)
   useEffect(() => {
@@ -739,7 +720,6 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           model={layoutModelRef.current}
           factory={factory}
           onModelChange={handleLayoutModelChange}
-          onRenderTabSet={handleRenderTabSet}
         />
       </div>
     </div>

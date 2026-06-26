@@ -1,5 +1,6 @@
 import { FC, useState, useCallback, useRef } from 'react';
 import { LegendDot } from '../CohortSelector/LegendDot';
+import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { getCohortColor, type LegendSelection, type CohortDescriptions } from '../../types';
 import styles from './FigureLegend.module.css';
 
@@ -17,36 +18,49 @@ function getLabel(sel: LegendSelection, cohortDescriptions?: CohortDescriptions)
 }
 
 export const FigureLegend: FC<FigureLegendProps> = ({ selections, onReorder, cohortDescriptions }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const dragIndexRef = useRef<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  // dropLineIndex: the gap index where the line will appear.
+  // 0 = before item 0, 1 = before item 1, ..., n = after last item.
+  const [dropLineIndex, setDropLineIndex] = useState<number | null>(null);
 
   const handleDragStart = useCallback((index: number) => {
     dragIndexRef.current = index;
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (dragIndexRef.current !== index) setDragOverIndex(index);
+  const getDropLineIndex = useCallback((e: React.DragEvent, rowIndex: number): number => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    return e.clientY < midY ? rowIndex : rowIndex + 1;
   }, []);
 
+  const handleDragOver = useCallback((e: React.DragEvent, rowIndex: number) => {
+    e.preventDefault();
+    setDropLineIndex(getDropLineIndex(e, rowIndex));
+  }, [getDropLineIndex]);
+
   const handleDrop = useCallback(
-    (e: React.DragEvent, dropIndex: number) => {
+    (e: React.DragEvent, rowIndex: number) => {
       e.preventDefault();
       const from = dragIndexRef.current;
+      const lineIndex = getDropLineIndex(e, rowIndex);
       dragIndexRef.current = null;
-      setDragOverIndex(null);
-      if (from == null || from === dropIndex) return;
+      setDropLineIndex(null);
+      if (from == null) return;
+      // Resolve insertion index accounting for the removal of `from`
+      const insertAt = lineIndex > from ? lineIndex - 1 : lineIndex;
+      if (insertAt === from) return;
       const next = [...selections];
       const [moved] = next.splice(from, 1);
-      next.splice(dropIndex, 0, moved);
+      next.splice(insertAt, 0, moved);
       onReorder(next);
     },
-    [selections, onReorder],
+    [selections, onReorder, getDropLineIndex],
   );
 
   const handleDragEnd = useCallback(() => {
     dragIndexRef.current = null;
-    setDragOverIndex(null);
+    setDropLineIndex(null);
   }, []);
 
   if (selections.length === 0) {
@@ -59,36 +73,55 @@ export const FigureLegend: FC<FigureLegendProps> = ({ selections, onReorder, coh
 
   return (
     <div className={styles.container}>
-      <div className={styles.hint}>Drag to reorder</div>
-      <div className={styles.card}>
-        {selections.map((sel, i) => {
-          const color = getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs);
-          const label = getLabel(sel, cohortDescriptions);
-          const isDragOver = dragOverIndex === i;
-          return (
-            <div
-              key={sel.cohortName}
-              className={`${styles.row} ${isDragOver ? styles.rowDragOver : ''}`}
-              draggable
-              onDragStart={() => handleDragStart(i)}
-              onDragOver={(e) => handleDragOver(e, i)}
-              onDrop={(e) => handleDrop(e, i)}
-              onDragEnd={handleDragEnd}
-            >
-              <div className={styles.dot}>
-                <LegendDot color={color} isActive onClick={() => {}} />
-              </div>
-              <span className={styles.label}>{label}</span>
-              <span className={styles.dragHandle} aria-hidden>
-                <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
-                  <circle cx="3" cy="2.5" r="1.2" /><circle cx="7" cy="2.5" r="1.2" />
-                  <circle cx="3" cy="7" r="1.2" /><circle cx="7" cy="7" r="1.2" />
-                  <circle cx="3" cy="11.5" r="1.2" /><circle cx="7" cy="11.5" r="1.2" />
-                </svg>
-              </span>
-            </div>
-          );
-        })}
+      <div className={styles.scrollRegion}>
+        <div ref={scrollRef} className={styles.scrollContent}>
+          <div className={styles.hint}>Drag to reorder</div>
+          <div className={styles.card}>
+            {selections.map((sel, i) => {
+              const color = getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs);
+              const label = getLabel(sel, cohortDescriptions);
+              const isDragging = dragIndexRef.current === i;
+              return (
+                <div key={sel.cohortName} className={styles.rowWrapper}>
+                  {dropLineIndex === i && <div className={styles.dropLine} />}
+                  <div
+                    className={`${styles.row} ${isDragging ? styles.rowDragging : ''}`}
+                    draggable
+                    onDragStart={() => handleDragStart(i)}
+                    onDragOver={(e) => handleDragOver(e, i)}
+                    onDrop={(e) => handleDrop(e, i)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div className={styles.dot}>
+                      <LegendDot color={color} isActive onClick={() => {}} />
+                    </div>
+                    <span className={styles.label}>{label}</span>
+                    <span className={styles.dragHandle} aria-hidden>
+                      <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+                        <circle cx="3" cy="2.5" r="1.2" /><circle cx="7" cy="2.5" r="1.2" />
+                        <circle cx="3" cy="7" r="1.2" /><circle cx="7" cy="7" r="1.2" />
+                        <circle cx="3" cy="11.5" r="1.2" /><circle cx="7" cy="11.5" r="1.2" />
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+            {dropLineIndex === selections.length && <div className={styles.dropLine} />}
+          </div>
+        </div>
+        <div className={styles.scrollbarRegion}>
+          <SimpleCustomScrollbar
+            targetRef={scrollRef}
+            orientation="vertical"
+            marginTop={10}
+            marginBottom={10}
+            marginToEnd={10}
+            classNameTrack={styles.scrollBarTrack}
+            classNameThumb={styles.scrollBarThumb}
+            showOnHover={true}
+          />
+        </div>
       </div>
     </div>
   );
