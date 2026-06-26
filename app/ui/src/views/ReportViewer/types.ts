@@ -40,6 +40,13 @@ export interface LegendSelection {
   subIndex: number;
   /** Total number of subcohorts in the group */
   totalSubs: number;
+  /** Optional manual color override (e.g. set via the legend color picker). */
+  color?: string;
+}
+
+/** Resolve the effective color for a legend selection, honoring manual overrides. */
+export function getSelectionColor(sel: LegendSelection): string {
+  return sel.color ?? getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs);
 }
 
 /** A spacer row in the legend: introduces vertical spacing between cohorts. */

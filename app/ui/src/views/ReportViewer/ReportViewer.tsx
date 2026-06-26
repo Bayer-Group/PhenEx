@@ -13,7 +13,7 @@ import { ThreePanelCollapseProvider, useThreePanelCollapse } from '../../context
 import {
   classifyRows,
   parseCohortGroups,
-  getCohortColor,
+  getSelectionColor,
   type CohortEntry,
   type CohortClassified,
   type CohortGroup,
@@ -265,7 +265,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
             name: entry.cohortName,
             displayName: cohortDescriptions?.[entry.cohortName]?.display_name ?? undefined,
             ci: sel.colorIndex,
-            color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
+            color: getSelectionColor(sel),
             classified: classifyRows(entry.data.rows),
             data: entry.data,
           };
@@ -290,7 +290,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
             name: entry.cohortName,
             displayName: cohortDescriptions?.[entry.cohortName]?.display_name ?? undefined,
             ci: sel.colorIndex,
-            color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
+            color: getSelectionColor(sel),
             classified: classifyRows(entry.data.rows),
             data: entry.data,
           };
@@ -502,7 +502,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       selections
         .map((sel) => ({
           name: sel.cohortName,
-          color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
+          color: getSelectionColor(sel),
           table2: table2Data?.[sel.cohortName] ?? [],
         }))
         .filter((c) => c.table2.length > 0),
@@ -514,7 +514,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       selections
         .map((sel) => ({
           name: sel.cohortName,
-          color: getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs),
+          color: getSelectionColor(sel),
           timeToEvent: timeToEventData?.[sel.cohortName] ?? [],
         }))
         .filter((c) => c.timeToEvent.length > 0),

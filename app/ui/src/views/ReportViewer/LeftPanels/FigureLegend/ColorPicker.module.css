@@ -1,0 +1,126 @@
+.picker {
+  width: 300px;
+  height: 200px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background-color: var(--background_color_light, #fff);
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  font-family: "IBMPlexSans-regular", sans-serif;
+}
+
+.section {
+  font-size: var(--font_size_infotext, 11px);
+  color: var(--text_color_notfocus, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s, filter 0.1s;
+}
+
+.swatch:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.swatchSelected {
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.35);
+}
+
+.swatchUsed {
+  filter: blur(1.5px) saturate(0.6) opacity(0.45);
+  cursor: not-allowed;
+}
+
+.swatchUsed:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.customRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wheel {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+
+.wheel::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.wheel::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+.hexInput {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font_size_infotext, 11px);
+  font-family: inherit;
+  color: #333;
+  background: var(--background_color_light, #fff);
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.hexInput:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.hexInputInvalid {
+  border-color: #e24a4a;
+}
+
+.applyButton {
+  flex-shrink: 0;
+  font-size: var(--font_size_infotext, 11px);
+  font-family: inherit;
+  color: #fff;
+  background-color: #4a90e2;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.12s, opacity 0.12s;
+}
+
+.applyButton:hover:not(:disabled) {
+  background-color: #3a7bc8;
+}
+
+.applyButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

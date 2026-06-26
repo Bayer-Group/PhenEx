@@ -253,6 +253,13 @@
   border-color: #4a90e2;
 }
 
+.pickerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: transparent;
+}
+
 .empty {
   font-size: var(--font_size_infotext, 12px);
   color: var(--text_color_notfocus, #999);

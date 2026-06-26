@@ -1,9 +1,12 @@
-import { FC, useState, useCallback, useRef } from 'react';
+import { FC, useState, useCallback, useRef, useMemo } from 'react';
 import { LegendDot } from '../CohortSelector/LegendDot';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { DraggablePortal } from '../../../../components/Portal/DraggablePortal';
+import { ColorPicker, type ColorUsage } from './ColorPicker';
 import {
-  getCohortColor,
+  getSelectionColor,
   isSpacer,
+  isCohortSelection,
   SPACER_SIZES,
   type LegendItem,
   type LegendSelection,
@@ -11,6 +14,26 @@ import {
   type CohortDescriptions,
 } from '../../types';
 import styles from './FigureLegend.module.css';
+
+const PICKER_WIDTH = 300;
+const PICKER_HEIGHT = 200;
+
+interface PickerState {
+  index: number;
+  x: number;
+  y: number;
+}
+
+/** Clamp the picker so it stays fully within the viewport. */
+function clampToViewport(x: number, y: number): { x: number; y: number } {
+  const margin = 8;
+  const maxX = window.innerWidth - PICKER_WIDTH - margin;
+  const maxY = window.innerHeight - PICKER_HEIGHT - margin;
+  return {
+    x: Math.max(margin, Math.min(x, maxX)),
+    y: Math.max(margin, Math.min(y, maxY)),
+  };
+}
 
 interface FigureLegendProps {
   items: LegendItem[];
@@ -35,6 +58,33 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
   // dropLineIndex: the gap index where the line will appear.
   // 0 = before item 0, 1 = before item 1, ..., n = after last item.
   const [dropLineIndex, setDropLineIndex] = useState<number | null>(null);
+  const [picker, setPicker] = useState<PickerState | null>(null);
+
+  const openPicker = useCallback((index: number, e: React.MouseEvent) => {
+    const { x, y } = clampToViewport(e.clientX + 12, e.clientY + 12);
+    setPicker({ index, x, y });
+  }, []);
+
+  const closePicker = useCallback(() => setPicker(null), []);
+
+  const handleSelectColor = useCallback(
+    (index: number, color: string) => {
+      const next = items.map((it, i) =>
+        i === index && isCohortSelection(it) ? { ...it, color } : it,
+      );
+      onChange(next);
+      closePicker();
+    },
+    [items, onChange, closePicker],
+  );
+
+  // Colors currently in use, keyed for the picker (excludes the row being edited).
+  const usedColors = useMemo<ColorUsage[]>(() => {
+    return items.flatMap((it, i) => {
+      if (!isCohortSelection(it) || i === picker?.index) return [];
+      return [{ color: getSelectionColor(it), cohortLabel: getLabel(it, cohortDescriptions) }];
+    });
+  }, [items, picker?.index, cohortDescriptions]);
 
   const handleDragStart = useCallback((index: number) => {
     dragIndexRef.current = index;
@@ -184,7 +234,7 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
                 );
               }
 
-              const color = getCohortColor(item.groupIndex, item.subIndex, item.totalSubs);
+              const color = getSelectionColor(item);
               const label = getLabel(item, cohortDescriptions);
               const isDragging = dragIndexRef.current === i;
               return (
@@ -198,8 +248,11 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
                     onDrop={(e) => handleDrop(e, i)}
                     onDragEnd={handleDragEnd}
                   >
-                    <div className={styles.dot}>
-                      <LegendDot color={color} isActive onClick={() => {}} />
+                    <div
+                      className={styles.dot}
+                      onClickCapture={(e) => openPicker(i, e)}
+                    >
+                      <LegendDot color={color} isActive tooltipLabel="Change color" onClick={() => {}} />
                     </div>
                     <span className={styles.label}>{label}</span>
                     {dragHandle}
@@ -226,6 +279,18 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
           />
         </div>
       </div>
+      {picker && isCohortSelection(items[picker.index]) && (
+        <>
+          <div className={styles.pickerBackdrop} onMouseDown={closePicker} />
+          <DraggablePortal initialX={picker.x} initialY={picker.y}>
+            <ColorPicker
+              value={getSelectionColor(items[picker.index] as LegendSelection)}
+              usedColors={usedColors}
+              onSelect={(color) => handleSelectColor(picker.index, color)}
+            />
+          </DraggablePortal>
+        </>
+      )}
     </div>
   );
 };
