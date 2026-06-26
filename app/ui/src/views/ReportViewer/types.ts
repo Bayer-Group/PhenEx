@@ -40,13 +40,30 @@ export interface LegendSelection {
   subIndex: number;
   /** Total number of subcohorts in the group */
   totalSubs: number;
-  /** Optional manual color override (e.g. set via the legend color picker). */
-  color?: string;
+}
+
+/**
+ * Manual per-cohort color overrides, keyed by full cohort directory name.
+ * This is the single source of truth for user-chosen colors; it is shared by
+ * the cohort selector, the figure legend, and all charts so a cohort's color
+ * is chosen once and shown everywhere.
+ */
+export type ColorOverrides = Record<string, string>;
+
+/** Resolve the effective color for a cohort, honoring manual overrides. */
+export function resolveCohortColor(
+  cohortName: string,
+  groupIndex: number,
+  subIndex: number,
+  totalSubs: number,
+  overrides?: ColorOverrides,
+): string {
+  return overrides?.[cohortName] ?? getCohortColor(groupIndex, subIndex, totalSubs);
 }
 
 /** Resolve the effective color for a legend selection, honoring manual overrides. */
-export function getSelectionColor(sel: LegendSelection): string {
-  return sel.color ?? getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs);
+export function getSelectionColor(sel: LegendSelection, overrides?: ColorOverrides): string {
+  return resolveCohortColor(sel.cohortName, sel.groupIndex, sel.subIndex, sel.totalSubs, overrides);
 }
 
 /** A spacer row in the legend: introduces vertical spacing between cohorts. */

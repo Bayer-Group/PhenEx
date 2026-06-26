@@ -1,9 +1,10 @@
 import React, { FC, useState, useCallback, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
-import { getCohortColor, type CohortGroup, type LegendSelection, type CohortDescriptions } from '../../types';
+import { getCohortColor, resolveCohortColor, type CohortGroup, type LegendSelection, type CohortDescriptions, type ColorOverrides } from '../../types';
 import { useBarHoverStore } from '../../GraphsAndTables/RowRenderers/useBarHoverStore';
 import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
 import { RightClickMenu } from '../../../../components/RightClickMenu/RightClickMenu';
 import { LegendDot } from './LegendDot';
+import { type ColorUsage } from './ColorPicker';
 import styles from './CohortSelector.module.css';
 
 interface CohortSelectorProps {
@@ -17,6 +18,8 @@ interface CohortSelectorProps {
   cohortDescriptions?: CohortDescriptions;
   finalCohortSizes?: Record<string, number | null>;
   headerActionsRef?: React.RefObject<HTMLDivElement | null>;
+  colorOverrides?: ColorOverrides;
+  onSetColor?: (cohortName: string, color: string) => void;
 }
 
 export const CohortSelector: FC<CohortSelectorProps> = ({
@@ -30,6 +33,8 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   cohortDescriptions,
   finalCohortSizes,
   headerActionsRef,
+  colorOverrides,
+  onSetColor,
 }) => {
   const { activeIndex } = useBarHoverStore();
   const [barWidth, setBarWidth] = useState(0);
@@ -71,9 +76,29 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
   const activeSet = useMemo(() => new Set(selections.map((s) => s.cohortName)), [selections]);
 
-  const activeColorMap = useMemo(
-    () => new Map(selections.map((s) => [s.cohortName, getCohortColor(s.groupIndex, s.subIndex, s.totalSubs)])),
-    [selections],
+  // Effective color for every cohort (selected or not), honoring overrides.
+  const colorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    groups.forEach((group, gi) => {
+      group.subcohorts.forEach((sub, si) => {
+        map.set(sub.fullName, resolveCohortColor(sub.fullName, gi, si, group.subcohorts.length, colorOverrides));
+      });
+    });
+    return map;
+  }, [groups, colorOverrides]);
+
+  // Colors used elsewhere, for blurring out taken swatches in a cohort's picker.
+  const usedColorsFor = useCallback(
+    (cohortName: string): ColorUsage[] => {
+      const result: ColorUsage[] = [];
+      colorMap.forEach((color, name) => {
+        if (name === cohortName) return;
+        const label = cohortDescriptions?.[name]?.display_name ?? name;
+        result.push({ color, cohortLabel: label });
+      });
+      return result;
+    },
+    [colorMap, cohortDescriptions],
   );
 
   // Map fullName → selection index for quick lookup
@@ -271,7 +296,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
             </div>
             {!collapsedGroups.has(gi) && visibleSubs.map((sub) => {
               const isActive = activeSet.has(sub.fullName);
-              const color = activeColorMap.get(sub.fullName);
+              const color = colorMap.get(sub.fullName);
               const selIdx = selectionIndexMap.get(sub.fullName);
               const hasDesc = sub.fullName !== group.parent && !!cohortDescriptions?.[sub.fullName]?.description;
               return (
@@ -292,6 +317,8 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                       color={color}
                       isActive={isActive}
                       onClick={() => { stopItemHover(); handleToggle(sub.fullName); }}
+                      onColorChange={onSetColor ? (c) => onSetColor(sub.fullName, c) : undefined}
+                      usedColors={usedColorsFor(sub.fullName)}
                     />
                   </div>
                   <div className={`${styles.legendItemContent} ${hasDesc ? styles.legendItemLabelClickable : ''}`} onClick={hasDesc ? () => toggleDesc(sub.fullName) : undefined}>

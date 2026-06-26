@@ -2,7 +2,7 @@ import { FC, useRef, useState, useEffect } from 'react';
 import { CohortSelector } from './CohortSelector';
 import { CohortActionBar } from './CohortActionBar';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import type { CohortGroup, LegendSelection, CohortDescriptions } from '../../types';
+import type { CohortGroup, LegendSelection, CohortDescriptions, ColorOverrides } from '../../types';
 import styles from './FullCohortSelector.module.css';
 
 interface FullCohortSelectorProps {
@@ -13,6 +13,8 @@ interface FullCohortSelectorProps {
   onRemove: (index: number) => void;
   cohortDescriptions?: CohortDescriptions;
   finalCohortSizes?: Record<string, number | null>;
+  colorOverrides?: ColorOverrides;
+  onSetColor?: (cohortName: string, color: string) => void;
 }
 
 export const FullCohortSelector: FC<FullCohortSelectorProps> = ({
@@ -23,6 +25,8 @@ export const FullCohortSelector: FC<FullCohortSelectorProps> = ({
   onRemove,
   cohortDescriptions,
   finalCohortSizes,
+  colorOverrides,
+  onSetColor,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
@@ -68,6 +72,8 @@ export const FullCohortSelector: FC<FullCohortSelectorProps> = ({
             cohortDescriptions={cohortDescriptions}
             finalCohortSizes={finalCohortSizes}
             headerActionsRef={headerActionsRef}
+            colorOverrides={colorOverrides}
+            onSetColor={onSetColor}
           />
         </div>
           <div className={styles.scrollbarRegion}>

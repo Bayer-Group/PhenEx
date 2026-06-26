@@ -7,11 +7,12 @@
  *   - run info (from info.txt)
  */
 
-import type { CohortEntry, LegendSelection, Table2Row, TimeToEventRow } from './types';
+import type { CohortEntry, ColorOverrides, LegendSelection, Table2Row, TimeToEventRow } from './types';
 
 const PREFIX = 'phenex:report:';
 const SEL_PREFIX = 'phenex:report:sel:';
 const SPACER_PREFIX = 'phenex:report:spacer:';
+const COLOR_PREFIX = 'phenex:report:color:';
 
 /** A persisted spacer, positioned after a named cohort (null = before first). */
 export interface StoredSpacer {
@@ -122,6 +123,26 @@ export function loadSelections(runId: string): LegendSelection[] | null {
 /** Clear saved selections for a run. */
 export function clearSelections(runId: string): void {
   localStorage.removeItem(`${SEL_PREFIX}${runId}`);
+}
+
+// ── Color-override persistence ──────────────────────────────────────────
+
+/** Save manual per-cohort color overrides for a run. */
+export function saveColorOverrides(runId: string, overrides: ColorOverrides): void {
+  try {
+    localStorage.setItem(`${COLOR_PREFIX}${runId}`, JSON.stringify(overrides));
+  } catch { /* ignore */ }
+}
+
+/** Restore manual per-cohort color overrides for a run. */
+export function loadColorOverrides(runId: string): ColorOverrides | null {
+  try {
+    const raw = localStorage.getItem(`${COLOR_PREFIX}${runId}`);
+    if (!raw) return null;
+    return JSON.parse(raw) as ColorOverrides;
+  } catch {
+    return null;
+  }
 }
 
 // ── Spacer persistence ──────────────────────────────────────────────────

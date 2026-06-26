@@ -23,10 +23,11 @@ import {
   type Table2Row,
   type TimeToEventRow,
   type CohortDescriptions,
+  type ColorOverrides,
   type Report,
 } from './types';
 import { type BarChartSpacer } from './GraphsAndTables/RowRenderers/barChartShared';
-import { loadSpacers, saveSpacers, type StoredSpacer } from './reportCache';
+import { loadSpacers, saveSpacers, loadColorOverrides, saveColorOverrides, type StoredSpacer } from './reportCache';
 import { buildSequentialRowList, buildAccordionEntries, keyMatchesRow, sectionKey, categoryKey, type SequentialRow, type ViewerEntry, type StudyRegistry } from './studyRegistryUtils';
 
 interface WaterfallInfoRow {
@@ -233,6 +234,30 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     setSpacers(loaded ?? []);
   }, [_runId]);
 
+  // ── Color overrides ───────────────────────────────────────────────────
+  // Per-cohort manual colors keyed by cohort name. Single source of truth
+  // shared by the cohort selector, the figure legend, and all charts.
+  const [colorOverrides, setColorOverrides] = useState<ColorOverrides>(() =>
+    _runId ? loadColorOverrides(_runId) ?? {} : {},
+  );
+
+  useEffect(() => {
+    if (!_runId) return;
+    setColorOverrides(loadColorOverrides(_runId) ?? {});
+  }, [_runId]);
+
+  const handleSetColor = useCallback(
+    (cohortName: string, color: string) => {
+      setColorOverrides((prev) => {
+        if (prev[cohortName] === color) return prev;
+        const next = { ...prev, [cohortName]: color };
+        if (_runId) saveColorOverrides(_runId, next);
+        return next;
+      });
+    },
+    [_runId],
+  );
+
   const updateSelections = useCallback(
     (updater: LegendSelection[] | ((prev: LegendSelection[]) => LegendSelection[])) => {
       setSelections((prev) => {
@@ -265,13 +290,13 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
             name: entry.cohortName,
             displayName: cohortDescriptions?.[entry.cohortName]?.display_name ?? undefined,
             ci: sel.colorIndex,
-            color: getSelectionColor(sel),
+            color: getSelectionColor(sel, colorOverrides),
             classified: classifyRows(entry.data.rows),
             data: entry.data,
           };
         })
         .filter((c): c is CohortClassified => c !== null),
-    [cohortEntries, selections, cohortDescriptions],
+    [cohortEntries, selections, cohortDescriptions, colorOverrides],
   );
 
   // ── Outcomes ──────────────────────────────────────────────────────────
@@ -290,13 +315,13 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
             name: entry.cohortName,
             displayName: cohortDescriptions?.[entry.cohortName]?.display_name ?? undefined,
             ci: sel.colorIndex,
-            color: getSelectionColor(sel),
+            color: getSelectionColor(sel, colorOverrides),
             classified: classifyRows(entry.data.rows),
             data: entry.data,
           };
         })
         .filter((c): c is CohortClassified => c !== null),
-    [outcomesEntries, selections, cohortDescriptions],
+    [outcomesEntries, selections, cohortDescriptions, colorOverrides],
   );
 
   // ── Sequential rows (built from selected data so navigable rows = displayed rows)
@@ -502,11 +527,11 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       selections
         .map((sel) => ({
           name: sel.cohortName,
-          color: getSelectionColor(sel),
+          color: getSelectionColor(sel, colorOverrides),
           table2: table2Data?.[sel.cohortName] ?? [],
         }))
         .filter((c) => c.table2.length > 0),
-    [selections, table2Data],
+    [selections, table2Data, colorOverrides],
   );
 
   const tteCohorts: TimeToEventCohort[] = useMemo(
@@ -514,11 +539,11 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       selections
         .map((sel) => ({
           name: sel.cohortName,
-          color: getSelectionColor(sel),
+          color: getSelectionColor(sel, colorOverrides),
           timeToEvent: timeToEventData?.[sel.cohortName] ?? [],
         }))
         .filter((c) => c.timeToEvent.length > 0),
-    [selections, timeToEventData],
+    [selections, timeToEventData, colorOverrides],
   );
 
   // ── Interaction handlers ──────────────────────────────────────────────
@@ -693,6 +718,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
               cohortDescriptions={cohortDescriptions}
               finalCohortSizes={finalCohortSizes}
+              colorOverrides={colorOverrides}
+              onSetColor={handleSetColor}
             />
           );
         case 'outline':
@@ -710,6 +737,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               items={legendItems}
               onChange={handleLegendChange}
               cohortDescriptions={cohortDescriptions}
+              colorOverrides={colorOverrides}
+              onSetColor={handleSetColor}
             />
           );
         default:
@@ -720,6 +749,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       groups, selections, handleReplace, handleAdd, updateSelections,
       cohortDescriptions, finalCohortSizes, viewerEntries, handleOutlineNavigate,
       expandedKeys, handleToggleExpand, legendItems, handleLegendChange, OutlinePanelConnected,
+      colorOverrides, handleSetColor,
     ],
   );
 
