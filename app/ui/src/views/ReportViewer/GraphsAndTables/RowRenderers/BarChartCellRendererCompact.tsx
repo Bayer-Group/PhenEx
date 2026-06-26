@@ -90,8 +90,10 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
                 key={item.key}
                 className={styles.barSpacer}
                 style={{ height: item.size * spacerUnitPx }}
-                aria-hidden
-              />
+                aria-hidden={!item.label}
+              >
+                {item.label && <span className={styles.barSpacerLabel}>{item.label}</span>}
+              </div>
             ) : (
               renderRow(item.row)
             ),

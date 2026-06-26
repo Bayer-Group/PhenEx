@@ -564,7 +564,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   // Spacers are placed after the cohort named by `afterCohortName`.
   const legendItems = useMemo<LegendItem[]>(() => {
     const items: LegendItem[] = [];
-    const spacerToItem = (s: StoredSpacer): LegendItem => ({ kind: 'spacer', id: s.id, size: s.size });
+    const spacerToItem = (s: StoredSpacer): LegendItem => ({ kind: 'spacer', id: s.id, size: s.size, label: s.label });
 
     const before = spacers.filter((s) => s.afterCohortName === null);
     before.forEach((s) => items.push(spacerToItem(s)));
@@ -584,7 +584,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     let cohortIndex = -1;
     for (const item of legendItems) {
       if (isSpacer(item)) {
-        result.push({ afterIndex: cohortIndex, size: item.size });
+        result.push({ afterIndex: cohortIndex, size: item.size, label: item.label });
       } else {
         cohortIndex += 1;
       }
@@ -600,7 +600,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
 
       for (const item of items) {
         if (isSpacer(item)) {
-          nextSpacers.push({ id: item.id, size: item.size, afterCohortName: lastCohortName });
+          nextSpacers.push({ id: item.id, size: item.size, afterCohortName: lastCohortName, label: item.label });
         } else {
           nextSelections.push(item);
           lastCohortName = item.cohortName;

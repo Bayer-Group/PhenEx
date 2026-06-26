@@ -18,6 +18,7 @@ export interface StoredSpacer {
   id: string;
   size: 1 | 2 | 3 | 4;
   afterCohortName: string | null;
+  label?: string;
 }
 
 /** Core run data cached in localStorage. */

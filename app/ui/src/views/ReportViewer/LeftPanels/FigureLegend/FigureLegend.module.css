@@ -164,12 +164,26 @@
   border-color: var(--line-color, #bbb);
 }
 
-.spacerLabel {
+.spacerLabelInput {
   flex: 1;
-  font-size: var(--font_size_infotext, 10px);
-  color: #999;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  min-width: 0;
+  font-size: var(--font_size_infotext, 11px);
+  font-family: inherit;
+  color: #333;
+  background: var(--background_color_light, #fff);
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: text;
+}
+
+.spacerLabelInput::placeholder {
+  color: #bbb;
+}
+
+.spacerLabelInput:focus {
+  outline: none;
+  border-color: #4a90e2;
 }
 
 .spacerSizes {

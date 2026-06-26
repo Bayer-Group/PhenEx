@@ -10,6 +10,8 @@ export interface BarChartSpacer {
   afterIndex: number;
   /** Spacing magnitude (1-4). */
   size: number;
+  /** Optional label rendered at the spacer position. */
+  label?: string;
 }
 
 export interface BarChartData {
@@ -72,7 +74,7 @@ export function splitCohortName(name: string): { parent: string; label: string }
 /** An item in an interleaved flat render list: a cohort row or a spacer. */
 export type FlatRenderItem =
   | { type: 'row'; row: RenderRow }
-  | { type: 'spacer'; size: number; key: string };
+  | { type: 'spacer'; size: number; key: string; label?: string };
 
 /**
  * Build a flat, ordered list of cohort rows interleaved with spacers.
@@ -88,7 +90,7 @@ export function buildFlatItems(
   const emitSpacersAfter = (index: number) => {
     spacers.forEach((s, i) => {
       if (s.afterIndex === index) {
-        items.push({ type: 'spacer', size: s.size, key: `spacer-${index}-${i}` });
+        items.push({ type: 'spacer', size: s.size, key: `spacer-${index}-${i}`, label: s.label });
       }
     });
   };

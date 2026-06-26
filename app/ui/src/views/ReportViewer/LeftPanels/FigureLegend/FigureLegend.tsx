@@ -90,6 +90,16 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
     [items, onChange],
   );
 
+  const handleSetSpacerLabel = useCallback(
+    (index: number, label: string) => {
+      const next = items.map((it, i) =>
+        i === index && isSpacer(it) ? { ...it, label } : it,
+      );
+      onChange(next);
+    },
+    [items, onChange],
+  );
+
   const handleRemoveSpacer = useCallback(
     (index: number) => {
       onChange(items.filter((_, i) => i !== index));
@@ -136,7 +146,16 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
                       onDrop={(e) => handleDrop(e, i)}
                       onDragEnd={handleDragEnd}
                     >
-                      <span className={styles.spacerLabel}>Spacer</span>
+                      <input
+                        className={styles.spacerLabelInput}
+                        value={item.label ?? ''}
+                        placeholder="Spacer label"
+                        onChange={(e) => handleSetSpacerLabel(i, e.target.value)}
+                        // Prevent the parent row's drag from hijacking text selection.
+                        draggable={false}
+                        onDragStart={(e) => e.preventDefault()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      />
                       <div className={styles.spacerSizes}>
                         {SPACER_SIZES.map((s) => (
                           <button

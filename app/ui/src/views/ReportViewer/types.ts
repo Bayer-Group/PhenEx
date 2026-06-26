@@ -49,6 +49,8 @@ export interface LegendSpacer {
   id: string;
   /** Spacing magnitude (1-4); larger = more space. */
   size: 1 | 2 | 3 | 4;
+  /** Optional label rendered in the bar chart at the spacer position. */
+  label?: string;
 }
 
 /** An item in the ordered legend: either a cohort selection or a spacer. */

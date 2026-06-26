@@ -262,6 +262,22 @@
 .barSpacer {
   width: 100%;
   flex-shrink: 0;
+  position: relative;
+  /* Label anchoring — adjust these to move the label.
+     --SPACER_LABEL_JUSTIFY: flex-start | center | flex-end (vertical position)
+     --SPACER_LABEL_ALIGN:   flex-start | center | flex-end (horizontal position) */
+  display: flex;
+  flex-direction: column;
+  justify-content: var(--SPACER_LABEL_JUSTIFY, flex-end);
+  align-items: var(--SPACER_LABEL_ALIGN, flex-start);
+}
+
+.barSpacerLabel {
+  font-size: var(--font_size_infotext, 10px);
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: #555;
+  white-space: nowrap;
+  line-height: 1;
   pointer-events: none;
 }
 
