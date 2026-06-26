@@ -1,8 +1,8 @@
 import { FC, useCallback, useMemo, useRef, useState } from 'react';
-import { Portal } from '../../../components/Portal/Portal';
-import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import { type ViewerEntry, getEntryCategory, getEntrySection, getEntryLabel } from '../studyRegistryUtils';
-import styles from './HorizontalRowTitle.module.css';
+import { Portal } from '../../components/Portal/Portal';
+import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { type ViewerEntry, getEntryCategory, getEntrySection, getEntryLabel } from './studyRegistryUtils';
+import styles from './BreadcrumbTitle.module.css';
 
 /* ── Display names for raw category keys ─────────────────────────────── */
 
@@ -16,7 +16,7 @@ const CAT_KEYS = ['attrition', 'baseline_characteristics', 'outcomes'] as const;
 
 /* ── Props ───────────────────────────────────────────────────────────── */
 
-interface HorizontalRowTitleProps {
+interface BreadcrumbTitleProps {
   entries: ViewerEntry[];
   currentIndex: number;
   studyTitle?: string;
@@ -149,7 +149,7 @@ const CrumbMenu: FC<CrumbMenuProps> = ({
 
 /* ── Main component ──────────────────────────────────────────────────── */
 
-export const HorizontalRowTitle: FC<HorizontalRowTitleProps> = ({
+export const BreadcrumbTitle: FC<BreadcrumbTitleProps> = ({
   entries, currentIndex, studyTitle = 'Loading study...', onNavigate,
 }) => {
   const current = entries[currentIndex];

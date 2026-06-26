@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { type RegistryComment } from '../studyRegistryUtils';
+import { type RegistryComment } from '../../studyRegistryUtils';
 import styles from './CommentCard.module.css';
 import ReactMarkdown from 'react-markdown';
 

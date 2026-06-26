@@ -53,21 +53,21 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
         onMouseLeave={() => setHover(null)}
         style={{ cursor: 'pointer' }}
       >
-        <div className={`${styles.dataCells} ${styles.dataCellsCompact}`}>
-          <div className={styles.barCellCompact}>
+        <div className={styles.barRowCompact}>
+          <div className={styles.barTrackCompact}>
             <div
-              className={styles.barFill}
+              className={styles.barFillCompact}
               style={{ width: `${barPct}%`, backgroundColor: entry.cohort.color }}
             />
-            {!hideLabels && (
-              <span
-                className={styles.barEndLabel}
-                style={{ left: `calc(${barPct}% + var(--BOOLEAN_BAR_LABEL_GAP, 6px))` }}
-              >
-                <strong>{pct.toFixed(pctDecimals)}%</strong> ({n.toLocaleString()})
-              </span>
-            )}
           </div>
+          {!hideLabels && (
+            <span
+              className={styles.barEndLabel}
+              style={{ left: `calc(${barPct}% + var(--BOOLEAN_BAR_LABEL_GAP, 6px))` }}
+            >
+              <strong>{pct.toFixed(pctDecimals)}%</strong> ({n.toLocaleString()})
+            </span>
+          )}
         </div>
       </div>
     );
@@ -75,13 +75,15 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
 
   return (
     <div
-      className={styles.container}
+      className={`${styles.container} ${styles.containerCompact}`}
       style={{ '--cohort-count': cohortData.length } as React.CSSProperties}
     >
       <BarChartHeader compact hidden={hideHeader} />
-      <BarChartGridOverlay lines={COMPACT_GRID_LINES} compact />
-      <div className={styles.rows}>
-        {flatRows.map(renderRow)}
+      <div className={styles.compactChartBody}>
+        <BarChartGridOverlay lines={COMPACT_GRID_LINES} compact />
+        <div className={styles.rows}>
+          {flatRows.map(renderRow)}
+        </div>
       </div>
 
       {hover && (

@@ -1,12 +1,11 @@
 import { FC, useRef, useState, useEffect } from 'react';
-import { CohortSelector } from './ReportFloatingControls/CohortSelector';
-import { CohortActionBar } from './ReportFloatingControls/CohortActionBar';
-import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import type { CohortGroup, LegendSelection, CohortDescriptions } from './types';
-import { useThreePanelCollapse } from '../../contexts/ThreePanelCollapseContext';
-import styles from './LeftPanel.module.css';
+import { CohortSelector } from './CohortSelector';
+import { CohortActionBar } from './CohortActionBar';
+import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import type { CohortGroup, LegendSelection, CohortDescriptions } from '../../types';
+import styles from './FullCohortSelector.module.css';
 
-interface LeftPanelProps {
+interface FullCohortSelectorProps {
   groups: CohortGroup[];
   selections: LegendSelection[];
   onReplace: (index: number, fullName: string) => void;
@@ -16,7 +15,7 @@ interface LeftPanelProps {
   finalCohortSizes?: Record<string, number | null>;
 }
 
-export const LeftPanel: FC<LeftPanelProps> = ({
+export const FullCohortSelector: FC<FullCohortSelectorProps> = ({
   groups,
   selections,
   onReplace,

@@ -2,11 +2,11 @@ import { FC, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalS
 import { Layout, Model, IJsonModel, Actions, BorderNode, TabSetNode, DockLocation, type Action, type ITabSetRenderValues } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
-import { LeftPanel } from './LeftPanel';
-import { OutlinePanel } from './OutlinePanel';
+import { FullCohortSelector } from './LeftPanels/CohortSelector/FullCohortSelector';
+import { OutlinePanel } from './LeftPanels/OutlinePanel/OutlinePanel';
 import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
-import { HorizontalRowTitle } from './HorizontalRowViewer/HorizontalRowTitle';
+import { BreadcrumbTitle } from './BreadcrumbTitle';
 import { CellLayoutStoreProvider } from './CellLayouts';
 import { ThreePanelCollapseProvider, useThreePanelCollapse } from '../../contexts/ThreePanelCollapseContext';
 import {
@@ -599,7 +599,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       switch (node.getComponent()) {
         case 'cohortSelector':
           return (
-            <LeftPanel
+            <FullCohortSelector
               groups={groups}
               selections={selections}
               onReplace={handleReplace}
@@ -658,7 +658,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     <CellLayoutStoreProvider>
     <div className={styles.container}>
       <div className={styles.titleGroup}>
-          <HorizontalRowTitle
+          <BreadcrumbTitle
             entries={viewerEntries}
             currentIndex={viewerIndex}
             studyTitle={displayTitle}

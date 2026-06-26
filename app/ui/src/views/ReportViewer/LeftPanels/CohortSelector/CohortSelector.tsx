@@ -1,8 +1,8 @@
 import React, { FC, useState, useCallback, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
-import { getCohortColor, type CohortGroup, type LegendSelection, type CohortDescriptions } from '../types';
-import { useBarHoverStore } from '../GraphsAndTables/RowRenderers/useBarHoverStore';
-import { PhenExNavBarTooltip } from '../../../components/PhenExNavBar/PhenExNavBarTooltip';
-import { RightClickMenu } from '../../../components/RightClickMenu/RightClickMenu';
+import { getCohortColor, type CohortGroup, type LegendSelection, type CohortDescriptions } from '../../types';
+import { useBarHoverStore } from '../../GraphsAndTables/RowRenderers/useBarHoverStore';
+import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
+import { RightClickMenu } from '../../../../components/RightClickMenu/RightClickMenu';
 import { LegendDot } from './LegendDot';
 import styles from './CohortSelector.module.css';
 

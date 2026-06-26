@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { ReportSelector } from './ReportFloatingControls/ReportSelector';
+import { ReportSelector } from './unused/ReportSelector';
 import type { Report } from './types';
 
 interface ReportsPanelProps {

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { ResizableContainer } from '../../../components/ResizableContainer';
+import { ResizableContainer } from '../../../../components/ResizableContainer';
 import styles from './CommentWindow.module.css';
 
 interface CommentWindowProps {

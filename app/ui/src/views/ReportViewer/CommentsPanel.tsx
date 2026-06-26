@@ -1,6 +1,6 @@
 import { FC, useMemo } from 'react';
 import { type SequentialRow, type RegistryComment } from './studyRegistryUtils';
-import { CommentCard } from './HorizontalRowViewer/CommentCard';
+import { CommentCard } from './HorizontalRowViewer/Comments/CommentCard';
 
 interface CommentsPanelProps {
   row: SequentialRow;

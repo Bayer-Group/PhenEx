@@ -1,19 +1,19 @@
 import { FC, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import styles from './SpatialStudyDisplay.module.css';
-import { PanZoomScrollbar } from '../../components/CustomScrollbar/PanZoomScrollbar';
-import { usePanZoom } from '../../hooks/usePanZoom';
-import { PanZoomScaleProvider } from '../../hooks/PanZoomScaleContext';
-import { CharacteristicsChart } from './GraphsAndTables/CharacteristicsChart';
-import { Table2Chart, TimeToEventChart, type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
-import { AttritionChart } from './GraphsAndTables/AttritionChart';
-import { ChartGroup } from './GraphsAndTables/ChartGroup';
-import { StudyInfoPanel } from './GraphsAndTables/StudyInfoPanel';
-import { ZoomScrubber } from './ReportFloatingControls/ZoomScrubber';
+import { PanZoomScrollbar } from '../../../components/CustomScrollbar/PanZoomScrollbar';
+import { usePanZoom } from '../../../hooks/usePanZoom';
+import { PanZoomScaleProvider } from '../../../hooks/PanZoomScaleContext';
+import { CharacteristicsChart } from '../GraphsAndTables/CharacteristicsChart';
+import { Table2Chart, TimeToEventChart, type Table2Cohort, type TimeToEventCohort } from '../GraphsAndTables/OutcomesChart';
+import { AttritionChart } from '../GraphsAndTables/AttritionChart';
+import { ChartGroup } from '../GraphsAndTables/ChartGroup';
+import { StudyInfoPanel } from '../GraphsAndTables/StudyInfoPanel';
+import { ZoomScrubber } from './ZoomScrubber';
 import { type OutlineEntry } from './OutlineBar';
-import { useVisibleSection } from './useVisibleSection';
-import { HorizontalRowTitle } from './HorizontalRowViewer/HorizontalRowTitle';
-import { type CohortClassified, type CohortGroup, type CohortDescriptions } from './types';
-import { type SequentialRow, getSectionNames, buildViewerEntries } from './studyRegistryUtils';
+import { useVisibleSection } from '../useVisibleSection';
+import { BreadcrumbTitle } from '../BreadcrumbTitle';
+import { type CohortClassified, type CohortGroup, type CohortDescriptions } from '../types';
+import { type SequentialRow, getSectionNames, buildViewerEntries } from '../studyRegistryUtils';
 
 // ── Props ───────────────────────────────────────────────────────────────
 
@@ -249,7 +249,7 @@ export const SpatialStudyDisplay: FC<SpatialStudyDisplayProps> = ({
   return (
     <div className={styles.container}>
       <div className={`${styles.floatingTitle} ${showFloatingTitle ? styles.floatingTitleVisible : ''}`}>
-        <HorizontalRowTitle
+        <BreadcrumbTitle
           entries={viewerEntries}
           currentIndex={activeEntryIndex}
           studyTitle={title}

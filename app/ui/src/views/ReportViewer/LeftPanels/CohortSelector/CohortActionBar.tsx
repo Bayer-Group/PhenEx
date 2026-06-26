@@ -1,8 +1,8 @@
 import { FC, useRef, useState, useMemo } from 'react';
-import EyeSolidIcon from '../../../assets/icons/eye-solid.svg';
-import EyeClosedIcon from '../../../assets/icons/eye-closed.svg';
-import { PhenExNavBarTooltip } from '../../../components/PhenExNavBar/PhenExNavBarTooltip';
-import type { CohortGroup, LegendSelection } from '../types';
+import EyeSolidIcon from '../../../../assets/icons/eye-solid.svg';
+import EyeClosedIcon from '../../../../assets/icons/eye-closed.svg';
+import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
+import type { CohortGroup, LegendSelection } from '../../../types';
 import styles from './CohortSelector.module.css';
 
 interface CohortActionBarProps {

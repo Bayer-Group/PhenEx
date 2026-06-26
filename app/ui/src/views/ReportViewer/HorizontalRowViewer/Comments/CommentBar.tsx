@@ -1,7 +1,7 @@
 import { FC, useRef, useState } from 'react';
 import EyeSolidIcon from '../../../assets/icons/eye-solid.svg';
 import EyeClosedIcon from '../../../assets/icons/eye-closed.svg';
-import { PhenExNavBarTooltip } from '../../../components/PhenExNavBar/PhenExNavBarTooltip';
+import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
 import styles from './CommentBar.module.css';
 
 interface CommentBarProps {

@@ -5,9 +5,9 @@ import {
   categoryKey,
   getCategoryLabel,
   getEntryLabel,
-} from './studyRegistryUtils';
+} from '../../studyRegistryUtils';
 import styles from './OutlinePanel.module.css';
-import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 
 interface OutlinePanelProps {
   /** The exact list of navigable cells currently in the viewer. */

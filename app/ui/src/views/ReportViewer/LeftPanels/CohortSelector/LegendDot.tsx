@@ -1,5 +1,5 @@
 import React, { FC, useRef, useState } from 'react';
-import { PhenExNavBarTooltip } from '../../../components/PhenExNavBar/PhenExNavBarTooltip';
+import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
 import styles from './LegendDot.module.css';
 
 interface LegendDotProps {

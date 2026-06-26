@@ -80,7 +80,7 @@
   align-items: stretch;
   gap: 12px;
   width: fit-content;
-  border: var(--border);
+  /* border: var(--border); */
   max-width: 100%;
 }
 
@@ -90,7 +90,7 @@
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;
   font-size: var(--font_size_phenotypename, 18px);
-  padding: 8px 4px 5px 5px;
+  padding: 20px 4px 5px 5px;
   cursor: pointer;
   border-radius: 6px;
   transition: background-color 0.1s;
@@ -110,7 +110,7 @@
   /* border: var(--border); */
   border-radius: 10px;
   flex: 0 1 auto;
-  min-width: 400px;
+  min-width: 350px;
   min-height: fit-content;
   display: flex;
   flex-direction: column;
@@ -119,6 +119,7 @@
   max-width: 600px;
   padding: 0 12px 0px 12px;
   box-sizing: border-box;
+  overflow: visible;
 }
 
 /* .multiRowContent > * {
