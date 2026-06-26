@@ -3,6 +3,7 @@ import { Layout, Model, IJsonModel, Actions, BorderNode, TabSetNode, DockLocatio
 import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
 import { FullCohortSelector } from './LeftPanels/CohortSelector/FullCohortSelector';
+import { FigureLegend } from './LeftPanels/FigureLegend/FigureLegend';
 import { OutlinePanel } from './LeftPanels/OutlinePanel/OutlinePanel';
 import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
@@ -89,6 +90,7 @@ function createLayoutModel(): Model {
         children: [
           { type: 'tab', name: 'Cohorts', component: 'cohortSelector', enableClose: false, enableDrag: true },
           { type: 'tab', name: 'Outline', component: 'outline', enableClose: false, enableDrag: true },
+          { type: 'tab', name: 'Legend', component: 'figureLegend', enableClose: false, enableDrag: true },
         ],
       },
       {
@@ -538,6 +540,14 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [findGroupInfo, updateSelections],
   );
 
+  const handleReorder = useCallback(
+    (reordered: LegendSelection[]) => {
+      setSelections(reordered);
+      onSelectionsChange?.(reordered);
+    },
+    [onSelectionsChange],
+  );
+
   const studyDescription = "This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints.";
 
   // ── Nested layout model for right border ──
@@ -618,6 +628,14 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               onToggleExpand={handleToggleExpand}
             />
           );
+        case 'figureLegend':
+          return (
+            <FigureLegend
+              selections={selections}
+              onReorder={handleReorder}
+              cohortDescriptions={cohortDescriptions}
+            />
+          );
         case 'center':
           return (
             <div className={styles.centerPanel}>
@@ -647,7 +665,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [
       displayTitle, groups, selections, sequentialRows, viewerEntries, externalNavIndex,
       expandedKeys, handleToggleExpand, handleNavigateToRow, handleOutlineNavigate, handleReplace, handleAdd, updateSelections,
-      cohortDescriptions, finalCohortSizes, cohortDataMap,
+      handleReorder, cohortDescriptions, finalCohortSizes, cohortDataMap,
       tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,
     ],
   );
