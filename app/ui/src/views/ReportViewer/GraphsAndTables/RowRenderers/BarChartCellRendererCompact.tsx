@@ -5,9 +5,10 @@ import { CohortNameTooltip } from './CohortNameTooltip';
 import {
   type BarChartBaseProps,
   type RenderRow,
-  buildFlatRows,
+  buildFlatItems,
   COMPACT_GRID_LINES,
   getCohortRowValues,
+  SPACER_UNIT_PX,
 } from './barChartShared';
 import { BarChartGridOverlay, BarChartHeader } from './barChartParts';
 import styles from './BarChartCellRenderer.module.css';
@@ -18,8 +19,9 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
   breadcrumbs,
   pctDecimals = 0,
   hideHeader = false,
+  spacerUnitPx = SPACER_UNIT_PX,
 }) => {
-  const { cohortData, finalCohortSizes = {} } = data._meta;
+  const { cohortData, finalCohortSizes = {}, spacers = [] } = data._meta;
   const { name } = data;
   const [hover, setHover] = useState<{ index: number; x: number; top: number } | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -30,7 +32,7 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
 
   const scale = usePanZoomScale();
   const hideLabels = scale < 0.5;
-  const flatRows = buildFlatRows(cohortData);
+  const flatItems = buildFlatItems(cohortData, spacers);
 
   const renderRow = (entry: RenderRow) => {
     const { pct, n } = getCohortRowValues(entry, name, finalCohortSizes);
@@ -82,7 +84,18 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
       <div className={styles.compactChartBody}>
         <BarChartGridOverlay lines={COMPACT_GRID_LINES} compact />
         <div className={styles.rows}>
-          {flatRows.map(renderRow)}
+          {flatItems.map((item) =>
+            item.type === 'spacer' ? (
+              <div
+                key={item.key}
+                className={styles.barSpacer}
+                style={{ height: item.size * spacerUnitPx }}
+                aria-hidden
+              />
+            ) : (
+              renderRow(item.row)
+            ),
+          )}
         </div>
       </div>
 
@@ -100,6 +113,7 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
           cohortData={cohortData}
           onClose={closeModal}
           breadcrumbs={breadcrumbs}
+          spacers={spacers}
         />
       )}
     </div>

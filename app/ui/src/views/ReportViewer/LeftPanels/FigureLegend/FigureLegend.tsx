@@ -1,12 +1,20 @@
 import { FC, useState, useCallback, useRef } from 'react';
 import { LegendDot } from '../CohortSelector/LegendDot';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import { getCohortColor, type LegendSelection, type CohortDescriptions } from '../../types';
+import {
+  getCohortColor,
+  isSpacer,
+  SPACER_SIZES,
+  type LegendItem,
+  type LegendSelection,
+  type LegendSpacer,
+  type CohortDescriptions,
+} from '../../types';
 import styles from './FigureLegend.module.css';
 
 interface FigureLegendProps {
-  selections: LegendSelection[];
-  onReorder: (selections: LegendSelection[]) => void;
+  items: LegendItem[];
+  onChange: (items: LegendItem[]) => void;
   cohortDescriptions?: CohortDescriptions;
 }
 
@@ -17,7 +25,11 @@ function getLabel(sel: LegendSelection, cohortDescriptions?: CohortDescriptions)
   return idx === -1 ? 'Main Cohort' : sel.cohortName.substring(idx + 2);
 }
 
-export const FigureLegend: FC<FigureLegendProps> = ({ selections, onReorder, cohortDescriptions }) => {
+function makeSpacerId(): string {
+  return `spacer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDescriptions }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragIndexRef = useRef<number | null>(null);
   // dropLineIndex: the gap index where the line will appear.
@@ -50,12 +62,12 @@ export const FigureLegend: FC<FigureLegendProps> = ({ selections, onReorder, coh
       // Resolve insertion index accounting for the removal of `from`
       const insertAt = lineIndex > from ? lineIndex - 1 : lineIndex;
       if (insertAt === from) return;
-      const next = [...selections];
+      const next = [...items];
       const [moved] = next.splice(from, 1);
       next.splice(insertAt, 0, moved);
-      onReorder(next);
+      onChange(next);
     },
-    [selections, onReorder, getDropLineIndex],
+    [items, onChange, getDropLineIndex],
   );
 
   const handleDragEnd = useCallback(() => {
@@ -63,7 +75,31 @@ export const FigureLegend: FC<FigureLegendProps> = ({ selections, onReorder, coh
     setDropLineIndex(null);
   }, []);
 
-  if (selections.length === 0) {
+  const handleAddSpacer = useCallback(() => {
+    const spacer: LegendSpacer = { kind: 'spacer', id: makeSpacerId(), size: 1 };
+    onChange([...items, spacer]);
+  }, [items, onChange]);
+
+  const handleSetSpacerSize = useCallback(
+    (index: number, size: 1 | 2 | 3 | 4) => {
+      const next = items.map((it, i) =>
+        i === index && isSpacer(it) ? { ...it, size } : it,
+      );
+      onChange(next);
+    },
+    [items, onChange],
+  );
+
+  const handleRemoveSpacer = useCallback(
+    (index: number) => {
+      onChange(items.filter((_, i) => i !== index));
+    },
+    [items, onChange],
+  );
+
+  const cohortCount = items.filter((it) => !isSpacer(it)).length;
+
+  if (cohortCount === 0) {
     return (
       <div className={styles.container}>
         <div className={styles.empty}>No cohorts selected. Select cohorts in the Cohorts tab.</div>
@@ -77,12 +113,63 @@ export const FigureLegend: FC<FigureLegendProps> = ({ selections, onReorder, coh
         <div ref={scrollRef} className={styles.scrollContent}>
           <div className={styles.hint}>Drag to reorder</div>
           <div className={styles.card}>
-            {selections.map((sel, i) => {
-              const color = getCohortColor(sel.groupIndex, sel.subIndex, sel.totalSubs);
-              const label = getLabel(sel, cohortDescriptions);
+            {items.map((item, i) => {
+              const dragHandle = (
+                <span className={styles.dragHandle} aria-hidden>
+                  <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+                    <circle cx="3" cy="2.5" r="1.2" /><circle cx="7" cy="2.5" r="1.2" />
+                    <circle cx="3" cy="7" r="1.2" /><circle cx="7" cy="7" r="1.2" />
+                    <circle cx="3" cy="11.5" r="1.2" /><circle cx="7" cy="11.5" r="1.2" />
+                  </svg>
+                </span>
+              );
+
+              if (isSpacer(item)) {
+                return (
+                  <div key={item.id} className={styles.rowWrapper}>
+                    {dropLineIndex === i && <div className={styles.dropLine} />}
+                    <div
+                      className={styles.spacerRow}
+                      draggable
+                      onDragStart={() => handleDragStart(i)}
+                      onDragOver={(e) => handleDragOver(e, i)}
+                      onDrop={(e) => handleDrop(e, i)}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <span className={styles.spacerLabel}>Spacer</span>
+                      <div className={styles.spacerSizes}>
+                        {SPACER_SIZES.map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            className={`${styles.spacerSizeButton} ${item.size === s ? styles.spacerSizeButtonActive : ''}`}
+                            onClick={() => handleSetSpacerSize(i, s)}
+                            title={`Spacing ${s}`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.spacerRemove}
+                        onClick={() => handleRemoveSpacer(i)}
+                        title="Remove spacer"
+                        aria-label="Remove spacer"
+                      >
+                        ×
+                      </button>
+                      {dragHandle}
+                    </div>
+                  </div>
+                );
+              }
+
+              const color = getCohortColor(item.groupIndex, item.subIndex, item.totalSubs);
+              const label = getLabel(item, cohortDescriptions);
               const isDragging = dragIndexRef.current === i;
               return (
-                <div key={sel.cohortName} className={styles.rowWrapper}>
+                <div key={item.cohortName} className={styles.rowWrapper}>
                   {dropLineIndex === i && <div className={styles.dropLine} />}
                   <div
                     className={`${styles.row} ${isDragging ? styles.rowDragging : ''}`}
@@ -96,19 +183,16 @@ export const FigureLegend: FC<FigureLegendProps> = ({ selections, onReorder, coh
                       <LegendDot color={color} isActive onClick={() => {}} />
                     </div>
                     <span className={styles.label}>{label}</span>
-                    <span className={styles.dragHandle} aria-hidden>
-                      <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
-                        <circle cx="3" cy="2.5" r="1.2" /><circle cx="7" cy="2.5" r="1.2" />
-                        <circle cx="3" cy="7" r="1.2" /><circle cx="7" cy="7" r="1.2" />
-                        <circle cx="3" cy="11.5" r="1.2" /><circle cx="7" cy="11.5" r="1.2" />
-                      </svg>
-                    </span>
+                    {dragHandle}
                   </div>
                 </div>
               );
             })}
-            {dropLineIndex === selections.length && <div className={styles.dropLine} />}
+            {dropLineIndex === items.length && <div className={styles.dropLine} />}
           </div>
+          <button type="button" className={styles.addSpacerButton} onClick={handleAddSpacer}>
+            + Add spacer
+          </button>
         </div>
         <div className={styles.scrollbarRegion}>
           <SimpleCustomScrollbar

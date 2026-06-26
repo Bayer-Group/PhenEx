@@ -18,11 +18,15 @@ import {
   type CohortClassified,
   type CohortGroup,
   type LegendSelection,
+  type LegendItem,
+  isSpacer,
   type Table2Row,
   type TimeToEventRow,
   type CohortDescriptions,
   type Report,
 } from './types';
+import { type BarChartSpacer } from './GraphsAndTables/RowRenderers/barChartShared';
+import { loadSpacers, saveSpacers, type StoredSpacer } from './reportCache';
 import { buildSequentialRowList, buildAccordionEntries, keyMatchesRow, sectionKey, categoryKey, type SequentialRow, type ViewerEntry, type StudyRegistry } from './studyRegistryUtils';
 
 interface WaterfallInfoRow {
@@ -215,22 +219,29 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     }
   }, [initialSelections]);
 
-  const sortSelections = useCallback(
-    (arr: LegendSelection[]) =>
-      [...arr].sort((a, b) => a.groupIndex - b.groupIndex || a.subIndex - b.subIndex),
-    [],
+  // ── Spacers ───────────────────────────────────────────────────────────
+  // Spacers live alongside selections. They are stored positionally by the
+  // cohort they follow (`afterCohortName`, null = before first row) so they
+  // survive selection changes. The legend manual order is preserved as-is.
+  const [spacers, setSpacers] = useState<StoredSpacer[]>(() =>
+    _runId ? loadSpacers(_runId) ?? [] : [],
   );
+
+  useEffect(() => {
+    if (!_runId) return;
+    const loaded = loadSpacers(_runId);
+    setSpacers(loaded ?? []);
+  }, [_runId]);
 
   const updateSelections = useCallback(
     (updater: LegendSelection[] | ((prev: LegendSelection[]) => LegendSelection[])) => {
       setSelections((prev) => {
-        const raw = typeof updater === 'function' ? updater(prev) : updater;
-        const next = sortSelections(raw);
+        const next = typeof updater === 'function' ? updater(prev) : updater;
         onSelectionsChange?.(next);
         return next;
       });
     },
-    [onSelectionsChange, sortSelections],
+    [onSelectionsChange],
   );
 
   // ── Derived data ──────────────────────────────────────────────────────
@@ -549,12 +560,66 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [findGroupInfo, updateSelections],
   );
 
-  const handleReorder = useCallback(
-    (reordered: LegendSelection[]) => {
-      setSelections(reordered);
-      onSelectionsChange?.(reordered);
+  // Combined, ordered legend list (cohorts + spacers) for the FigureLegend.
+  // Spacers are placed after the cohort named by `afterCohortName`.
+  const legendItems = useMemo<LegendItem[]>(() => {
+    const items: LegendItem[] = [];
+    const spacerToItem = (s: StoredSpacer): LegendItem => ({ kind: 'spacer', id: s.id, size: s.size });
+
+    const before = spacers.filter((s) => s.afterCohortName === null);
+    before.forEach((s) => items.push(spacerToItem(s)));
+
+    for (const sel of selections) {
+      items.push(sel);
+      spacers
+        .filter((s) => s.afterCohortName === sel.cohortName)
+        .forEach((s) => items.push(spacerToItem(s)));
+    }
+    return items;
+  }, [selections, spacers]);
+
+  // Bar-chart spacers, positioned by index into the (cohorts-only) display order.
+  const barChartSpacers = useMemo<BarChartSpacer[]>(() => {
+    const result: BarChartSpacer[] = [];
+    let cohortIndex = -1;
+    for (const item of legendItems) {
+      if (isSpacer(item)) {
+        result.push({ afterIndex: cohortIndex, size: item.size });
+      } else {
+        cohortIndex += 1;
+      }
+    }
+    return result;
+  }, [legendItems]);
+
+  const handleLegendChange = useCallback(
+    (items: LegendItem[]) => {
+      const nextSelections: LegendSelection[] = [];
+      const nextSpacers: StoredSpacer[] = [];
+      let lastCohortName: string | null = null;
+
+      for (const item of items) {
+        if (isSpacer(item)) {
+          nextSpacers.push({ id: item.id, size: item.size, afterCohortName: lastCohortName });
+        } else {
+          nextSelections.push(item);
+          lastCohortName = item.cohortName;
+        }
+      }
+
+      setSpacers(nextSpacers);
+      if (_runId) saveSpacers(_runId, nextSpacers);
+
+      setSelections((prev) => {
+        const changed =
+          prev.length !== nextSelections.length ||
+          prev.some((s, i) => s.cohortName !== nextSelections[i].cohortName);
+        if (!changed) return prev;
+        onSelectionsChange?.(nextSelections);
+        return nextSelections;
+      });
     },
-    [onSelectionsChange],
+    [_runId, onSelectionsChange],
   );
 
   const studyDescription = "This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints.";
@@ -642,8 +707,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         case 'figureLegend':
           return (
             <FigureLegend
-              selections={selections}
-              onReorder={handleReorder}
+              items={legendItems}
+              onChange={handleLegendChange}
               cohortDescriptions={cohortDescriptions}
             />
           );
@@ -654,7 +719,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [
       groups, selections, handleReplace, handleAdd, updateSelections,
       cohortDescriptions, finalCohortSizes, viewerEntries, handleOutlineNavigate,
-      expandedKeys, handleToggleExpand, handleReorder, OutlinePanelConnected,
+      expandedKeys, handleToggleExpand, legendItems, handleLegendChange, OutlinePanelConnected,
     ],
   );
 
@@ -680,6 +745,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
                 onScrolledPastTitle={setShowRowTitle}
                 cohortDataMap={cohortDataMap}
                 finalCohortSizes={finalCohortSizes}
+                spacers={barChartSpacers}
                 tteCohorts={tteCohorts}
                 table2Cohorts={table2Cohorts}
                 studyTitle={displayTitle}
@@ -696,7 +762,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [
       displayTitle, sequentialRows, viewerEntries, externalNavIndex,
       handleNavigateToRow, handleOutlineNavigate,
-      finalCohortSizes, cohortDataMap,
+      finalCohortSizes, cohortDataMap, barChartSpacers,
       tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,
       leftPanelFactory,
     ],

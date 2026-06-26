@@ -29,6 +29,7 @@ export const COLORS = COHORT_BASE_COLORS;
 
 /** An active legend item: a selected cohort at a specific display index/color. */
 export interface LegendSelection {
+  kind?: 'cohort';
   /** Full cohort directory name (e.g. "cohort1_baseline__age_40_45") */
   cohortName: string;
   /** Index into COLORS */
@@ -40,6 +41,28 @@ export interface LegendSelection {
   /** Total number of subcohorts in the group */
   totalSubs: number;
 }
+
+/** A spacer row in the legend: introduces vertical spacing between cohorts. */
+export interface LegendSpacer {
+  kind: 'spacer';
+  /** Stable id for keying/drag operations. */
+  id: string;
+  /** Spacing magnitude (1-4); larger = more space. */
+  size: 1 | 2 | 3 | 4;
+}
+
+/** An item in the ordered legend: either a cohort selection or a spacer. */
+export type LegendItem = LegendSelection | LegendSpacer;
+
+export function isSpacer(item: LegendItem): item is LegendSpacer {
+  return (item as LegendSpacer).kind === 'spacer';
+}
+
+export function isCohortSelection(item: LegendItem): item is LegendSelection {
+  return (item as LegendSpacer).kind !== 'spacer';
+}
+
+export const SPACER_SIZES: readonly (1 | 2 | 3 | 4)[] = [1, 2, 3, 4];
 
 /** Parsed cohort group: a parent cohort with its subcohorts. */
 export interface CohortGroup {

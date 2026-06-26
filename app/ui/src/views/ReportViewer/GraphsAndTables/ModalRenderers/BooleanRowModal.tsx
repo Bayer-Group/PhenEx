@@ -2,8 +2,12 @@ import { FC } from 'react';
 import { type CohortClassified } from '../../types';
 import { RowModal } from './RowModal';
 import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
-import { BarChartCellRendererPresentation } from '../RowRenderers/BarChartCellRendererPresentation';
+import { BarChartCellRendererCompact } from '../RowRenderers/BarChartCellRendererCompact';
+import { type BarChartSpacer } from '../RowRenderers/barChartShared';
 import styles from './BooleanRowModal.module.css';
+
+/** Pixels per spacer unit in the larger modal/presentation context. */
+const PRESENTATION_SPACER_UNIT_PX = 14;
 
 interface BooleanRowModalProps {
   name: string;
@@ -11,6 +15,7 @@ interface BooleanRowModalProps {
   onClose: () => void;
   breadcrumbs?: string[];
   finalCohortSizes?: Record<string, number | null>;
+  spacers?: BarChartSpacer[];
 }
 
 export const BooleanRowModal: FC<BooleanRowModalProps> = ({
@@ -19,6 +24,7 @@ export const BooleanRowModal: FC<BooleanRowModalProps> = ({
   onClose,
   breadcrumbs,
   finalCohortSizes,
+  spacers,
 }) => {
   const { visible } = useCohortVisibility(cohortData.length);
   const filteredCohortData = useFilteredCohortData(cohortData, visible);
@@ -27,10 +33,11 @@ export const BooleanRowModal: FC<BooleanRowModalProps> = ({
     <RowModal onClose={onClose} breadcrumbs={breadcrumbs}>
       <div className={styles.container}>
         {/* <ModalLegend cohortData={cohortData} visible={visible} onToggle={toggle} /> */}
-        <BarChartCellRendererPresentation
-          data={{ name, _meta: { cohortData: filteredCohortData, finalCohortSizes } }}
+        <BarChartCellRendererCompact
+          data={{ name, _meta: { cohortData: filteredCohortData, finalCohortSizes, spacers } }}
           isModal
           pctDecimals={1}
+          spacerUnitPx={PRESENTATION_SPACER_UNIT_PX}
         />
       </div>
     </RowModal>

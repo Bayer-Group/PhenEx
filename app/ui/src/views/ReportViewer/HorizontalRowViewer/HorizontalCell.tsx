@@ -1,5 +1,6 @@
 import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react';
 import { type CohortClassified, type KdeCurve } from '../types';
+import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow, type ViewerEntry, CATEGORY_DESCRIPTIONS, getCategoryLabel } from '../studyRegistryUtils';
 import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEventContent';
 import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
@@ -23,6 +24,7 @@ export interface HorizontalCellProps {
   nearby: boolean;
   cohortDataMap: Record<string, CohortClassified[]>;
   finalCohortSizes?: Record<string, number | null>;
+  spacers?: BarChartSpacer[];
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
@@ -36,7 +38,7 @@ export interface HorizontalCellProps {
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, onVerticalScroll, initialScrollTop, studyTitle = '', studyDescription }, ref) => {
+  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, onVerticalScroll, initialScrollTop, studyTitle = '', studyDescription }, ref) => {
     const isSection = entry.kind === 'section';
     const isCategory = entry.kind === 'category';
     const reporter = entry.kind === 'row' ? entry.row.reporter : entry.reporter;
@@ -85,7 +87,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
     const renderRowContent = (row: SequentialRow) => {
       switch (row.rowType) {
         case 'boolean':
-          return <BooleanCellLayout row={row} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
+          return <BooleanCellLayout row={row} cohortData={cohortData} finalCohortSizes={finalCohortSizes} spacers={spacers} />;
         case 'categorical':
           return <CategoricalCellLayout row={row} cohortData={cohortData} finalCohortSizes={finalCohortSizes} />;
         case 'numeric':
@@ -167,7 +169,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
         case 'boolean':
           return (
             <BarChartCellRendererCompact
-              data={{ name: row.name, _meta: { cohortData, finalCohortSizes } }}
+              data={{ name: row.name, _meta: { cohortData, finalCohortSizes, spacers } }}
               isModal
               hideHeader={hideBarChartHeader}
             />

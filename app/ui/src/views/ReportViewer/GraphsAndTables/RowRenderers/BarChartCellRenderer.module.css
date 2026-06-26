@@ -259,6 +259,12 @@
   background-color: transparent;
 }
 
+.barSpacer {
+  width: 100%;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
 .barRowCompact {
   position: relative;
   width: 100%;

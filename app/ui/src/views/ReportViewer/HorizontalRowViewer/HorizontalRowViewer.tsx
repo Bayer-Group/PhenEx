@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { type CohortClassified } from '../types';
+import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow, type ViewerEntry } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import styles from './HorizontalRowViewer.module.css';
@@ -31,6 +32,7 @@ interface HorizontalRowViewerProps {
   initialIndex: number;
   cohortDataMap: Record<string, CohortClassified[]>;
   finalCohortSizes?: Record<string, number | null>;
+  spacers?: BarChartSpacer[];
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   studyTitle?: string;
@@ -50,6 +52,7 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
   initialIndex,
   cohortDataMap,
   finalCohortSizes,
+  spacers,
   tteCohorts,
   table2Cohorts,
   studyTitle,
@@ -310,6 +313,7 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
                   nearby={nearby}
                   cohortDataMap={cohortDataMap}
                   finalCohortSizes={finalCohortSizes}
+                  spacers={spacers}
                   tteCohorts={tteCohorts}
                   table2Cohorts={table2Cohorts}
                   onNavigate={navigate}

@@ -11,6 +11,14 @@ import type { CohortEntry, LegendSelection, Table2Row, TimeToEventRow } from './
 
 const PREFIX = 'phenex:report:';
 const SEL_PREFIX = 'phenex:report:sel:';
+const SPACER_PREFIX = 'phenex:report:spacer:';
+
+/** A persisted spacer, positioned after a named cohort (null = before first). */
+export interface StoredSpacer {
+  id: string;
+  size: 1 | 2 | 3 | 4;
+  afterCohortName: string | null;
+}
 
 /** Core run data cached in localStorage. */
 export interface RunData {
@@ -113,4 +121,24 @@ export function loadSelections(runId: string): LegendSelection[] | null {
 /** Clear saved selections for a run. */
 export function clearSelections(runId: string): void {
   localStorage.removeItem(`${SEL_PREFIX}${runId}`);
+}
+
+// ── Spacer persistence ──────────────────────────────────────────────────
+
+/** Save the legend spacers for a run. */
+export function saveSpacers(runId: string, spacers: StoredSpacer[]): void {
+  try {
+    localStorage.setItem(`${SPACER_PREFIX}${runId}`, JSON.stringify(spacers));
+  } catch { /* ignore */ }
+}
+
+/** Restore saved legend spacers for a run. */
+export function loadSpacers(runId: string): StoredSpacer[] | null {
+  try {
+    const raw = localStorage.getItem(`${SPACER_PREFIX}${runId}`);
+    if (!raw) return null;
+    return JSON.parse(raw) as StoredSpacer[];
+  } catch {
+    return null;
+  }
 }
