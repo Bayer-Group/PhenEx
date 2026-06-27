@@ -1,11 +1,11 @@
 import React, { FC, useRef, useState, useCallback } from 'react';
 import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
 import { DraggablePortal } from '../../../../components/Portal/DraggablePortal';
-import { ColorPicker, type ColorUsage } from './ColorPicker';
+import { ColorPicker, colorPickerDragHandle, type ColorUsage } from './ColorPicker';
 import styles from './LegendDot.module.css';
 
 const PICKER_WIDTH = 300;
-const PICKER_HEIGHT = 200;
+const PICKER_HEIGHT = 230;
 
 interface LegendDotProps {
   color?: string;
@@ -70,7 +70,7 @@ export const LegendDot: FC<LegendDotProps> = ({
   );
 
   return (
-    <>
+    <div className={styles.legendDotContainer}>
       {onColorChange && (
         <button
           type="button"
@@ -104,11 +104,20 @@ export const LegendDot: FC<LegendDotProps> = ({
       {pickerPos && onColorChange && (
         <>
           <div className={styles.pickerBackdrop} onMouseDown={closePicker} />
-          <DraggablePortal initialX={pickerPos.x} initialY={pickerPos.y}>
-            <ColorPicker value={color} usedColors={usedColors} onSelect={handleSelect} />
+          <DraggablePortal
+            initialX={pickerPos.x}
+            initialY={pickerPos.y}
+            dragHandleSelector={`.${colorPickerDragHandle}`}
+          >
+            <ColorPicker
+              value={color}
+              usedColors={usedColors}
+              onSelect={handleSelect}
+              onClose={closePicker}
+            />
           </DraggablePortal>
         </>
       )}
-    </>
+    </div>
   );
 };

@@ -3,6 +3,12 @@ import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExN
 import { COHORT_BASE_COLORS } from '../../types';
 import styles from './ColorPicker.module.css';
 
+/**
+ * Stable class name used by the host portal as its drag handle. Only the
+ * header drags, so the body's inputs/swatches stay fully interactive.
+ */
+export const colorPickerDragHandle = 'colorPickerDragHandle';
+
 /** Maps a palette color to the label of the cohort currently using it. */
 export interface ColorUsage {
   color: string;
@@ -15,6 +21,7 @@ interface ColorPickerProps {
   /** Colors already taken by other cohorts (rendered blurred + disabled). */
   usedColors: ColorUsage[];
   onSelect: (color: string) => void;
+  onClose?: () => void;
 }
 
 /** Normalize a color string for equality comparison (strips whitespace, lowercases). */
@@ -64,7 +71,7 @@ const Swatch: FC<{
   );
 };
 
-export const ColorPicker: FC<ColorPickerProps> = ({ value, usedColors, onSelect }) => {
+export const ColorPicker: FC<ColorPickerProps> = ({ value, usedColors, onSelect, onClose }) => {
   const [custom, setCustom] = useState(value ?? '#000000');
 
   const usedMap = useMemo(() => {
@@ -78,6 +85,20 @@ export const ColorPicker: FC<ColorPickerProps> = ({ value, usedColors, onSelect 
 
   return (
     <div className={styles.picker}>
+      <div className={`${styles.header} ${colorPickerDragHandle}`}>
+        <span className={styles.headerTitle}>Cohort color</span>
+        {onClose && (
+          <button
+            type="button"
+            className={styles.closeButton}
+            onClick={onClose}
+            aria-label="Close color picker"
+            title="Close"
+          >
+            ×
+          </button>
+        )}
+      </div>
       <div className={styles.section}>Palette</div>
       <div className={styles.grid}>
         {COHORT_BASE_COLORS.map((color) => {
