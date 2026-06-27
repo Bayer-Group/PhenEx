@@ -31,6 +31,8 @@
   --background_color_light: hsl(30, 60%, 94%);
   --text_color_notfocus: hsl(11, 8%, 30%);
 
+  --gridline-color: var(--line-color);
+
 
   --background_color_focus: #000000d9;
   --background-color-content: white;

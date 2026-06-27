@@ -1,11 +1,16 @@
 import React, { FC, useRef, useState, useCallback } from 'react';
 import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
 import { DraggablePortal } from '../../../../components/Portal/DraggablePortal';
-import { ColorPicker, colorPickerDragHandle, type ColorUsage } from './ColorPicker';
+import {
+  ColorPicker,
+  COLOR_PICKER_HEIGHT,
+  colorPickerDragHandle,
+  type ColorUsage,
+} from './ColorPicker';
 import styles from './LegendDot.module.css';
 
 const PICKER_WIDTH = 300;
-const PICKER_HEIGHT = 230;
+const PICKER_HEIGHT = COLOR_PICKER_HEIGHT;
 
 interface LegendDotProps {
   color?: string;
@@ -65,9 +70,9 @@ export const LegendDot: FC<LegendDotProps> = ({
   const closePicker = useCallback(() => setPickerPos(null), []);
 
   const handleSelect = useCallback(
-    (next: string) => {
+    (next: string, keepOpen = false) => {
       onColorChange?.(next);
-      closePicker();
+      if (!keepOpen) closePicker();
     },
     [onColorChange, closePicker],
   );

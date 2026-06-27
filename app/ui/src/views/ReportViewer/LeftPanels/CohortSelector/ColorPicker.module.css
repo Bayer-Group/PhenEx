@@ -96,30 +96,110 @@
   box-shadow: none;
 }
 
+.selectedPreview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.previewSwatch {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.previewLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font_size_infotext, 11px);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wheelPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.satVal {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.satVal::before,
+.satVal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.satVal::before {
+  background: linear-gradient(to right, #fff, transparent);
+}
+
+.satVal::after {
+  background: linear-gradient(to top, #000, transparent);
+}
+
+.wheelPointer {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.hueTrack {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(
+    to right,
+    #f00 0%,
+    #ff0 17%,
+    #0f0 33%,
+    #0ff 50%,
+    #00f 67%,
+    #f0f 83%,
+    #f00 100%
+  );
+  cursor: pointer;
+  touch-action: none;
+}
+
+.hueThumb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 .customRow {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.wheel {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  padding: 0;
-  border: 1px solid var(--line-color, #ddd);
-  border-radius: 6px;
-  background: none;
-  cursor: pointer;
-}
-
-.wheel::-webkit-color-swatch-wrapper {
-  padding: 2px;
-}
-
-.wheel::-webkit-color-swatch {
-  border: none;
-  border-radius: 4px;
 }
 
 .hexInput {

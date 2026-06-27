@@ -25,7 +25,7 @@
   display: flex;
   flex-direction: column;
   overflow: visible;
-  padding-bottom: var(--BOOLEAN_COMPACT_BOTTOM_PAD);
+  padding-bottom: 0;
 }
 
 .compactChartBody {
@@ -33,6 +33,7 @@
   flex: 1;
   min-height: 0;
   overflow: visible;
+  /* background-color: red; */
 }
 
 .compactChartBody .gridOverlayCompact {
@@ -93,8 +94,8 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background-color: var(--gridline-color, #e0e0e0);
-  opacity: 0.5;
+  background-color: var(--background_color_dark, #e0e0e0);
+  opacity: 1;
 }
 
 /* ── Header: bar | % | N ──────────────────────────────────────────────── */
@@ -106,11 +107,12 @@
   padding-bottom: 20px;
   align-items: center;
   flex-shrink: 0;
+  /* background-color: blue; */
 
 }
 
 .headerRowHidden {
-  visibility: hidden;
+  /* visibility: hidden; */
 }
 
 .headerRowCompact {
@@ -241,22 +243,12 @@
   background-color: transparent;
   transition: background-color 0.3s ease 0.3s;
   overflow: visible;
+  margin-bottom: 2px;
 }
 
-.cohortRowPresentation {
-  display: grid;
-  grid-template-columns: var(--BOOLEAN_PRESENTATION_LABEL_COL) minmax(0, 1fr);
-  gap: var(--BOOLEAN_PRESENTATION_GAP);
-  height: var(--BOOLEAN_PRESENTATION_ROW_HEIGHT);
-  z-index: 2;
-}
 
 .cohortRow:hover {
   background-color: rgba(232, 231, 231, 0.2);
-}
-
-.cohortRowPresentation:hover {
-  background-color: transparent;
 }
 
 .barSpacer {
@@ -301,7 +293,7 @@
   top: 0;
   height: 100%;
   box-sizing: border-box;
-  border-radius: 0 3px 3px 0;
+  border-radius: 3px 3px 3px 3px;
   border: 1px solid transparent;
   transition: border-color 0.3s ease 0.3s;
 }
@@ -337,32 +329,6 @@
   height: 100%;
 }
 
-.cohortRowPresentation .dataCells {
-  grid-template-columns: var(--BOOLEAN_PRESENTATION_PCT_COL) minmax(0, 1fr) var(--BOOLEAN_PRESENTATION_N_COL);
-  gap: var(--BOOLEAN_PRESENTATION_GAP);
-}
-
-.cohortRowPresentation .pctCell {
-  grid-column: 1;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  font-size: 12px;
-}
-
-.cohortRowPresentation .barCell {
-  grid-column: 2;
-  position: relative;
-  height: calc(var(--BOOLEAN_PRESENTATION_ROW_HEIGHT) - 4px);
-}
-
-.cohortRowPresentation .nCell {
-  grid-column: 3;
-  justify-content: flex-start;
-  gap: 4px;
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-}
 
 .cohortLabelCell {
   font-size: clamp(12px, calc(14px / var(--pz-scale, 1)), 24px);

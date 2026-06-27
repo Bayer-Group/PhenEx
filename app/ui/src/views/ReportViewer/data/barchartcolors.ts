@@ -13,6 +13,12 @@ export const colorConfig = {
     hrt: [161, 127, 102] as const,
     ssri: [233, 191, 191] as const,
     fezolinetant: [199, 109, 102] as const,
+    monokai_pink: [225, 71, 118] as const,
+    monokai_orange: [226, 96, 51] as const,
+    monokai_yellow: [204, 122, 10] as const,
+    monokai_green: [38, 157, 105] as const,
+    monokai_blue: [28, 140, 168] as const,
+    monokai_purple: [254, 44, 55] as const,
   },
   cohortColorOrder: [
     'cyan',

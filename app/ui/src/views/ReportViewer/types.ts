@@ -6,6 +6,9 @@ export const COHORT_BASE_COLORS: string[] = colorConfig.cohortColorOrder.map((na
   const [r, g, b] = palette[name];
   return `rgb(${r}, ${g}, ${b})`;
 });
+export const AVAILABLE_COLORS: string[] = Object.values(palette).map(([r, g, b]) => {
+  return `rgb(${r}, ${g}, ${b})`;
+});
 
 /**
  * Get the color for a selection, based on its cohort group index and
