@@ -219,6 +219,7 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
                       <LegendDot
                         color={color}
                         isActive
+                        showDot={false}
                         onClick={() => {}}
                         onColorChange={onSetColor ? (c) => onSetColor(item.cohortName, c) : undefined}
                         usedColors={usedColorsFor(item.cohortName)}

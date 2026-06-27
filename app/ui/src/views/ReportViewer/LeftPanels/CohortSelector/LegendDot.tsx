@@ -14,6 +14,8 @@ interface LegendDotProps {
   onClick: () => void;
   tooltipLabel?: string;
   scale?: number;
+  /** When false, the selection dot is hidden (color picker remains if enabled). */
+  showDot?: boolean;
   /** When provided, the dot becomes a color-picker trigger. */
   onColorChange?: (color: string) => void;
   /** Colors already used by other cohorts (shown blurred in the picker). */
@@ -38,6 +40,7 @@ export const LegendDot: FC<LegendDotProps> = ({
   onClick,
   tooltipLabel,
   scale,
+  showDot = true,
   onColorChange,
   usedColors = [],
 }) => {
@@ -75,32 +78,39 @@ export const LegendDot: FC<LegendDotProps> = ({
         <button
           type="button"
           className={styles.pickerButton}
-          style={{ background: color ?? 'transparent' }}
-          onClick={openPicker}
+          style={{
+            background: getBackground(),
+            border: isActive ? '1px solid transparent' : partiallyActive && color ? `1px solid ${color}` : '1px dashed #ccc',
+            ...(scale != null ? { transform: `scale(${scale})` } : {}),
+          }}          onClick={openPicker}
           aria-label="Change cohort color"
           title="Change color"
         />
       )}
-      <div
-        ref={ref}
-        className={styles.dot}
-        style={{
-          background: getBackground(),
-          border: isActive ? '1px solid transparent' : partiallyActive && color ? `1px solid ${color}` : '1px dashed #ccc',
-          ...(scale != null ? { transform: `scale(${scale})` } : {}),
-        }}
-        onClick={(e) => { e.stopPropagation(); onClick(); }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      />
-      <PhenExNavBarTooltip
-        isVisible={hovered}
-        anchorElement={ref.current}
-        label={label}
-        verticalPosition="above"
-        horizontalAlignment="left"
-        delay={400}
-      />
+      {showDot && (
+        <>
+          <div
+            ref={ref}
+            className={styles.dot}
+            style={{
+              background: getBackground(),
+              border: isActive ? '1px solid transparent' : partiallyActive && color ? `1px solid ${color}` : '1px dashed #ccc',
+              ...(scale != null ? { transform: `scale(${scale})` } : {}),
+            }}
+            onClick={(e) => { e.stopPropagation(); onClick(); }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+          />
+          <PhenExNavBarTooltip
+            isVisible={hovered}
+            anchorElement={ref.current}
+            label={label}
+            verticalPosition="above"
+            horizontalAlignment="left"
+            delay={400}
+          />
+        </>
+      )}
       {pickerPos && onColorChange && (
         <>
           <div className={styles.pickerBackdrop} onMouseDown={closePicker} />
