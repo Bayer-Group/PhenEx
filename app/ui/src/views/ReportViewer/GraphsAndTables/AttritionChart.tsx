@@ -1,6 +1,8 @@
 import { FC, useMemo, useState } from 'react';
 import { type CohortClassified, type CohortGroup, type CohortDescriptions, getCohortColor } from '../types';
 import { AttritionMainCohortCard } from './AttritionMainCohortCard';
+import { AttritionTableMainCohortCard } from './AttritionTableMainCohortCard';
+import { DEFAULT_COLUMNS, type ColumnConfig } from './RowRenderers/AttritionTableCellRenderer';
 import styles from './AttritionChart.module.css';
 
 /** Shape of a single row in waterfall.json */
@@ -72,6 +74,8 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
   const selectedSet = useMemo(() => new Set(cohortData.map((cd) => cd.name)), [cohortData]);
   const [sharedRowMode, setSharedRowMode] = useState<'show' | 'hide' | 'dim'>('show');
   const [hoveredParentRow, setHoveredParentRow] = useState<string | null>(null);
+  const [tableColumns, _setTableColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
+  const [dimParentRows, setDimParentRows] = useState(true);
 
   /** Build per-group chart data, grouping subcohorts under their main cohort. */
   const groupedCharts = useMemo(() => {
@@ -125,15 +129,23 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.controls}>
+      {/* <div className={styles.controls}>
         <button
           className={styles.toggleBtn}
           onClick={() => setSharedRowMode((m) => nextMode[m])}
         >
           Parent rows: {sharedModeLabels[sharedRowMode]}
         </button>
-      </div>
-      <div className={styles.container}>
+        <button
+          className={styles.toggleBtn}
+          onClick={() => setDimParentRows((v) => !v)}
+        >
+          Table parent rows: {dimParentRows ? 'Dimmed' : 'Shown'}
+        </button>
+      </div> */}
+
+      {/* Funnel cards — horizontal */}
+      {/* <div className={styles.container}>
         {groupedCharts.map((group) => (
           <AttritionMainCohortCard
             key={group.parent}
@@ -145,6 +157,22 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
             sharedRowMode={sharedRowMode}
             hoveredParentRow={hoveredParentRow}
             onParentRowHover={setHoveredParentRow}
+          />
+        ))}
+      </div> */}
+
+      {/* Table cards — stacked vertically */}
+      <div className={styles.tableStack}>
+        {groupedCharts.map((group) => (
+          <AttritionTableMainCohortCard
+            key={group.parent}
+            parent={group.parent}
+            groupColor={group.groupColor}
+            charts={group.charts}
+            parentRowNames={group.parentRowNames}
+            cohortDescriptions={cohortDescriptions}
+            dimParentRows={dimParentRows}
+            columns={tableColumns}
           />
         ))}
       </div>

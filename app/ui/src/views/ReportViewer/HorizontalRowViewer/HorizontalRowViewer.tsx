@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { type CohortClassified } from '../types';
+import { CohortGroup, type CohortClassified } from '../types';
 import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow, type ViewerEntry } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
@@ -42,6 +42,8 @@ interface HorizontalRowViewerProps {
   onIndexChange?: (index: number) => void;
   onNavigateToRow?: (row: SequentialRow) => void;
   onScrolledPastTitle?: (scrolled: boolean) => void;
+  waterfallData: Record<string, unknown>;
+  groups: CohortGroup[];
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -62,6 +64,8 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
   onIndexChange,
   onNavigateToRow,
   onScrolledPastTitle,
+  waterfallData,
+  groups,
 }) => {
   const { isLeftPanelShown } = useThreePanelCollapse();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -322,6 +326,8 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
                   initialScrollTop={sharedScrollTopRef.current}
                   studyTitle={studyTitle}
                   studyDescription={studyDescription}
+                  waterfallData={waterfallData}
+                  groups={groups}
                 />
               );
             }

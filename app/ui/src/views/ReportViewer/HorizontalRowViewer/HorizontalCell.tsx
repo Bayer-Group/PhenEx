@@ -1,5 +1,5 @@
-import { forwardRef, memo, useEffect, useMemo, useRef, useState } from 'react';
-import { type CohortClassified, type KdeCurve } from '../types';
+import { forwardRef, memo, useMemo, useRef } from 'react';
+import { type CohortClassified, type CohortGroup, type KdeCurve } from '../types';
 import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow, type ViewerEntry, CATEGORY_DESCRIPTIONS, getCategoryLabel } from '../studyRegistryUtils';
 import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEventContent';
@@ -13,6 +13,7 @@ import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import styles from './HorizontalCell.module.css';
+import { AttritionChart } from '../GraphsAndTables/AttritionChart';
 
 // ── Props ───────────────────────────────────────────────────────────────
 
@@ -33,12 +34,14 @@ export interface HorizontalCellProps {
   initialScrollTop?: number;
   studyTitle?: string;
   studyDescription?: string;
+  waterfallData: Record<string, unknown>;
+  groups: CohortGroup[];
 }
 
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, onVerticalScroll, initialScrollTop, studyTitle = '', studyDescription }, ref) => {
+  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, initialScrollTop, studyTitle = '', studyDescription, waterfallData, groups }, ref) => {
     const isSection = entry.kind === 'section';
     const isCategory = entry.kind === 'category';
     const reporter = entry.kind === 'row' ? entry.row.reporter : entry.reporter;
@@ -48,7 +51,10 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
         : entry.kind === 'section' ? entry.section
           : getCategoryLabel(entry.category);
 
-    const cohortData = cohortDataMap[reporter] ?? [];
+    const isAttrition = entry.kind === 'category' && entry.category === 'attrition';
+    const cohortData = isAttrition
+      ? Object.values(cohortDataMap).flat()
+      : cohortDataMap[reporter] ?? [];
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const initialScrollTopRef = useRef(initialScrollTop ?? 0);
     initialScrollTopRef.current = initialScrollTop ?? 0;
@@ -88,8 +94,17 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
       }
     };
 
+    const renderAttritionContent = () => {
+      return (
+        <div className={styles.attritionBody}>
+          <AttritionChart cohortData={cohortData} waterfall={waterfallData} groups={groups} />
+        </div>
+      );
+    };
+
     const renderCategoryContent = () => {
       if (entry.kind !== 'category') return null;
+      else if (entry.category === 'attrition') return renderAttritionContent();
       const description = CATEGORY_DESCRIPTIONS[entry.category] ?? '';
       const sectionEntries = entries.filter(
         (e): e is Extract<ViewerEntry, { kind: 'section' }> =>

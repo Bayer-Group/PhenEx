@@ -780,6 +780,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
                 table2Cohorts={table2Cohorts}
                 studyTitle={displayTitle}
                 studyDescription={studyDescription}
+                waterfallData={waterfallData}
+                groups={groups}
               />
             </div>
           );

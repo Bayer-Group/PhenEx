@@ -1,0 +1,115 @@
+/* ── Table ───────────────────────────────────────────────────────────── */
+
+.table {
+  border-collapse: collapse;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 12px;
+  width: 100%;
+  min-width: 480px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+
+.th {
+  padding: 5px 10px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text_color_secondary, #888);
+  border-bottom: 1px solid var(--border_color, #e0e0e0);
+  white-space: nowrap;
+}
+
+.th.nRemaining,
+.th.delta,
+.th.n,
+.th.pct,
+.th.pctSource,
+.th.pctRemaining {
+  text-align: right;
+}
+
+/* ── Rows ────────────────────────────────────────────────────────────── */
+
+.tr {
+  transition: background 0.12s;
+}
+
+.tr:hover {
+  background: var(--background_color_hover, rgba(0, 0, 0, 0.04));
+}
+
+/* ── Cells ───────────────────────────────────────────────────────────── */
+
+.td {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border_color, #f0f0f0);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.td.nRemaining,
+.td.delta,
+.td.n,
+.td.pct,
+.td.pctSource,
+.td.pctRemaining {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.td.name {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Category column ────────────────────────────────────────────────── */
+
+.td.category {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text_color_secondary, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 8px;
+}
+
+.td.category:not(.categoryFirst) {
+  color: transparent;
+  user-select: none;
+}
+
+/* ── Row types ───────────────────────────────────────────────────────── */
+
+.type_entry .td.category,
+.type_entry .td.name {
+  color: var(--color_entry, #555);
+}
+
+.type_inclusion .td.category,
+.type_inclusion .td.name {
+  color: var(--color_inclusion, #2a9d8f);
+}
+
+.type_exclusion .td.category,
+.type_exclusion .td.name {
+  color: var(--color_exclusion, #e76f51);
+}
+
+/* ── Parent row dimming ──────────────────────────────────────────────── */
+
+.dimmed {
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+}
+
+.dimmed:hover {
+  opacity: 0.7;
+}
+
+/* ── Delta cell (negative values) ───────────────────────────────────── */
+
+.td.delta {
+  color: var(--color_exclusion, #e76f51);
+}

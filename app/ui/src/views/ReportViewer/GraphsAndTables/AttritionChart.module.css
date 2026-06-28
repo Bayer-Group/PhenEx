@@ -26,8 +26,16 @@
   flex-direction: row;
   gap: 60px;
   align-items: flex-start;
-  padding-left: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
-  padding-right: min(calc(max(120px * var(--pz-scale, 1), 10px) + 20px), 80px);
-  padding-bottom: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 80px);
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0;
   margin-bottom: 20px;
+}
+
+/* ── Table view — groups stacked vertically ──────────────────────────── */
+
+.tableStack {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0px 0px;
 }
