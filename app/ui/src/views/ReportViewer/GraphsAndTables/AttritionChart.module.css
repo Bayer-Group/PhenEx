@@ -32,10 +32,36 @@
   margin-bottom: 20px;
 }
 
-/* ── Table view — groups stacked vertically ──────────────────────────── */
+/* ── Table view — cohorts stacked vertically in legend order ─────────── */
 
 .tableStack {
   display: flex;
   flex-direction: column;
-  padding: 0 0px 0px;
+  padding: 0 12px 24px;
+  gap: 20px;
+}
+
+.tableRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.tableRowLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding-bottom: 2px;
+}
+
+.tableRowDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }

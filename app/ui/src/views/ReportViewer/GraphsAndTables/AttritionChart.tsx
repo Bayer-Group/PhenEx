@@ -1,8 +1,8 @@
 import { FC, useMemo, useState } from 'react';
 import { type CohortClassified, type CohortGroup, type CohortDescriptions, getCohortColor } from '../types';
 import { AttritionMainCohortCard } from './AttritionMainCohortCard';
-import { AttritionTableMainCohortCard } from './AttritionTableMainCohortCard';
-import { DEFAULT_COLUMNS, type ColumnConfig } from './RowRenderers/AttritionTableCellRenderer';
+import { AttritionTableCellRenderer, DEFAULT_COLUMNS, type ColumnConfig } from './RowRenderers/AttritionTableCellRenderer';
+import { buildFlatRows } from './RowRenderers/barChartShared';
 import styles from './AttritionChart.module.css';
 
 /** Shape of a single row in waterfall.json */
@@ -70,6 +70,16 @@ interface GroupedCharts {
   parentRowNames: Set<string>;
 }
 
+/** Flat entry for table rendering: one row per cohort in legend order */
+interface FlatTableEntry {
+  cohortName: string;
+  displayName: string;
+  color: string;
+  rows: any[];
+  parentRowNames: Set<string>;
+  isParent: boolean;
+}
+
 export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups, cohortDescriptions }) => {
   const selectedSet = useMemo(() => new Set(cohortData.map((cd) => cd.name)), [cohortData]);
   const [sharedRowMode, setSharedRowMode] = useState<'show' | 'hide' | 'dim'>('show');
@@ -94,25 +104,32 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
         const rows: WaterfallRow[] = Array.isArray(raw) ? raw : (raw as WaterfallPayload).rows;
         if (!rows?.length) continue;
 
+        const resolvedColor =
+          cohortData.find((cd) => cd.name === sub.fullName)?.color ??
+          getCohortColor(gi, si, group.subcohorts.length);
+
         charts.push({
           cohortName: sub.fullName,
           label: sub.label,
-          color: getCohortColor(gi, si, group.subcohorts.length),
+          color: resolvedColor,
           rows: waterfallToD3Rows(rows),
           databaseSize: getDatabaseSize(rows),
         });
       }
 
       if (charts.length > 0) {
-        // Find parent (main) cohort's row names for shared-row detection
         const mainChart = charts.find((c) => c.cohortName === group.parent);
         const parentRowNames = new Set(
           mainChart ? mainChart.rows.map((r: any) => r.name as string) : [],
         );
 
+        const parentColor =
+          cohortData.find((cd) => cd.name === group.parent)?.color ??
+          getCohortColor(gi, 0, group.subcohorts.length);
+
         result.push({
           parent: group.parent,
-          groupColor: getCohortColor(gi, 0, group.subcohorts.length),
+          groupColor: parentColor,
           charts,
           parentRowNames,
         });
@@ -120,7 +137,43 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
     }
 
     return result;
-  }, [groups, waterfall, selectedSet]);
+  }, [groups, waterfall, selectedSet, cohortData]);
+
+  /** Flat list in legend order (cohortData order), one entry per cohort. */
+  const flatTableEntries = useMemo<FlatTableEntry[]>(() => {
+    const chartByName = new Map<string, ChartEntry>();
+    const parentRowsByParent = new Map<string, Set<string>>();
+    for (const group of groupedCharts) {
+      parentRowsByParent.set(group.parent, group.parentRowNames);
+      for (const chart of group.charts) {
+        chartByName.set(chart.cohortName, chart);
+      }
+    }
+
+    const parentNames = new Set(groupedCharts.map((g) => g.parent));
+
+    return buildFlatRows(cohortData)
+      .map(({ cohort, label }) => {
+        const chart = chartByName.get(cohort.name);
+        if (!chart) return null;
+        const isParent = parentNames.has(cohort.name);
+        const parentName = cohort.name.includes('__')
+          ? cohort.name.substring(0, cohort.name.indexOf('__'))
+          : cohort.name;
+        const parentRowNames = isParent
+          ? new Set<string>()
+          : (parentRowsByParent.get(parentName) ?? new Set<string>());
+        return {
+          cohortName: cohort.name,
+          displayName: cohortDescriptions?.[cohort.name]?.display_name ?? cohort.displayName ?? label,
+          color: chart.color,
+          rows: chart.rows,
+          parentRowNames,
+          isParent,
+        };
+      })
+      .filter((e): e is FlatTableEntry => e !== null);
+  }, [cohortData, groupedCharts, cohortDescriptions]);
 
   if (!groupedCharts.length) return null;
 
@@ -129,51 +182,23 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
 
   return (
     <div className={styles.wrapper}>
-      {/* <div className={styles.controls}>
-        <button
-          className={styles.toggleBtn}
-          onClick={() => setSharedRowMode((m) => nextMode[m])}
-        >
-          Parent rows: {sharedModeLabels[sharedRowMode]}
-        </button>
-        <button
-          className={styles.toggleBtn}
-          onClick={() => setDimParentRows((v) => !v)}
-        >
-          Table parent rows: {dimParentRows ? 'Dimmed' : 'Shown'}
-        </button>
-      </div> */}
+  
 
-      {/* Funnel cards — horizontal */}
-      {/* <div className={styles.container}>
-        {groupedCharts.map((group) => (
-          <AttritionMainCohortCard
-            key={group.parent}
-            parent={group.parent}
-            groupColor={group.groupColor}
-            charts={group.charts}
-            parentRowNames={group.parentRowNames}
-            cohortDescriptions={cohortDescriptions}
-            sharedRowMode={sharedRowMode}
-            hoveredParentRow={hoveredParentRow}
-            onParentRowHover={setHoveredParentRow}
-          />
-        ))}
-      </div> */}
-
-      {/* Table cards — stacked vertically */}
+      {/* Table — one row per cohort in legend order, stacked vertically */}
       <div className={styles.tableStack}>
-        {groupedCharts.map((group) => (
-          <AttritionTableMainCohortCard
-            key={group.parent}
-            parent={group.parent}
-            groupColor={group.groupColor}
-            charts={group.charts}
-            parentRowNames={group.parentRowNames}
-            cohortDescriptions={cohortDescriptions}
-            dimParentRows={dimParentRows}
-            columns={tableColumns}
-          />
+        {flatTableEntries.map((entry) => (
+          <div key={entry.cohortName} className={styles.tableRow}>
+            <div className={styles.tableRowLabel}>
+              <span className={styles.tableRowDot} style={{ backgroundColor: entry.color }} />
+              <span>{entry.displayName}</span>
+            </div>
+            <AttritionTableCellRenderer
+              rows={entry.rows}
+              columns={tableColumns}
+              parentRowNames={entry.isParent ? undefined : entry.parentRowNames}
+              dimParentRows={dimParentRows}
+            />
+          </div>
         ))}
       </div>
     </div>
