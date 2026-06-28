@@ -37,7 +37,7 @@
 .tableStack {
   display: flex;
   flex-direction: column;
-  padding: 0 12px 24px;
+  padding: 0 0px 0px;
   gap: 20px;
 }
 
@@ -47,21 +47,24 @@
   gap: 4px;
   border: var(--border);
   border-radius: 12px;
-  padding: 12px;
+  padding: 4px 4px;
 }
 
 .tableRowLabel {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--font_size_phenotypename);
   font-weight: 600;
   padding-bottom: 2px;
+  color: var(--text_color_focus);
 }
 
 .tableRowDot {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-right: 6px;
+  margin-left:4px;
 }
