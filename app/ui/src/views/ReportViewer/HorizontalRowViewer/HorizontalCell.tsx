@@ -53,7 +53,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
 
     const isAttrition = entry.kind === 'category' && entry.category === 'attrition';
     const cohortData = isAttrition
-      ? Object.values(cohortDataMap).flat()
+      ? (cohortDataMap['table1'] ?? [])
       : cohortDataMap[reporter] ?? [];
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const initialScrollTopRef = useRef(initialScrollTop ?? 0);
