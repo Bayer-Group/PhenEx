@@ -4,7 +4,7 @@
   --BOOLEAN_N_COL: 48px;
   --BOOLEAN_COL_GAP: 8px;
   --BOOLEAN_BAR_LABEL_GAP: 6px;
-  --BOOLEAN_COMPACT_HEADER_GAP: 6px;
+  --BOOLEAN_COMPACT_HEADER_HEIGHT: calc(3px + var(--font_size_infotext, 10px) * 1.4 + 20px);
   --BOOLEAN_COMPACT_BOTTOM_PAD: 12px;
   --BOOLEAN_PRESENTATION_LABEL_COL: 200px;
   --BOOLEAN_PRESENTATION_PCT_COL: 60px;
@@ -22,15 +22,27 @@
 }
 
 .containerCompact {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   overflow: visible;
   padding-bottom: 0;
 }
 
+.containerCompact .headerRow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+}
+
+.containerCompactNoHeader .rows {
+  padding-top: 0;
+}
+
 .compactChartBody {
   position: relative;
-  flex: 1;
+  height: 100%;
+  width: 100%;
   min-height: 0;
   overflow: visible;
   /* background-color: red; */
@@ -188,7 +200,7 @@
 }
 
 .containerCompact .rows {
-  padding-top: var(--BOOLEAN_COMPACT_HEADER_GAP);
+  padding-top: var(--BOOLEAN_COMPACT_HEADER_HEIGHT);
 }
 
 .groupSection {

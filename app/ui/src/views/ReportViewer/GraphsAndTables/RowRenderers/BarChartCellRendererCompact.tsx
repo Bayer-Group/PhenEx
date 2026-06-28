@@ -77,10 +77,10 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
 
   return (
     <div
-      className={`${styles.container} ${styles.containerCompact}`}
+      className={`${styles.container} ${styles.containerCompact}${hideHeader ? ` ${styles.containerCompactNoHeader}` : ''}`}
       style={{ '--cohort-count': cohortData.length } as React.CSSProperties}
     >
-      <BarChartHeader compact hidden={hideHeader} />
+      {!hideHeader && <BarChartHeader compact />}
       <div className={styles.compactChartBody}>
         <BarChartGridOverlay lines={COMPACT_GRID_LINES} compact />
         <div className={styles.rows}>

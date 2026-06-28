@@ -50,24 +50,9 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
 
     const cohortData = cohortDataMap[reporter] ?? [];
     const verticalScrollRef = useRef<HTMLDivElement>(null);
-    const [titleHidden, setTitleHidden] = useState(false);
     const initialScrollTopRef = useRef(initialScrollTop ?? 0);
     initialScrollTopRef.current = initialScrollTop ?? 0;
 
-    useEffect(() => {
-      const el = verticalScrollRef.current;
-      if (!el || !isFocused) return;
-      el.scrollTop = initialScrollTopRef.current;
-      const threshold = 10;
-      const handler = () => {
-        const hidden = el.scrollTop > threshold;
-        setTitleHidden(hidden);
-        onVerticalScroll?.(el.scrollTop, threshold);
-      };
-      el.addEventListener('scroll', handler, { passive: true });
-      handler();
-      return () => el.removeEventListener('scroll', handler);
-    }, [isFocused, onVerticalScroll]);
 
     const availableTteOutcomes = useMemo(
       () => rows
@@ -193,7 +178,6 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
             >
               <div
                 className={`${styles.cardTitle} ${isSection || isCategory ? styles.cardTitleSection : ''}`}
-                style={{ opacity: titleHidden ? 0 : 1 }}
               >
                 {title}
               </div>

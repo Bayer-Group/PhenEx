@@ -25,7 +25,7 @@
   box-sizing: border-box;
   overflow-y: auto;
   scrollbar-width: none;
-  padding-top: 100px;
+  padding-top: 10px;
 }
 
 .verticalWrapper::-webkit-scrollbar {
@@ -85,12 +85,12 @@
 }
 
 .multiRowTitle {
-  width: 200px;
+  width: 250px;
   flex-shrink: 0;
-  font-family: "IBMPlexSans-bold", sans-serif;
+  font-family: "IBMPlexSans-regular", sans-serif;
   color: black;
   font-size: var(--font_size_phenotypename, 18px);
-  padding: 20px 4px 5px 5px;
+  padding: 35px 4px 5px 5px;
   cursor: pointer;
   border-radius: 6px;
   transition: background-color 0.1s;
@@ -103,7 +103,7 @@
 }
 
 .multiRowTitle:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  /* background-color: rgba(0, 0, 0, 0.05); */
 }
 
 .multiRowContent {
