@@ -57,6 +57,8 @@ interface AttritionTableCellRendererProps {
   color?: string;
   /** Main cohort color, used for bar fills on rows shared with the parent */
   parentColor?: string;
+  /** When true, rows shared with the parent cohort are hidden */
+  hideParentRows?: boolean;
 }
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
@@ -87,6 +89,7 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
   parentRowNames,
   color,
   parentColor,
+  hideParentRows = false,
 }) => {
   const visibleColumns = useMemo(
     () => columns.filter((c) => c.visible),
@@ -122,7 +125,12 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
       });
   }, [rows, parentRowNames]);
 
-  if (!tableRows.length) return null;
+  const visibleRows = useMemo(
+    () => (hideParentRows ? tableRows.filter((r) => !r.isParent) : tableRows),
+    [tableRows, hideParentRows],
+  );
+
+  if (!visibleRows.length) return null;
 
   function barColor(row: TableRow): string {
     return (row.isParent && parentColor) ? parentColor : (color ?? 'var(--color_primary, #888)');
@@ -135,9 +143,7 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
         <div className={styles.barTrack}>
           <div className={styles.barFill} style={{ width: `${barPct}%` }} />
         </div>
-        <span className={styles.barLabel} style={{ left: `calc(${barPct}% + 6px)` }}>
-          {label}
-        </span>
+        <span className={styles.barLabel}>{label}</span>
       </div>
     );
   }
@@ -166,7 +172,7 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
         </tr>
       </thead>
       <tbody>
-        {tableRows.map((row, i) => (
+        {visibleRows.map((row, i) => (
           <tr
             key={i}
             className={[styles.tr, styles[`type_${row.type}`] ?? ''].join(' ')}

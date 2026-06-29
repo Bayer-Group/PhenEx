@@ -11,9 +11,9 @@
   --col-index:     40px;
   --col-name:     200px;
   --col-pctSource: 70px;
-  --col-remaining:220px;
+  --col-remaining:210px;
   --col-delta:     80px;
-  --col-pctEntry: 220px;
+  --col-pctEntry: 210px;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────── */
@@ -24,7 +24,7 @@
   font-weight: 600;
   font-size: 11px;
   color: var(--text_color_secondary, #888);
-  border-bottom: 1px solid var(--border_color, #e0e0e0);
+  /* border-bottom: 1px solid var(--border_color, #e0e0e0); */
   white-space: nowrap;
 }
 
@@ -124,16 +124,20 @@
 /* ── Bar cells (remaining / pctEntry) ───────────────────────────────── */
 
 .barCell {
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   height: 15px;
-  overflow: visible;
 }
 
 .barTrack {
   position: relative;
-  width: 100%;
+  flex: 0 0 80px;
   height: 100%;
-  overflow: visible;
+  background: var(--background_color_light, #e8e8e8);
+  border-radius: 3px;
+  overflow: hidden;
+  border: var(--border);
 }
 
 .barFill {
@@ -153,15 +157,11 @@
 }
 
 .barLabel {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  flex: 1;
   font-size: var(--font_size_infotext, 10px);
   color: #666;
   white-space: nowrap;
   line-height: 1;
-  pointer-events: none;
-  z-index: 2;
 }
 
 .barLabel strong {

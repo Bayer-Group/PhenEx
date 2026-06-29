@@ -8,8 +8,10 @@ export interface SwitchButtonProps {
   onValueChange?: (value: boolean) => void;
   tooltip?: string;
   classNameSwitchContainer?: string;
+  classNameLabel?: string;
   classNameSwitchBackground?: string;
   classNameSwitchBackgroundSelected?: string;
+  classNameSwitchThumb?: string;
   classNameSwitch?: string;
   classNameSwitchSelected?: string;
   verticalPosition?: 'above' | 'below';
@@ -21,8 +23,10 @@ export const SwitchButton: React.FC<SwitchButtonProps> = ({
   onValueChange,
   tooltip,
   classNameSwitchContainer,
+  classNameLabel,
   classNameSwitchBackground,
   classNameSwitchBackgroundSelected,
+  classNameSwitchThumb,
   classNameSwitch,
   classNameSwitchSelected,
   verticalPosition = 'above',
@@ -50,12 +54,12 @@ export const SwitchButton: React.FC<SwitchButtonProps> = ({
         onMouseEnter={() => tooltip && setShowTooltip(true)}
         onMouseLeave={() => tooltip && setShowTooltip(false)}
       >
-        <span className={styles.label}>{label}</span>
+        <span className={`${styles.label} ${classNameLabel || ''}`}>{label}</span>
         <div
           className={`${styles.switchTrack} ${switchBackgroundClass}`}
           onClick={handleClick}
         >
-          <div className={`${styles.switchThumb} ${switchClass}`} />
+          <div className={`${styles.switchThumb} ${classNameSwitchThumb || ''} ${switchClass}`} />
         </div>
       </div>
       

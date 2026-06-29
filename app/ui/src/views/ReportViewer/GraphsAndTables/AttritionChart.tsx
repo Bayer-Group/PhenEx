@@ -1,7 +1,7 @@
 import { FC, useMemo, useState } from 'react';
 import { type CohortClassified, type CohortGroup, type CohortDescriptions, getCohortColor } from '../types';
-import { AttritionMainCohortCard } from './AttritionMainCohortCard';
 import { AttritionTableCellRenderer, DEFAULT_COLUMNS, type ColumnConfig } from './RowRenderers/AttritionTableCellRenderer';
+import { AttritionControls } from './AttritionControls';
 import { buildFlatRows } from './RowRenderers/barChartShared';
 import styles from './AttritionChart.module.css';
 
@@ -66,7 +66,8 @@ interface FlatTableEntry {
 
 export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups, cohortDescriptions }) => {
   const selectedSet = useMemo(() => new Set(cohortData.map((cd) => cd.name)), [cohortData]);
-  const [tableColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
+  const [tableColumns, setTableColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
+  const [hideMainCohortRows, setHideMainCohortRows] = useState(false);
 
   /** Build per-group chart data, grouping subcohorts under their main cohort. */
   const groupedCharts = useMemo(() => {
@@ -162,7 +163,14 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
 
   return (
     <div className={styles.wrapper}>
-  
+      <div className={styles.controlsRow}>
+        <AttritionControls
+          columns={tableColumns}
+          onColumnsChange={setTableColumns}
+          hideMainCohortRows={hideMainCohortRows}
+          onHideMainCohortRowsChange={setHideMainCohortRows}
+        />
+      </div>
 
       {/* Table — one row per cohort in legend order, stacked vertically */}
       <div className={styles.tableStack}>
@@ -178,6 +186,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
               parentRowNames={entry.isParent ? undefined : entry.parentRowNames}
               color={entry.color}
               parentColor={entry.parentColor}
+              hideParentRows={hideMainCohortRows}
             />
           </div>
         ))}
