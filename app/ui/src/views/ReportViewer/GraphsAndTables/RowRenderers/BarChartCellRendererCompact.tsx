@@ -38,21 +38,24 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
     const { pct, n } = getCohortRowValues(entry, name, finalCohortSizes);
     const barPct = Math.max(0, pct);
 
+    const hoverHandlers = {
+      onMouseEnter: (e: React.MouseEvent) => {
+        const rect = barRefs.current[entry.originalIndex]?.getBoundingClientRect();
+        if (rect) setHover({ index: entry.originalIndex, x: e.clientX, top: rect.top });
+      },
+      onMouseMove: (e: React.MouseEvent) => {
+        const rect = barRefs.current[entry.originalIndex]?.getBoundingClientRect();
+        if (rect) setHover({ index: entry.originalIndex, x: e.clientX, top: rect.top });
+      },
+      onMouseLeave: () => setHover(null),
+    };
+
     return (
       <div
         key={entry.cohort.name}
         ref={(el) => { if (el) barRefs.current[entry.originalIndex] = el; }}
         className={styles.cohortRow}
         onClick={openModal}
-        onMouseEnter={(e) => {
-          const rect = barRefs.current[entry.originalIndex]?.getBoundingClientRect();
-          if (rect) setHover({ index: entry.originalIndex, x: e.clientX, top: rect.top });
-        }}
-        onMouseMove={(e) => {
-          const rect = barRefs.current[entry.originalIndex]?.getBoundingClientRect();
-          if (rect) setHover({ index: entry.originalIndex, x: e.clientX, top: rect.top });
-        }}
-        onMouseLeave={() => setHover(null)}
         style={{ cursor: 'pointer' }}
       >
         <div className={styles.barRowCompact}>
@@ -60,12 +63,14 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
             <div
               className={styles.barFillCompact}
               style={{ width: `${barPct}%`, backgroundColor: entry.cohort.color }}
+              {...hoverHandlers}
             />
           </div>
           {!hideLabels && (
             <span
               className={styles.barEndLabel}
               style={{ left: `calc(${barPct}% + var(--BOOLEAN_BAR_LABEL_GAP, 6px))` }}
+              {...hoverHandlers}
             >
               <strong>{pct.toFixed(pctDecimals)}%</strong> ({n.toLocaleString()})
             </span>

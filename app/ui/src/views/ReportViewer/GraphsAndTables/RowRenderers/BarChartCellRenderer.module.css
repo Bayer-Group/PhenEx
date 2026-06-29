@@ -19,6 +19,7 @@
   height: 100%;
   box-sizing: border-box;
   font-family: "IBMPlexSans-regular", sans-serif;
+  cursor: auto !important;
 }
 
 .containerCompact {
@@ -249,7 +250,7 @@
     calc(20px - (var(--cohort-count, 1) - 1) * 10px / 9),
     20px
   );
-  cursor: default;
+  cursor: auto;
   width: 100%;
   border-radius: 5px;
   background-color: transparent;
@@ -308,7 +309,7 @@
   box-sizing: border-box;
   border-radius: 3px 3px 3px 3px;
   border: 1px solid transparent;
-  transition: border-color 0.3s ease 0.3s;
+  transition: border-color 0.15s ease;
 }
 
 .cohortRow:hover .barFillCompact {
@@ -323,7 +324,7 @@
   color: #666;
   white-space: nowrap;
   line-height: 1;
-  pointer-events: none;
+  pointer-events: auto;
   z-index: 2;
 }
 

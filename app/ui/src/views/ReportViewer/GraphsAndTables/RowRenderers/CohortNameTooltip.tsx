@@ -20,25 +20,19 @@ interface CohortNameTooltipProps {
 export const CohortNameTooltip: FC<CohortNameTooltipProps> = ({ name, x, top }) => {
   const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
-  const delayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Show after 300ms pause, auto-hide after 2s
+  // Show immediately, auto-hide after 2s
   useEffect(() => {
-    setVisible(false);
     setFading(false);
     if (hideTimer.current) clearTimeout(hideTimer.current);
     if (fadeTimer.current) clearTimeout(fadeTimer.current);
-    delayTimer.current = setTimeout(() => {
-      setVisible(true);
-      setFading(false);
-      fadeTimer.current = setTimeout(() => setFading(true), 1700);
-      hideTimer.current = setTimeout(() => setVisible(false), 2000);
-    }, 300);
+    setVisible(true);
+    fadeTimer.current = setTimeout(() => setFading(true), 1700);
+    hideTimer.current = setTimeout(() => setVisible(false), 2000);
     return () => {
-      if (delayTimer.current) clearTimeout(delayTimer.current);
       if (hideTimer.current) clearTimeout(hideTimer.current);
       if (fadeTimer.current) clearTimeout(fadeTimer.current);
     };
@@ -48,10 +42,9 @@ export const CohortNameTooltip: FC<CohortNameTooltipProps> = ({ name, x, top }) 
   useEffect(() => {
     const onActivity = () => {
       setVisible(false);
-      if (delayTimer.current) clearTimeout(delayTimer.current);
       if (suppressTimer.current) clearTimeout(suppressTimer.current);
       suppressTimer.current = setTimeout(() => {
-        delayTimer.current = setTimeout(() => setVisible(true), 300);
+        setVisible(true);
       }, 150);
     };
 
