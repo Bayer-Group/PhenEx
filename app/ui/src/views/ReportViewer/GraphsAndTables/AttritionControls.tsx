@@ -12,7 +12,7 @@ const COLUMNS_SWITCH_LABELS: Partial<Record<ColumnKey, string>> = {
 };
 
 const HIDE_MAIN_COHORT_DESCRIPTION =
-  'Subcohorts (aka cohort stratifications) share the entry and all inclusion/exclusion criteria of the main cohort. These rows are displayed in the color of the parent cohort. Click to hide or display.';
+  'Subcohorts (aka cohort stratifications) share the entry and all inclusion/exclusion criteria of the main cohort. These rows are displayed in the color of the main cohort. Click to hide or display.';
 
 const DARK_SWITCH_PROPS = {
   classNameLabel: styles.switchLabel,

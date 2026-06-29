@@ -20,7 +20,7 @@
 
 /* Passed as classNameSwitchContainer to each SwitchButton */
 .switch {
-  width: fit-content !important;
+  width: 100% !important;
   height: auto !important;
 }
 
@@ -38,6 +38,7 @@
   opacity: 0.75;
   line-height: 1.4;
   padding-left: 2px;
+  padding-right:40px;
 }
 
 .divider {

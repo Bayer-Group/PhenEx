@@ -204,13 +204,15 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.infoText}>
-          On this page we see how study entry criterion and all inclusion and exclusion criteria affect the final cohort size. <br></br><br></br>
-          Each card below is a single cohort or subcohort. The first row is always the study entry criterion, which defines the study entry date for each cohort. 
-          The subsequent rows are inclusion criteria (which all patients must fulfill at study entry date) and exclusion criteria (which may not be present at study entry date). 
-          <br></br><br></br>
-      </div>
-      <div className={styles.controlsRow}>
+      <div className={styles.infoAndControls}>
+        <div className={styles.infoText}>
+            On this page we see how study entry criterion and all inclusion and exclusion criteria affect the final cohort size. <br></br><br></br>
+            Each card below is a single cohort or subcohort. The first row is always the study entry criterion, which defines the study entry date for each cohort. 
+            The subsequent rows are inclusion criteria (which all patients must fulfill at study entry date) and exclusion criteria (which may not be present at study entry date).
+            <br></br><br></br>
+            You can customize the columns displayed to the right. To reorder, group, or change colors of cohorts, use the figure legend in the left panel.
+            <br></br><br></br>
+        </div>
         <AttritionControls
           columns={tableColumns}
           onColumnsChange={setTableColumns}
