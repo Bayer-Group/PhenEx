@@ -85,7 +85,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
 
 export const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   attrition: 'How the study population was derived — the sequence of inclusion and exclusion criteria applied and the number of patients remaining at each step.',
-  baseline_characteristics: 'Demographic, clinical, and treatment characteristics of each cohort measured at baseline, grouped into the sections below.',
+  baseline_characteristics: 'The following pages allow us to characterize all cohorts and subcohorts at study entry date. Features are grouped into the sections below. Click on a section to jump to it, or use the outline in the left panel to navigate. Use left and right arrows to skip to the next or previous item, with order defined by the outline',
   outcomes: 'Clinical endpoints observed during follow-up, including incidence rates and time-to-event analyses, grouped into the sections below.',
 };
 

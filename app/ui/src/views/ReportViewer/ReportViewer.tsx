@@ -438,7 +438,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         tabEnableClose: false,
         tabEnableRename: false,
         tabEnableDrag: true,
-        tabSetEnableMaximize: false,
+        tabSetEnableMaximize: true,
         tabSetEnableDrop: true,
         splitterSize: 4,
       },

@@ -9,6 +9,7 @@ import { StudyInfoCellRenderer } from '../GraphsAndTables/RowRenderers/StudyInfo
 import { BarChartCellRendererCompact } from '../GraphsAndTables/RowRenderers/BarChartCellRendererCompact';
 import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
 import { NumericGraphCellRenderer } from '../GraphsAndTables/RowRenderers/NumericGraphCellRenderer';
+import { KaplanMeierCellRenderer } from '../GraphsAndTables/RowRenderers/KaplanMeierCellRenderer';
 import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../CellLayouts';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
@@ -178,6 +179,16 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
           return <CategoricalBarChartCellRenderer baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes}/>;
         case 'numeric':
           return <NumericGraphCellRenderer name={row.name} cohortData={cohortData} kdeData={kdeData} />;
+        case 'time_to_event': {
+          const kmCurves = (tteCohorts ?? [])
+            .map((c) => ({
+              color: c.color,
+              cohortName: c.name,
+              steps: c.timeToEvent.filter((r) => r.Outcome === row.name),
+            }))
+            .filter((c) => c.steps.length > 0);
+          return <KaplanMeierCellRenderer curves={kmCurves} mode="compact" />;
+        }
         default:
           return null;
       }

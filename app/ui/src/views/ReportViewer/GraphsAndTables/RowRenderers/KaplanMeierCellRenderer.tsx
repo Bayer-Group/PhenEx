@@ -10,17 +10,17 @@ export const DEFAULT_RISK_TIMEPOINTS = [30, 60, 90, 120, 180, 365];
 
 /* ── Layout constants ────────────────────────────────────────────────── */
 
-const PAD = 4;
 const STROKE_PAD = 2;
 const COMPACT_W = 300;
-const Y_AXIS_W = 28;
-const PLOT_RIGHT = PAD;
-const MARGIN_BOTTOM = 4;
-const HEADER_H = 14;
+const Y_AXIS_W = 36;
+const X_AXIS_H = 14;
 const RISK_ROW_H = 13;
-const COMPACT_PLOT_H = 96;
-const FULL_PLOT_H = 320;
+const COMPACT_PLOT_H = 150;
+const FULL_PLOT_H = 300;
 const Y_TICKS = [0, 0.25, 0.5, 0.75, 1] as const;
+
+/** Spacing (px) around the plot area inside the SVG. */
+const PLOT_MARGINS = { top: 8, bottom: 4, left: 4, right: 4 } as const;
 
 /* ── Types ───────────────────────────────────────────────────────────── */
 
@@ -41,10 +41,11 @@ function buildStepPath(
   plotLeft: number,
   strokePad: number,
   xMax: number,
+  topPad: number = 0,
 ): string {
   if (!steps.length) return '';
   const sx = (t: number) => plotLeft + (t / xMax) * plotW;
-  const sy = (p: number) => strokePad + plotH - p * plotH;
+  const sy = (p: number) => topPad + strokePad + plotH - p * plotH;
 
   let d = `M${sx(steps[0].Timeline)},${sy(steps[0].Survival_Probability)}`;
   for (let i = 1; i < steps.length; i++) {
@@ -63,10 +64,11 @@ function buildCIBand(
   plotLeft: number,
   strokePad: number,
   xMax: number,
+  topPad: number = 0,
 ): string {
   if (!steps.length || steps[0].CI_Lower == null) return '';
   const sx = (t: number) => plotLeft + (t / xMax) * plotW;
-  const sy = (p: number) => strokePad + plotH - p * plotH;
+  const sy = (p: number) => topPad + strokePad + plotH - p * plotH;
 
   // Upper path forward (step function)
   let upper = `M${sx(steps[0].Timeline)},${sy(steps[0].CI_Upper)}`;
@@ -218,16 +220,16 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
     : 0;
 
   const width = Math.max(COMPACT_W, Math.round(containerWidth) || COMPACT_W);
-  const plotLeft = Y_AXIS_W + PAD;
-  const plotW = Math.max(120, width - plotLeft - PLOT_RIGHT);
-  const plotH = isFull ? FULL_PLOT_H : Math.max(COMPACT_PLOT_H, Math.round(containerHeight) - HEADER_H - MARGIN_BOTTOM - STROKE_PAD);
-  const svgH = STROKE_PAD + plotH;
+  const plotLeft = Y_AXIS_W;
+  const plotW = Math.max(120, width - plotLeft - PLOT_MARGINS.right);
+  const plotH = isFull ? FULL_PLOT_H : Math.max(COMPACT_PLOT_H, Math.round(containerHeight) - X_AXIS_H - PLOT_MARGINS.bottom - STROKE_PAD - PLOT_MARGINS.top);
+  const svgH = PLOT_MARGINS.top + STROKE_PAD + plotH + PLOT_MARGINS.bottom;
 
   const ticks = niceTicks(xMax);
   // In full mode, gridlines align to risk timepoints; in compact mode, use auto ticks
   const gridTicks = isFull ? activeTimepoints : ticks;
   const toPixel = (t: number) => plotLeft + (t / xMax) * plotW;
-  const toYPixel = (p: number) => STROKE_PAD + plotH - p * plotH;
+  const toYPixel = (p: number) => PLOT_MARGINS.top + STROKE_PAD + plotH - p * plotH;
   const toTime = (px: number) => Math.max(0, Math.min(xMax, ((px - plotLeft) / plotW) * xMax));
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -262,21 +264,13 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
 
   const containerClass = isFull ? `${styles.container} ${styles.full}` : styles.container;
   const containerStyle = {
-    paddingBottom: MARGIN_BOTTOM,
-    minHeight: HEADER_H + svgH + riskTableH + MARGIN_BOTTOM,
+    paddingLeft: PLOT_MARGINS.left,
+    paddingBottom: PLOT_MARGINS.bottom,
+    minHeight: svgH + X_AXIS_H + riskTableH + PLOT_MARGINS.bottom,
   };
 
   return (
     <div className={containerClass} style={containerStyle} ref={containerRef}>
-      {/* Tick labels header */}
-      <div className={styles.headerRow}>
-        {gridTicks.map((t) => (
-          <span key={t} className={styles.headerTick} style={{ left: toPixel(t) }}>
-            {t}
-          </span>
-        ))}
-      </div>
-
       {/* KM step curves with CI bands */}
       <div className={styles.plotArea} ref={plotAreaRef} onMouseMove={isFull ? handleMouseMove : undefined} onMouseLeave={isFull ? handleMouseLeave : undefined}>
         <svg width={width} height={svgH} className={styles.kmSvg}>
@@ -304,35 +298,35 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
               key={tick}
               x1={toPixel(tick)}
               x2={toPixel(tick)}
-              y1={STROKE_PAD}
-              y2={STROKE_PAD + plotH}
+              y1={PLOT_MARGINS.top + STROKE_PAD}
+              y2={PLOT_MARGINS.top + STROKE_PAD + plotH}
               className={styles.gridLineVertical}
             />
           ))}
           <line
             x1={plotLeft}
             x2={plotLeft}
-            y1={STROKE_PAD}
-            y2={STROKE_PAD + plotH}
+            y1={PLOT_MARGINS.top + STROKE_PAD}
+            y2={PLOT_MARGINS.top + STROKE_PAD + plotH}
             className={styles.axisLine}
           />
           <line
             x1={plotLeft}
             x2={plotLeft + plotW}
-            y1={STROKE_PAD + plotH}
-            y2={STROKE_PAD + plotH}
+            y1={PLOT_MARGINS.top + STROKE_PAD + plotH}
+            y2={PLOT_MARGINS.top + STROKE_PAD + plotH}
             className={styles.axisLine}
           />
           {curves.map((c, i) => {
             const dimmed = activeIndex !== null && activeIndex !== i;
-            const ciPath = hasCI ? buildCIBand(c.steps, plotW, plotH, plotLeft, STROKE_PAD, xMax) : '';
+            const ciPath = hasCI ? buildCIBand(c.steps, plotW, plotH, plotLeft, STROKE_PAD, xMax, PLOT_MARGINS.top) : '';
             return (
               <g key={c.cohortName} opacity={dimmed ? 0.15 : 1}>
                 {ciPath && (
                   <path d={ciPath} fill={c.color} fillOpacity={0.12} stroke="none" />
                 )}
                 <path
-                  d={buildStepPath(c.steps, plotW, plotH, plotLeft, STROKE_PAD, xMax)}
+                  d={buildStepPath(c.steps, plotW, plotH, plotLeft, STROKE_PAD, xMax, PLOT_MARGINS.top)}
                   fill="none"
                   stroke={c.color}
                   strokeWidth={2}
@@ -365,6 +359,15 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
             </div>
           </>
         )}
+      </div>
+
+      {/* X-axis tick labels (below the plot) */}
+      <div className={styles.xAxisRow}>
+        {gridTicks.map((t) => (
+          <span key={t} className={styles.xAxisTick} style={{ left: toPixel(t) }}>
+            {t}
+          </span>
+        ))}
       </div>
 
       {/* Risk table (full mode only) */}
