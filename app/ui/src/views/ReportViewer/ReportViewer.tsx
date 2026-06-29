@@ -752,7 +752,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       colorOverrides, handleSetColor,
     ],
   );
-
+  console.log(" waterfalldata", waterfallData);
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {

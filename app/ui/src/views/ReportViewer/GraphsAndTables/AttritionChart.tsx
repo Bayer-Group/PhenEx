@@ -31,24 +31,6 @@ interface AttritionChartProps {
   cohortDescriptions?: CohortDescriptions;
 }
 
-/**
- * Convert waterfall JSON rows into the row format expected by
- * AttritionCellRenderer (name, count, effective_type, etc.).
- *
- * Skips the synthetic "info" rows (database size / final cohort) because
- * the D3 component adds those itself.
- */
-function waterfallToD3Rows(rows: WaterfallRow[]) {
-  return rows
-    .filter((r) => r.Type !== 'info')
-    .map((r) => ({
-      name: r.Name,
-      count: r.Remaining,
-      effective_type: r.Type,
-      hierarchical_index: r.Index,
-      excluded_count: r.Delta !== null ? Math.abs(r.Delta) : undefined,
-    }));
-}
 
 function getDatabaseSize(rows: WaterfallRow[]): number | null {
   const dbRow = rows.find((r) => r.Type === 'info' && r.Remaining != null && r.Name !== 'Final Cohort Size');
@@ -112,7 +94,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
           cohortName: sub.fullName,
           label: sub.label,
           color: resolvedColor,
-          rows: waterfallToD3Rows(rows),
+          rows: rows.filter((r) => r.Type !== 'info'),
           databaseSize: getDatabaseSize(rows),
         });
       }
@@ -179,7 +161,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
 
   const sharedModeLabels = { show: 'Showing', hide: 'Hidden', dim: 'Dimmed' } as const;
   const nextMode = { show: 'hide', hide: 'dim', dim: 'show' } as const;
-
+  console.log("FLAT TABLE ENTRIES", flatTableEntries);
   return (
     <div className={styles.wrapper}>
   

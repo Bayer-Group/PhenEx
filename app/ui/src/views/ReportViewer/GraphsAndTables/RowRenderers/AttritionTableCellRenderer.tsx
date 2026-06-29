@@ -100,24 +100,25 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
     const seenTypes = new Set<string>();
 
     return rows
-      .filter((r: any) => r.effective_type !== 'info')
+      .filter((r: any) => (r.Type ?? r.effective_type) !== 'info')
       .map((r: any) => {
-        const type: string = r.effective_type ?? 'entry';
+        const type: string = (r.Type ?? r.effective_type ?? 'entry').toLowerCase();
         const isFirstOfType = !seenTypes.has(type);
         if (isFirstOfType) seenTypes.add(type);
 
+        const name: string = r.Name ?? r.name ?? 'Unnamed';
         return {
           type,
           categoryLabel: isFirstOfType ? (CATEGORY_LABELS[type] ?? type) : null,
-          index: r.hierarchical_index ?? '',
-          name: r.name ?? 'Unnamed',
-          pctSource: r.pct_source_database ?? null,
-          pctRemaining: r.pct_remaining ?? null,
-          nRemaining: r.count ?? null,
-          delta: r.excluded_count != null ? -Math.abs(r.excluded_count) : null,
-          n: r.n ?? null,
-          pct: r.pct ?? null,
-          isParent: parentRowNames?.has(r.name) ?? false,
+          index: r.Index ?? r.hierarchical_index ?? '',
+          name,
+          pctSource: r.Pct_Source_Database ?? r.pct_source_database ?? null,
+          pctRemaining: r.Pct_Remaining ?? r.pct_remaining ?? null,
+          nRemaining: r.Remaining ?? r.count ?? null,
+          delta: r.Delta ?? (r.excluded_count != null ? -Math.abs(r.excluded_count) : null),
+          n: r.N ?? r.n ?? null,
+          pct: r.Pct_N ?? r.pct ?? null,
+          isParent: parentRowNames?.has(name) ?? false,
         };
       });
   }, [rows, parentRowNames]);
@@ -137,7 +138,7 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
       case 'pct':         return fmtPct(row.pct);
     }
   }
-
+  console.log("TABLE ROWS", tableRows);
   return (
     <table className={styles.table}>
       <thead>

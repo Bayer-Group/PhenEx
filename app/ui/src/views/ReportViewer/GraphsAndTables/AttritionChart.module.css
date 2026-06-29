@@ -28,7 +28,7 @@
   align-items: flex-start;
   padding-left: 0;
   padding-right: 0;
-  padding-bottom: 0;
+  padding-bottom: 200px !important;
   margin-bottom: 20px;
 }
 
@@ -37,7 +37,7 @@
 .tableStack {
   display: flex;
   flex-direction: column;
-  padding: 0 0px 0px;
+  padding: 0 0px 200px 0px;
   gap: 20px;
 }
 
