@@ -15,6 +15,7 @@ const ROW_H = 14;
 const ROW_GAP = 2;
 const SPACER_H = 10;
 const MARGIN_TOP = 40;
+const MARGIN_BOTTOM = 40;
 const LABEL_ROW_H = 18; // height reserved for labels below the plot
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
@@ -215,7 +216,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
     <div
       ref={containerRef}
       className={styles.container}
-      style={{ paddingTop: MARGIN_TOP }}
+      style={{ paddingTop: MARGIN_TOP, paddingBottom: MARGIN_BOTTOM }}
       onMouseMove={(e) => {
         const svg = svgRef.current;
         if (!svg) return;
