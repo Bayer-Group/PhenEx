@@ -13,8 +13,7 @@
   --col-pctSource: 70px;
   --col-remaining:220px;
   --col-delta:     80px;
-  --col-n:         80px;
-  --col-pct:       55px;
+  --col-pctEntry: 220px;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────── */
@@ -30,8 +29,6 @@
 }
 
 .th.delta,
-.th.n,
-.th.pct,
 .th.pctSource {
   text-align: right;
 }
@@ -43,9 +40,8 @@
 .th.name,      .td.name      { width: var(--col-name); }
 .th.pctSource, .td.pctSource { width: var(--col-pctSource); }
 .th.remaining, .td.remaining { width: var(--col-remaining); }
-.th.delta,     .td.delta     { width: var(--col-delta); }
-.th.n,         .td.n         { width: var(--col-n); }
-.th.pct,       .td.pct       { width: var(--col-pct); }
+.th.delta,    .td.delta    { width: var(--col-delta); }
+.th.pctEntry, .td.pctEntry { width: var(--col-pctEntry); }
 
 /* ── Rows ────────────────────────────────────────────────────────────── */
 
@@ -76,8 +72,6 @@
 }
 
 .td.delta,
-.td.n,
-.td.pct,
 .td.pctSource {
   text-align: right;
   font-variant-numeric: tabular-nums;

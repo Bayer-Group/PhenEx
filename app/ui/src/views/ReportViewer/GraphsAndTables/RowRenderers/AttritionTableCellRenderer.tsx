@@ -10,8 +10,7 @@ export type ColumnKey =
   | 'pctSource'
   | 'remaining'
   | 'delta'
-  | 'n'
-  | 'pct';
+  | 'pctEntry';
 
 export interface ColumnConfig {
   key: ColumnKey;
@@ -20,14 +19,13 @@ export interface ColumnConfig {
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { key: 'category',  label: 'Category',  visible: true },
-  { key: 'index',     label: 'Index',     visible: true },
-  { key: 'name',      label: 'Name',      visible: true },
-  { key: 'pctSource', label: '% Source',  visible: true },
-  { key: 'remaining', label: 'Remaining', visible: true },
-  { key: 'delta',     label: 'Delta',     visible: true },
-  { key: 'n',         label: 'N',         visible: true },
-  { key: 'pct',       label: '%',         visible: true },
+  { key: 'category',  label: 'Category',           visible: true },
+  { key: 'index',     label: 'Index',               visible: true },
+  { key: 'name',      label: 'Name',                visible: true },
+  { key: 'pctSource', label: '% Source',            visible: true },
+  { key: 'remaining', label: 'Remaining',           visible: true },
+  { key: 'delta',     label: 'Delta',               visible: true },
+  { key: 'pctEntry',  label: '% of Entry',          visible: true },
 ];
 
 /* ── Internal row model ─────────────────────────────────────────────── */
@@ -152,8 +150,25 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
         );
       }
       case 'delta': return row.delta != null ? fmtN(row.delta) : '–';
-      case 'n':     return fmtN(row.n);
-      case 'pct':   return fmtPct(row.pct);
+      case 'pctEntry': {
+        const barPct = Math.min(Math.max(row.pct ?? 0, 0), 100);
+        return (
+          <div className={styles.remainingBar}>
+            <div className={styles.remainingTrack}>
+              <div
+                className={styles.remainingFill}
+                style={{ width: `${barPct}%`, backgroundColor: color ?? 'var(--color_primary, #888)' }}
+              />
+            </div>
+            <span
+              className={styles.remainingLabel}
+              style={{ left: `calc(${barPct}% + 6px)` }}
+            >
+              <strong>{fmtPct(row.pct)}</strong> ({fmtN(row.n)})
+            </span>
+          </div>
+        );
+      }
     }
   }
   return (
