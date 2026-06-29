@@ -204,6 +204,12 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
 
   return (
     <div className={styles.wrapper}>
+      <div className={styles.infoText}>
+          On this page we see how study entry criterion and all inclusion and exclusion criteria affect the final cohort size. <br></br><br></br>
+          Each card below is a single cohort or subcohort. The first row is always the study entry criterion, which defines the study entry date for each cohort. 
+          The subsequent rows are inclusion criteria (which all patients must fulfill at study entry date) and exclusion criteria (which may not be present at study entry date). 
+          <br></br><br></br>
+      </div>
       <div className={styles.controlsRow}>
         <AttritionControls
           columns={tableColumns}
@@ -237,6 +243,19 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
                   <span className={styles.tableRowLabelSeparator}>⋅</span>
                   <span className={styles.tableRowSubcohortName}>
                     {entry.subcohortDisplayName ?? 'Main Cohort'}
+                  </span>
+                </div>
+                <div className={styles.tableRowFinalCohort}>
+                <span className={styles.finalCohortArrow}>→</span>
+                  <span className={styles.tableRowFinalCohortLabel}>Final Cohort Size</span>
+                  <span className={styles.tableRowFinalCohortValue}>
+                    <strong>
+                      {(() => {
+                        const last = [...entry.rows].reverse().find((r: any) => (r.Remaining ?? r.count) != null);
+                        const n: number | null = last ? (last.Remaining ?? last.count ?? null) : null;
+                        return n != null ? n.toLocaleString() : '–';
+                      })()}
+                    </strong>
                   </span>
                 </div>
               </div>

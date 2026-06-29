@@ -274,6 +274,7 @@
   flex-direction: column;
   justify-content: var(--SPACER_LABEL_JUSTIFY, flex-end);
   align-items: var(--SPACER_LABEL_ALIGN, flex-start);
+  margin-bottom: 2px;
 }
 
 .barSpacerLabel {

@@ -5,7 +5,9 @@
   font-family: "IBMPlexSans-regular", sans-serif;
   font-size: 12px;
   width: 100%;
+  max-width: 100%;
   table-layout: fixed;
+  margin-bottom: 20px;
 
   --col-category:  60px;
   --col-index:     40px;
@@ -78,8 +80,8 @@
 }
 
 .td.name {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal !important;
+  word-break: break-word;
 }
 
 /* ── Category column ────────────────────────────────────────────────── */

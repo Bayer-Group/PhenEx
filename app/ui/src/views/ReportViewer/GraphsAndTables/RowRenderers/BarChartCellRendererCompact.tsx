@@ -89,7 +89,7 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
               <div
                 key={item.key}
                 className={styles.barSpacer}
-                style={{ height: item.size * spacerUnitPx }}
+                style={{ height: 10 + (item.size - 1) * spacerUnitPx }}
                 aria-hidden={!item.label}
               >
                 {item.label && <span className={styles.barSpacerLabel}>{item.label}</span>}
