@@ -8,7 +8,7 @@ import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/Ou
 import { StudyInfoCellRenderer } from '../GraphsAndTables/RowRenderers/StudyInfoCellRenderer';
 import { BarChartCellRendererCompact } from '../GraphsAndTables/RowRenderers/BarChartCellRendererCompact';
 import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
-import { NumericGraphCellRenderer } from '../GraphsAndTables/RowRenderers/NumericGraphCellRenderer';
+import { BoxPlotCellRenderer } from '../GraphsAndTables/RowRenderers/BoxPlotCellRenderer';
 import { KaplanMeierCellRenderer } from '../GraphsAndTables/RowRenderers/KaplanMeierCellRenderer';
 import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../CellLayouts';
 
@@ -177,8 +177,17 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
           );
         case 'categorical':
           return <CategoricalBarChartCellRenderer baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes}/>;
-        case 'numeric':
-          return <NumericGraphCellRenderer name={row.name} cohortData={cohortData} kdeData={kdeData} />;
+        case 'numeric': {
+          let lo = Infinity, hi = -Infinity;
+          for (const cd of cohortData) {
+            const r = cd.data.rows.find((r) => r.Name === row.name);
+            if (!r) continue;
+            if (r.Min != null && r.Min < lo) lo = r.Min;
+            if (r.Max != null && r.Max > hi) hi = r.Max;
+          }
+          if (!isFinite(lo)) { lo = 0; hi = 1; }
+          return <BoxPlotCellRenderer name={row.name} cohortData={cohortData} xMin={lo} xMax={hi} />;
+        }
         case 'time_to_event': {
           const kmCurves = (tteCohorts ?? [])
             .map((c) => ({
