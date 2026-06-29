@@ -10,34 +10,71 @@ from phenex.filters.value import *
 
 class RelativeTimeRangeFilter(Filter):
     """
-    This class filters events in an EventTable based on a specified time range relative to an anchor date.  The anchor date can either be provided by an anchor phenotype or by an 'INDEX_DATE' column in the EventTable.
+    Filters events based on a time range relative to an anchor date.
+
+    Every time-relative operation in PhenEx requires an **anchor date** — the reference point from which "before" and "after" are measured. The anchor date is resolved as follows:
+
+    1. **If `anchor_phenotype` is provided**, the EVENT_DATE of that phenotype is used as the anchor. The anchor phenotype must be executed before this filter runs (PhenEx handles this automatically when phenotypes are composed via the Cohort).
+    2. **If `anchor_phenotype` is None** (the default), the `INDEX_DATE` column already present on the table is used. INDEX_DATE is set by the entry criterion of the cohort.
+
+    The `when` parameter controls the direction:
+
+    - `when='before'`: days *prior to* the anchor are positive, days *after* are negative.
+    - `when='after'`: days *after* the anchor are positive, days *before* are negative.
+
+    This convention means that `min_days` and `max_days` are always expressed as positive numbers regardless of direction.
 
     Parameters:
-        min_days: Minimum number of days from the anchor date to filter events.
-        max_days: Maximum number of days from the anchor date to filter events.
-        anchor_phenotype: A phenotype providing the anchor date for filtering.
-        when: when can be "before" or "after"; if "before", days prior to anchor event_date are positive, and days after are negative; using after, days before the anchor event_date are negative and days after the anchor event_date are positive.
-
-    Methods:
-        filter: Filters the given EventTable based on the specified time range relative to the anchor date.
+        min_days: Minimum number of days from the anchor date to include. Must use `GreaterThan` or `GreaterThanOrEqualTo`.
+        max_days: Maximum number of days from the anchor date to include. Must use `LessThan` or `LessThanOrEqualTo`.
+        anchor_phenotype: A phenotype whose EVENT_DATE is used as the anchor date. If None, the INDEX_DATE column on the input table is used.
+        when: Direction relative to the anchor. Either 'before' or 'after'.
 
     Examples:
-        ```
-        # filter events to one year before index date, excluding index date
+
+    Example: Baseline period — one year before index date
+        ```python
+        from phenex.filters import RelativeTimeRangeFilter
         from phenex.filters.value import LessThan, GreaterThan
+
         one_year_preindex = RelativeTimeRangeFilter(
-            max_days = LessThan(365),
-            min_days = GreaterThan(0),
-            when = 'before'
-            )
+            max_days=LessThan(365),
+            min_days=GreaterThan(0),
+            when='before',
+        )
         ```
 
+    Example: Follow-up period — anytime after index date
+        ```python
+        from phenex.filters import RelativeTimeRangeFilter
+        from phenex.filters.value import GreaterThanOrEqualTo
+
+        post_index = RelativeTimeRangeFilter(
+            min_days=GreaterThanOrEqualTo(0),
+            when='after',
+        )
         ```
-        # filter events to one year after index date, including index date
-        anytime_after_index = RelativeTimeRangeFilter(
-            min_days = GreaterThan(0),
-            when = 'after'
-            )
+
+    Example: Anchored to another phenotype — events within 90 days after AF diagnosis
+        ```python
+        from phenex.phenotypes import CodelistPhenotype
+        from phenex.codelists import Codelist
+        from phenex.filters import RelativeTimeRangeFilter
+        from phenex.filters.value import GreaterThanOrEqualTo, LessThanOrEqualTo
+
+        af = CodelistPhenotype(
+            name='af',
+            domain='CONDITION_OCCURRENCE',
+            codelist=Codelist([313217]),
+            return_date='first',
+        )
+
+        within_90d_of_af = RelativeTimeRangeFilter(
+            anchor_phenotype=af,
+            min_days=GreaterThanOrEqualTo(0),
+            max_days=LessThanOrEqualTo(90),
+            when='after',
+        )
         ```
     """
 
