@@ -1,11 +1,20 @@
-/* ── Table ───────────────────────────────────────────────────────────── */
+/* ── Table & column width tokens ─────────────────────────────────────── */
 
 .table {
   border-collapse: collapse;
   font-family: "IBMPlexSans-regular", sans-serif;
   font-size: 12px;
   width: 100%;
-  min-width: 480px;
+  table-layout: fixed;
+
+  --col-category:  60px;
+  --col-index:     40px;
+  --col-name:     200px;
+  --col-pctSource: 70px;
+  --col-remaining:220px;
+  --col-delta:     80px;
+  --col-n:         80px;
+  --col-pct:       55px;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────── */
@@ -20,14 +29,23 @@
   white-space: nowrap;
 }
 
-.th.nRemaining,
 .th.delta,
 .th.n,
 .th.pct,
-.th.pctSource,
-.th.pctRemaining {
+.th.pctSource {
   text-align: right;
 }
+
+/* ── Column widths (single source of truth) ─────────────────────────── */
+
+.th.category,  .td.category  { width: var(--col-category); }
+.th.index,     .td.index     { width: var(--col-index); }
+.th.name,      .td.name      { width: var(--col-name); }
+.th.pctSource, .td.pctSource { width: var(--col-pctSource); }
+.th.remaining, .td.remaining { width: var(--col-remaining); }
+.th.delta,     .td.delta     { width: var(--col-delta); }
+.th.n,         .td.n         { width: var(--col-n); }
+.th.pct,       .td.pct       { width: var(--col-pct); }
 
 /* ── Rows ────────────────────────────────────────────────────────────── */
 
@@ -57,18 +75,15 @@
   vertical-align: middle;
 }
 
-.td.nRemaining,
 .td.delta,
 .td.n,
 .td.pct,
-.td.pctSource,
-.td.pctRemaining {
+.td.pctSource {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
 .td.name {
-  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -121,4 +136,53 @@
 
 .td.delta {
   color: var(--color_exclusion, #e76f51);
+}
+
+/* ── Remaining column (bar + label) ─────────────────────────────────── */
+
+.remainingBar {
+  position: relative;
+  width: calc(100% - 80px);
+  height: 100%;
+  height: 15px;
+  overflow: visible;
+}
+
+.remainingTrack {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.remainingFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  transition: border-color 0.3s ease 0.3s;
+}
+
+.tr:hover .remainingFill {
+  border-color: black;
+}
+
+.remainingLabel {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--font_size_infotext, 10px);
+  color: #666;
+  white-space: nowrap;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.remainingLabel strong {
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: #333;
 }

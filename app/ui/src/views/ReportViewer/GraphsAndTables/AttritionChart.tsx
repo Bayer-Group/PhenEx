@@ -161,7 +161,6 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
 
   const sharedModeLabels = { show: 'Showing', hide: 'Hidden', dim: 'Dimmed' } as const;
   const nextMode = { show: 'hide', hide: 'dim', dim: 'show' } as const;
-  console.log("FLAT TABLE ENTRIES", flatTableEntries);
   return (
     <div className={styles.wrapper}>
   
@@ -179,6 +178,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
               columns={tableColumns}
               parentRowNames={entry.isParent ? undefined : entry.parentRowNames}
               dimParentRows={dimParentRows}
+              color={entry.color}
             />
           </div>
         ))}

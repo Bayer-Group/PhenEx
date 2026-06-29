@@ -8,8 +8,7 @@ export type ColumnKey =
   | 'index'
   | 'name'
   | 'pctSource'
-  | 'pctRemaining'
-  | 'nRemaining'
+  | 'remaining'
   | 'delta'
   | 'n'
   | 'pct';
@@ -21,15 +20,14 @@ export interface ColumnConfig {
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { key: 'category',     label: 'Category',    visible: true },
-  { key: 'index',        label: 'Index',        visible: true },
-  { key: 'name',         label: 'Name',         visible: true },
-  { key: 'pctSource',    label: '% Source',     visible: true },
-  { key: 'pctRemaining', label: '% Remaining',  visible: true },
-  { key: 'nRemaining',   label: 'N Remaining',  visible: true },
-  { key: 'delta',        label: 'Delta',        visible: true },
-  { key: 'n',            label: 'N',            visible: true },
-  { key: 'pct',          label: '%',            visible: true },
+  { key: 'category',  label: 'Category',  visible: true },
+  { key: 'index',     label: 'Index',     visible: true },
+  { key: 'name',      label: 'Name',      visible: true },
+  { key: 'pctSource', label: '% Source',  visible: true },
+  { key: 'remaining', label: 'Remaining', visible: true },
+  { key: 'delta',     label: 'Delta',     visible: true },
+  { key: 'n',         label: 'N',         visible: true },
+  { key: 'pct',       label: '%',         visible: true },
 ];
 
 /* ── Internal row model ─────────────────────────────────────────────── */
@@ -59,6 +57,8 @@ interface AttritionTableCellRendererProps {
   parentRowNames?: Set<string>;
   /** Dim parent rows by default */
   dimParentRows?: boolean;
+  /** Cohort color used for the % Remaining bar fill */
+  color?: string;
 }
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
@@ -88,6 +88,7 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
   columns = DEFAULT_COLUMNS,
   parentRowNames,
   dimParentRows = true,
+  color,
 }) => {
   const visibleColumns = useMemo(
     () => columns.filter((c) => c.visible),
@@ -127,18 +128,34 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
 
   function cellContent(col: ColumnConfig, row: TableRow): React.ReactNode {
     switch (col.key) {
-      case 'category':    return row.categoryLabel ?? '';
-      case 'index':       return row.index;
-      case 'name':        return row.name;
-      case 'pctSource':   return fmtPct(row.pctSource);
-      case 'pctRemaining':return fmtPct(row.pctRemaining);
-      case 'nRemaining':  return fmtN(row.nRemaining);
-      case 'delta':       return row.delta != null ? fmtN(row.delta) : '–';
-      case 'n':           return fmtN(row.n);
-      case 'pct':         return fmtPct(row.pct);
+      case 'category':  return row.categoryLabel ?? '';
+      case 'index':     return row.index;
+      case 'name':      return row.name;
+      case 'pctSource': return fmtPct(row.pctSource);
+      case 'remaining': {
+        const barPct = Math.min(Math.max(row.pctRemaining ?? 0, 0), 100);
+        return (
+          <div className={styles.remainingBar}>
+            <div className={styles.remainingTrack}>
+              <div
+                className={styles.remainingFill}
+                style={{ width: `${barPct}%`, backgroundColor: color ?? 'var(--color_primary, #888)' }}
+              />
+            </div>
+            <span
+              className={styles.remainingLabel}
+              style={{ left: `calc(${barPct}% + 6px)` }}
+            >
+              <strong>{fmtPct(row.pctRemaining)}</strong> ({fmtN(row.nRemaining)})
+            </span>
+          </div>
+        );
+      }
+      case 'delta': return row.delta != null ? fmtN(row.delta) : '–';
+      case 'n':     return fmtN(row.n);
+      case 'pct':   return fmtPct(row.pct);
     }
   }
-  console.log("TABLE ROWS", tableRows);
   return (
     <table className={styles.table}>
       <thead>
