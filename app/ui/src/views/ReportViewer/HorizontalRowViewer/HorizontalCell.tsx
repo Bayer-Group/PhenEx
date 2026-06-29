@@ -97,7 +97,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
     const renderAttritionContent = () => {
       return (
         <div className={styles.attritionBody}>
-          <AttritionChart cohortData={cohortData} waterfall={waterfallData} groups={groups} />
+          <AttritionChart cohortData={cohortData} waterfall={waterfallData} groups={groups} spacers={spacers} />
         </div>
       );
     };

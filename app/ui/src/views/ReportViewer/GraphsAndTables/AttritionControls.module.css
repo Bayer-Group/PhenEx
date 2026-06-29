@@ -1,0 +1,45 @@
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 6px 12px;
+  background-color: var(--background_color_dark);
+  border-radius: 12px;
+  font-family: "IBMPlexSans-regular" !important;
+}
+
+/* Passed as classNameSwitchContainer to each SwitchButton */
+.switch {
+  width: fit-content !important;
+  height: auto !important;
+}
+
+.switchLabel {
+  color: var(--text_color_notfocus) !important;
+  font-size: 12px;
+}
+
+/* off-state track border */
+.switchTrackOff {
+  border-color: var(--text_color_notfocus) !important;
+  background-color: transparent !important;
+}
+
+.switchTrackOn{
+  background-color: var(--color_background_dark) !important;
+}
+
+/* thumb color */
+.switchThumb {
+  background-color: var(--text_color_notfocus) !important;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: var(--text_color_notfocus);
+  opacity: 0.3;
+  flex-shrink: 0;
+  align-self: center;
+}

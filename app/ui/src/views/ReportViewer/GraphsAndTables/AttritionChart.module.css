@@ -101,3 +101,18 @@
   margin-right: 6px;
   margin-left:4px;
 }
+
+.spacerRow {
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  min-height: 8px;
+}
+
+.spacerLabel {
+  font-size: var(--font_size_pagetitle);
+  font-family: "IBMPlexSans-bold" !important;
+  color: var(--text_color_focus);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}

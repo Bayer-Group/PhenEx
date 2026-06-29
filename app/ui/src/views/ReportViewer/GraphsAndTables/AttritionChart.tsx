@@ -2,7 +2,7 @@ import { FC, useMemo, useState } from 'react';
 import { type CohortClassified, type CohortGroup, type CohortDescriptions, getCohortColor } from '../types';
 import { AttritionTableCellRenderer, DEFAULT_COLUMNS, type ColumnConfig } from './RowRenderers/AttritionTableCellRenderer';
 import { AttritionControls } from './AttritionControls';
-import { buildFlatRows } from './RowRenderers/barChartShared';
+import { buildFlatRows, type BarChartSpacer, SPACER_UNIT_PX } from './RowRenderers/barChartShared';
 import styles from './AttritionChart.module.css';
 
 /** Shape of a single row in waterfall.json */
@@ -29,6 +29,7 @@ interface AttritionChartProps {
   waterfall: Record<string, unknown>;
   groups: CohortGroup[];
   cohortDescriptions?: CohortDescriptions;
+  spacers?: BarChartSpacer[];
 }
 
 
@@ -52,21 +53,29 @@ interface GroupedCharts {
   parentRowNames: Set<string>;
 }
 
-/** Flat entry for table rendering: one row per cohort in legend order */
-interface FlatTableEntry {
-  cohortName: string;
-  displayName: string;
-  mainCohortDisplayName: string;
-  subcohortDisplayName: string | null;
-  color: string;
-  /** Color of the parent cohort; undefined when this entry is the parent itself */
-  parentColor: string | undefined;
-  rows: any[];
-  parentRowNames: Set<string>;
-  isParent: boolean;
-}
+/** Flat entry for table rendering: one cohort row or a spacer in legend order */
+type FlatTableEntry =
+  | {
+      kind: 'cohort';
+      cohortName: string;
+      displayName: string;
+      mainCohortDisplayName: string;
+      subcohortDisplayName: string | null;
+      color: string;
+      /** Color of the parent cohort; undefined when this entry is the parent itself */
+      parentColor: string | undefined;
+      rows: any[];
+      parentRowNames: Set<string>;
+      isParent: boolean;
+    }
+  | {
+      kind: 'spacer';
+      id: string;
+      size: number;
+      label?: string;
+    };
 
-export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups, cohortDescriptions }) => {
+export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups, cohortDescriptions, spacers = [] }) => {
   const selectedSet = useMemo(() => new Set(cohortData.map((cd) => cd.name)), [cohortData]);
   const [tableColumns, setTableColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [hideMainCohortRows, setHideMainCohortRows] = useState(false);
@@ -123,7 +132,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
     return result;
   }, [groups, waterfall, selectedSet, cohortData]);
 
-  /** Flat list in legend order (cohortData order), one entry per cohort. */
+  /** Flat list in legend order (cohortData order), cohort entries interleaved with spacers. */
   const flatTableEntries = useMemo<FlatTableEntry[]>(() => {
     const chartByName = new Map<string, ChartEntry>();
     const parentRowsByParent = new Map<string, Set<string>>();
@@ -140,7 +149,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
       cohortData.map((cd) => [cd.name, cohortDescriptions?.[cd.name]?.display_name ?? cd.displayName ?? cd.name]),
     );
 
-    return buildFlatRows(cohortData)
+    const cohortEntries = buildFlatRows(cohortData)
       .map(({ cohort, label }) => {
         const chart = chartByName.get(cohort.name);
         if (!chart) return null;
@@ -158,6 +167,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
           : cohortDescriptions?.[cohort.name]?.display_name ?? cohort.displayName ?? label;
 
         return {
+          kind: 'cohort' as const,
           cohortName: cohort.name,
           displayName: cohortDescriptions?.[cohort.name]?.display_name ?? cohort.displayName ?? label,
           mainCohortDisplayName,
@@ -169,8 +179,26 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
           isParent,
         };
       })
-      .filter((e): e is FlatTableEntry => e !== null);
-  }, [cohortData, groupedCharts, cohortDescriptions]);
+      .filter((e): e is Extract<FlatTableEntry, { kind: 'cohort' }> => e !== null);
+
+    // Interleave spacers by afterIndex (afterIndex -1 = before first cohort).
+    const result: FlatTableEntry[] = [];
+    const emitSpacersAfter = (index: number) => {
+      spacers.forEach((s, i) => {
+        if (s.afterIndex === index) {
+          result.push({ kind: 'spacer', id: `spacer-${index}-${i}`, size: s.size, label: s.label });
+        }
+      });
+    };
+
+    emitSpacersAfter(-1);
+    cohortEntries.forEach((entry, index) => {
+      result.push(entry);
+      emitSpacersAfter(index);
+    });
+
+    return result;
+  }, [cohortData, groupedCharts, cohortDescriptions, spacers]);
 
   if (!groupedCharts.length) return null;
 
@@ -185,30 +213,44 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
         />
       </div>
 
-      {/* Table — one row per cohort in legend order, stacked vertically */}
+      {/* Table — one row per cohort in legend order, stacked vertically, with spacers */}
       <div className={styles.tableStack}>
-        {flatTableEntries.map((entry) => (
-          <div key={entry.cohortName} className={styles.tableRow}>
-            <div className={styles.tableRowLabel}>
-              <span className={styles.tableRowDot} style={{ backgroundColor: entry.color }} />
-              <div className={styles.tableRowLabelText}>
-                <span className={styles.tableRowMainCohortName}>{entry.mainCohortDisplayName}</span>
-                <span className={styles.tableRowLabelSeparator}>⋅</span>
-                <span className={styles.tableRowSubcohortName}>
-                  {entry.subcohortDisplayName ?? 'Main Cohort'}
-                </span>
+        {flatTableEntries.map((entry) => {
+          if (entry.kind === 'spacer') {
+            return (
+              <div
+                key={entry.id}
+                className={styles.spacerRow}
+                style={{ marginTop: entry.size * SPACER_UNIT_PX * 4 }}
+                aria-hidden={!entry.label}
+              >
+                {entry.label && <span className={styles.spacerLabel}>{entry.label}</span>}
               </div>
+            );
+          }
+          return (
+            <div key={entry.cohortName} className={styles.tableRow}>
+              <div className={styles.tableRowLabel}>
+                <span className={styles.tableRowDot} style={{ backgroundColor: entry.color }} />
+                <div className={styles.tableRowLabelText}>
+                  <span className={styles.tableRowMainCohortName}>{entry.mainCohortDisplayName}</span>
+                  <span className={styles.tableRowLabelSeparator}>⋅</span>
+                  <span className={styles.tableRowSubcohortName}>
+                    {entry.subcohortDisplayName ?? 'Main Cohort'}
+                  </span>
+                </div>
+              </div>
+              <AttritionTableCellRenderer
+                rows={entry.rows}
+                columns={tableColumns}
+                parentRowNames={entry.isParent ? undefined : entry.parentRowNames}
+                color={entry.color}
+                parentColor={entry.parentColor}
+                hideParentRows={hideMainCohortRows}
+              />
             </div>
-            <AttritionTableCellRenderer
-              rows={entry.rows}
-              columns={tableColumns}
-              parentRowNames={entry.isParent ? undefined : entry.parentRowNames}
-              color={entry.color}
-              parentColor={entry.parentColor}
-              hideParentRows={hideMainCohortRows}
-            />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
