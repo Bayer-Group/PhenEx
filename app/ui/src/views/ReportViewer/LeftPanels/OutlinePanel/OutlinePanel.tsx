@@ -99,9 +99,9 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
             <SimpleCustomScrollbar
               targetRef={scrollRef}
               orientation="vertical"
-              marginTop={60}
-              marginBottom={5}
-              marginToEnd={7}
+              marginTop={10}
+              marginBottom={10}
+              marginToEnd={10}
               classNameTrack={styles.scrollBarTrack}
               classNameThumb={styles.scrollBarThumb}
               showOnHover={true}
