@@ -57,6 +57,8 @@ interface FlatTableEntry {
   cohortName: string;
   displayName: string;
   color: string;
+  /** Color of the parent cohort; undefined when this entry is the parent itself */
+  parentColor: string | undefined;
   rows: any[];
   parentRowNames: Set<string>;
   isParent: boolean;
@@ -64,10 +66,7 @@ interface FlatTableEntry {
 
 export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups, cohortDescriptions }) => {
   const selectedSet = useMemo(() => new Set(cohortData.map((cd) => cd.name)), [cohortData]);
-  const [sharedRowMode, setSharedRowMode] = useState<'show' | 'hide' | 'dim'>('show');
-  const [hoveredParentRow, setHoveredParentRow] = useState<string | null>(null);
-  const [tableColumns, _setTableColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
-  const [dimParentRows, setDimParentRows] = useState(true);
+  const [tableColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
 
   /** Build per-group chart data, grouping subcohorts under their main cohort. */
   const groupedCharts = useMemo(() => {
@@ -102,7 +101,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
       if (charts.length > 0) {
         const mainChart = charts.find((c) => c.cohortName === group.parent);
         const parentRowNames = new Set(
-          mainChart ? mainChart.rows.map((r: any) => r.name as string) : [],
+          mainChart ? mainChart.rows.map((r: any) => (r.Name ?? r.name) as string) : [],
         );
 
         const parentColor =
@@ -145,10 +144,12 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
         const parentRowNames = isParent
           ? new Set<string>()
           : (parentRowsByParent.get(parentName) ?? new Set<string>());
+        const parentColor = isParent ? undefined : chartByName.get(parentName)?.color;
         return {
           cohortName: cohort.name,
           displayName: cohortDescriptions?.[cohort.name]?.display_name ?? cohort.displayName ?? label,
           color: chart.color,
+          parentColor,
           rows: chart.rows,
           parentRowNames,
           isParent,
@@ -159,8 +160,6 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
 
   if (!groupedCharts.length) return null;
 
-  const sharedModeLabels = { show: 'Showing', hide: 'Hidden', dim: 'Dimmed' } as const;
-  const nextMode = { show: 'hide', hide: 'dim', dim: 'show' } as const;
   return (
     <div className={styles.wrapper}>
   
@@ -177,8 +176,8 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
               rows={entry.rows}
               columns={tableColumns}
               parentRowNames={entry.isParent ? undefined : entry.parentRowNames}
-              dimParentRows={dimParentRows}
               color={entry.color}
+              parentColor={entry.parentColor}
             />
           </div>
         ))}

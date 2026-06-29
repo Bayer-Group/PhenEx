@@ -53,10 +53,10 @@ interface AttritionTableCellRendererProps {
   columns?: ColumnConfig[];
   /** Names of rows shared with the parent cohort */
   parentRowNames?: Set<string>;
-  /** Dim parent rows by default */
-  dimParentRows?: boolean;
-  /** Cohort color used for the % Remaining bar fill */
+  /** Cohort's own color, used for bar fills on unique rows */
   color?: string;
+  /** Main cohort color, used for bar fills on rows shared with the parent */
+  parentColor?: string;
 }
 
 /* ── Helpers ────────────────────────────────────────────────────────── */
@@ -85,8 +85,8 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
   rows,
   columns = DEFAULT_COLUMNS,
   parentRowNames,
-  dimParentRows = true,
   color,
+  parentColor,
 }) => {
   const visibleColumns = useMemo(
     () => columns.filter((c) => c.visible),
@@ -124,53 +124,36 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
 
   if (!tableRows.length) return null;
 
+  function barColor(row: TableRow): string {
+    return (row.isParent && parentColor) ? parentColor : (color ?? 'var(--color_primary, #888)');
+  }
+
+  function barCell(pct: number | null, label: React.ReactNode): React.ReactNode {
+    const barPct = Math.min(Math.max(pct ?? 0, 0), 100);
+    return (
+      <div className={styles.barCell}>
+        <div className={styles.barTrack}>
+          <div className={styles.barFill} style={{ width: `${barPct}%` }} />
+        </div>
+        <span className={styles.barLabel} style={{ left: `calc(${barPct}% + 6px)` }}>
+          {label}
+        </span>
+      </div>
+    );
+  }
+
   function cellContent(col: ColumnConfig, row: TableRow): React.ReactNode {
     switch (col.key) {
       case 'category':  return row.categoryLabel ?? '';
       case 'index':     return row.index;
       case 'name':      return row.name;
       case 'pctSource': return fmtPct(row.pctSource);
-      case 'remaining': {
-        const barPct = Math.min(Math.max(row.pctRemaining ?? 0, 0), 100);
-        return (
-          <div className={styles.remainingBar}>
-            <div className={styles.remainingTrack}>
-              <div
-                className={styles.remainingFill}
-                style={{ width: `${barPct}%`, backgroundColor: color ?? 'var(--color_primary, #888)' }}
-              />
-            </div>
-            <span
-              className={styles.remainingLabel}
-              style={{ left: `calc(${barPct}% + 6px)` }}
-            >
-              <strong>{fmtPct(row.pctRemaining)}</strong> ({fmtN(row.nRemaining)})
-            </span>
-          </div>
-        );
-      }
-      case 'delta': return row.delta != null ? fmtN(row.delta) : '–';
-      case 'pctEntry': {
-        const barPct = Math.min(Math.max(row.pct ?? 0, 0), 100);
-        return (
-          <div className={styles.remainingBar}>
-            <div className={styles.remainingTrack}>
-              <div
-                className={styles.remainingFill}
-                style={{ width: `${barPct}%`, backgroundColor: color ?? 'var(--color_primary, #888)' }}
-              />
-            </div>
-            <span
-              className={styles.remainingLabel}
-              style={{ left: `calc(${barPct}% + 6px)` }}
-            >
-              <strong>{fmtPct(row.pct)}</strong> ({fmtN(row.n)})
-            </span>
-          </div>
-        );
-      }
+      case 'remaining': return barCell(row.pctRemaining, <><strong>{fmtPct(row.pctRemaining)}</strong> ({fmtN(row.nRemaining)})</>);
+      case 'delta':     return row.delta != null ? fmtN(row.delta) : '–';
+      case 'pctEntry':  return barCell(row.pct, <><strong>{fmtPct(row.pct)}</strong> ({fmtN(row.n)})</>);
     }
   }
+
   return (
     <table className={styles.table}>
       <thead>
@@ -186,11 +169,8 @@ export const AttritionTableCellRenderer: React.FC<AttritionTableCellRendererProp
         {tableRows.map((row, i) => (
           <tr
             key={i}
-            className={[
-              styles.tr,
-              dimParentRows && row.isParent ? styles.dimmed : '',
-              styles[`type_${row.type}`] ?? '',
-            ].join(' ')}
+            className={[styles.tr, styles[`type_${row.type}`] ?? ''].join(' ')}
+            style={{ '--bar-color': barColor(row) } as React.CSSProperties}
           >
             {visibleColumns.map((col) => (
               <td
