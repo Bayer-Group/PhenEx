@@ -237,19 +237,20 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
             + Add spacer
           </button>
         </div>
-        <div className={styles.scrollbarRegion}>
-          <SimpleCustomScrollbar
+        {/* <div className={styles.scrollbarRegion}> */}
+   
+        {/* </div> */}
+      </div>
+      <SimpleCustomScrollbar
             targetRef={scrollRef}
             orientation="vertical"
-            marginTop={10}
-            marginBottom={10}
-            marginToEnd={10}
+            // marginTop={100}
+            // marginBottom={100}
+            marginToEnd={0}
             classNameTrack={styles.scrollBarTrack}
             classNameThumb={styles.scrollBarThumb}
             showOnHover={true}
           />
-        </div>
-      </div>
     </div>
   );
 };
