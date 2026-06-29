@@ -10,6 +10,7 @@ import { BarChartCellRendererCompact } from '../GraphsAndTables/RowRenderers/Bar
 import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
 import { BoxPlotCellRenderer } from '../GraphsAndTables/RowRenderers/BoxPlotCellRenderer';
 import { KaplanMeierCellRenderer } from '../GraphsAndTables/RowRenderers/KaplanMeierCellRenderer';
+import { Table2CellRenderer } from '../GraphsAndTables/RowRenderers/Table2CellRenderer';
 import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../CellLayouts';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
@@ -197,6 +198,14 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
             }))
             .filter((c) => c.steps.length > 0);
           return <KaplanMeierCellRenderer curves={kmCurves} mode="compact" />;
+        }
+        case 'table2': {
+          const t2cohorts = (table2Cohorts ?? []).map((c) => ({
+            name: c.name,
+            color: c.color,
+            table2: c.table2,
+          }));
+          return <Table2CellRenderer outcome={row.name} cohorts={t2cohorts} />;
         }
         default:
           return null;
