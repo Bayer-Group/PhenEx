@@ -242,9 +242,9 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
 
   const handleMouseLeave = useCallback(() => setHoverTime(null), []);
 
-  // Build tooltip data when hovering (full mode only)
+  // Build tooltip data when hovering
   const hoverData = useMemo(() => {
-    if (!isFull || hoverTime == null) return null;
+    if (hoverTime == null) return null;
     return curves.map((c) => {
       const row = rowAtTime(c.steps, hoverTime);
       return {
@@ -272,7 +272,7 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
   return (
     <div className={containerClass} style={containerStyle} ref={containerRef}>
       {/* KM step curves with CI bands */}
-      <div className={styles.plotArea} ref={plotAreaRef} onMouseMove={isFull ? handleMouseMove : undefined} onMouseLeave={isFull ? handleMouseLeave : undefined}>
+      <div className={styles.plotArea} ref={plotAreaRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
         <svg width={width} height={svgH} className={styles.kmSvg}>
           {Y_TICKS.map((tick) => (
             <g key={tick}>
@@ -340,8 +340,8 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
           })}
         </svg>
 
-        {/* Hover crosshair + tooltip (full mode only) */}
-        {isFull && hoverTime != null && hoverData && (
+        {/* Hover crosshair + tooltip */}
+        {hoverTime != null && hoverData && (
           <>
             <div className={styles.crosshairLine} style={{ left: hoverPixelX, height: svgH }} />
             <div
