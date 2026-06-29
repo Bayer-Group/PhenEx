@@ -66,6 +66,33 @@
   color: var(--text_color_focus);
 }
 
+.tableRowLabelText {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
+  font-family: "IBMPlexSans-regular" !important;
+}
+
+.tableRowMainCohortName {
+  font-size: var(--font_size_items);
+  color: var(--text_color_focus);
+  line-height: 1.2;
+  font-family: "IBMPlexSans-bold" !important;
+}
+
+.tableRowLabelSeparator {
+  font-size: var(--font_size_phenotypename);
+  color: var(--text_color);
+  line-height: 1.2;
+}
+
+.tableRowSubcohortName {
+  font-size: var(--font_size_phenotypename);
+  color: var(--text_color);
+  line-height: 1.2;
+}
+
 .tableRowDot {
   width: 16px;
   height: 16px;

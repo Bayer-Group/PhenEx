@@ -56,6 +56,8 @@ interface GroupedCharts {
 interface FlatTableEntry {
   cohortName: string;
   displayName: string;
+  mainCohortDisplayName: string;
+  subcohortDisplayName: string | null;
   color: string;
   /** Color of the parent cohort; undefined when this entry is the parent itself */
   parentColor: string | undefined;
@@ -134,6 +136,10 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
 
     const parentNames = new Set(groupedCharts.map((g) => g.parent));
 
+    const cohortDisplayNameMap = new Map(
+      cohortData.map((cd) => [cd.name, cohortDescriptions?.[cd.name]?.display_name ?? cd.displayName ?? cd.name]),
+    );
+
     return buildFlatRows(cohortData)
       .map(({ cohort, label }) => {
         const chart = chartByName.get(cohort.name);
@@ -146,9 +152,16 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
           ? new Set<string>()
           : (parentRowsByParent.get(parentName) ?? new Set<string>());
         const parentColor = isParent ? undefined : chartByName.get(parentName)?.color;
+        const mainCohortDisplayName = cohortDisplayNameMap.get(parentName) ?? parentName;
+        const subcohortDisplayName = isParent
+          ? null
+          : cohortDescriptions?.[cohort.name]?.display_name ?? cohort.displayName ?? label;
+
         return {
           cohortName: cohort.name,
           displayName: cohortDescriptions?.[cohort.name]?.display_name ?? cohort.displayName ?? label,
+          mainCohortDisplayName,
+          subcohortDisplayName,
           color: chart.color,
           parentColor,
           rows: chart.rows,
@@ -178,7 +191,13 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
           <div key={entry.cohortName} className={styles.tableRow}>
             <div className={styles.tableRowLabel}>
               <span className={styles.tableRowDot} style={{ backgroundColor: entry.color }} />
-              <span>{entry.displayName}</span>
+              <div className={styles.tableRowLabelText}>
+                <span className={styles.tableRowMainCohortName}>{entry.mainCohortDisplayName}</span>
+                <span className={styles.tableRowLabelSeparator}>⋅</span>
+                <span className={styles.tableRowSubcohortName}>
+                  {entry.subcohortDisplayName ?? 'Main Cohort'}
+                </span>
+              </div>
             </div>
             <AttritionTableCellRenderer
               rows={entry.rows}
