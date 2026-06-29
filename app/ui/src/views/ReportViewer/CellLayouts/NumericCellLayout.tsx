@@ -130,7 +130,7 @@ const BoxplotPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeData: 
   return (
     <div style={{ padding: 8, height: '100%', boxSizing: 'border-box' }}>
       <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
-        <BoxPlotCellRenderer name={name} cohortData={filtered} xMin={xMin} xMax={xMax} showLabels />
+        <BoxPlotCellRenderer name={name} cohortData={filtered} xMin={xMin} xMax={xMax} showLabels showGrid={false} />
       </NumericChartFrame>
     </div>
   );

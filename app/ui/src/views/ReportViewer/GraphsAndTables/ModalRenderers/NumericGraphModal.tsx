@@ -57,6 +57,7 @@ export const NumericGraphModal: FC<NumericGraphModalProps> = ({
               xMin={xMin}
               xMax={xMax}
               showLabels
+              showGrid={false}
             />
           </NumericChartFrame>
         </div>

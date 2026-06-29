@@ -6,10 +6,29 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  
 }
 
 .plotSvg {
   display: block;
+}
+
+.spacerLabelOverlay {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+
+.spacerLabel {
+  position: absolute;
+  font-size: var(--font_size_infotext, 10px);
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: #555;
+  white-space: nowrap;
+  line-height: 1;
+  transform: translateY(-100%);
 }
 
 .tooltipWrapper {

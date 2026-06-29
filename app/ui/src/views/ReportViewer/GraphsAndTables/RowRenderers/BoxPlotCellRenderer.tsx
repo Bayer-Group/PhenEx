@@ -4,6 +4,7 @@ import { useBarHoverStore } from './useBarHoverStore';
 import { NumericChartFrame } from './NumericChartFrame';
 import { BoxPlotModal } from '../ModalRenderers/BoxPlotModal';
 import { Portal } from '../../../../components/Portal/Portal';
+import { type BarChartSpacer, buildFlatItems, SPACER_UNIT_PX } from './barChartShared';
 import styles from './BoxPlotCellRenderer.module.css';
 
 /* ── Layout constants ────────────────────────────────────────────────── */
@@ -12,6 +13,8 @@ const PAD = 2;
 const DEFAULT_W = 300;
 const ROW_H = 14;
 const ROW_GAP = 2;
+const SPACER_H = 10;
+const MARGIN_TOP = 40;
 const LABEL_ROW_H = 18; // height reserved for labels below the plot
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
@@ -125,6 +128,9 @@ interface BoxPlotCellRendererProps {
   xMax: number;
   width?: number;
   showGrid?: boolean;
+  showTicks?: boolean;
+  spacers?: BarChartSpacer[];
+  spacerUnitPx?: number;
   /** If set, only show the box plot for this cohort index. */
   cohortIndex?: number;
   /** Always show landmark labels (for modal use). */
@@ -137,7 +143,10 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   xMin,
   xMax,
   width: widthProp,
-  showGrid = false,
+  showGrid = true,
+  showTicks = true,
+  spacers,
+  spacerUnitPx = SPACER_UNIT_PX,
   cohortIndex,
   showLabels = false,
 }) => {
@@ -162,25 +171,43 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   const xRange = xMax - xMin || 1;
   const toX = (v: number) => PAD + ((v - xMin) / xRange) * PLOT_W;
 
-  const allEntries = cohortData
-    .map((cd, i) => {
-      const row = cd.data.rows.find((r) => r.Name === name);
-      if (!row) return null;
-      const stats = getStats(row as unknown as Record<string, unknown>);
-      if (!stats) return null;
-      return { color: cd.color, stats, index: i };
-    })
-    .filter(Boolean) as { color: string; stats: BoxStats; index: number }[];
+  // Build flat items (cohort rows + spacers) respecting display order
+  const flatItems = buildFlatItems(cohortData, spacers);
 
-  // Filter: only for explicit cohortIndex (modal use)
-  let entries = allEntries;
-  if (cohortIndex != null) {
-    entries = allEntries.filter((e) => e.index === cohortIndex);
+  // Map flat items to entries with y-offsets
+  type PlotEntry =
+    | { type: 'row'; color: string; stats: BoxStats; index: number; cy: number }
+    | { type: 'spacer'; height: number; y: number; label?: string };
+
+  let cursorY = 0;
+  const plotItems: PlotEntry[] = [];
+
+  for (const item of flatItems) {
+    if (item.type === 'spacer') {
+      // Omit spacers when showing a single cohort
+      if (cohortIndex == null) {
+        const h = SPACER_H + (item.size - 1) * spacerUnitPx;
+        plotItems.push({ type: 'spacer', height: h, y: cursorY, label: item.label });
+        cursorY += h;
+      }
+    } else {
+      const { cohort, originalIndex } = item.row;
+      if (cohortIndex != null && originalIndex !== cohortIndex) continue;
+      const row = cohort.data.rows.find((r) => r.Name === name);
+      const stats = row ? getStats(row as unknown as Record<string, unknown>) : null;
+      if (stats) {
+        const cy = cursorY + ROW_H / 2;
+        plotItems.push({ type: 'row', color: cohort.color, stats, index: originalIndex, cy });
+      }
+      cursorY += ROW_H + ROW_GAP;
+    }
   }
 
-  if (entries.length === 0) return null;
+  const rowEntries = plotItems.filter((p): p is Extract<PlotEntry, { type: 'row' }> => p.type === 'row');
+  if (rowEntries.length === 0) return null;
 
-  const plotH = entries.length * (ROW_H + ROW_GAP) - ROW_GAP;
+  // Remove trailing gap from last row
+  const plotH = cursorY - ROW_GAP;
   const svgH = plotH + (showLabels ? LABEL_ROW_H : 0);
   const boxH = ROW_H * 0.6;
 
@@ -188,6 +215,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
     <div
       ref={containerRef}
       className={styles.container}
+      style={{ paddingTop: MARGIN_TOP }}
       onMouseMove={(e) => {
         const svg = svgRef.current;
         if (!svg) return;
@@ -197,25 +225,34 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
         const scaleX = rect.width / W;
         const localY = (e.clientY - rect.top) / scaleY;
         const localX = (e.clientX - rect.left) / scaleX;
-        const idx = Math.floor(localY / (ROW_H + ROW_GAP));
-        if (idx >= 0 && idx < entries.length) {
-          const entry = entries[idx];
-          const { stats } = entry;
-          const p25X = toX(stats.p25);
-          const p75X = toX(stats.p75);
-          if (localX >= p25X && localX <= p75X) {
-            setHoveredRow(idx);
-            const meanX = stats.mean != null ? toX(stats.mean) : toX(stats.median);
-            const medianX = toX(stats.median);
-            const dataX = rect.left + ((meanX + medianX) / 2) * scaleX;
-            const centerX = rect.left + rect.width / 2;
-            const cx = centerX + (dataX - centerX) * 0.3;
-            const cy = idx * (ROW_H + ROW_GAP) + ROW_H / 2;
-            setTooltipPos({ x: cx, y: rect.top + cy * scaleY });
-          } else {
-            setHoveredRow(null);
-            setTooltipPos(null);
+
+        // Find which row entry the mouse is over based on cy positions
+        let foundIdx: number | null = null;
+        for (let i = 0; i < rowEntries.length; i++) {
+          const entry = rowEntries[i];
+          const top = entry.cy - ROW_H / 2;
+          const bottom = entry.cy + ROW_H / 2;
+          if (localY >= top && localY <= bottom) {
+            const { stats } = entry;
+            const p25X = toX(stats.p25);
+            const p75X = toX(stats.p75);
+            if (localX >= p25X && localX <= p75X) {
+              foundIdx = i;
+            }
+            break;
           }
+        }
+
+        if (foundIdx !== null) {
+          const entry = rowEntries[foundIdx];
+          const { stats } = entry;
+          const meanX = stats.mean != null ? toX(stats.mean) : toX(stats.median);
+          const medianX = toX(stats.median);
+          const dataX = rect.left + ((meanX + medianX) / 2) * scaleX;
+          const centerX = rect.left + rect.width / 2;
+          const cx = centerX + (dataX - centerX) * 0.3;
+          setHoveredRow(foundIdx);
+          setTooltipPos({ x: cx, y: rect.top + entry.cy * scaleY });
         } else {
           setHoveredRow(null);
           setTooltipPos(null);
@@ -229,13 +266,18 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
         if (!rect.height) return;
         const scaleY = rect.height / svgH;
         const localY = (e.clientY - rect.top) / scaleY;
-        const idx = Math.floor(localY / (ROW_H + ROW_GAP));
-        if (idx >= 0 && idx < entries.length) {
-          onClick(entries[idx].index);
+        for (const entry of rowEntries) {
+          const top = entry.cy - ROW_H / 2;
+          const bottom = entry.cy + ROW_H / 2;
+          if (localY >= top && localY <= bottom) {
+            onClick(entry.index);
+            break;
+          }
         }
       }}
     >
-      {containerW > 0 && entries.length > 0 && (
+      {containerW > 0 && rowEntries.length > 0 && (
+      <>
       <svg
         ref={svgRef}
         width="100%"
@@ -244,33 +286,47 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
         preserveAspectRatio="none"
         className={styles.plotSvg}
       >
-        {entries.map((e, i) => {
-          const cy = i * (ROW_H + ROW_GAP) + ROW_H / 2;
+        {rowEntries.map((e, i) => {
+          const { cy } = e;
           const boxTop = cy - boxH / 2;
           const { stats } = e;
           const dimmed = activeIndex !== null && activeIndex !== e.index;
 
           return (
-            <g key={e.index} opacity={dimmed ? 0.15 : 0.85} style={{ transition: 'transform 0.15s ease, opacity 0.15s ease', transform: hoveredRow === i ? `scaleY(1.5)` : 'scaleY(1)', transformOrigin: `0 ${cy}px` }}>
-              <line x1={toX(stats.min)} y1={cy} x2={toX(stats.max)} y2={cy} stroke={e.color} strokeWidth={hoveredRow === i ? 1.5 : 1} />
-              <line x1={toX(stats.min)} y1={cy - boxH * 0.3} x2={toX(stats.min)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={hoveredRow === i ? 1.5 : 1} />
-              <line x1={toX(stats.max)} y1={cy - boxH * 0.3} x2={toX(stats.max)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={hoveredRow === i ? 1.5 : 1} />
+            <g key={e.index} opacity={dimmed ? 0.15 : 0.85} style={{ transition: 'transform 0.15s ease, opacity 0.15s ease', transformOrigin: `0 ${cy}px` }}>
+              <line x1={toX(stats.min)} y1={cy} x2={toX(stats.max)} y2={cy} stroke={e.color} strokeWidth={1.5} />
+              <line x1={toX(stats.min)} y1={cy - boxH * 0.3} x2={toX(stats.min)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1.5} />
+              <line x1={toX(stats.max)} y1={cy - boxH * 0.3} x2={toX(stats.max)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1.5} />
               <rect
                 x={toX(stats.p25)} y={boxTop}
                 width={toX(stats.p75) - toX(stats.p25)} height={boxH}
                 fill={e.color} fillOpacity={dimmed ? 0.05 : 0.2}
-                stroke={e.color} strokeWidth={hoveredRow === i ? 2.5 : 1.5} rx={1}
+                stroke={e.color} strokeWidth={1.5} rx={1}
               />
-              <line x1={toX(stats.median)} y1={boxTop} x2={toX(stats.median)} y2={boxTop + boxH} stroke={e.color} strokeWidth={hoveredRow === i ? 3 : 2} />
-              {stats.mean != null && <circle cx={toX(stats.mean)} cy={cy} r={hoveredRow === i ? 3.5 : 2.5} fill={e.color} />}
+              <line x1={toX(stats.median)} y1={boxTop} x2={toX(stats.median)} y2={boxTop + boxH} stroke={e.color} strokeWidth={1.5} />
+              {stats.mean != null && <circle cx={toX(stats.mean)} cy={cy} r={3.5} fill={e.color} strokeWidth={1.5} stroke={'var(--line-color)'}/>}
             </g>
           );
         })}
       </svg>
+
+      {/* Spacer labels as HTML overlay — SVG preserveAspectRatio=none would distort text */}
+      <div className={styles.spacerLabelOverlay} style={{ height: svgH }}>
+        {plotItems.map((p, pi) => {
+          if (p.type !== 'spacer' || !p.label) return null;
+          const topPct = ((p.y + p.height) / svgH) * 100;
+          return (
+            <span key={pi} className={styles.spacerLabel} style={{ top: `${topPct}%` }}>
+              {p.label}
+            </span>
+          );
+        })}
+      </div>
+      </>
       )}
 
       {hoveredRow !== null && tooltipPos && (() => {
-        const e = entries[hoveredRow];
+        const e = rowEntries[hoveredRow];
         if (!e) return null;
         const { stats } = e;
         const label = getCohortLabel(cohortData, e.index);
@@ -296,7 +352,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
 
   if (showGrid) {
     return (
-      <NumericChartFrame xMin={xMin} xMax={xMax} width={W} showTicks={false}>
+      <NumericChartFrame xMin={xMin} xMax={xMax} width={W} showTicks={showTicks}>
         {content}
       </NumericChartFrame>
     );

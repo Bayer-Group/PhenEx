@@ -53,6 +53,7 @@ export const NumericContent: FC<NumericContentProps> = ({ name, cohortData, kdeD
             xMin={xMin}
             xMax={xMax}
             showLabels
+            showGrid={false}
           />
         </NumericChartFrame>
       </div>

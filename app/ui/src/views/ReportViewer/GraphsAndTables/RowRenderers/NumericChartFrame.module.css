@@ -38,13 +38,14 @@
   position: absolute;
   top: 0;
   transform: translate(-50%, 0);
-  font-size: clamp(16px, calc(14px / var(--pz-scale, 1)), 40px);
-  color: black;
+  font-size: var(--font_size_infotext) !important;
+  color: var(--text_color_notfocus) !important;
   white-space: nowrap;
   padding: 0 2px;
-  background-color: rgba(255, 255, 255, 0.7);
+  /* background-color: rgba(255, 255, 255, 0.7); */
   border-radius: 3px;
   z-index: 100;
+  font-family: "IBMPlexSans-regular" !important;
 }
 
 /* ── Content (renders above grid) ────────────────────────────────────── */

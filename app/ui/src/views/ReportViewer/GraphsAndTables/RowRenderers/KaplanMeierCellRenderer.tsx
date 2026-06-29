@@ -1,6 +1,7 @@
 import { FC, useRef, useState, useCallback, useMemo, useLayoutEffect } from 'react';
 import { type TimeToEventRow } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
+import { Portal } from '../../../../components/Portal/Portal';
 import styles from './KaplanMeierCellRenderer.module.css';
 
 /* ── Configurable risk table timepoints ──────────────────────────────── */
@@ -183,6 +184,7 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
   const [containerHeight, setContainerHeight] = useState(0);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [hoverPixelX, setHoverPixelX] = useState(0);
+  const [plotRect, setPlotRect] = useState<DOMRect | null>(null);
 
   useLayoutEffect(() => {
     const el = containerRef.current;
@@ -238,9 +240,13 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
     const px = e.clientX - rect.left;
     setHoverPixelX(px);
     setHoverTime(toTime(px));
+    setPlotRect(rect);
   }, [xMax]);
 
-  const handleMouseLeave = useCallback(() => setHoverTime(null), []);
+  const handleMouseLeave = useCallback(() => {
+    setHoverTime(null);
+    setPlotRect(null);
+  }, []);
 
   // Build tooltip data when hovering
   const hoverData = useMemo(() => {
@@ -340,13 +346,24 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
           })}
         </svg>
 
-        {/* Hover crosshair + tooltip */}
-        {hoverTime != null && hoverData && (
-          <>
-            <div className={styles.crosshairLine} style={{ left: hoverPixelX, height: svgH }} />
+        {/* Hover crosshair */}
+        {hoverTime != null && (
+          <div className={styles.crosshairLine} style={{ left: hoverPixelX, height: svgH }} />
+        )}
+
+        {/* Tooltip rendered in a portal to escape any overflow:hidden ancestors */}
+        {hoverTime != null && hoverData && plotRect && (
+          <Portal>
             <div
               className={styles.tooltip}
-              style={{ left: hoverPixelX > width / 2 ? hoverPixelX - 4 : hoverPixelX + 4, transform: hoverPixelX > width / 2 ? 'translateX(-100%)' : undefined }}
+              style={{
+                position: 'fixed',
+                top: plotRect.top + 4,
+                left: hoverPixelX > width / 2
+                  ? plotRect.left + hoverPixelX - 4
+                  : plotRect.left + hoverPixelX + 4,
+                transform: hoverPixelX > width / 2 ? 'translateX(-100%)' : undefined,
+              }}
             >
               <div className={styles.tooltipHeader}>Day {Math.round(hoverTime)}</div>
               {hoverData.map((d) => (
@@ -357,7 +374,7 @@ export const KaplanMeierCellRenderer: FC<KaplanMeierCellRendererProps> = ({
                 </div>
               ))}
             </div>
-          </>
+          </Portal>
         )}
       </div>
 

@@ -120,9 +120,7 @@
 }
 
 .tooltip {
-  position: absolute;
-  top: 4px;
-  z-index: 20;
+  z-index: 9999;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(180, 180, 180, 0.6);
   border-radius: 4px;
@@ -143,7 +141,8 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 8px;
+  font-family: "IBMPlexSans-regular" !important;
+  font-size: var(--font_size_items) !important;
   line-height: 1.4;
 }
 
@@ -162,5 +161,5 @@
 
 .tooltipDetail {
   color: #999;
-  font-size: 7px;
+  font-size: var(--font_size_items) !important;
 }
