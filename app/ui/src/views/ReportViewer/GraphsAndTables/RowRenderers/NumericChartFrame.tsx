@@ -64,8 +64,8 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
   xMax,
   width: widthProp,
   showTicks = true,
-  clippedLeft,
-  clippedRight,
+  clippedLeft: _clippedLeft,
+  clippedRight: _clippedRight,
   children,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -103,19 +103,6 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
             </span>
           ))}
 
-          {/* Clipped-edge hatch ticks — anchored to the cut boundary, not centered */}
-          {clippedLeft && (
-            <span className={`${styles.headerTick} ${styles.clipTick}`} style={{ left: px(xMin), transform: 'none' }}>
-              <span className={styles.clipHatchBar} />
-              {fmtTick(clippedLeft.value)}
-            </span>
-          )}
-          {clippedRight && (
-            <span className={`${styles.headerTick} ${styles.clipTick}`} style={{ left: 'auto', right: width - px(xMax), transform: 'none' }}>
-              {fmtTick(clippedRight.value)}
-              <span className={styles.clipHatchBar} />
-            </span>
-          )}
         </div>
       )}
 

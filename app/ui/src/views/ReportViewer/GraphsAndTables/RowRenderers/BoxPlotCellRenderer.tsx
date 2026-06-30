@@ -25,7 +25,6 @@ const LABEL_ROW_H = 18; // height reserved for labels below the plot
  * edge to signal truncation.
  */
 const CLIP_IQR_FACTOR = 1.5;
-const CLIP_HATCH_W = 12; // px width of the hatch band
 
 /* ── Helpers ─────────────────────────────────────────────────────────── */
 
@@ -397,70 +396,72 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
         preserveAspectRatio="none"
         className={styles.plotSvg}
       >
-        <defs>
-          <pattern id="clipHatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
-            <line x1="0" y1="0" x2="0" y2="6" stroke="var(--text_color_notfocus, #999)" strokeWidth="1.5" strokeOpacity="0.35" />
-          </pattern>
-        </defs>
-
-        {/* Hatch bands at clipped edges */}
-        {clippedLeft && (
-          <rect x={PAD} y={0} width={CLIP_HATCH_W} height={svgH} fill="url(#clipHatch)" />
-        )}
-        {clippedRight && (
-          <rect x={PAD + PLOT_W - CLIP_HATCH_W} y={0} width={CLIP_HATCH_W} height={svgH} fill="url(#clipHatch)" />
-        )}
-
         {rowEntries.map((e) => {
           const { cy } = e;
           const boxTop = cy - boxH / 2;
           const { stats } = e;
           const dimmed = activeIndex !== null && activeIndex !== e.index;
 
-          // Whisker endpoints: clamped by toX to the clipped axis bounds
+          // Whisker endpoints clamped by toX to the effective axis bounds
           const minX = toX(stats.min);
           const maxX = toX(stats.max);
 
-          // Break-mark geometry: where the hatch band's inner edge is
-          const breakXLeft  = PAD + CLIP_HATCH_W;
-          const breakXRight = PAD + PLOT_W - CLIP_HATCH_W;
+          // Arrow tip sits right at the axis edge
+          const arrowXLeft  = PAD;
+          const arrowXRight = PAD + PLOT_W;
 
-          // A zigzag break mark running along the whisker (horizontal zig-zag)
-          const bh = boxH * 0.55; // perpendicular amplitude (vertical)
-          const bw = 3;           // half-width of each tooth along the whisker
-          function breakPath(x: number): string {
-            return [
-              `M ${x - bw} ${cy - bh}`,
-              `L ${x + bw} ${cy}`,
-              `L ${x - bw} ${cy + bh}`,
-            ].join(' ');
-          }
+          // Arrow geometry: chevron pointing outward (< on left, > on right)
+          const ah = boxH * 0.6; // half-height of the arrowhead
+          const aw = 4;          // depth of the arrow along x
 
           const leftClipped  = !!clippedLeft  && stats.min < effXMin;
           const rightClipped = !!clippedRight && stats.max > effXMax;
 
+          // < arrow: tip at x, opens to the right
+          const leftArrowPath  = (x: number) => `M ${x + aw} ${cy - ah} L ${x} ${cy} L ${x + aw} ${cy + ah}`;
+          // > arrow: tip at x, opens to the left
+          const rightArrowPath = (x: number) => `M ${x - aw} ${cy - ah} L ${x} ${cy} L ${x - aw} ${cy + ah}`;
+
           return (
             <g key={e.index} opacity={dimmed ? 0.15 : 0.85} style={{ transition: 'transform 0.15s ease, opacity 0.15s ease', transformOrigin: `0 ${cy}px` }}>
-              {/* Whisker line — starts/ends at break mark inner edge when clipped */}
+              {/* Whisker line — terminates at the arrow tip when clipped */}
               <line
-                x1={leftClipped  ? breakXLeft  : minX}
+                x1={leftClipped  ? arrowXLeft  : minX}
                 y1={cy}
-                x2={rightClipped ? breakXRight : maxX}
+                x2={rightClipped ? arrowXRight : maxX}
                 y2={cy}
                 stroke={e.color} strokeWidth={1.5}
               />
 
-              {/* Min end-cap or break mark */}
-              {leftClipped ? (
-                <path d={breakPath(breakXLeft)} stroke={e.color} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              ) : (
+              {/* Min end-cap or < arrow + value label outside the left edge */}
+              {leftClipped ? (<>
+                <path d={leftArrowPath(arrowXLeft)} stroke={e.color} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                <text
+                  x={arrowXLeft - 4}
+                  y={cy}
+                  textAnchor="end"
+                  dominantBaseline="middle"
+                  fontSize={8}
+                  fill={e.color}
+                  fontFamily="IBMPlexSans-regular, sans-serif"
+                >{fmt(stats.min)}</text>
+              </>) : (
                 <line x1={minX} y1={cy - boxH * 0.3} x2={minX} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1.5} />
               )}
 
-              {/* Max end-cap or break mark */}
-              {rightClipped ? (
-                <path d={breakPath(breakXRight)} stroke={e.color} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              ) : (
+              {/* Max end-cap or > arrow + value label outside the right edge */}
+              {rightClipped ? (<>
+                <path d={rightArrowPath(arrowXRight)} stroke={e.color} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                <text
+                  x={arrowXRight + 4}
+                  y={cy}
+                  textAnchor="start"
+                  dominantBaseline="middle"
+                  fontSize={8}
+                  fill={e.color}
+                  fontFamily="IBMPlexSans-regular, sans-serif"
+                >{fmt(stats.max)}</text>
+              </>) : (
                 <line x1={maxX} y1={cy - boxH * 0.3} x2={maxX} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1.5} />
               )}
 
