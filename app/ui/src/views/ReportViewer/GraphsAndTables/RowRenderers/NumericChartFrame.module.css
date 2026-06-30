@@ -55,3 +55,29 @@
   width: 100%;
   height: 100%;
 }
+
+/* ── Clipped-edge tick ───────────────────────────────────────────────── */
+.clipTick {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--text_color_notfocus) !important;
+  opacity: 0.75;
+}
+
+/* Inline hatched bar sitting next to the label */
+.clipHatchBar {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--text_color_notfocus, #999) 0px,
+    var(--text_color_notfocus, #999) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  opacity: 0.5;
+  border-radius: 1px;
+}

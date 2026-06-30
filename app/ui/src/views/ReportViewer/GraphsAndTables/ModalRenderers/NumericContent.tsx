@@ -3,7 +3,7 @@ import { type CohortClassified, type KdeCurve } from '../../types';
 import { useCohortVisibility, useFilteredCohortData } from './ModalLegend';
 import { NumericChartFrame } from '../RowRenderers/NumericChartFrame';
 import { KDEChartCellRenderer } from '../RowRenderers/KDEChartCellRenderer';
-import { BoxPlotCellRenderer } from '../RowRenderers/BoxPlotCellRenderer';
+import { BoxPlotCellRenderer, computeClippedXBounds } from '../RowRenderers/BoxPlotCellRenderer';
 import { NumericTableCellRenderer } from '../RowRenderers/NumericTableCellRenderer';
 import { Tabs } from '../../../../components/ButtonsAndTabs/Tabs/Tabs';
 import styles from './NumericContent.module.css';
@@ -20,7 +20,7 @@ export const NumericContent: FC<NumericContentProps> = ({ name, cohortData, kdeD
   const filtered = useFilteredCohortData(cohortData, visible);
   const [statMode, setStatMode] = useState<'coverage' | 'missingness'>('coverage');
 
-  const { xMin, xMax } = useMemo(() => {
+  const { xMin, xMax, clippedLeft, clippedRight } = useMemo(() => {
     let lo = Infinity;
     let hi = -Infinity;
     for (const cd of cohortData) {
@@ -30,13 +30,13 @@ export const NumericContent: FC<NumericContentProps> = ({ name, cohortData, kdeD
       if (row.Max != null && row.Max > hi) hi = row.Max;
     }
     if (!isFinite(lo)) { lo = 0; hi = 1; }
-    return { xMin: lo, xMax: hi };
+    return computeClippedXBounds(name, cohortData, lo, hi);
   }, [name, cohortData]);
 
   return (
     <div className={styles.container}>
       <div className={styles.distributionCard}>
-        <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
+        <NumericChartFrame xMin={xMin} xMax={xMax} showTicks clippedLeft={clippedLeft} clippedRight={clippedRight}>
           <div className={styles.kdeSection}>
             <KDEChartCellRenderer
               name={name}

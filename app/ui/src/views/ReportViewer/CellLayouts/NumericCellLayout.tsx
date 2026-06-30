@@ -5,7 +5,7 @@ import { type SequentialRow } from '../studyRegistryUtils';
 import { useCohortVisibility, useFilteredCohortData } from '../GraphsAndTables/ModalRenderers/ModalLegend';
 import { NumericChartFrame } from '../GraphsAndTables/RowRenderers/NumericChartFrame';
 import { KDEChartCellRenderer } from '../GraphsAndTables/RowRenderers/KDEChartCellRenderer';
-import { BoxPlotCellRenderer } from '../GraphsAndTables/RowRenderers/BoxPlotCellRenderer';
+import { BoxPlotCellRenderer, computeClippedXBounds } from '../GraphsAndTables/RowRenderers/BoxPlotCellRenderer';
 import { NumericTableCellRenderer } from '../GraphsAndTables/RowRenderers/NumericTableCellRenderer';
 import { DescriptionPanel } from './DescriptionPanel';
 import { CommentsPanel } from '../CommentsPanel';
@@ -114,7 +114,7 @@ const BoxplotPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeData: 
   const { visible } = useCohortVisibility(cohortData.length);
   const filtered = useFilteredCohortData(cohortData, visible);
 
-  const { xMin, xMax } = useMemo(() => {
+  const { xMin, xMax, clippedLeft, clippedRight } = useMemo(() => {
     let lo = Infinity;
     let hi = -Infinity;
     for (const cd of cohortData) {
@@ -124,12 +124,12 @@ const BoxplotPanel: FC<{ name: string; cohortData: CohortClassified[]; kdeData: 
       if (r.Max != null && r.Max > hi) hi = r.Max;
     }
     if (!isFinite(lo)) { lo = 0; hi = 1; }
-    return { xMin: lo, xMax: hi };
+    return computeClippedXBounds(name, cohortData, lo, hi);
   }, [name, cohortData]);
 
   return (
     <div style={{ padding: 8, height: '100%', boxSizing: 'border-box' }}>
-      <NumericChartFrame xMin={xMin} xMax={xMax} showTicks>
+      <NumericChartFrame xMin={xMin} xMax={xMax} showTicks clippedLeft={clippedLeft} clippedRight={clippedRight}>
         <BoxPlotCellRenderer name={name} cohortData={filtered} xMin={xMin} xMax={xMax} showLabels showGrid={false} />
       </NumericChartFrame>
     </div>

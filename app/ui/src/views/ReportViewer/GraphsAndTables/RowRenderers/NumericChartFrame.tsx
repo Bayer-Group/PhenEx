@@ -42,11 +42,20 @@ export function toPixel(v: number, xMin: number, xMax: number, width: number): n
 
 /* ── Frame component ─────────────────────────────────────────────────── */
 
+interface ClipEdge {
+  /** The true (unclipped) axis value that was cropped away. */
+  value: number;
+}
+
 interface NumericChartFrameProps {
   xMin: number;
   xMax: number;
   width?: number;
   showTicks?: boolean;
+  /** If the left edge was clipped, provide the true minimum so a hatch tick is shown. */
+  clippedLeft?: ClipEdge;
+  /** If the right edge was clipped, provide the true maximum so a hatch tick is shown. */
+  clippedRight?: ClipEdge;
   children: ReactNode;
 }
 
@@ -55,6 +64,8 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
   xMax,
   width: widthProp,
   showTicks = true,
+  clippedLeft,
+  clippedRight,
   children,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,6 +102,20 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
               {fmtTick(t)}
             </span>
           ))}
+
+          {/* Clipped-edge hatch ticks — anchored to the cut boundary, not centered */}
+          {clippedLeft && (
+            <span className={`${styles.headerTick} ${styles.clipTick}`} style={{ left: px(xMin), transform: 'none' }}>
+              <span className={styles.clipHatchBar} />
+              {fmtTick(clippedLeft.value)}
+            </span>
+          )}
+          {clippedRight && (
+            <span className={`${styles.headerTick} ${styles.clipTick}`} style={{ left: 'auto', right: width - px(xMax), transform: 'none' }}>
+              {fmtTick(clippedRight.value)}
+              <span className={styles.clipHatchBar} />
+            </span>
+          )}
         </div>
       )}
 

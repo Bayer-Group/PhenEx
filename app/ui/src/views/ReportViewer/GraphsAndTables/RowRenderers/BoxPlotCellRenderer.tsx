@@ -18,7 +18,71 @@ const MARGIN_TOP = 40;
 const MARGIN_BOTTOM = 40;
 const LABEL_ROW_H = 18; // height reserved for labels below the plot
 
+/**
+ * When clipMax is enabled, whiskers that extend beyond this many IQR-widths
+ * past Q1/Q3 trigger clipping of the x-axis. The axis is then clamped to the
+ * IQR ± CLIP_IQR_FACTOR * IQR, and a hatched band is drawn at each clipped
+ * edge to signal truncation.
+ */
+const CLIP_IQR_FACTOR = 1.5;
+const CLIP_HATCH_W = 12; // px width of the hatch band
+
 /* ── Helpers ─────────────────────────────────────────────────────────── */
+
+/**
+ * Given a set of cohorts and a row name, compute the clipped x-axis bounds
+ * using the same IQR-fence logic as BoxPlotCellRenderer's clipMax mode.
+ * Returns { xMin, xMax } suitable for passing to NumericChartFrame.
+ */
+export interface ClippedXBounds {
+  xMin: number;
+  xMax: number;
+  /** If the left edge was clipped, the true raw minimum value. */
+  clippedLeft?: { value: number };
+  /** If the right edge was clipped, the true raw maximum value. */
+  clippedRight?: { value: number };
+}
+
+export function computeClippedXBounds(
+  name: string,
+  cohortData: CohortClassified[],
+  rawXMin: number,
+  rawXMax: number,
+): ClippedXBounds {
+  const allStats: { p25: number; p75: number; min: number; max: number }[] = [];
+  for (const cd of cohortData) {
+    const row = cd.data.rows.find((r) => r.Name === name);
+    if (!row) continue;
+    const p25 = row.P25 as number | null | undefined;
+    const p75 = row.P75 as number | null | undefined;
+    const min = row.Min as number | null | undefined;
+    const max = row.Max as number | null | undefined;
+    if (p25 == null || p75 == null) continue;
+    allStats.push({ p25, p75, min: min ?? p25, max: max ?? p75 });
+  }
+  if (allStats.length === 0) return { xMin: rawXMin, xMax: rawXMax };
+
+  let clipLo = -Infinity;
+  let clipHi = Infinity;
+  let anyClipLo = false;
+  let anyClipHi = false;
+  for (const s of allStats) {
+    const iqr = s.p75 - s.p25;
+    const lo = s.p25 - CLIP_IQR_FACTOR * iqr;
+    const hi = s.p75 + CLIP_IQR_FACTOR * iqr;
+    if (lo > clipLo) clipLo = lo;
+    if (hi < clipHi) clipHi = hi;
+    if (s.min < lo) anyClipLo = true;
+    if (s.max > hi) anyClipHi = true;
+  }
+
+  return {
+    xMin: anyClipLo ? Math.max(rawXMin, clipLo) : rawXMin,
+    xMax: anyClipHi ? Math.min(rawXMax, clipHi) : rawXMax,
+    clippedLeft: anyClipLo ? { value: rawXMin } : undefined,
+    clippedRight: anyClipHi ? { value: rawXMax } : undefined,
+  };
+}
 
 function fmt(v: number): string {
   if (Math.abs(v) < 10 && v % 1 !== 0) return v.toFixed(1);
@@ -136,6 +200,12 @@ interface BoxPlotCellRendererProps {
   cohortIndex?: number;
   /** Always show landmark labels (for modal use). */
   showLabels?: boolean;
+  /**
+   * When true (default), the x-axis is clipped to IQR ± CLIP_IQR_FACTOR*IQR
+   * when any whisker is significantly beyond Q1/Q3. A hatch pattern marks the
+   * truncated region at each clipped edge.
+   */
+  clipMax?: boolean;
 }
 
 export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
@@ -150,6 +220,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   spacerUnitPx = SPACER_UNIT_PX,
   cohortIndex,
   showLabels = false,
+  clipMax = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(0);
@@ -169,8 +240,47 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const xRange = xMax - xMin || 1;
-  const toX = (v: number) => PAD + ((v - xMin) / xRange) * PLOT_W;
+  // ── Clip-max: derive tighter axis bounds when outlier whiskers are extreme ──
+  const { effXMin, effXMax, clippedLeft, clippedRight } = (() => {
+    if (!clipMax) return { effXMin: xMin, effXMax: xMax, clippedLeft: undefined as { value: number } | undefined, clippedRight: undefined as { value: number } | undefined };
+
+    // Gather all stats across visible cohorts for this row
+    const allStats: BoxStats[] = [];
+    for (const cd of cohortData) {
+      const row = cd.data.rows.find((r) => r.Name === name);
+      if (!row) continue;
+      const s = getStats(row as unknown as Record<string, unknown>);
+      if (s) allStats.push(s);
+    }
+    if (allStats.length === 0) return { effXMin: xMin, effXMax: xMax, clippedLeft: undefined as { value: number } | undefined, clippedRight: undefined as { value: number } | undefined };
+
+    // Determine clip bounds: IQR ± CLIP_IQR_FACTOR * IQR across all cohorts
+    let clipLo = -Infinity;
+    let clipHi = Infinity;
+    let anyClipLo = false;
+    let anyClipHi = false;
+    for (const s of allStats) {
+      const iqr = s.p75 - s.p25;
+      const lo = s.p25 - CLIP_IQR_FACTOR * iqr;
+      const hi = s.p75 + CLIP_IQR_FACTOR * iqr;
+      if (lo > clipLo) clipLo = lo;
+      if (hi < clipHi) clipHi = hi;
+      if (s.min < lo) anyClipLo = true;
+      if (s.max > hi) anyClipHi = true;
+    }
+
+    const newMin = anyClipLo ? Math.max(xMin, clipLo) : xMin;
+    const newMax = anyClipHi ? Math.min(xMax, clipHi) : xMax;
+    return {
+      effXMin: newMin,
+      effXMax: newMax,
+      clippedLeft: anyClipLo ? { value: xMin } : undefined,
+      clippedRight: anyClipHi ? { value: xMax } : undefined,
+    };
+  })();
+
+  const xRange = effXMax - effXMin || 1;
+  const toX = (v: number) => PAD + ((Math.max(effXMin, Math.min(effXMax, v)) - effXMin) / xRange) * PLOT_W;
 
   // Build flat items (cohort rows + spacers) respecting display order
   const flatItems = buildFlatItems(cohortData, spacers);
@@ -271,7 +381,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
           const top = entry.cy - ROW_H / 2;
           const bottom = entry.cy + ROW_H / 2;
           if (localY >= top && localY <= bottom) {
-            onClick(entry.index);
+            // onClick(entry.index);
             break;
           }
         }
@@ -287,25 +397,82 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
         preserveAspectRatio="none"
         className={styles.plotSvg}
       >
-        {rowEntries.map((e, i) => {
+        <defs>
+          <pattern id="clipHatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="6" stroke="var(--text_color_notfocus, #999)" strokeWidth="1.5" strokeOpacity="0.35" />
+          </pattern>
+        </defs>
+
+        {/* Hatch bands at clipped edges */}
+        {clippedLeft && (
+          <rect x={PAD} y={0} width={CLIP_HATCH_W} height={svgH} fill="url(#clipHatch)" />
+        )}
+        {clippedRight && (
+          <rect x={PAD + PLOT_W - CLIP_HATCH_W} y={0} width={CLIP_HATCH_W} height={svgH} fill="url(#clipHatch)" />
+        )}
+
+        {rowEntries.map((e) => {
           const { cy } = e;
           const boxTop = cy - boxH / 2;
           const { stats } = e;
           const dimmed = activeIndex !== null && activeIndex !== e.index;
 
+          // Whisker endpoints: clamped by toX to the clipped axis bounds
+          const minX = toX(stats.min);
+          const maxX = toX(stats.max);
+
+          // Break-mark geometry: where the hatch band's inner edge is
+          const breakXLeft  = PAD + CLIP_HATCH_W;
+          const breakXRight = PAD + PLOT_W - CLIP_HATCH_W;
+
+          // A zigzag break mark running along the whisker (horizontal zig-zag)
+          const bh = boxH * 0.55; // perpendicular amplitude (vertical)
+          const bw = 3;           // half-width of each tooth along the whisker
+          function breakPath(x: number): string {
+            return [
+              `M ${x - bw} ${cy - bh}`,
+              `L ${x + bw} ${cy}`,
+              `L ${x - bw} ${cy + bh}`,
+            ].join(' ');
+          }
+
+          const leftClipped  = !!clippedLeft  && stats.min < effXMin;
+          const rightClipped = !!clippedRight && stats.max > effXMax;
+
           return (
             <g key={e.index} opacity={dimmed ? 0.15 : 0.85} style={{ transition: 'transform 0.15s ease, opacity 0.15s ease', transformOrigin: `0 ${cy}px` }}>
-              <line x1={toX(stats.min)} y1={cy} x2={toX(stats.max)} y2={cy} stroke={e.color} strokeWidth={1.5} />
-              <line x1={toX(stats.min)} y1={cy - boxH * 0.3} x2={toX(stats.min)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1.5} />
-              <line x1={toX(stats.max)} y1={cy - boxH * 0.3} x2={toX(stats.max)} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1.5} />
+              {/* Whisker line — starts/ends at break mark inner edge when clipped */}
+              <line
+                x1={leftClipped  ? breakXLeft  : minX}
+                y1={cy}
+                x2={rightClipped ? breakXRight : maxX}
+                y2={cy}
+                stroke={e.color} strokeWidth={1.5}
+              />
+
+              {/* Min end-cap or break mark */}
+              {leftClipped ? (
+                <path d={breakPath(breakXLeft)} stroke={e.color} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              ) : (
+                <line x1={minX} y1={cy - boxH * 0.3} x2={minX} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1.5} />
+              )}
+
+              {/* Max end-cap or break mark */}
+              {rightClipped ? (
+                <path d={breakPath(breakXRight)} stroke={e.color} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              ) : (
+                <line x1={maxX} y1={cy - boxH * 0.3} x2={maxX} y2={cy + boxH * 0.3} stroke={e.color} strokeWidth={1.5} />
+              )}
+
               <rect
                 x={toX(stats.p25)} y={boxTop}
                 width={toX(stats.p75) - toX(stats.p25)} height={boxH}
-                fill={e.color} fillOpacity={dimmed ? 0.05 : 0.2}
+                fill={e.color} fillOpacity={.5}
                 stroke={e.color} strokeWidth={1.5} rx={1}
               />
-              <line x1={toX(stats.median)} y1={boxTop} x2={toX(stats.median)} y2={boxTop + boxH} stroke={e.color} strokeWidth={1.5} />
-              {stats.mean != null && <circle cx={toX(stats.mean)} cy={cy} r={3.5} fill={e.color} strokeWidth={1.5} stroke={'var(--line-color)'}/>}
+              <line x1={toX(stats.median)} y1={boxTop - 1} x2={toX(stats.median)} y2={boxTop + boxH + 1} stroke={e.color} strokeWidth={3} />
+              {/* <rect x={toX(stats.median) - 2.5} y={boxTop - 5} width={5} height={boxH + 10} fill={e.color} stroke="white" strokeWidth={1.5} rx={3} /> */}
+              {stats.mean != null && <circle cx={toX(stats.mean)} cy={cy} r={(boxH -2 )/2} fill={e.color} strokeWidth={1.5} stroke="black"/>}
             </g>
           );
         })}
@@ -353,7 +520,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
 
   if (showGrid) {
     return (
-      <NumericChartFrame xMin={xMin} xMax={xMax} width={W} showTicks={showTicks}>
+      <NumericChartFrame xMin={effXMin} xMax={effXMax} width={W} showTicks={showTicks} clippedLeft={clippedLeft} clippedRight={clippedRight}>
         {content}
       </NumericChartFrame>
     );
