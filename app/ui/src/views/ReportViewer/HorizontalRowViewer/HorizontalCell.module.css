@@ -85,7 +85,7 @@
   flex-direction: row;
   align-items: stretch;
   gap: 12px;
-  width: fit-content;
+  width: 100%;
   /* border: var(--border); */
   max-width: 100%;
 }
@@ -108,14 +108,10 @@
   word-break: break-word;
 }
 
-.multiRowTitle:hover {
-  /* background-color: rgba(0, 0, 0, 0.05); */
-}
-
 .multiRowContent {
   /* border: var(--border); */
   border-radius: 10px;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-width: 350px;
   min-height: fit-content;
   display: flex;

@@ -16,6 +16,7 @@
 .container {
   position: relative;
   width: 100%;
+  max-width: 400px;
   height: 100%;
   box-sizing: border-box;
   font-family: "IBMPlexSans-regular", sans-serif;

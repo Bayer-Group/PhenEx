@@ -74,22 +74,23 @@
 
 /* ── Vertical layout ─────────────────────────────────────────────────── */
 
-/* Width-locking wrapper: establishes a definite box so the inner chart can't
-   expand its shrink-to-fit ancestor (.multiRowContent) to fit the bars.
-   The inner .vertical is absolutely positioned, so it contributes no content
-   width and the scroll area can actually clip + scroll. */
+/* Width-locking wrapper. Width is set inline (px) from the parent's measured
+   available width, so the chart fills up to the parent (max width = parent) but
+   never expands the shrink-to-fit ancestor to fit the bars. overflow:hidden
+   keeps inner overflow contained so the scroll area can clip + scroll. */
 .vSizer {
   position: relative;
   width: 100%;
-  min-width: 350px;
   min-height: 160px;
+  max-width: 100%;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
 .vertical {
-  position: absolute;
-  inset: 0;
   display: flex;
+  width: 100%;
+  height: 100%;
   flex-direction: column;
   box-sizing: border-box;
 }
