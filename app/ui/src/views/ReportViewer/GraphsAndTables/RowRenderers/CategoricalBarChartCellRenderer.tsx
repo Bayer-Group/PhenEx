@@ -1,6 +1,7 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useRef } from 'react';
 import { type CohortClassified } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
+import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import styles from './CategoricalBarChartCellRenderer.module.css';
 
 type Orientation = 'horizontal' | 'vertical';
@@ -96,54 +97,86 @@ const HorizontalChart: FC<{
 
 /* ── Vertical ───────────────────────────────────────────────────────── */
 
+const MIN_GROUP_WIDTH_PX = 40;
+const MIN_BAR_WIDTH_PX = 8;
+
 const VerticalChart: FC<{
   categories: CategoryData[];
   activeIndex: number | null;
 }> = ({ categories, activeIndex }) => {
   const ceiling = 100;
   const ticks = [0, 20, 40, 60, 80, 100];
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const cohortCount = categories[0]?.values.length ?? 1;
+  const groupMinWidth = Math.max(MIN_GROUP_WIDTH_PX, cohortCount * MIN_BAR_WIDTH_PX);
+  const minChartWidth = categories.length * groupMinWidth;
 
   return (
+    <div className={styles.vSizer}>
     <div className={styles.vertical}>
-      {/* Y-axis ticks */}
-      <div className={styles.vYAxis}>
-        {ticks.map((t) => (
-          <div key={t} className={styles.vYTick} style={{ bottom: `${(t / ceiling) * 100}%` }}>
-            {t}
+      <div className={styles.vChartRow}>
+        {/* Fixed Y-axis, outside the scroll region. Plot height only (label row excluded). */}
+        <div className={styles.vYAxis}>
+          <div className={styles.vYAxisInner}>
+            {ticks.map((t) => (
+              <div key={t} className={styles.vYTick} style={{ bottom: `${(t / ceiling) * 100}%` }}>
+                {t}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Chart area */}
-      <div className={styles.vChartArea}>
-        {/* Grid lines */}
-        {ticks.map((t) => (
-          <div key={t} className={styles.vGridLine} style={{ bottom: `${(t / ceiling) * 100}%` }} />
-        ))}
-
-        {/* Category groups */}
-        <div className={styles.vGroups}>
-          {categories.map(({ category, values }) => (
-            <div key={category} className={styles.vGroup}>
-              {values.map(({ pct, color, cohortIndex }) => {
-                const dimmed = activeIndex !== null && activeIndex !== cohortIndex;
-                return (
-                  <div
-                    key={cohortIndex}
-                    className={styles.vBar}
-                    style={{
-                      height: `${(pct / ceiling) * 100}%`,
-                      backgroundColor: color,
-                      opacity: dimmed ? 0.25 : 1,
-                    }}
-                  />
-                );
-              })}
-              <div className={styles.vLabel}>{category}</div>
+        <div ref={scrollRef} className={styles.vScrollArea}>
+          <div
+            className={styles.vScrollInner}
+            style={{ minWidth: minChartWidth, ['--group-min-width' as string]: `${groupMinWidth}px` }}
+          >
+            <div className={styles.vChartArea}>
+              {ticks.map((t) => (
+                <div key={t} className={styles.vGridLine} style={{ bottom: `${(t / ceiling) * 100}%` }} />
+              ))}
+              <div className={styles.vGroups}>
+                {categories.map(({ category, values }) => (
+                  <div key={category} className={styles.vGroup}>
+                    {values.map(({ pct, color, cohortIndex }) => {
+                      const dimmed = activeIndex !== null && activeIndex !== cohortIndex;
+                      return (
+                        <div
+                          key={cohortIndex}
+                          className={styles.vBar}
+                          style={{
+                            height: `${(pct / ceiling) * 100}%`,
+                            backgroundColor: color,
+                            opacity: dimmed ? 0.25 : 1,
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+            {/* Labels below the plot, scroll horizontally with the bars and stay aligned with groups */}
+            <div className={styles.vLabelRow}>
+              {categories.map(({ category }) => (
+                <div key={category} className={styles.vLabel}>{category}</div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
+
+      <SimpleCustomScrollbar
+        targetRef={scrollRef}
+        orientation="horizontal"
+        marginTop={0}
+        marginToEnd={40}
+        classNameTrack={styles.vScrollBarTrack}
+        classNameThumb={styles.vScrollBarThumb}
+        showOnHover={true}
+      />
+    </div>
     </div>
   );
 };

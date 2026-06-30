@@ -284,7 +284,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
               </div>
               <div className={styles.legendGroupTitleContent} onClick={() => toggleGroupCollapse(gi)}>
                 <span className={styles.legendGroupTitleLabel} style={{ backgroundColor: groupColor }}>
-                  {cohortDescriptions?.[group.parent]?.display_name || group.parent}
+                  {(cohortDescriptions?.[group.parent]?.display_name || group.parent).replace(/_/g, ' ')}
                 </span>
                 {!collapsedGroups.has(gi) && cohortDescriptions?.[group.parent]?.description && (
                   <div className={styles.legendGroupDescription}>{cohortDescriptions[group.parent].description}</div>
@@ -325,7 +325,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                     <span
                       className={`${styles.legendItemLabel} ${!isActive ? styles.legendItemLabelInactive : ''}`}
                     >
-                      {sub.fullName === group.parent ? 'Main Cohort' : (cohortDescriptions?.[sub.fullName]?.display_name || sub.label)}
+                      {sub.fullName === group.parent ? 'Main Cohort' : (cohortDescriptions?.[sub.fullName]?.display_name || sub.label).replace(/_/g, ' ')}
                     </span>
                     {hasDesc && expandedDescs.has(sub.fullName) && (
                       <div className={styles.subcohortDescription}>

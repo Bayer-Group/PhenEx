@@ -177,7 +177,7 @@
   flex-direction: row;
   align-items: flex-start;
   gap: 4px;
-  padding: 0px 8px 3px 5px;
+  padding: 0px 30px 3px 5px;
   user-select: none;
   transition: background 0.15s, border-color 0.15s;
   border: 1px solid transparent;
