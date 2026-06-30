@@ -51,13 +51,14 @@ class SubsetTable(Node):
 
         index_table = self.index_phenotype.table
 
-        # Check if EVENT_DATE exists in the index table
-        if "EVENT_DATE" in index_table.columns:
+        if "INDEX_DATE" in index_table.columns:
+            columns = list(set(["INDEX_DATE"] + table.columns))
+        elif "EVENT_DATE" in index_table.columns:
             index_table = index_table.rename({"INDEX_DATE": "EVENT_DATE"})
             columns = list(set(["INDEX_DATE"] + table.columns))
         else:
             logger.warning(
-                f"EVENT_DATE column not found in index_phenotype table for SubsetTable '{self.name}'. INDEX_DATE will not be set."
+                f"INDEX_DATE column not found in index_phenotype table for SubsetTable '{self.name}'. INDEX_DATE will not be set."
             )
             columns = table.columns
 
@@ -68,6 +69,12 @@ class SubsetTable(Node):
                 f"PERSON_ID column not found in domain table for SubsetTable '{self.name}'. Cannot perform subsetting without PERSON_ID."
             )
             return table.table
-        subset_table = table.inner_join(index_table, "PERSON_ID")
-        subset_table = subset_table.select(columns)
+
+        # In multi index settings the index_table determines which index dates to use! 
+        # the subset tables entry will contain all possible index dates; 
+        # subset tables index should contain only index dates/person ids in the index_table (which may select first or last)
+        join_keys = ["PERSON_ID", "INDEX_DATE"] if "INDEX_DATE" in table.columns else ["PERSON_ID"]
+        subset_table = table.inner_join(index_table, join_keys)
+        subset_table = subset_table.select(columns).distinct()
+
         return subset_table
