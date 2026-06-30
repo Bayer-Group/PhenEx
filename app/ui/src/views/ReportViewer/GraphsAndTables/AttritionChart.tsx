@@ -239,10 +239,13 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
           return (
             <div key={entry.cohortName} className={styles.tableRow}>
               <div className={styles.tableRowLabel}>
-                <span className={styles.tableRowDot} style={{ backgroundColor: entry.color }} />
+                <span className={styles.tableRowDot} style={{ backgroundColor: entry.isParent ? entry.color : entry.parentColor }} />
                 <div className={styles.tableRowLabelText}>
                   <span className={styles.tableRowMainCohortName}>{entry.mainCohortDisplayName}</span>
                   <span className={styles.tableRowLabelSeparator}>⋅</span>
+                  {!entry.isParent && (
+                    <span className={styles.tableRowDot} style={{ backgroundColor: entry.color }} />
+                  )}
                   <span className={styles.tableRowSubcohortName}>
                     {entry.subcohortDisplayName ?? 'Main Cohort'}
                   </span>
