@@ -177,7 +177,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
             />
           );
         case 'categorical':
-          return <CategoricalBarChartCellRenderer baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes}/>;
+          return <CategoricalBarChartCellRenderer baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} orientation="vertical"/>;
         case 'numeric': {
           let lo = Infinity, hi = -Infinity;
           for (const cd of cohortData) {

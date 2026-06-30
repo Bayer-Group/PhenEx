@@ -19,14 +19,79 @@ const MARGIN_BOTTOM = 40;
 const LABEL_ROW_H = 18; // height reserved for labels below the plot
 
 /**
- * When clipMax is enabled, whiskers that extend beyond this many IQR-widths
- * past Q1/Q3 trigger clipping of the x-axis. The axis is then clamped to the
- * IQR ± CLIP_IQR_FACTOR * IQR, and a hatched band is drawn at each clipped
- * edge to signal truncation.
+ * A whisker is considered a long tail when it extends beyond this many
+ * IQR-widths past Q1 (left) or Q3 (right). Only then is the axis clipped.
  */
 const CLIP_IQR_FACTOR = 1.5;
 
+/**
+ * Fraction of the full IQR added as padding beyond the most extreme Q1/Q3
+ * so that Q1/Q3 are never rendered right at the axis edge.
+ */
+const Q_EDGE_PAD_FACTOR = 0.5;
+
 /* ── Helpers ─────────────────────────────────────────────────────────── */
+
+/**
+ * Core clip-bound computation shared between the component and the exported
+ * helper. Given a list of {p25, p75, min, max} stats:
+ *
+ * - The axis is clipped on a side only when at least one cohort has a long
+ *   tail (whisker extends past CLIP_IQR_FACTOR × IQR beyond Q1/Q3).
+ * - When clipping, the axis bound is the loosest (most permissive) IQR fence
+ *   across all cohorts, so cohorts with wider spreads keep their whiskers.
+ * - The axis is then further expanded to guarantee all Q1/Q3 values have at
+ *   least Q_EDGE_PAD_FACTOR × IQR of space on either side — Q boxes never
+ *   appear jammed against the axis edge.
+ */
+function computeClipBounds(
+  allStats: { p25: number; p75: number; min: number; max: number }[],
+  rawXMin: number,
+  rawXMax: number,
+): { outMin: number; outMax: number } {
+  let anyClipLo = false;
+  let anyClipHi = false;
+  // Loosest (most permissive) IQR fence that triggers clipping.
+  let fenceLo = Infinity;
+  let fenceHi = -Infinity;
+
+  for (const s of allStats) {
+    const iqr = s.p75 - s.p25;
+    const lo = s.p25 - CLIP_IQR_FACTOR * iqr;
+    const hi = s.p75 + CLIP_IQR_FACTOR * iqr;
+    if (s.min < lo) {
+      anyClipLo = true;
+      if (lo < fenceLo) fenceLo = lo; // keep loosest = smallest lower fence
+    }
+    if (s.max > hi) {
+      anyClipHi = true;
+      if (hi > fenceHi) fenceHi = hi; // keep loosest = largest upper fence
+    }
+  }
+
+  if (!anyClipLo && !anyClipHi) return { outMin: rawXMin, outMax: rawXMax };
+
+  // Ensure Q1/Q3 of every cohort has padding room so they're not at the edge.
+  let minQ1 = Infinity;
+  let maxQ3 = -Infinity;
+  let maxIQR = 0;
+  for (const s of allStats) {
+    if (s.p25 < minQ1) minQ1 = s.p25;
+    if (s.p75 > maxQ3) maxQ3 = s.p75;
+    const iqr = s.p75 - s.p25;
+    if (iqr > maxIQR) maxIQR = iqr;
+  }
+  const pad = Q_EDGE_PAD_FACTOR * maxIQR;
+
+  const outMin = anyClipLo
+    ? Math.max(rawXMin, Math.min(fenceLo, minQ1 - pad))
+    : rawXMin;
+  const outMax = anyClipHi
+    ? Math.min(rawXMax, Math.max(fenceHi, maxQ3 + pad))
+    : rawXMax;
+
+  return { outMin, outMax };
+}
 
 /**
  * Given a set of cohorts and a row name, compute the clipped x-axis bounds
@@ -61,31 +126,24 @@ export function computeClippedXBounds(
   }
   if (allStats.length === 0) return { xMin: rawXMin, xMax: rawXMax };
 
-  let clipLo = -Infinity;
-  let clipHi = Infinity;
-  let anyClipLo = false;
-  let anyClipHi = false;
-  for (const s of allStats) {
-    const iqr = s.p75 - s.p25;
-    const lo = s.p25 - CLIP_IQR_FACTOR * iqr;
-    const hi = s.p75 + CLIP_IQR_FACTOR * iqr;
-    if (lo > clipLo) clipLo = lo;
-    if (hi < clipHi) clipHi = hi;
-    if (s.min < lo) anyClipLo = true;
-    if (s.max > hi) anyClipHi = true;
-  }
-
+  const { outMin, outMax } = computeClipBounds(allStats, rawXMin, rawXMax);
+  const eps = (rawXMax - rawXMin) * 1e-6;
   return {
-    xMin: anyClipLo ? Math.max(rawXMin, clipLo) : rawXMin,
-    xMax: anyClipHi ? Math.min(rawXMax, clipHi) : rawXMax,
-    clippedLeft: anyClipLo ? { value: rawXMin } : undefined,
-    clippedRight: anyClipHi ? { value: rawXMax } : undefined,
+    xMin: outMin,
+    xMax: outMax,
+    clippedLeft: outMin > rawXMin + eps ? { value: rawXMin } : undefined,
+    clippedRight: outMax < rawXMax - eps ? { value: rawXMax } : undefined,
   };
 }
 
 function fmt(v: number): string {
-  if (Math.abs(v) < 10 && v % 1 !== 0) return v.toFixed(1);
-  return Math.round(v).toString();
+  if (Number.isInteger(v)) return v.toString();
+  const abs = Math.abs(v);
+  if (abs >= 1000) return v.toFixed(1);
+  if (abs >= 100) return v.toFixed(2);
+  if (abs >= 10) return v.toFixed(2);
+  if (abs >= 1) return v.toFixed(3);
+  return v.toPrecision(3);
 }
 
 interface CohortLabel {
@@ -235,9 +293,15 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   const W = widthProp ?? (containerW || DEFAULT_W);
   const PLOT_W = W - PAD * 2;
   const { activeIndex, onClick } = useBarHoverStore();
-  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const [landmarkTooltip, setLandmarkTooltip] = useState<{
+    x: number;
+    y: number;
+    label: string;
+    value: string;
+    cohortLabel: CohortLabel;
+    color: string;
+  } | null>(null);
 
   // ── Clip-max: derive tighter axis bounds when outlier whiskers are extreme ──
   const { effXMin, effXMax, clippedLeft, clippedRight } = (() => {
@@ -253,28 +317,13 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
     }
     if (allStats.length === 0) return { effXMin: xMin, effXMax: xMax, clippedLeft: undefined as { value: number } | undefined, clippedRight: undefined as { value: number } | undefined };
 
-    // Determine clip bounds: IQR ± CLIP_IQR_FACTOR * IQR across all cohorts
-    let clipLo = -Infinity;
-    let clipHi = Infinity;
-    let anyClipLo = false;
-    let anyClipHi = false;
-    for (const s of allStats) {
-      const iqr = s.p75 - s.p25;
-      const lo = s.p25 - CLIP_IQR_FACTOR * iqr;
-      const hi = s.p75 + CLIP_IQR_FACTOR * iqr;
-      if (lo > clipLo) clipLo = lo;
-      if (hi < clipHi) clipHi = hi;
-      if (s.min < lo) anyClipLo = true;
-      if (s.max > hi) anyClipHi = true;
-    }
-
-    const newMin = anyClipLo ? Math.max(xMin, clipLo) : xMin;
-    const newMax = anyClipHi ? Math.min(xMax, clipHi) : xMax;
+    const { outMin, outMax } = computeClipBounds(allStats, xMin, xMax);
+    const eps = (xMax - xMin) * 1e-6;
     return {
-      effXMin: newMin,
-      effXMax: newMax,
-      clippedLeft: anyClipLo ? { value: xMin } : undefined,
-      clippedRight: anyClipHi ? { value: xMax } : undefined,
+      effXMin: outMin,
+      effXMax: outMax,
+      clippedLeft: outMin > xMin + eps ? { value: xMin } : undefined,
+      clippedRight: outMax < xMax - eps ? { value: xMax } : undefined,
     };
   })();
 
@@ -321,70 +370,26 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   const svgH = plotH + (showLabels ? LABEL_ROW_H : 0);
   const boxH = ROW_H * 0.6;
 
+  const showLandmark = (ev: React.MouseEvent, rowIndex: number, landmarkLabel: string, landmarkVal: number) => {
+    const entry = rowEntries[rowIndex];
+    if (!entry) return;
+    setLandmarkTooltip({
+      x: ev.clientX + 50,
+      y: ev.clientY,
+      label: landmarkLabel,
+      value: fmt(landmarkVal),
+      cohortLabel: getCohortLabel(cohortData, entry.index),
+      color: entry.color,
+    });
+  };
+
+  const hideLandmark = () => setLandmarkTooltip(null);
+
   const content = (
     <div
       ref={containerRef}
       className={styles.container}
       style={{ paddingTop: MARGIN_TOP, paddingBottom: MARGIN_BOTTOM }}
-      onMouseMove={(e) => {
-        const svg = svgRef.current;
-        if (!svg) return;
-        const rect = svg.getBoundingClientRect();
-        if (!rect.height) return;
-        const scaleY = rect.height / svgH;
-        const scaleX = rect.width / W;
-        const localY = (e.clientY - rect.top) / scaleY;
-        const localX = (e.clientX - rect.left) / scaleX;
-
-        // Find which row entry the mouse is over based on cy positions
-        let foundIdx: number | null = null;
-        for (let i = 0; i < rowEntries.length; i++) {
-          const entry = rowEntries[i];
-          const top = entry.cy - ROW_H / 2;
-          const bottom = entry.cy + ROW_H / 2;
-          if (localY >= top && localY <= bottom) {
-            const { stats } = entry;
-            const p25X = toX(stats.p25);
-            const p75X = toX(stats.p75);
-            if (localX >= p25X && localX <= p75X) {
-              foundIdx = i;
-            }
-            break;
-          }
-        }
-
-        if (foundIdx !== null) {
-          const entry = rowEntries[foundIdx];
-          const { stats } = entry;
-          const meanX = stats.mean != null ? toX(stats.mean) : toX(stats.median);
-          const medianX = toX(stats.median);
-          const dataX = rect.left + ((meanX + medianX) / 2) * scaleX;
-          const centerX = rect.left + rect.width / 2;
-          const cx = centerX + (dataX - centerX) * 0.3;
-          setHoveredRow(foundIdx);
-          setTooltipPos({ x: cx, y: rect.top + entry.cy * scaleY });
-        } else {
-          setHoveredRow(null);
-          setTooltipPos(null);
-        }
-      }}
-      onMouseLeave={() => { setHoveredRow(null); setTooltipPos(null); }}
-      onClick={(e) => {
-        const svg = svgRef.current;
-        if (!svg) return;
-        const rect = svg.getBoundingClientRect();
-        if (!rect.height) return;
-        const scaleY = rect.height / svgH;
-        const localY = (e.clientY - rect.top) / scaleY;
-        for (const entry of rowEntries) {
-          const top = entry.cy - ROW_H / 2;
-          const bottom = entry.cy + ROW_H / 2;
-          if (localY >= top && localY <= bottom) {
-            // onClick(entry.index);
-            break;
-          }
-        }
-      }}
     >
       {containerW > 0 && rowEntries.length > 0 && (
       <>
@@ -396,7 +401,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
         preserveAspectRatio="none"
         className={styles.plotSvg}
       >
-        {rowEntries.map((e) => {
+        {rowEntries.map((e, i) => {
           const { cy } = e;
           const boxTop = cy - boxH / 2;
           const { stats } = e;
@@ -472,8 +477,31 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
                 stroke={e.color} strokeWidth={1.5} rx={1}
               />
               <line x1={toX(stats.median)} y1={boxTop - 1} x2={toX(stats.median)} y2={boxTop + boxH + 1} stroke={e.color} strokeWidth={3} />
-              {/* <rect x={toX(stats.median) - 2.5} y={boxTop - 5} width={5} height={boxH + 10} fill={e.color} stroke="white" strokeWidth={1.5} rx={3} /> */}
-              {stats.mean != null && <circle cx={toX(stats.mean)} cy={cy} r={(boxH -2 )/2} fill={e.color} strokeWidth={1.5} stroke="black"/>}
+              {stats.mean != null && <circle cx={toX(stats.mean)} cy={cy} r={(boxH - 2) / 2} fill={e.color} strokeWidth={1.5} stroke="black" />}
+
+              {/* Invisible landmark hit targets */}
+              {(
+                [
+                  { lbl: 'Min', val: stats.min },
+                  { lbl: 'Q1', val: stats.p25 },
+                  { lbl: 'Median', val: stats.median },
+                  ...(stats.mean != null ? [{ lbl: 'Mean', val: stats.mean }] : []),
+                  { lbl: 'Q3', val: stats.p75 },
+                  { lbl: 'Max', val: stats.max },
+                ] as { lbl: string; val: number }[]
+              ).map(({ lbl, val }) => (
+                <circle
+                  key={lbl}
+                  cx={toX(val)}
+                  cy={cy}
+                  r={6}
+                  fill="transparent"
+                  stroke="none"
+                  style={{ cursor: 'default' }}
+                  onMouseEnter={(ev) => showLandmark(ev, i, lbl, val)}
+                  onMouseLeave={hideLandmark}
+                />
+              ))}
             </g>
           );
         })}
@@ -494,28 +522,27 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
       </>
       )}
 
-      {hoveredRow !== null && tooltipPos && (() => {
-        const e = rowEntries[hoveredRow];
-        if (!e) return null;
-        const { stats } = e;
-        const label = getCohortLabel(cohortData, e.index);
-        return (
-          <Portal>
-            <div className={styles.tooltipWrapper} style={{ left: tooltipPos.x, top: tooltipPos.y, transform: 'translate(-50%, -105%)' }}>
-              <div className={styles.tooltipCohort} style={{ color: label.color }}>
-                <div className={styles.tooltipParent}>{label.parent}</div>
-                {label.sub && <div className={styles.tooltipSub}>{label.sub}</div>}
-              </div>
-              <div className={styles.tooltipStats}>
-                <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Mean</span><span className={styles.tooltipValue}>{stats.mean != null ? fmt(stats.mean) : '–'}</span></div>
-                <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Median</span><span className={styles.tooltipValue}>{fmt(stats.median)}</span></div>
-                <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Min</span><span className={styles.tooltipValue}>{fmt(stats.min)}</span></div>
-                <div className={styles.tooltipStat}><span className={styles.tooltipLabel}>Max</span><span className={styles.tooltipValue}>{fmt(stats.max)}</span></div>
+      {landmarkTooltip && (
+        <Portal>
+          <div
+            className={styles.tooltipWrapper}
+            style={{ left: landmarkTooltip.x, top: landmarkTooltip.y, transform: 'translate(-50%, -115%)' }}
+          >
+            <div className={styles.tooltipCohort} style={{ color: landmarkTooltip.color }}>
+              <div className={styles.tooltipParent}>{landmarkTooltip.cohortLabel.parent}</div>
+              {landmarkTooltip.cohortLabel.sub && (
+                <div className={styles.tooltipSub}>{landmarkTooltip.cohortLabel.sub}</div>
+              )}
+            </div>
+            <div className={styles.tooltipStats}>
+              <div className={styles.tooltipStat}>
+                <span className={styles.tooltipLabel}>{landmarkTooltip.label}</span>
+                <span className={styles.tooltipValue}>{landmarkTooltip.value}</span>
               </div>
             </div>
-          </Portal>
-        );
-      })()}
+          </div>
+        </Portal>
+      )}
     </div>
   );
 

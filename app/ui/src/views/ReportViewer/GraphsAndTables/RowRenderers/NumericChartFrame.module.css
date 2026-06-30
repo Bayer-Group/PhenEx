@@ -28,7 +28,7 @@
 .headerRow {
   position: absolute;
   height: 20px;
-  top: 2px;
+  bottom: 20px;
   left: 0;
   right: 0;
   overflow: visible;
@@ -36,7 +36,7 @@
 
 .headerTick {
   position: absolute;
-  top: 0;
+  top: 20px;
   transform: translate(-50%, 0);
   font-size: var(--font_size_infotext) !important;
   color: var(--text_color_notfocus) !important;

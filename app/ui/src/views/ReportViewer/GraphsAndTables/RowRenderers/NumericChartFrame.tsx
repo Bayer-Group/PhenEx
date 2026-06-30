@@ -20,11 +20,11 @@ export function niceTicks(min: number, max: number): number[] {
 
   if (range >= 10 && step < 5) step = 5;
 
-  // Start from a nice value at or below min
-  const first = Math.floor(min / step) * step;
+  const first = Math.ceil(min / step) * step;
   const ticks: number[] = [];
-  for (let v = first; v <= max - step * 0.01; v += step) {
-    ticks.push(Math.round(v * 1e6) / 1e6);
+  for (let v = first; v <= max + step * 0.01; v += step) {
+    const rounded = Math.round(v * 1e6) / 1e6;
+    if (rounded >= min && rounded <= max) ticks.push(rounded);
   }
   return ticks;
 }
