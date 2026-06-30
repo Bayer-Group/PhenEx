@@ -48,6 +48,33 @@
   font-family: "IBMPlexSans-regular" !important;
 }
 
+/* ── Hover crosshair ─────────────────────────────────────────────────── */
+.hoverLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--text_color_notfocus, #888);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 10;
+  transform: translateX(-50%);
+}
+
+.hoverLabel {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 200%);
+  font-size: var(--font_size_infotext);
+  font-family: "IBMPlexSans-regular" !important;
+  color: var(--text_color_notfocus);
+  background-color: var(--background_color, #fff);
+  white-space: nowrap;
+  padding: 0 3px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
 /* ── Content (renders above grid) ────────────────────────────────────── */
 .content {
   position: relative;

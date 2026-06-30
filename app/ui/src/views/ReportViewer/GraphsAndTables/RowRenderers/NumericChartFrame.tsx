@@ -1,4 +1,4 @@
-import { FC, ReactNode, useRef, useState, useEffect } from 'react';
+import { FC, ReactNode, useRef, useState, useEffect, useCallback } from 'react';
 import styles from './NumericChartFrame.module.css';
 
 /* ── Shared axis helpers (exported for reuse) ────────────────────────── */
@@ -70,6 +70,7 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(0);
+  const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -83,33 +84,55 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
   const ticks = niceTicks(xMin, xMax);
   const px = (v: number) => toPixel(v, xMin, xMax, width);
 
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setHover({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  }, []);
+
+  const hoverValue =
+    hover !== null
+      ? xMin + ((hover.x - PAD) / (width - PAD * 2)) * (xMax - xMin)
+      : null;
+
   return (
-    <div ref={containerRef} className={styles.frame}>
+    <div
+      ref={containerRef}
+      className={styles.frame}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setHover(null)}
+    >
       {width > 0 && (
         <>
-      {/* Grid lines */}
-      <div className={styles.gridOverlay} style={{ left: 0, width }}>
-        {ticks.map((t) => (
-          <div key={t} className={styles.gridLine} style={{ left: px(t) }} />
-        ))}
-      </div>
+          {/* Grid lines */}
+          <div className={styles.gridOverlay} style={{ left: 0, width }}>
+            {ticks.map((t) => (
+              <div key={t} className={styles.gridLine} style={{ left: px(t) }} />
+            ))}
+          </div>
 
-      {/* Tick labels */}
-      {showTicks && (
-        <div className={styles.headerRow}>
-          {ticks.map((t) => (
-            <span key={t} className={styles.headerTick} style={{ left: px(t) }}>
-              {fmtTick(t)}
-            </span>
-          ))}
+          {/* Hover crosshair */}
+          {hover !== null && hoverValue !== null && (
+            <div className={styles.hoverLine} style={{ left: hover.x }}>
+              <span className={styles.hoverLabel} style={{ top: hover.y }}>
+                {fmtTick(hoverValue)}
+              </span>
+            </div>
+          )}
 
-        </div>
-      )}
+          {/* Tick labels */}
+          {showTicks && (
+            <div className={styles.headerRow}>
+              {ticks.map((t) => (
+                <span key={t} className={styles.headerTick} style={{ left: px(t) }}>
+                  {fmtTick(t)}
+                </span>
+              ))}
+            </div>
+          )}
 
-      {/* Chart content */}
-      <div className={styles.content}>
-        {children}
-      </div>
+          {/* Chart content */}
+          <div className={styles.content}>{children}</div>
         </>
       )}
     </div>
