@@ -123,6 +123,7 @@ export const LegendDot: FC<LegendDotProps> = ({
             initialX={pickerPos.x}
             initialY={pickerPos.y}
             dragHandleSelector={`.${colorPickerDragHandle}`}
+            clampToViewport
           >
             <ColorPicker
               value={color}

@@ -11,6 +11,8 @@ interface DraggablePortalProps {
   enableDragging?: boolean; // Allow disabling drag functionality
   onDragStart?: () => void; // Called when drag starts
   onDragEnd?: (wasDragged: boolean) => void; // Called when drag ends, with flag indicating if actually dragged
+  /** When true, measures the rendered content after mount and clamps the position so it stays fully visible in the viewport. */
+  clampToViewport?: boolean;
 }
 
 interface Position {
@@ -28,6 +30,7 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
   enableDragging = true,
   onDragStart,
   onDragEnd,
+  clampToViewport = false,
 }) => {
   // Parse initial position if provided as string (e.g., "100px")
   const parsePosition = (pos: string | number): number => {
@@ -49,6 +52,7 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
 
   const [container] = useState(() => document.createElement('div'));
   const [position, setPosition] = useState<Position>(getInitialPosition);
+  const [isAppended, setIsAppended] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Position>({ x: 0, y: 0 });
   const [dragStartPosition, setDragStartPosition] = useState<Position>({ x: 0, y: 0 });
@@ -79,13 +83,29 @@ export const DraggablePortal: React.FC<DraggablePortalProps> = ({
     // Ensure the container fully captures mouse events
     container.style.isolation = 'isolate';
     document.body.appendChild(container);
+    setIsAppended(true);
 
     return () => {
       if (document.body.contains(container)) {
         document.body.removeChild(container);
       }
+      setIsAppended(false);
     };
   }, [container]);
+
+  // After mount, measure the actual rendered size and clamp position so content stays in the viewport.
+  useEffect(() => {
+    if (!clampToViewport || !isAppended || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) return;
+    const margin = 8;
+    const clampedX = Math.max(margin, Math.min(position.x, window.innerWidth - rect.width - margin));
+    const clampedY = Math.max(margin, Math.min(position.y, window.innerHeight - rect.height - margin));
+    if (clampedX !== position.x || clampedY !== position.y) {
+      setPosition({ x: clampedX, y: clampedY });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAppended, clampToViewport]);
 
   // Update container position when position state changes
   useEffect(() => {

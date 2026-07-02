@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
-import { AVAILABLE_COLORS } from '../../types';
+import { COLOR_PALETTES } from '../../types';
 import styles from './ColorPicker.module.css';
 
 /**
@@ -9,8 +9,8 @@ import styles from './ColorPicker.module.css';
  */
 export const colorPickerDragHandle = 'colorPickerDragHandle';
 
-/** Approximate height for viewport clamping in LegendDot. */
-export const COLOR_PICKER_HEIGHT = 360;
+/** Approximate height for viewport clamping in LegendDot (generous upper bound). */
+export const COLOR_PICKER_HEIGHT = 540;
 
 /** Maps a palette color to the label of the cohort currently using it. */
 export interface ColorUsage {
@@ -328,22 +328,26 @@ export const ColorPicker: FC<ColorPickerProps> = ({ value, usedColors, onSelect,
           </button>
         )}
       </div>
-      <div className={styles.section}>Palette</div>
-      <div className={styles.grid}>
-        {AVAILABLE_COLORS.map((color) => {
-          const norm = normalize(color);
-          const selected = norm === selectedNorm;
-          return (
-            <Swatch
-              key={color}
-              color={color}
-              selected={selected}
-              usedBy={usedMap.get(norm)}
-              onSelect={onSelect}
-            />
-          );
-        })}
-      </div>
+      {COLOR_PALETTES.map((palette) => (
+        <div key={palette.name}>
+          <div className={styles.section}>{palette.name}</div>
+          <div className={styles.grid}>
+            {palette.colors.map((color) => {
+              const norm = normalize(color.value);
+              const selected = norm === selectedNorm;
+              return (
+                <Swatch
+                  key={color.value}
+                  color={color.value}
+                  selected={selected}
+                  usedBy={usedMap.get(norm)}
+                  onSelect={onSelect}
+                />
+              );
+            })}
+          </div>
+        </div>
+      ))}
 
       <div className={styles.section}>Custom</div>
       <div className={styles.selectedPreview}>

@@ -1,5 +1,5 @@
 import { forwardRef, memo, useMemo, useRef } from 'react';
-import { type CohortClassified, type CohortGroup, type KdeCurve } from '../types';
+import { type CohortClassified, type CohortGroup, type KdeCurve, type CohortDescriptions, type ColorOverrides } from '../types';
 import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow, type ViewerEntry, CATEGORY_DESCRIPTIONS, getCategoryLabel } from '../studyRegistryUtils';
 import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEventContent';
@@ -38,12 +38,15 @@ export interface HorizontalCellProps {
   studyDescription?: string;
   waterfallData: Record<string, unknown>;
   groups: CohortGroup[];
+  cohortDescriptions?: CohortDescriptions;
+  colorOverrides?: ColorOverrides;
+  onSetColor?: (cohortName: string, color: string) => void;
 }
 
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, initialScrollTop, studyTitle = '', studyDescription, waterfallData, groups }, ref) => {
+  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, initialScrollTop, studyTitle = '', studyDescription, waterfallData, groups, cohortDescriptions, colorOverrides, onSetColor }, ref) => {
     const isSection = entry.kind === 'section';
     const isCategory = entry.kind === 'category';
     const reporter = entry.kind === 'row' ? entry.row.reporter : entry.reporter;
@@ -99,7 +102,14 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
     const renderAttritionContent = () => {
       return (
         <div className={styles.attritionBody}>
-          <AttritionChart cohortData={cohortData} waterfall={waterfallData} groups={groups} spacers={spacers} />
+          <AttritionChart
+            cohortData={cohortData}
+            waterfall={waterfallData}
+            groups={groups}
+            spacers={spacers}
+            cohortDescriptions={cohortDescriptions}
+            onSetColor={onSetColor}
+          />
         </div>
       );
     };

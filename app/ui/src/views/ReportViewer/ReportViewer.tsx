@@ -782,6 +782,9 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
                 studyDescription={studyDescription}
                 waterfallData={waterfallData}
                 groups={groups}
+                cohortDescriptions={cohortDescriptions}
+                colorOverrides={colorOverrides}
+                onSetColor={handleSetColor}
               />
             </div>
           );

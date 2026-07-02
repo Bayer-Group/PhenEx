@@ -10,6 +10,15 @@ export const AVAILABLE_COLORS: string[] = Object.values(palette).map(([r, g, b])
   return `rgb(${r}, ${g}, ${b})`;
 });
 
+/** Structured palettes for color picker display. */
+export const COLOR_PALETTES = Object.entries(colorConfig.palettes).map(([name, colors]) => ({
+  name,
+  colors: Object.entries(colors).map(([colorName, [r, g, b]]) => ({
+    name: colorName,
+    value: `rgb(${r}, ${g}, ${b})`,
+  })),
+}));
+
 /**
  * Get the color for a selection, based on its cohort group index and
  * subcohort position within that group. Subcohorts fade in alpha.

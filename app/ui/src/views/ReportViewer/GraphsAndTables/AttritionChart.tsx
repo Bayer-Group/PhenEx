@@ -1,8 +1,10 @@
-import { FC, useMemo, useState } from 'react';
+import { FC, useMemo, useState, useCallback } from 'react';
 import { type CohortClassified, type CohortGroup, type CohortDescriptions, getCohortColor } from '../types';
 import { AttritionTableCellRenderer, DEFAULT_COLUMNS, type ColumnConfig } from './RowRenderers/AttritionTableCellRenderer';
 import { AttritionControls } from './AttritionControls';
 import { buildFlatRows, type BarChartSpacer, SPACER_UNIT_PX } from './RowRenderers/barChartShared';
+import { LegendDot } from '../LeftPanels/CohortSelector/LegendDot';
+import { type ColorUsage } from '../LeftPanels/CohortSelector/ColorPicker';
 import styles from './AttritionChart.module.css';
 
 /** Shape of a single row in waterfall.json */
@@ -30,6 +32,7 @@ interface AttritionChartProps {
   groups: CohortGroup[];
   cohortDescriptions?: CohortDescriptions;
   spacers?: BarChartSpacer[];
+  onSetColor?: (cohortName: string, color: string) => void;
 }
 
 
@@ -75,7 +78,7 @@ type FlatTableEntry =
       label?: string;
     };
 
-export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups, cohortDescriptions, spacers = [] }) => {
+export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups, cohortDescriptions, spacers = [], onSetColor }) => {
   const selectedSet = useMemo(() => new Set(cohortData.map((cd) => cd.name)), [cohortData]);
   const [tableColumns, setTableColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [hideMainCohortRows, setHideMainCohortRows] = useState(false);
@@ -200,6 +203,17 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
     return result;
   }, [cohortData, groupedCharts, cohortDescriptions, spacers]);
 
+  // Build the list of used colors for a given cohort's picker
+  const usedColorsFor = useCallback(
+    (cohortName: string): ColorUsage[] => {
+      return flatTableEntries.flatMap((entry) => {
+        if (entry.kind !== 'cohort' || entry.cohortName === cohortName) return [];
+        return [{ color: entry.color, cohortLabel: entry.displayName }];
+      });
+    },
+    [flatTableEntries],
+  );
+
   if (!groupedCharts.length) return null;
 
   return (
@@ -239,12 +253,41 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
           return (
             <div key={entry.cohortName} className={styles.tableRow}>
               <div className={styles.tableRowLabel}>
-                <span className={styles.tableRowDot} style={{ backgroundColor: entry.isParent ? entry.color : entry.parentColor }} />
+                <span className={styles.tableRowDot}>
+                  <LegendDot
+                    color={entry.isParent ? entry.color : entry.parentColor}
+                    isActive
+                    showDot
+                    onClick={() => {}}
+                    onColorChange={
+                      onSetColor
+                        ? (c) => {
+                            const targetCohort = entry.isParent
+                              ? entry.cohortName
+                              : entry.cohortName.substring(0, entry.cohortName.indexOf('__'));
+                            onSetColor(targetCohort, c);
+                          }
+                        : undefined
+                    }
+                    usedColors={usedColorsFor(
+                      entry.isParent ? entry.cohortName : entry.cohortName.substring(0, entry.cohortName.indexOf('__')),
+                    )}
+                  />
+                </span>
                 <div className={styles.tableRowLabelText}>
                   <span className={styles.tableRowMainCohortName}>{entry.mainCohortDisplayName}</span>
                   <span className={styles.tableRowLabelSeparator}>⋅</span>
                   {!entry.isParent && (
-                    <span className={styles.tableRowDot} style={{ backgroundColor: entry.color }} />
+                    <span className={styles.tableRowDot}>
+                      <LegendDot
+                        color={entry.color}
+                        isActive
+                        showDot
+                        onClick={() => {}}
+                        onColorChange={onSetColor ? (c) => onSetColor(entry.cohortName, c) : undefined}
+                        usedColors={usedColorsFor(entry.cohortName)}
+                      />
+                    </span>
                   )}
                   <span className={styles.tableRowSubcohortName}>
                     {entry.subcohortDisplayName ?? 'Main Cohort'}

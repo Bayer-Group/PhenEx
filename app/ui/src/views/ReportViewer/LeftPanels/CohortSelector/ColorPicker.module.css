@@ -62,8 +62,8 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 3px;
 }
 
 .swatch {
@@ -71,7 +71,7 @@
   aspect-ratio: 1;
   padding: 0;
   border: 2px solid transparent;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.1s, filter 0.1s;
 }

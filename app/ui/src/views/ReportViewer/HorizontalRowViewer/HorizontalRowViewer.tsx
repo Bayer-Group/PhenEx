@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { CohortGroup, type CohortClassified } from '../types';
+import { CohortGroup, type CohortClassified, type CohortDescriptions, type ColorOverrides } from '../types';
 import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow, type ViewerEntry } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
@@ -44,6 +44,9 @@ interface HorizontalRowViewerProps {
   onScrolledPastTitle?: (scrolled: boolean) => void;
   waterfallData: Record<string, unknown>;
   groups: CohortGroup[];
+  cohortDescriptions?: CohortDescriptions;
+  colorOverrides?: ColorOverrides;
+  onSetColor?: (cohortName: string, color: string) => void;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -66,6 +69,9 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
   onScrolledPastTitle,
   waterfallData,
   groups,
+  cohortDescriptions,
+  colorOverrides,
+  onSetColor,
 }) => {
   const { isLeftPanelShown } = useThreePanelCollapse();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -328,6 +334,9 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
                   studyDescription={studyDescription}
                   waterfallData={waterfallData}
                   groups={groups}
+                  cohortDescriptions={cohortDescriptions}
+                  colorOverrides={colorOverrides}
+                  onSetColor={onSetColor}
                 />
               );
             }
