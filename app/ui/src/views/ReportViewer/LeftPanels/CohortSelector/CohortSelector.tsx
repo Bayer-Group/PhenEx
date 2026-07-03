@@ -1,5 +1,5 @@
 import React, { FC, useState, useCallback, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
-import { getCohortColor, resolveCohortColor, type CohortGroup, type LegendSelection, type CohortDescriptions, type ColorOverrides } from '../../types';
+import { getCohortColor, resolveCohortColor, generateGroupColors, type GroupColorConfig, type CohortGroup, type LegendSelection, type CohortDescriptions, type ColorOverrides } from '../../types';
 import { useBarHoverStore } from '../../GraphsAndTables/RowRenderers/useBarHoverStore';
 import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
 import { RightClickMenu } from '../../../../components/RightClickMenu/RightClickMenu';
@@ -204,23 +204,19 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
   }, [groups, activeSet, onAdd]);
 
   /**
-   * When the user picks a base color for a group, compute alpha-faded variants
-   * for each subcohort (matching the default getCohortColor alpha ramp) and
-   * persist each one via onSetColor.
+   * When the user picks a color config for a group, generate per-subcohort
+   * colors (alpha-fade for single mode, Lab interpolation for two-color) and
+   * persist each via onSetColor.
    */
   const handleSetGroupColor = useCallback(
-    (groupIndex: number, baseColor: string) => {
+    (groupIndex: number, config: GroupColorConfig) => {
       if (!onSetColor) return;
       const group = groups[groupIndex];
-      const total = group.subcohorts.length;
-      const m = baseColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-      group.subcohorts.forEach((sub, si) => {
-        const alpha = total <= 1 ? 1 : 1.0 - (si / total) * 0.65;
-        const color = m ? `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${alpha})` : baseColor;
-        onSetColor(sub.fullName, color);
-      });
+      const activeSubs = group.subcohorts.filter((sub) => activeSet.has(sub.fullName));
+      const colors = generateGroupColors(config, activeSubs.length);
+      activeSubs.forEach((sub, si) => onSetColor(sub.fullName, colors[si]));
     },
-    [groups, onSetColor],
+    [groups, activeSet, onSetColor],
   );
 
   const handleDeselectAll = useCallback(() => {

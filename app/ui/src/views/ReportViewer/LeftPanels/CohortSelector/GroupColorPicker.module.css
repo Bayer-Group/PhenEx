@@ -1,0 +1,112 @@
+.modeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0 4px;
+}
+
+.modeLabel {
+  font-size: var(--font_size_infotext, 11px);
+  color: var(--text_color_notfocus, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.modeSelect {
+  flex: 1;
+  font-size: var(--font_size_infotext, 11px);
+  font-family: inherit;
+  color: #333;
+  background: var(--background_color_light, #fff);
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.modeSelect:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.colorSectionLabel {
+  font-size: var(--font_size_infotext, 11px);
+  font-weight: 600;
+  color: #555;
+  padding: 4px 0 2px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--line-color, #eee);
+  margin: 6px -12px;
+}
+
+.directionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 2px;
+}
+
+.directionLabel {
+  font-size: var(--font_size_infotext, 11px);
+  color: var(--text_color_notfocus, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.directionToggle {
+  display: flex;
+  flex: 1;
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.directionOption {
+  flex: 1;
+  padding: 5px 0;
+  font-size: var(--font_size_infotext, 11px);
+  font-family: inherit;
+  color: #555;
+  background: var(--background_color_light, #fff);
+  border: none;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.directionOption + .directionOption {
+  border-left: 1px solid var(--line-color, #ddd);
+}
+
+.directionOptionActive {
+  color: #fff;
+  background-color: #4a90e2;
+}
+
+.applyPaletteButton {
+  width: 100%;
+  padding: 7px;
+  font-size: var(--font_size_infotext, 11px);
+  font-family: inherit;
+  font-weight: 600;
+  color: #fff;
+  background-color: #4a90e2;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: background 0.12s, opacity 0.12s;
+}
+
+.applyPaletteButton:hover:not(:disabled) {
+  background-color: #3a7bc8;
+}
+
+.applyPaletteButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

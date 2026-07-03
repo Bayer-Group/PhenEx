@@ -39,6 +39,136 @@ export function getCohortColor(
 // Keep COLORS for backward compat
 export const COLORS = COHORT_BASE_COLORS;
 
+// ── Group color config ───────────────────────────────────────────────────────
+
+export type GroupColorMode = 'single' | 'two-color';
+
+/** Which way around the hue wheel the two-color ramp travels. */
+export type HueDirection = 'short' | 'long';
+
+export interface GroupColorConfig {
+  mode: GroupColorMode;
+  /** The sole color in 'single' mode, or the start of the ramp in 'two-color'. */
+  startColor: string;
+  /** End of the ramp; only used in 'two-color' mode. */
+  endColor?: string;
+  /** Hue rotation direction for 'two-color' mode. Defaults to 'short'. */
+  direction?: HueDirection;
+}
+
+// ── Lab / LCH color helpers (used only by generateGroupColors) ───────────────
+
+function labLinearize(c: number): number {
+  const v = c / 255;
+  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+}
+
+function labDelinearize(c: number): number {
+  const v = Math.max(0, Math.min(1, c));
+  return Math.round((v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055) * 255);
+}
+
+function labF(t: number): number {
+  return t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+}
+
+function labFInv(t: number): number {
+  return t > 0.206897 ? t ** 3 : (t - 16 / 116) / 7.787;
+}
+
+function rgbToLab(r: number, g: number, b: number): [number, number, number] {
+  const rl = labLinearize(r), gl = labLinearize(g), bl = labLinearize(b);
+  const x = rl * 0.4124564 + gl * 0.3575761 + bl * 0.1804375;
+  const y = rl * 0.2126729 + gl * 0.7151522 + bl * 0.0721750;
+  const z = rl * 0.0193339 + gl * 0.1191920 + bl * 0.9503041;
+  const fx = labF(x / 0.95047), fy = labF(y), fz = labF(z / 1.08883);
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+
+function labToRgb(L: number, a: number, b: number): [number, number, number] {
+  const fy = (L + 16) / 116;
+  const x = labFInv(a / 500 + fy) * 0.95047;
+  const y = labFInv(fy);
+  const z = labFInv(fy - b / 200) * 1.08883;
+  const r =  x * 3.2404542 - y * 1.5371385 - z * 0.4985314;
+  const g = -x * 0.9692660 + y * 1.8760108 + z * 0.0415560;
+  const bv = x * 0.0556434 - y * 0.2040259 + z * 1.0572252;
+  return [labDelinearize(r), labDelinearize(g), labDelinearize(bv)];
+}
+
+function parseRgbChannels(color: string): [number, number, number] | null {
+  const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  return m ? [+m[1], +m[2], +m[3]] : null;
+}
+
+/** Lab → LCh: same lightness, chroma = radius, hue = angle in degrees [0, 360). */
+function labToLch(L: number, a: number, b: number): [number, number, number] {
+  const C = Math.hypot(a, b);
+  const H = (Math.atan2(b, a) * 180) / Math.PI;
+  return [L, C, (H + 360) % 360];
+}
+
+/** LCh → Lab: inverse of labToLch. */
+function lchToLab(L: number, C: number, H: number): [number, number, number] {
+  const h = (H * Math.PI) / 180;
+  return [L, Math.cos(h) * C, Math.sin(h) * C];
+}
+
+/**
+ * Signed hue delta from h1 to h2 (degrees), choosing the short or long arc
+ * around the wheel — mirrors culori's fixupHueShorter / fixupHueLonger, which
+ * is what learnui.design's palette generator uses.
+ */
+function hueDelta(h1: number, h2: number, direction: HueDirection): number {
+  // Shortest signed delta in (-180, 180].
+  let d = ((h2 - h1) % 360 + 540) % 360 - 180;
+  if (direction === 'long' && d !== 0) d -= 360 * Math.sign(d);
+  return d;
+}
+
+/**
+ * Generate `count` color strings from a GroupColorConfig.
+ *
+ * - 'single':    alpha-fades startColor (fully opaque → 35% opacity), matching
+ *                the default getCohortColor ramp.
+ * - 'two-color': perceptually uniform LCh interpolation between startColor and
+ *                endColor — lightness and chroma vary linearly while hue rotates
+ *                the short or long way around the wheel. This is the algorithm
+ *                learnui.design uses, and it yields far more visually equidistant
+ *                palettes than linear Lab (a, b) interpolation, which dips through
+ *                gray when the endpoints sit on opposite sides of the hue circle.
+ */
+export function generateGroupColors(config: GroupColorConfig, count: number): string[] {
+  if (count === 0) return [];
+
+  if (config.mode === 'two-color' && config.endColor) {
+    const start = parseRgbChannels(config.startColor);
+    const end = parseRgbChannels(config.endColor);
+    if (start && end) {
+      const [L1, C1, H1] = labToLch(...rgbToLab(...start));
+      const [L2, C2, H2] = labToLch(...rgbToLab(...end));
+      const dH = hueDelta(H1, H2, config.direction ?? 'short');
+      return Array.from({ length: count }, (_, i) => {
+        const t = count <= 1 ? 0 : i / (count - 1);
+        const L = L1 + (L2 - L1) * t;
+        const C = C1 + (C2 - C1) * t;
+        const H = H1 + dH * t;
+        const [r, g, bv] = labToRgb(...lchToLab(L, C, H));
+        return `rgb(${r}, ${g}, ${bv})`;
+      });
+    }
+  }
+
+  // single: alpha-fade ramp
+  const m = config.startColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (!m) return Array(count).fill(config.startColor);
+  return Array.from({ length: count }, (_, i) => {
+    if (count <= 1) return config.startColor;
+    const alpha = 1.0 - (i / count) * 0.65;
+    return `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${alpha})`;
+  });
+}
+
 /** An active legend item: a selected cohort at a specific display index/color. */
 export interface LegendSelection {
   kind?: 'cohort';

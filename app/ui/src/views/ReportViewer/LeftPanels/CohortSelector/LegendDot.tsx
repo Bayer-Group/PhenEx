@@ -12,6 +12,7 @@ import {
   GROUP_COLOR_PICKER_HEIGHT,
   groupColorPickerDragHandle,
 } from './GroupColorPicker';
+import { type GroupColorConfig } from '../../types';
 import styles from './LegendDot.module.css';
 
 const PICKER_WIDTH = 300;
@@ -40,7 +41,7 @@ interface LegendDotProps {
    * (palette + custom hex, no HSV wheel, no used-color blurring).
    * Mutually exclusive with `onColorChange`.
    */
-  onGroupColorChange?: (color: string) => void;
+  onGroupColorChange?: (config: GroupColorConfig) => void;
 }
 
 /** Clamp the picker so it stays fully within the viewport. */
@@ -167,8 +168,8 @@ export const LegendDot: FC<LegendDotProps> = ({
             clampToViewport
           >
             <GroupColorPicker
-              value={color}
-              onSelect={(c) => { onGroupColorChange(c); closePicker(); }}
+              value={color ? { mode: 'single', startColor: color } : undefined}
+              onSelect={(config) => { onGroupColorChange(config); closePicker(); }}
               onClose={closePicker}
             />
           </DraggablePortal>
