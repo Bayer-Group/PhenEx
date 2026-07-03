@@ -8,6 +8,7 @@ from phenex.util import create_logger
 from phenex.util.output_concatenator import OutputConcatenator
 from phenex.core.cohort import Cohort
 from phenex.reporting import Waterfall
+from phenex.reporting.static_report_builder import build_static_report
 
 logger = create_logger(__name__)
 
@@ -124,7 +125,9 @@ class Study:
             ) + self.custom_reporters
 
             _cohort.execute(
-                overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
+                overwrite=overwrite,
+                lazy_execution=lazy_execution,
+                n_threads=n_threads,
             )
 
             _cohort.custom_reporters = _original_custom_reporters
@@ -245,7 +248,7 @@ class Study:
             dump(cohort, f, indent=4)
 
     def _concatenate_reports(self, path_exec_dir_study):
-        """Concatenate all cohort reports into a single Excel file."""
+        """Concatenate all cohort reports into Excel, combined JSON, and index.html."""
         cohort_names = [c.name for c in self.cohorts]
         concatenator = OutputConcatenator(
             path_exec_dir_study,
@@ -254,3 +257,4 @@ class Study:
             description=self.description,
         )
         concatenator.concatenate_all_reports()
+        build_static_report(path_exec_dir_study)

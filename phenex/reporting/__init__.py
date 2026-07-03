@@ -10,3 +10,4 @@ from .treatment_pattern_analysis_sankey import (
     TreatmentPatternAnalysisSankeyReporter,
     SankeyGenerator,
 )
+from .static_report_builder import build_static_report

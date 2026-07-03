@@ -1,3 +1,4 @@
+import json
 import re
 import zipfile
 from pathlib import Path
@@ -181,6 +182,90 @@ class OutputConcatenator:
                 self._generate_table1_html(
                     report_type, reports_by_type[report_type], cohort_dirs
                 )
+
+        self.write_combined_json_reports(cohort_dirs)
+
+    # ------------------------------------------------------------------
+
+    def write_combined_json_reports(self, cohort_dirs: List[Path] = None) -> None:
+        """Write combined JSON files that aggregate per-cohort report data.
+
+        Produces ``combined_<name>.json`` files and
+        ``<name>_value_distributions.json`` files (for table1 reports) in the
+        study execution directory. These are consumed by the static HTML report
+        builder to generate ``index.html``.
+        """
+        if cohort_dirs is None:
+            cohort_dirs = self._get_cohort_directories()
+
+        _COHORT_KEYED_FILES = [
+            "table1.json",
+            "table1_outcomes.json",
+            "waterfall.json",
+            "TimeToEvent.json",
+            "Table2.json",
+        ]
+
+        for filename in _COHORT_KEYED_FILES:
+            is_table1 = filename.startswith("table1")
+            combined: dict = {}
+            combined_kdes: dict = {}
+
+            for cohort_dir in cohort_dirs:
+                path = cohort_dir / filename
+                if not path.is_file():
+                    continue
+                with path.open() as f:
+                    data = json.load(f)
+                if is_table1:
+                    combined_kdes[cohort_dir.name] = data.get("kdes", {})
+                    data = {
+                        "rows": data.get("rows", []),
+                        "sections": data.get("sections", {}),
+                    }
+                else:
+                    data = data.get("rows", data)
+                combined[cohort_dir.name] = data
+
+            if combined:
+                output = self.study_path / f"combined_{filename}"
+                with output.open("w") as f:
+                    json.dump(combined, f, indent=2, default=str)
+                logger.info(f"Written {output.name} ({len(combined)} cohorts)")
+
+            if combined_kdes:
+                kde_name = filename.replace(".json", "_value_distributions.json")
+                kde_output = self.study_path / kde_name
+                with kde_output.open("w") as f:
+                    json.dump(combined_kdes, f, indent=2, default=str)
+                logger.info(f"Written {kde_output.name}")
+
+        # Frozen cohort definitions (codelists stripped for compactness)
+        frozen_cohorts: list = []
+        for cohort_dir in cohort_dirs:
+            frozen_file = cohort_dir / f"frozen_{cohort_dir.name}.json"
+            if frozen_file.is_file():
+                with frozen_file.open() as f:
+                    definition = json.load(f)
+                frozen_cohorts.append(self._strip_codelists(definition))
+
+        if frozen_cohorts:
+            output = self.study_path / "combined_frozen_cohorts.json"
+            with output.open("w") as f:
+                json.dump(frozen_cohorts, f, indent=2, default=str)
+            logger.info(f"Written {output.name} ({len(frozen_cohorts)} cohorts)")
+
+    @staticmethod
+    def _strip_codelists(obj):
+        """Recursively replace any 'codelist' key value with an empty list."""
+        if isinstance(obj, dict):
+            return {
+                k: ([] if k == "codelist" else OutputConcatenator._strip_codelists(v))
+                for k, v in obj.items()
+            }
+        if isinstance(obj, list):
+            return [OutputConcatenator._strip_codelists(item) for item in obj]
+        return obj
 
     # ------------------------------------------------------------------
 
