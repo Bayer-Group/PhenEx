@@ -2,6 +2,7 @@ import os, datetime, json, sys
 from typing import List, Dict, Optional
 
 from phenex.node import Node, NodeGroup
+from phenex.core.database import Database
 import ibis
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
@@ -24,6 +25,7 @@ class Study:
         name: Name of the study. Used for directory naming and identification.
         cohorts: List of Cohort objects to execute. Each cohort must have a unique name and an assigned database.
         custom_reporters: Additional reporters to run on each cohort. A Waterfall and Table1 reporter is always included by default.
+        database: Optional database to use for all cohorts that do not have a database already defined. If a cohort already has a database, a warning is issued and the cohort-level database is used. If this is not provided, every cohort must have a database defined or an error is raised.
 
     Example:
     ```python
@@ -49,16 +51,18 @@ class Study:
         cohorts: List[Cohort],
         custom_reporters: List["Reporter"] = None,
         description: Optional[str] = None,
+        database: Optional[Database] = None,
     ):
         self.path = path
         self.name = name
         self.cohorts = cohorts
         self.custom_reporters = custom_reporters
         self.description = description
+        self.database = database
 
         self._create_study_output_path()
         self._check_cohort_names_unique()
-        self._check_cohorts_have_databases()
+        self._assign_and_check_databases()
 
     def _create_study_output_path(self):
         # ensure that the output path directory is the name of the study
@@ -76,11 +80,20 @@ class Study:
                 f"Ensure that cohort names are unique; found cohort names {sorted(all_names)}"
             )
 
-    def _check_cohorts_have_databases(self):
+    def _assign_and_check_databases(self):
         missing_database = []
         for cohort in self.cohorts:
-            if cohort.database is None:
-                missing_database.append(cohort)
+            if cohort.database is not None:
+                if self.database is not None:
+                    logger.warning(
+                        f"Cohort '{cohort.name}' has its own database defined; "
+                        f"it overrides the study-level database and will be used instead."
+                    )
+            else:
+                if self.database is not None:
+                    cohort.database = self.database
+                else:
+                    missing_database.append(cohort)
         if len(missing_database) > 0:
             raise ValueError(
                 f"Cohorts must have databases defined in order for use in a Study. Cohorts missing database : {[x.name for x in missing_database]}"
