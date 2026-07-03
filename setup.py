@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-__version__ = "v0.8.1"
+__version__ = "v0.9.0"
 
 
 # Function to parse requirements.txt
