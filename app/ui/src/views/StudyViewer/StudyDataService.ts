@@ -1,7 +1,6 @@
 import { TableData, ColumnDefinition, TableRow } from '../CohortViewer/tableTypes';
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 
-import { executeStudy } from '../../api/execute_cohort/route';
 
 import {
   getUserCohort,

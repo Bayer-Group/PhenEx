@@ -1,0 +1,81 @@
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.controls {
+  margin-left: 12px;
+  background-color: transparent;
+  flex-shrink: 0;
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.logsContainer {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+  font-family: 'IBMPlexSans-Regular';
+  font-size: 12px;
+  color: black;
+  box-sizing: border-box;
+}
+
+.emptyState {
+  color: #888;
+  text-align: left;
+  font-size: 18px;
+  font-family: 'IBMPlexSans-bold';
+}
+
+.logEntry {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 2px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.timestamp {
+  color: #999;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
+.logMessage {
+  flex: 1;
+  white-space: pre-wrap;
+}
+
+.normalLog { color: #333; }
+.infoLog   { color: #1a7ad4; }
+.warningLog { color: #c47700; }
+.errorLog  { color: #c0392b; }
+.completeLog { color: #27ae60; font-weight: 600; }
+
+.reportLink {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.reportLink a {
+  color: var(--primary-color, #2563eb);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.reportLink a:hover {
+  text-decoration: underline;
+}

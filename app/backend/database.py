@@ -1763,6 +1763,97 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
+    async def save_study_execution(
+        self,
+        execution_id: str,
+        study_id: str,
+        user_id: str,
+    ) -> bool:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            await conn.execute(
+                """
+                INSERT INTO study_execution (execution_id, study_id, user_id, status)
+                VALUES ($1, $2, $3, 'running')
+                """,
+                execution_id,
+                study_id,
+                user_id,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save study execution {execution_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_study_execution(
+        self,
+        execution_id: str,
+        status: str,
+        manifest_path: str = None,
+        error_message: str = None,
+    ) -> bool:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            await conn.execute(
+                """
+                UPDATE study_execution
+                SET status = $1, ended_at = CURRENT_TIMESTAMP,
+                    manifest_path = $2, error_message = $3
+                WHERE execution_id = $4
+                """,
+                status,
+                manifest_path,
+                error_message,
+                execution_id,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update study execution {execution_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_study_executions(self, study_id: str, user_id: str) -> List[Dict]:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            rows = await conn.fetch(
+                """
+                SELECT execution_id, study_id, user_id, status,
+                       started_at, ended_at, manifest_path, error_message
+                FROM study_execution
+                WHERE study_id = $1 AND user_id = $2
+                ORDER BY started_at DESC
+                """,
+                study_id,
+                user_id,
+            )
+            return [
+                {
+                    "execution_id": row["execution_id"],
+                    "study_id": row["study_id"],
+                    "user_id": str(row["user_id"]),
+                    "status": row["status"],
+                    "started_at": row["started_at"].isoformat() if row["started_at"] else None,
+                    "ended_at": row["ended_at"].isoformat() if row["ended_at"] else None,
+                    "manifest_path": row["manifest_path"],
+                    "error_message": row["error_message"],
+                }
+                for row in rows
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get study executions for {study_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
 
 # Global instance
 db_manager = DatabaseManager()

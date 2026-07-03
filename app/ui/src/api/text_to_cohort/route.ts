@@ -1,4 +1,4 @@
-import { api, authFetch } from '../httpClient';
+import { api, authFetch, BACKEND_URL } from '../httpClient';
 
 export const getPublicCohorts = async () => {
   try {
@@ -312,6 +312,69 @@ export const updateStudyDisplayOrder = async (study_id: string, display_order: n
     return response.data;
   } catch (error) {
     console.error('Error in updateStudyDisplayOrder:', error);
+    throw error;
+  }
+};
+
+export const executeStudy = async (
+  studyId: string,
+  onEvent?: (event: { type: 'log' | 'error' | 'complete'; message?: string; execution_id?: string }) => void,
+  databaseConfig?: Record<string, any>
+): Promise<string | null> => {
+  const response = await authFetch(`${BACKEND_URL}/study/execute`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ study_id: studyId, database_config: databaseConfig }),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Study execute failed: ${response.status} ${text}`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('No response body');
+
+  const decoder = new TextDecoder();
+  let executionId: string | null = null;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      for (const line of chunk.split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const event = JSON.parse(line.slice(6));
+          if (event.type === 'complete') {
+            executionId = event.execution_id ?? null;
+          }
+          if (onEvent) onEvent(event);
+        } catch {
+          // ignore malformed lines
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  return executionId;
+};
+
+export const generateStudyReport = async (
+  studyId: string,
+  executionId: string
+): Promise<{ report_url?: string }> => {
+  try {
+    const response = await api.get('/study/report', {
+      params: { study_id: studyId, execution_id: executionId },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in generateStudyReport:', error);
     throw error;
   }
 };

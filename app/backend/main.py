@@ -202,6 +202,11 @@ from .routes.study import router as study_router
 
 app.include_router(study_router)
 
+# Include the study execution router
+from .routes.study_execute import router as study_execute_router
+
+app.include_router(study_execute_router)
+
 # Include the codelist routers
 from .routes.codelist import (
     router as codelist_router,

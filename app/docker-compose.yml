@@ -22,6 +22,7 @@ services:
     volumes:
       - ${HOME}/.phenex/data/phenex/cohorts:/data/cohorts
       - ${HOME}/.phenex/data/phenex/users:/data/users
+      - ${HOME}/.phenex/data/phenex/study_artifacts:/data/study_artifacts
       - ./backend:/app  # Mount your local backend code directory
       - ../phenex:/app/phenex  # If you have a separate phenex library
     env_file: ./.env
