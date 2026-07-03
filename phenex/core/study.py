@@ -102,40 +102,86 @@ class Study:
             previous_executions
         )
 
-        for _cohort in self.cohorts:
-            path_exec_dir_cohort = self._prepare_cohort_execution_directory(
-                _cohort, path_exec_dir_study
-            )
+        status = "success"
+        error_message = None
+        try:
+            for _cohort in self.cohorts:
+                path_exec_dir_cohort = self._prepare_cohort_execution_directory(
+                    _cohort, path_exec_dir_study
+                )
 
-            if self._should_use_previous_execution(
-                _cohort, previous_executions, parents_requiring_execution
-            ):
-                if self._copy_previous_execution(
-                    _cohort, previous_executions[_cohort.name], path_exec_dir_cohort
+                if self._should_use_previous_execution(
+                    _cohort, previous_executions, parents_requiring_execution
                 ):
-                    continue
+                    if self._copy_previous_execution(
+                        _cohort, previous_executions[_cohort.name], path_exec_dir_cohort
+                    ):
+                        continue
 
-            self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
+                self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
 
-            # Merge study-level custom reporters into the cohort before execution.
-            # Save and restore so repeated calls to study.execute() don't accumulate duplicates.
-            _original_custom_reporters = _cohort.custom_reporters
-            _cohort.custom_reporters = (
-                _original_custom_reporters or []
-            ) + self.custom_reporters
+                # Merge study-level custom reporters into the cohort before execution.
+                # Save and restore so repeated calls to study.execute() don't accumulate duplicates.
+                _original_custom_reporters = _cohort.custom_reporters
+                _cohort.custom_reporters = (
+                    _original_custom_reporters or []
+                ) + self.custom_reporters
 
-            _cohort.execute(
-                overwrite=overwrite,
-                lazy_execution=lazy_execution,
-                n_threads=n_threads,
+                _cohort.execute(
+                    overwrite=overwrite,
+                    lazy_execution=lazy_execution,
+                    n_threads=n_threads,
+                )
+
+                _cohort.custom_reporters = _original_custom_reporters
+
+                _cohort.write_reports_to_json(path_exec_dir_cohort)
+                _cohort.write_reports_to_html(path_exec_dir_cohort)
+
+            self._concatenate_reports(path_exec_dir_study)
+        except KeyboardInterrupt:
+            status = "interrupted"
+            raise
+        except Exception as e:
+            status = "failed"
+            error_message = str(e)
+            raise
+        finally:
+            self._write_manifest(
+                path_exec_dir_study, status=status, error_message=error_message
             )
 
-            _cohort.custom_reporters = _original_custom_reporters
+    def _write_manifest(
+        self, path_exec_dir_study, status="success", error_message=None
+    ):
+        """Write manifest.json with execution metadata and a list of all generated files."""
+        from phenex import __version__ as phenex_version
 
-            _cohort.write_reports_to_json(path_exec_dir_cohort)
-            _cohort.write_reports_to_html(path_exec_dir_cohort)
+        files = []
+        for dirpath, _, filenames in os.walk(path_exec_dir_study):
+            for fname in sorted(filenames):
+                abs_path = os.path.join(dirpath, fname)
+                rel_path = os.path.relpath(abs_path, path_exec_dir_study)
+                files.append(rel_path)
 
-        self._concatenate_reports(path_exec_dir_study)
+        manifest = {
+            "study_name": self.name,
+            "execution_timestamp": datetime.datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+            "status": status,
+            "error_message": error_message,
+            "phenex_version": phenex_version,
+            "python_version": sys.version,
+            "cohorts": [c.name for c in self.cohorts],
+            "files": sorted(files),
+        }
+
+        manifest_path = os.path.join(path_exec_dir_study, "manifest.json")
+        with open(manifest_path, "w") as f:
+            json.dump(manifest, f, indent=4)
+
+        logger.info(f"Manifest written to {manifest_path}")
 
     def _should_use_previous_execution(
         self, cohort, previous_executions, parents_requiring_execution
