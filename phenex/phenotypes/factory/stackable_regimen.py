@@ -30,9 +30,9 @@ class StackableRegimen:
 
         | Regimen Type | Logic Expression |
         | ------------ | --------------- |
-        | stack 1 phenotypes i.e. "single" regimen | c1 & ~(c2 | c3) |
-        |  | c2 & ~(c1 | c3) |
-        |  | c3 & ~(c1 | c2) |
+        | stack 1 phenotypes i.e. "single" regimen | c1 & ~(c2 \| c3) |
+        |  | c2 & ~(c1 \| c3) |
+        |  | c3 & ~(c1 \| c2) |
         | stack 2 phenotypes i.e. "dual" regimen | (c1 & c2) & ~c3 |
         |  | (c1 & c3) & ~c2 |
         |  | (c2 & c3) & ~c1 |

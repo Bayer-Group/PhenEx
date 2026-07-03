@@ -8,7 +8,7 @@ from threading import Thread
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
 
 from phenex.util.serialization.from_dict import from_dict
 
@@ -20,6 +20,18 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 STUDY_ARTIFACTS_DIR = os.environ.get("STUDY_ARTIFACTS_DIR", "/data/study_artifacts")
+
+_db_cache: dict = {}  # key: n_patients -> Database instance
+
+
+def _get_mock_database(mapper, n_patients: int = 1000):
+    """Return a cached Database backed by DatabaseMocker, built once per n_patients value."""
+    if n_patients not in _db_cache:
+        from phenex.sim import DatabaseMocker
+        logger.info(f"Building DatabaseMocker with {n_patients} patients (one-time)...")
+        _db_cache[n_patients] = DatabaseMocker(domains_dict=mapper, n_patients=n_patients).get_database()
+        logger.info("DatabaseMocker ready and cached.")
+    return _db_cache[n_patients]
 
 
 @router.post("/study/execute", tags=["study"])
@@ -138,29 +150,38 @@ async def execute_study(request: Request):
                     print("Using OMOP mapper")
 
                 db_cfg = database_config["config"]
+                connector_type = database_config.get("connector", "snowflake")
                 print("Creating database connection...")
 
-                try:
-                    from phenex.connectors.snowflake import SnowflakeConnector
-                    con = SnowflakeConnector(
-                        SNOWFLAKE_SOURCE_DATABASE=db_cfg["source_database"],
-                        SNOWFLAKE_DEST_DATABASE=db_cfg["destination_database"],
-                    )
-                except ImportError:
-                    raise RuntimeError("Snowflake connector not available")
+                if connector_type == "mocker":
+                    n_patients = db_cfg.get("n_patients", 1000) if db_cfg else 1000
+                    database = _get_mock_database(mapper, n_patients)
+                else:
+                    try:
+                        from phenex.connectors.snowflake import SnowflakeConnector
+                        from phenex.core.database import Database
+                        con = SnowflakeConnector(
+                            SNOWFLAKE_SOURCE_DATABASE=db_cfg["source_database"],
+                            SNOWFLAKE_DEST_DATABASE=db_cfg["destination_database"],
+                        )
+                        database = Database(connector=con, mapper=mapper)
+                    except ImportError:
+                        raise RuntimeError("Snowflake connector not available")
 
                 print("Database connection established")
-                mapped_tables = mapper.get_mapped_tables(con)
-                print(f"Found {len(mapped_tables)} mapped tables")
 
+                print(f"Loading {len(full_cohorts)} cohorts from database...")
                 px_cohorts = []
-                for cohort_data in full_cohorts:
+                for cohort_wrapper in full_cohorts:
+                    cohort_data = cohort_wrapper.get("cohort_data", cohort_wrapper)
                     cohort_name = cohort_data.get("name", cohort_data.get("id", "unknown"))
                     print(f"Preparing cohort: {cohort_name}")
                     processed = prepare_cohort_for_phenex(cohort_data, user_id)
                     px_cohort = from_dict(processed)
-                    px_cohort.database = mapped_tables
+                    print(f"  -> created cohort object with name: {px_cohort.name!r}")
+                    px_cohort.database = database
                     px_cohorts.append(px_cohort)
+                print(f"Total cohorts ready for execution: {len(px_cohorts)}")
 
                 from phenex.core.study import Study
 
@@ -169,14 +190,14 @@ async def execute_study(request: Request):
 
                 px_study = Study(
                     path=artifacts_dir,
-                    name=study.get("name", study_id),
+                    name=study_id,
                     cohorts=px_cohorts,
                     description=study.get("description", ""),
                 )
 
                 print("Executing study...")
                 logger.info("Starting study execution...")
-                px_study.execute()
+                px_study.execute(overwrite=True)
                 print("Study execution completed!")
                 logger.info("Study execution completed successfully")
 
@@ -292,3 +313,70 @@ async def get_study_executions(request: Request, study_id: str):
     except Exception as e:
         logger.error(f"Failed to get study executions: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve study executions")
+
+
+@router.post("/study/demo", tags=["study"])
+async def create_demo_study(request: Request):
+    """
+    Create the demo study (Cardiovascular Disease Demo Study) for the authenticated user.
+    Returns the new study ID.
+    """
+    user_id = get_authenticated_user_id(request)
+    from ..init.populate_sample_cohorts import SampleCohortsInitializer
+    initializer = SampleCohortsInitializer()
+    items = initializer.get_sample_cohorts_and_studies()
+
+    study_id = None
+    for item in items:
+        study_data = item["study"]
+        cohort_data = item["cohort"]
+        study_id = study_data["id"]
+
+        await db_manager.update_study_for_user(
+            user_id=user_id,
+            study_id=study_data["id"],
+            name=study_data["name"],
+            description=study_data["description"],
+            baseline_characteristics=study_data.get("baseline_characteristics"),
+            outcomes=study_data.get("outcomes"),
+            analysis=study_data.get("analysis"),
+            visible_by=[],
+            is_public=False,
+        )
+        cohort_data["study_id"] = study_data["id"]
+        await db_manager.update_cohort_for_user(
+            user_id=user_id,
+            cohort_id=cohort_data["id"],
+            cohort_data=cohort_data,
+            study_id=cohort_data["study_id"],
+            provisional=False,
+        )
+
+    return {"study_id": study_id}
+
+
+@router.get("/study/{study_id}/report", tags=["study"])
+async def get_study_report(request: Request, study_id: str):
+    """
+    Return the index.html report for the most recent execution of a study.
+    """
+    get_authenticated_user_id(request)
+    study_dir = os.path.join(STUDY_ARTIFACTS_DIR, study_id)
+    if not os.path.isdir(study_dir):
+        raise HTTPException(status_code=404, detail="No artifacts found for study")
+
+    # Find the most recent timestamped execution directory
+    exec_dirs = sorted(
+        [d for d in os.listdir(study_dir) if os.path.isdir(os.path.join(study_dir, d)) and d.startswith("D")],
+        reverse=True,
+    )
+    if not exec_dirs:
+        raise HTTPException(status_code=404, detail="No execution directories found")
+
+    report_path = os.path.join(study_dir, exec_dirs[0], "index.html")
+    if not os.path.isfile(report_path):
+        raise HTTPException(status_code=404, detail="index.html not found for this execution")
+
+    with open(report_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    return HTMLResponse(content=content)

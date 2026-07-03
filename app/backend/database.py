@@ -1557,7 +1557,13 @@ class DatabaseManager:
 
             # Begin transaction for cascading deletion
             async with conn.transaction():
-                # First, delete all cohorts associated with this study
+                # Delete execution records for this study
+                await conn.execute(
+                    "DELETE FROM study_execution WHERE study_id = $1",
+                    study_id,
+                )
+
+                # Delete all cohorts associated with this study
                 delete_cohorts_query = f"""
                     DELETE FROM {self.full_table_name} 
                     WHERE study_id = $1

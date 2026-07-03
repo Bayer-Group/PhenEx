@@ -1,4 +1,4 @@
-from .codelists import Codelist, CompositeCodelist
+from .codelists import Codelist
 from .factory import (
     LocalFileCodelistFactory,
     LocalCSVCodelistFactory,

@@ -3,7 +3,6 @@ import logging
 import asyncio
 
 from .populate_sample_users import UserInitializer
-from .populate_sample_cohorts import SampleCohortsInitializer
 
 load_dotenv()
 
@@ -46,23 +45,6 @@ async def _init_db():
             logger.warning(
                 "⚠️ User initialization failed, but backend will continue to start"
             )
-
-        # Finally, populate sample cohorts
-        logger.info("🚀 Starting sample cohorts initialization on backend startup...")
-        cohorts_initializer = SampleCohortsInitializer()
-        cohorts_success = await cohorts_initializer.initialize()
-
-        if cohorts_success:
-            logger.info("✅ Sample cohorts initialization completed successfully!")
-        else:
-            logger.warning(
-                "⚠️ Sample cohorts initialization failed, but backend will continue to start"
-            )
-
-        if user_success and cohorts_success:
-            logger.info("🎉 Complete database initialization completed successfully!")
-        else:
-            logger.warning("⚠️ Some initialization steps failed, but backend is ready")
 
     except Exception as e:
         logger.warning(

@@ -210,6 +210,10 @@ class Subcohort(Cohort):
         )
         self.cohort = cohort
 
+        # super().__init__() overwrites _table_name_prefix on shared phenotype objects;
+        # restore the parent cohort's prefix on its phenotypes.
+        cohort._apply_table_name_prefix(cohort.phenotypes)
+
         additional_sections = self._additional_outcome_sections or {}
         merged = {**parent_sections, **additional_sections}
         self.outcome_sections = merged if merged else None

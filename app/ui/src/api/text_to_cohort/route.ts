@@ -304,6 +304,16 @@ export const createNewStudy = async (study_data: any) => {
   }
 };
 
+export const createDemoStudy = async (): Promise<{ study_id: string }> => {
+  try {
+    const response = await api.post('/study/demo', {});
+    return response.data;
+  } catch (error) {
+    console.error('Error in createDemoStudy:', error);
+    throw error;
+  }
+};
+
 export const updateStudyDisplayOrder = async (study_id: string, display_order: number) => {
   try {
     const response = await api.patch('/study/display_order', null, {

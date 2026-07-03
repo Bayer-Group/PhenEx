@@ -4,11 +4,8 @@ import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 import { TabsWithDropdown } from '../../../components/ButtonsAndTabs/Tabs/TabsWithDropdown';
 import { StudyDataService } from '../../StudyViewer/StudyDataService';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
-import {
-  executeStudy,
-  generateStudyReport,
-} from '../../../api/text_to_cohort/route';
-import { BACKEND_URL } from '../../../api/httpClient';
+import { executeStudy } from '../../../api/text_to_cohort/route';
+import { BACKEND_URL, authFetch } from '../../../api/httpClient';
 
 export const StudyExecutePanel: React.FC = () => {
   const [isExecuting, setIsExecuting] = useState(false);
@@ -64,16 +61,8 @@ export const StudyExecutePanel: React.FC = () => {
       }, databaseConfig);
 
       if (execId) {
-        try {
-          setLogs(prev => [...prev, { message: 'Building report...', type: 'log', timestamp: new Date() }]);
-          const report = await generateStudyReport(studyId, execId);
-          if (report.report_url) {
-            setReportUrl(`${BACKEND_URL}${report.report_url}`);
-            setLogs(prev => [...prev, { message: 'Report ready.', type: 'complete', timestamp: new Date() }]);
-          }
-        } catch (err: any) {
-          setLogs(prev => [...prev, { message: `Report error: ${err?.message ?? 'Failed'}`, type: 'error', timestamp: new Date() }]);
-        }
+        setReportUrl(`${BACKEND_URL}/study/${studyId}/report`);
+        setLogs(prev => [...prev, { message: 'Report ready.', type: 'complete', timestamp: new Date() }]);
       }
     } catch (err: any) {
       setLogs(prev => [...prev, { message: `Error: ${err?.message ?? 'Execution failed'}`, type: 'error', timestamp: new Date() }]);
@@ -139,11 +128,21 @@ export const StudyExecutePanel: React.FC = () => {
 
   const renderReportLink = () => {
     if (!reportUrl) return null;
+    const handleViewReport = async () => {
+      try {
+        const resp = await authFetch(reportUrl);
+        if (!resp.ok) throw new Error(`${resp.status}`);
+        const html = await resp.text();
+        const blob = new Blob([html], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      } catch (err: any) {
+        setLogs(prev => [...prev, { message: `Failed to open report: ${err?.message}`, type: 'error', timestamp: new Date() }]);
+      }
+    };
     return (
       <div className={styles.reportLink}>
-        <a href={reportUrl} target="_blank" rel="noopener noreferrer">
-          View Report ↗
-        </a>
+        <button onClick={handleViewReport}>View Report ↗</button>
       </div>
     );
   };

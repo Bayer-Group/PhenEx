@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styles from './StudiesGridView.module.css';
 import { CohortsDataService, StudyData } from '../../LeftPanel/CohortsDataService';
 import { AuthContext } from '@/auth/AuthProvider';
-import { deleteStudy } from '@/api/text_to_cohort/route';
+import { deleteStudy, createDemoStudy } from '@/api/text_to_cohort/route';
 import { LoginModal } from '../../../components/Form';
 
 export const StudiesGridView = () => {
@@ -76,11 +76,20 @@ export const StudiesGridView = () => {
 
   const handleCreateFirstStudy = async () => {
     try {
-      // Use centralized helper to ensure consistent behavior
       const { createAndNavigateToNewStudy } = await import('@/views/LeftPanel/studyNavigationHelpers');
       await createAndNavigateToNewStudy(navigate);
     } catch (error) {
       console.error('Failed to create study:', error);
+    }
+  };
+
+  const handleSeeDemo = async () => {
+    try {
+      const { study_id } = await createDemoStudy();
+      dataService.invalidateCache();
+      navigate(`/studies/${study_id}`);
+    } catch (error) {
+      console.error('Failed to create demo study:', error);
     }
   };
 
@@ -236,25 +245,26 @@ export const StudiesGridView = () => {
               <p className={styles.ctaDescription}>
                 Create your first study to begin defining cohorts and analyzing patient data.
               </p>
-              <button 
-                className={styles.ctaButton}
-                onClick={handleCreateFirstStudy}
-              >
-                Create Your First Study
-              </button>
+              <div className={styles.ctaButtons}>
+                <button 
+                  className={styles.ctaButton}
+                  onClick={handleCreateFirstStudy}
+                >
+                  Create Your First Study
+                </button>
+                <button 
+                  className={styles.ctaButtonSecondary}
+                  onClick={handleSeeDemo}
+                >
+                  See Demo Study
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-      {publicStudies.length > 0 && (
-        <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>Public Studies</h2>
-          <div className={styles.studiesGrid}>
-            {publicStudies.map(study => renderStudyCard(study, false))}
-          </div>
-        </div>
-      )}
+
 
       {/* Delete Confirmation Dialog */}
       {deleteConfirmStudy && (

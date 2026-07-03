@@ -239,6 +239,12 @@ class Table2(Reporter):
         index_table = index_table.mutate(INDEX_DATE=index_table.EVENT_DATE)
         index_table = index_table.select(["PERSON_ID", "INDEX_DATE"])
 
+        # Deduplicate to one row per patient (earliest index date) to avoid
+        # fan-out when entry criterion returns multiple rows per patient
+        index_table = index_table.group_by("PERSON_ID").aggregate(
+            INDEX_DATE=index_table.INDEX_DATE.min()
+        )
+
         # Calculate time to first outcome event
         index_table = self._calculate_time_to_first_post_index_event(
             index_table, [outcome], "OUTCOME_DATE", "DAYS_TO_EVENT"

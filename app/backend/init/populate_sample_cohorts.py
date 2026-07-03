@@ -37,314 +37,218 @@ class SampleCohortsInitializer:
 
     def get_sample_cohorts_and_studies(self):
         """Get sample cohort and study data."""
-        sample_data = []
-
-        # Atrial Fibrillation Study and Cohort
+        study_id = self.generate_study_id()
         cohort_1_id = self.generate_cohort_id()
-        study_1_id = self.generate_study_id()
-        sample_data.append(
-            {
-                "study": {
-                    "id": study_1_id,
-                    "name": "Atrial Fibrillation Study",
-                    "description": "Comprehensive study of patients diagnosed with atrial fibrillation",
-                    "baseline_characteristics": {
-                        "age_range": "18+",
-                        "demographics": "Adult population",
-                    },
-                    "outcomes": {
-                        "primary": "Cardiovascular events",
-                        "secondary": "Medication adherence",
-                    },
-                    "analysis": {"type": "observational", "follow_up": "2 years"},
-                },
-                "cohort": {
-                    "id": cohort_1_id,
-                    "study_id": study_1_id,
-                    "name": "Atrial Fibrillation Cohort",
-                    "class_name": "Cohort",
-                    "description": "Patients diagnosed with atrial fibrillation",
-                    "phenotypes": [
-                        {
-                            "id": "entry_criterion",
-                            "name": "Atrial Fibrillation Diagnosis",
-                            "type": "entry",
-                            "class_name": "CodelistPhenotype",
-                            "codelist": {
-                                "ICD10": [
-                                    "I48",
-                                    "I48.0",
-                                    "I48.1",
-                                    "I48.2",
-                                    "I48.3",
-                                    "I48.4",
-                                    "I48.9",
-                                ]
-                            },
-                        },
-                        {
-                            "id": "inclusion_1",
-                            "name": "Age 18 or older",
-                            "type": "inclusion",
-                            "class_name": "AgePhenotype",
-                            "min_age": 18,
-                        },
-                    ],
-                },
-            }
-        )
-
-        # Type 2 Diabetes Study and Cohort
         cohort_2_id = self.generate_cohort_id()
-        study_2_id = self.generate_study_id()
-        sample_data.append(
-            {
-                "study": {
-                    "id": study_2_id,
-                    "name": "Type 2 Diabetes Study",
-                    "description": "Longitudinal study of adult patients with Type 2 diabetes mellitus",
-                    "baseline_characteristics": {
-                        "age_range": "18+",
-                        "exclusions": "Type 1 diabetes",
-                    },
-                    "outcomes": {
-                        "primary": "Glycemic control",
-                        "secondary": "Complications",
-                    },
-                    "analysis": {"type": "cohort", "follow_up": "5 years"},
-                },
-                "cohort": {
-                    "id": cohort_2_id,
-                    "study_id": study_2_id,
-                    "name": "Type 2 Diabetes Cohort",
-                    "class_name": "Cohort",
-                    "description": "Adult patients with Type 2 diabetes mellitus",
-                    "phenotypes": [
-                        {
-                            "id": "entry_criterion",
-                            "name": "Type 2 Diabetes Diagnosis",
-                            "type": "entry",
-                            "class_name": "CodelistPhenotype",
-                            "codelist": {
-                                "ICD10": [
-                                    "E11",
-                                    "E11.0",
-                                    "E11.1",
-                                    "E11.2",
-                                    "E11.3",
-                                    "E11.4",
-                                    "E11.5",
-                                    "E11.6",
-                                    "E11.7",
-                                    "E11.8",
-                                    "E11.9",
-                                ]
-                            },
-                        },
-                        {
-                            "id": "inclusion_1",
-                            "name": "Adult patients",
-                            "type": "inclusion",
-                            "class_name": "AgePhenotype",
-                            "min_age": 18,
-                        },
-                        {
-                            "id": "exclusion_1",
-                            "name": "Exclude Type 1 Diabetes",
-                            "type": "exclusion",
-                            "class_name": "CodelistPhenotype",
-                            "codelist": {
-                                "ICD10": [
-                                    "E10",
-                                    "E10.0",
-                                    "E10.1",
-                                    "E10.2",
-                                    "E10.3",
-                                    "E10.4",
-                                    "E10.5",
-                                    "E10.6",
-                                    "E10.7",
-                                    "E10.8",
-                                    "E10.9",
-                                ]
-                            },
-                        },
-                    ],
-                },
-            }
-        )
 
-        # Hypertension Study and Cohort
-        cohort_3_id = self.generate_cohort_id()
-        study_3_id = self.generate_study_id()
-        sample_data.append(
-            {
-                "study": {
-                    "id": study_3_id,
-                    "name": "Hypertension Study",
-                    "description": "Study of patients with essential hypertension",
-                    "baseline_characteristics": {
-                        "age_range": "21+",
-                        "condition": "Essential hypertension",
-                    },
-                    "outcomes": {
-                        "primary": "Blood pressure control",
-                        "secondary": "Cardiovascular events",
-                    },
-                    "analysis": {"type": "observational", "follow_up": "3 years"},
-                },
-                "cohort": {
-                    "id": cohort_3_id,
-                    "study_id": study_3_id,
-                    "name": "Hypertension Cohort",
-                    "class_name": "Cohort",
-                    "description": "Patients with essential hypertension",
-                    "phenotypes": [
-                        {
-                            "id": "entry_criterion",
-                            "name": "Essential Hypertension",
-                            "type": "entry",
-                            "class_name": "CodelistPhenotype",
-                            "codelist": {"ICD10": ["I10", "I11", "I12", "I13", "I15"]},
-                        },
-                        {
-                            "id": "inclusion_1",
-                            "name": "Adults only",
-                            "type": "inclusion",
-                            "class_name": "AgePhenotype",
-                            "min_age": 21,
-                        },
-                    ],
-                },
-            }
-        )
+        # Single multi-cohort demo study with two cohorts designed to run on DomainsMocker
+        study = {
+            "id": study_id,
+            "name": "Cardiovascular Disease Demo Study",
+            "description": (
+                "A demonstration multi-cohort study comparing patients with atrial fibrillation "
+                "to patients with acute myocardial infarction. Designed to run on the built-in database mocker."
+            ),
+            "baseline_characteristics": {},
+            "outcomes": {},
+            "analysis": {},
+        }
 
-        # Acute Myocardial Infarction Study and Cohort
-        cohort_4_id = self.generate_cohort_id()
-        study_4_id = self.generate_study_id()
-        sample_data.append(
-            {
-                "study": {
-                    "id": study_4_id,
-                    "name": "Acute Myocardial Infarction Study",
-                    "description": "Study of patients with acute myocardial infarction (heart attack)",
-                    "baseline_characteristics": {
-                        "age_range": "18+",
-                        "exclusions": "Previous MI",
-                    },
-                    "outcomes": {
-                        "primary": "30-day mortality",
-                        "secondary": "Readmission rates",
-                    },
-                    "analysis": {"type": "case-control", "follow_up": "1 year"},
-                },
-                "cohort": {
-                    "id": cohort_4_id,
-                    "study_id": study_4_id,
-                    "name": "Acute Myocardial Infarction Cohort",
-                    "class_name": "Cohort",
-                    "description": "Patients with acute myocardial infarction (heart attack)",
-                    "phenotypes": [
-                        {
-                            "id": "entry_criterion",
-                            "name": "Acute Myocardial Infarction",
-                            "type": "entry",
-                            "class_name": "CodelistPhenotype",
-                            "codelist": {
-                                "ICD10": [
-                                    "I21",
-                                    "I21.0",
-                                    "I21.1",
-                                    "I21.2",
-                                    "I21.3",
-                                    "I21.4",
-                                    "I21.9",
-                                ]
-                            },
-                        },
-                        {
-                            "id": "inclusion_1",
-                            "name": "Adult patients",
-                            "type": "inclusion",
-                            "class_name": "AgePhenotype",
-                            "min_age": 18,
-                        },
-                        {
-                            "id": "exclusion_1",
-                            "name": "Exclude previous MI",
-                            "type": "exclusion",
-                            "class_name": "CodelistPhenotype",
-                            "codelist": {"ICD10": ["I25.2"]},
-                        },
-                    ],
-                },
-            }
-        )
+        # OMOP concept IDs for AF (from DomainsMocker)
+        af_concepts = [1569171, 4232691, 4154290, 4232697, 4119602]
+        # OMOP concept IDs for MI (from DomainsMocker)
+        mi_concepts = [312327, 4296653, 4270024, 314666, 4163874, 438170]
 
-        # Chronic Kidney Disease Study and Cohort
-        cohort_5_id = self.generate_cohort_id()
-        study_5_id = self.generate_study_id()
-        sample_data.append(
-            {
-                "study": {
-                    "id": study_5_id,
-                    "name": "Chronic Kidney Disease Study",
-                    "description": "Study of patients with chronic kidney disease stages 3-5",
-                    "baseline_characteristics": {
-                        "age_range": "18+",
-                        "ckd_stages": "3-5",
+        # Cohort 1: Atrial Fibrillation
+        # Entry: first AF diagnosis; Exclusion: prior MI; Outcome: all-cause mortality
+        cohort_1 = {
+            "id": cohort_1_id,
+            "study_id": study_id,
+            "name": "Atrial Fibrillation",
+            "class_name": "Cohort",
+            "description": "Adults with a first recorded atrial fibrillation diagnosis, excluding prior myocardial infarction.",
+            "database_config": {
+                "mapper": "OMOP",
+                "connector": "mocker",
+                "config": {"n_patients": 25000},
+            },
+            "phenotypes": [
+                {
+                    "id": "entry_1",
+                    "name": "Atrial Fibrillation Diagnosis",
+                    "type": "entry",
+                    "class_name": "CodelistPhenotype",
+                    "domain": "CONDITION_OCCURRENCE",
+                    "return_date": "first",
+                    "codelist": {
+                        "class_name": "Codelist",
+                        "codelist_type": "manual",
+                        "use_code_type": False,
+                        "codelist": {"null": af_concepts},
                     },
-                    "outcomes": {
-                        "primary": "Progression to ESRD",
-                        "secondary": "Cardiovascular outcomes",
+                },
+                {
+                    "id": "inclusion_1",
+                    "name": "Age 18 or older at index",
+                    "type": "inclusion",
+                    "class_name": "AgePhenotype",
+                    "domain": "PERSON",
+                    "value_filter": {
+                        "class_name": "ValueFilter",
+                        "column_name": "VALUE",
+                        "min_value": {"class_name": "GreaterThanOrEqualTo", "value": 18},
                     },
-                    "analysis": {"type": "prospective cohort", "follow_up": "10 years"},
                 },
-                "cohort": {
-                    "id": cohort_5_id,
-                    "study_id": study_5_id,
-                    "name": "Chronic Kidney Disease Cohort",
-                    "class_name": "Cohort",
-                    "description": "Patients with chronic kidney disease stages 3-5",
-                    "phenotypes": [
-                        {
-                            "id": "entry_criterion",
-                            "name": "Chronic Kidney Disease",
-                            "type": "entry",
-                            "class_name": "CodelistPhenotype",
-                            "codelist": {
-                                "ICD10": ["N18", "N18.3", "N18.4", "N18.5", "N18.6"]
-                            },
-                        },
-                        {
-                            "id": "inclusion_1",
-                            "name": "Adult patients",
-                            "type": "inclusion",
-                            "class_name": "AgePhenotype",
-                            "min_age": 18,
-                        },
-                        {
-                            "id": "exclusion_1",
-                            "name": "Exclude acute kidney failure",
-                            "type": "exclusion",
-                            "class_name": "CodelistPhenotype",
-                            "codelist": {
-                                "ICD10": [
-                                    "N17",
-                                    "N17.0",
-                                    "N17.1",
-                                    "N17.2",
-                                    "N17.8",
-                                    "N17.9",
-                                ]
-                            },
-                        },
-                    ],
+                {
+                    "id": "exclusion_1",
+                    "name": "Exclude prior myocardial infarction",
+                    "type": "exclusion",
+                    "class_name": "CodelistPhenotype",
+                    "domain": "CONDITION_OCCURRENCE",
+                    "return_date": "first",
+                    "codelist": {
+                        "class_name": "Codelist",
+                        "codelist_type": "manual",
+                        "use_code_type": False,
+                        "codelist": {"null": mi_concepts},
+                    },
+                    "relative_time_range": {
+                        "class_name": "RelativeTimeRangeFilter",
+                        "when": "before",
+                        "min_days": {"class_name": "GreaterThanOrEqualTo", "value": 1},
+                    },
                 },
-            }
-        )
+                {
+                    "id": "baseline_1",
+                    "name": "Age at Index",
+                    "type": "baseline",
+                    "class_name": "AgePhenotype",
+                    "domain": "PERSON",
+                },
+                {
+                    "id": "baseline_2",
+                    "name": "Sex",
+                    "type": "baseline",
+                    "class_name": "CategoricalPhenotype",
+                    "domain": "PERSON",
+                    "categorical_filter": {
+                        "class_name": "CategoricalFilter",
+                        "column_name": "GENDER_SOURCE_VALUE",
+                        "operator": "notnull",
+                    },
+                },
+                {
+                    "id": "outcome_1",
+                    "name": "All-cause Mortality",
+                    "type": "outcome",
+                    "class_name": "DeathPhenotype",
+                    "domain": "DEATH",
+                    "relative_time_range": {
+                        "class_name": "RelativeTimeRangeFilter",
+                        "when": "after",
+                        "min_days": {"class_name": "GreaterThanOrEqualTo", "value": 1},
+                    },
+                },
+            ],
+        }
 
-        return sample_data
+        # Cohort 2: Acute Myocardial Infarction
+        # Entry: first MI; Exclusion: prior AF; Outcome: all-cause mortality
+        cohort_2 = {
+            "id": cohort_2_id,
+            "study_id": study_id,
+            "name": "Acute Myocardial Infarction",
+            "class_name": "Cohort",
+            "description": "Adults with a first recorded myocardial infarction, excluding prior atrial fibrillation.",
+            "database_config": {
+                "mapper": "OMOP",
+                "connector": "mocker",
+                "config": {"n_patients": 25000},
+            },
+            "phenotypes": [
+                {
+                    "id": "entry_1",
+                    "name": "Myocardial Infarction Diagnosis",
+                    "type": "entry",
+                    "class_name": "CodelistPhenotype",
+                    "domain": "CONDITION_OCCURRENCE",
+                    "return_date": "first",
+                    "codelist": {
+                        "class_name": "Codelist",
+                        "codelist_type": "manual",
+                        "use_code_type": False,
+                        "codelist": {"null": mi_concepts},
+                    },
+                },
+                {
+                    "id": "inclusion_1",
+                    "name": "Age 18 or older at index",
+                    "type": "inclusion",
+                    "class_name": "AgePhenotype",
+                    "domain": "PERSON",
+                    "value_filter": {
+                        "class_name": "ValueFilter",
+                        "column_name": "VALUE",
+                        "min_value": {"class_name": "GreaterThanOrEqualTo", "value": 18},
+                    },
+                },
+                {
+                    "id": "exclusion_1",
+                    "name": "Exclude prior atrial fibrillation",
+                    "type": "exclusion",
+                    "class_name": "CodelistPhenotype",
+                    "domain": "CONDITION_OCCURRENCE",
+                    "return_date": "first",
+                    "codelist": {
+                        "class_name": "Codelist",
+                        "codelist_type": "manual",
+                        "use_code_type": False,
+                        "codelist": {"null": af_concepts},
+                    },
+                    "relative_time_range": {
+                        "class_name": "RelativeTimeRangeFilter",
+                        "when": "before",
+                        "min_days": {"class_name": "GreaterThanOrEqualTo", "value": 1},
+                    },
+                },
+                {
+                    "id": "baseline_1",
+                    "name": "Age at Index",
+                    "type": "baseline",
+                    "class_name": "AgePhenotype",
+                    "domain": "PERSON",
+                },
+                {
+                    "id": "baseline_2",
+                    "name": "Sex",
+                    "type": "baseline",
+                    "class_name": "CategoricalPhenotype",
+                    "domain": "PERSON",
+                    "categorical_filter": {
+                        "class_name": "CategoricalFilter",
+                        "column_name": "GENDER_SOURCE_VALUE",
+                        "operator": "notnull",
+                    },
+                },
+                {
+                    "id": "outcome_1",
+                    "name": "All-cause Mortality",
+                    "type": "outcome",
+                    "class_name": "DeathPhenotype",
+                    "domain": "DEATH",
+                    "relative_time_range": {
+                        "class_name": "RelativeTimeRangeFilter",
+                        "when": "after",
+                        "min_days": {"class_name": "GreaterThanOrEqualTo", "value": 1},
+                    },
+                },
+            ],
+        }
+
+        return [
+            {"study": study, "cohort": cohort_1},
+            {"study": study, "cohort": cohort_2},
+        ]
 
     async def wait_for_database(
         self, max_retries: int = 30, delay: float = 2.0
@@ -439,22 +343,47 @@ class SampleCohortsInitializer:
         """Create all sample studies and cohorts."""
         sample_data = self.get_sample_cohorts_and_studies()
         success_count = 0
+        created_study_ids = set()
 
-        logger.info(f"🚀 Creating {len(sample_data)} sample studies and cohorts...")
+        logger.info(f"🚀 Creating sample study with {len(sample_data)} cohorts...")
 
         for i, data in enumerate(sample_data, 1):
-            study_name = data["study"]["name"]
-            cohort_name = data["cohort"]["name"]
-            logger.info(
-                f"📝 Creating study and cohort {i}/{len(sample_data)}: {study_name} / {cohort_name}"
-            )
+            study_data = data["study"]
+            cohort_data = data["cohort"]
+            cohort_name = cohort_data["name"]
+            logger.info(f"📝 Creating cohort {i}/{len(sample_data)}: {cohort_name}")
 
-            if await self.create_sample_study_and_cohort(data):
-                success_count += 1
+            # Only create the study once (all cohorts share the same study)
+            if study_data["id"] not in created_study_ids:
+                if await self.create_sample_study_and_cohort(data):
+                    created_study_ids.add(study_data["id"])
+                    success_count += 1
+            else:
+                # Study already created; only create the cohort
+                try:
+                    cohort_success = await self.db_manager.update_cohort_for_user(
+                        user_id=self.public_user_id,
+                        cohort_id=cohort_data["id"],
+                        cohort_data=cohort_data,
+                        study_id=cohort_data["study_id"],
+                        provisional=False,
+                    )
+                    if cohort_success:
+                        conn = await self.db_manager.get_connection()
+                        await conn.execute(
+                            f"UPDATE {self.db_manager.full_table_name} SET is_public = TRUE WHERE user_id = $1 AND cohort_id = $2",
+                            self.public_user_id,
+                            cohort_data["id"],
+                        )
+                        await conn.close()
+                        logger.info(f"✅ Created sample cohort: {cohort_name}")
+                        success_count += 1
+                    else:
+                        logger.error(f"❌ Failed to create cohort: {cohort_name}")
+                except Exception as e:
+                    logger.error(f"❌ Error creating cohort {cohort_name}: {e}")
 
-        logger.info(
-            f"📊 Created {success_count}/{len(sample_data)} sample studies and cohorts"
-        )
+        logger.info(f"📊 Created {success_count}/{len(sample_data)} cohorts")
         return success_count == len(sample_data)
 
     async def verify_sample_cohorts(self) -> bool:
@@ -477,8 +406,8 @@ class SampleCohortsInitializer:
                 logger.info(f"  - {name} (ID: {study.get('id', 'Unknown')})")
 
             return (
-                len(public_cohorts) >= 5 and len(public_studies) >= 5
-            )  # Expect at least 5 of each
+                len(public_cohorts) >= 2 and len(public_studies) >= 1
+            )  # Expect 1 study with 2 cohorts
 
         except Exception as e:
             logger.error(f"❌ Error verifying sample cohorts and studies: {e}")
