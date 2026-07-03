@@ -7,10 +7,16 @@ import {
   colorPickerDragHandle,
   type ColorUsage,
 } from './ColorPicker';
+import {
+  GroupColorPicker,
+  GROUP_COLOR_PICKER_HEIGHT,
+  groupColorPickerDragHandle,
+} from './GroupColorPicker';
 import styles from './LegendDot.module.css';
 
 const PICKER_WIDTH = 300;
-const PICKER_HEIGHT = COLOR_PICKER_HEIGHT;
+const COHORT_PICKER_HEIGHT = COLOR_PICKER_HEIGHT;
+const GROUP_PICKER_HEIGHT = GROUP_COLOR_PICKER_HEIGHT;
 
 interface LegendDotProps {
   color?: string;
@@ -21,17 +27,27 @@ interface LegendDotProps {
   scale?: number;
   /** When false, the selection dot is hidden (color picker remains if enabled). */
   showDot?: boolean;
-  /** When provided, the dot becomes a color-picker trigger. */
+  /**
+   * When provided, the dot shows a picker button that opens the per-cohort
+   * `ColorPicker` (full HSV wheel + palette, with used-color blurring).
+   * Mutually exclusive with `onGroupColorChange`.
+   */
   onColorChange?: (color: string) => void;
-  /** Colors already used by other cohorts (shown blurred in the picker). */
+  /** Colors already used by other cohorts (shown blurred in the cohort picker). */
   usedColors?: ColorUsage[];
+  /**
+   * When provided, the dot shows a picker button that opens the `GroupColorPicker`
+   * (palette + custom hex, no HSV wheel, no used-color blurring).
+   * Mutually exclusive with `onColorChange`.
+   */
+  onGroupColorChange?: (color: string) => void;
 }
 
 /** Clamp the picker so it stays fully within the viewport. */
-function clampToViewport(x: number, y: number): { x: number; y: number } {
+function clampToViewport(x: number, y: number, pickerHeight: number): { x: number; y: number } {
   const margin = 8;
   const maxX = window.innerWidth - PICKER_WIDTH - margin;
-  const maxY = window.innerHeight - PICKER_HEIGHT - margin;
+  const maxY = window.innerHeight - pickerHeight - margin;
   return {
     x: Math.max(margin, Math.min(x, maxX)),
     y: Math.max(margin, Math.min(y, maxY)),
@@ -48,7 +64,9 @@ export const LegendDot: FC<LegendDotProps> = ({
   showDot = true,
   onColorChange,
   usedColors = [],
+  onGroupColorChange,
 }) => {
+  const hasPickerButton = onColorChange != null || onGroupColorChange != null;
   const ref = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
   const [pickerPos, setPickerPos] = useState<{ x: number; y: number } | null>(null);
@@ -62,10 +80,14 @@ export const LegendDot: FC<LegendDotProps> = ({
     return 'transparent';
   };
 
-  const openPicker = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setPickerPos(clampToViewport(e.clientX + 12, e.clientY + 12));
-  }, []);
+  const openPicker = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const height = onGroupColorChange != null ? GROUP_PICKER_HEIGHT : COHORT_PICKER_HEIGHT;
+      setPickerPos(clampToViewport(e.clientX + 12, e.clientY + 12, height));
+    },
+    [onGroupColorChange],
+  );
 
   const closePicker = useCallback(() => setPickerPos(null), []);
 
@@ -79,7 +101,7 @@ export const LegendDot: FC<LegendDotProps> = ({
 
   return (
     <div className={styles.legendDotContainer}>
-      {onColorChange && (
+      {hasPickerButton && (
         <button
           type="button"
           className={styles.pickerButton}
@@ -87,8 +109,9 @@ export const LegendDot: FC<LegendDotProps> = ({
             background: getBackground(),
             border: isActive ? '1px solid transparent' : partiallyActive && color ? `1px solid ${color}` : '1px dashed #ccc',
             ...(scale != null ? { transform: `scale(${scale})` } : {}),
-          }}          onClick={openPicker}
-          aria-label="Change cohort color"
+          }}
+          onClick={openPicker}
+          aria-label={onGroupColorChange != null ? 'Change group color' : 'Change cohort color'}
           title="Change color"
         />
       )}
@@ -116,7 +139,7 @@ export const LegendDot: FC<LegendDotProps> = ({
           />
         </>
       )}
-      {pickerPos && onColorChange && (
+      {pickerPos && onColorChange != null && (
         <>
           <div className={styles.pickerBackdrop} onMouseDown={closePicker} />
           <DraggablePortal
@@ -129,6 +152,23 @@ export const LegendDot: FC<LegendDotProps> = ({
               value={color}
               usedColors={usedColors}
               onSelect={handleSelect}
+              onClose={closePicker}
+            />
+          </DraggablePortal>
+        </>
+      )}
+      {pickerPos && onGroupColorChange != null && (
+        <>
+          <div className={styles.pickerBackdrop} onMouseDown={closePicker} />
+          <DraggablePortal
+            initialX={pickerPos.x}
+            initialY={pickerPos.y}
+            dragHandleSelector={`.${groupColorPickerDragHandle}`}
+            clampToViewport
+          >
+            <GroupColorPicker
+              value={color}
+              onSelect={(c) => { onGroupColorChange(c); closePicker(); }}
               onClose={closePicker}
             />
           </DraggablePortal>

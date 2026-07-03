@@ -203,6 +203,26 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
     }
   }, [groups, activeSet, onAdd]);
 
+  /**
+   * When the user picks a base color for a group, compute alpha-faded variants
+   * for each subcohort (matching the default getCohortColor alpha ramp) and
+   * persist each one via onSetColor.
+   */
+  const handleSetGroupColor = useCallback(
+    (groupIndex: number, baseColor: string) => {
+      if (!onSetColor) return;
+      const group = groups[groupIndex];
+      const total = group.subcohorts.length;
+      const m = baseColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+      group.subcohorts.forEach((sub, si) => {
+        const alpha = total <= 1 ? 1 : 1.0 - (si / total) * 0.65;
+        const color = m ? `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${alpha})` : baseColor;
+        onSetColor(sub.fullName, color);
+      });
+    },
+    [groups, onSetColor],
+  );
+
   const handleDeselectAll = useCallback(() => {
     for (let i = selections.length - 1; i >= 0; i--) onRemove(i);
     if (!showAll) onToggleShowAll();
@@ -264,7 +284,13 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
       )} */}
 
       {groups.map((group, gi) => {
-        const groupColor = getCohortColor(gi, 0, group.subcohorts.length);
+        // Prefer the overridden color of the first subcohort (strips alpha) so the
+        // group dot reflects a previous group-color pick; fall back to the default.
+        const firstSub = group.subcohorts[0];
+        const firstOverride = firstSub ? colorMap.get(firstSub.fullName) : undefined;
+        const groupColor = firstOverride
+          ? firstOverride.replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)[^)]*\)/, 'rgb($1, $2, $3)')
+          : getCohortColor(gi, 0, group.subcohorts.length);
         const visibleSubs = showAll
           ? group.subcohorts
           : group.subcohorts.filter((sub) => activeSet.has(sub.fullName));
@@ -280,6 +306,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                   onClick={() => handleGroupClick(gi)}
                   tooltipLabel={group.subcohorts.every((s) => activeSet.has(s.fullName)) ? 'Click to deselect all' : group.subcohorts.some((s) => activeSet.has(s.fullName)) ? 'Click to select all' : 'Click to select all'}
                   scale={1.3}
+                  onGroupColorChange={onSetColor ? (c) => handleSetGroupColor(gi, c) : undefined}
                 />
               </div>
               <div className={styles.legendGroupTitleContent} onClick={() => toggleGroupCollapse(gi)}>

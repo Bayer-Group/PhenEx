@@ -647,7 +647,14 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [_runId, onSelectionsChange],
   );
 
-  const studyDescription = "This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts. Outcomes include time-to-event analyses and incidence rates for key clinical endpoints.";
+  const studyDescription = [
+    '<p>This study characterizes baseline demographics, clinical history, and treatment patterns across defined patient cohorts.</p>',
+    '<ol>',
+    '<li>Select the cohorts you are interested in from the left <strong>Cohorts</strong> tab.</li>',
+    '<li>Use the left/right arrows (buttons or keyboard) or the <strong>Outline</strong> tab in the left panel to navigate through the study&rsquo;s sections and view the corresponding data in the main panel.</li>',
+    '<li>Use the <strong>Legend</strong> tab in the left panel to customize cohort colors and manage spacers for better visualization.</li>',
+    '</ol>',
+  ].join('');
 
   // ── Nested layout model for right border ──
   const rightPanelModel = useMemo(() => {

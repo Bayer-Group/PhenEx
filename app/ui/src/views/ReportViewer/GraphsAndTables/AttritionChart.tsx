@@ -81,7 +81,7 @@ type FlatTableEntry =
 export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall, groups, cohortDescriptions, spacers = [], onSetColor }) => {
   const selectedSet = useMemo(() => new Set(cohortData.map((cd) => cd.name)), [cohortData]);
   const [tableColumns, setTableColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
-  const [hideMainCohortRows, setHideMainCohortRows] = useState(false);
+  const [hideMainCohortRows, setHideMainCohortRows] = useState(true);
 
   /** Build per-group chart data, grouping subcohorts under their main cohort. */
   const groupedCharts = useMemo(() => {

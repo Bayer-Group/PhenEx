@@ -10,7 +10,7 @@ export const StudyInfoCellRenderer: FC<StudyInfoCellRendererProps> = ({ title, d
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>{title}</h1>
-      {description && <p className={styles.description}>{description}</p>}
+      {description && <div className={styles.description} dangerouslySetInnerHTML={{ __html: description }} />}
     </div>
   );
 };

@@ -31,7 +31,7 @@ export const FullCohortSelector: FC<FullCohortSelectorProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
   const headerActionsRef = useRef<HTMLDivElement>(null);
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState(true);
   const [showFloatingActions, setShowFloatingActions] = useState(false);
 
   useEffect(() => {
