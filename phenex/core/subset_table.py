@@ -70,10 +70,14 @@ class SubsetTable(Node):
             )
             return table.table
 
-        # In multi index settings the index_table determines which index dates to use! 
-        # the subset tables entry will contain all possible index dates; 
+        # In multi index settings the index_table determines which index dates to use!
+        # the subset tables entry will contain all possible index dates;
         # subset tables index should contain only index dates/person ids in the index_table (which may select first or last)
-        join_keys = ["PERSON_ID", "INDEX_DATE"] if "INDEX_DATE" in table.columns else ["PERSON_ID"]
+        join_keys = (
+            ["PERSON_ID", "INDEX_DATE"]
+            if "INDEX_DATE" in table.columns
+            else ["PERSON_ID"]
+        )
         subset_table = table.inner_join(index_table, join_keys)
         subset_table = subset_table.select(columns).distinct()
 

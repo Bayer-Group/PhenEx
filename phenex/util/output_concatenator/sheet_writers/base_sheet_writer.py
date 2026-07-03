@@ -186,7 +186,12 @@ class _BaseSheetWriter:
     @staticmethod
     def _clean_numeric(value):
         """Convert whole-number floats to int (e.g. 98.0 -> 98)."""
-        if isinstance(value, float) and not math.isnan(value) and not math.isinf(value) and value == int(value):
+        if (
+            isinstance(value, float)
+            and not math.isnan(value)
+            and not math.isinf(value)
+            and value == int(value)
+        ):
             return int(value)
         return value
 
