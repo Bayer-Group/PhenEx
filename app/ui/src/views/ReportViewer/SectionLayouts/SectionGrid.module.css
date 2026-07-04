@@ -10,7 +10,7 @@
   box-sizing: border-box;
   border: var(--border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--background_color_light, #f0f0f0);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
