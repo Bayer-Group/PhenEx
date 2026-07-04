@@ -1,6 +1,13 @@
-import { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
-import { COLOR_PALETTES, COHORT_BASE_COLORS, type GroupColorConfig, type GroupColorMode, type HueDirection } from '../../types';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  COHORT_BASE_COLORS,
+  TWO_COLOR_START_SWATCHES,
+  TWO_COLOR_END_SWATCHES,
+  type GroupColorConfig,
+  type GroupColorMode,
+  type HueDirection,
+} from '../../types';
+import { InlineColorWheel, isValidColor, parseColor, rgbToHex } from './ColorPicker';
 import pickerStyles from './ColorPicker.module.css';
 import styles from './GroupColorPicker.module.css';
 
@@ -11,112 +18,79 @@ import styles from './GroupColorPicker.module.css';
 export const groupColorPickerDragHandle = 'groupColorPickerDragHandle';
 
 /** Approximate max height for viewport clamping (two-color mode is tallest). */
-export const GROUP_COLOR_PICKER_HEIGHT = 620;
+export const GROUP_COLOR_PICKER_HEIGHT = 460;
 
-function normalize(color: string): string {
-  return color.replace(/\s+/g, '').toLowerCase();
-}
+/** Default end tone when a group hasn't been given a two-tone ramp yet. */
+const DEFAULT_END_COLOR = COHORT_BASE_COLORS[Math.min(3, COHORT_BASE_COLORS.length - 1)];
 
-function isValidColor(input: string): boolean {
-  const v = input.trim();
-  return (
-    /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v) ||
-    /^rgba?\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}/i.test(v)
-  );
-}
-
-// ── Swatch ───────────────────────────────────────────────────────────────────
-
-const Swatch: FC<{
-  color: string;
-  selected: boolean;
-  onSelect: (color: string) => void;
-}> = ({ color, selected, onSelect }) => {
-  const ref = useRef<HTMLButtonElement>(null);
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <>
-      <button
-        ref={ref}
-        type="button"
-        className={`${pickerStyles.swatch} ${selected ? pickerStyles.swatchSelected : ''}`}
-        style={{ background: color }}
-        onClick={() => onSelect(color)}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      />
-      <PhenExNavBarTooltip
-        isVisible={hovered}
-        anchorElement={ref.current}
-        label={color}
-        verticalPosition="above"
-        horizontalAlignment="center"
-        delay={300}
-      />
-    </>
-  );
-};
-
-// ── ColorSection ─────────────────────────────────────────────────────────────
+// ── ToneColumn ───────────────────────────────────────────────────────────────
 
 /**
- * A self-contained palette + custom hex input for picking a single color.
- * Used once in 'single' mode and twice (start/end) in 'two-color' mode.
+ * A compact custom color picker for a single tone: a live preview swatch, an
+ * HSV wheel, and a hex input — mirroring the "Custom" section of the per-cohort
+ * `ColorPicker`. Used side by side for the start and end tones.
  */
-const ColorSection: FC<{
-  label?: string;
+const ToneColumn: FC<{
+  label: string;
   value: string;
+  /** Quick-pick default swatches shown below the wheel. */
+  swatches?: string[];
   onChange: (color: string) => void;
-}> = ({ label, value, onChange }) => {
+}> = ({ label, value, swatches, onChange }) => {
   const [custom, setCustom] = useState(value);
 
   useEffect(() => {
     setCustom(value);
   }, [value]);
 
-  const selectedNorm = useMemo(() => normalize(value), [value]);
-  const customValid = isValidColor(custom);
+  const valid = isValidColor(custom);
+  const preview = valid ? custom.trim() : value;
+  const wheelColor = useMemo(() => {
+    const parsed = parseColor(custom) ?? parseColor(value);
+    return rgbToHex(parsed ?? { r: 0, g: 0, b: 0 });
+  }, [custom, value]);
+
+  const apply = useCallback(
+    (hex: string) => {
+      setCustom(hex);
+      onChange(hex);
+    },
+    [onChange],
+  );
 
   return (
-    <>
-      {label && <div className={styles.colorSectionLabel}>{label}</div>}
-      {COLOR_PALETTES.map((palette) => (
-        <div key={palette.name}>
-          <div className={pickerStyles.section}>{palette.name}</div>
-          <div className={pickerStyles.grid}>
-            {palette.colors.map((color) => (
-              <Swatch
-                key={color.value}
-                color={color.value}
-                selected={normalize(color.value) === selectedNorm}
-                onSelect={onChange}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-      <div className={pickerStyles.customRow}>
-        <input
-          type="text"
-          className={`${pickerStyles.hexInput} ${customValid || !custom ? '' : pickerStyles.hexInputInvalid}`}
-          value={custom}
-          placeholder="#rrggbb or rgb(r,g,b)"
-          onChange={(e) => setCustom(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && customValid) onChange(custom.trim());
-          }}
-        />
-        <button
-          type="button"
-          className={pickerStyles.applyButton}
-          disabled={!customValid}
-          onClick={() => onChange(custom.trim())}
-        >
-          Apply
-        </button>
+    <div className={styles.toneColumn}>
+      <div className={styles.toneHeader}>
+        <span className={pickerStyles.previewSwatch} style={{ background: preview }} aria-hidden />
+        <span className={styles.toneLabel}>{label}</span>
       </div>
-    </>
+      <InlineColorWheel color={wheelColor} onChange={apply} />
+      {swatches && swatches.length > 0 && (
+        <div className={styles.swatchRow}>
+          {swatches.map((swatch) => (
+            <button
+              key={swatch}
+              type="button"
+              className={styles.swatch}
+              style={{ background: swatch }}
+              title={swatch}
+              aria-label={swatch}
+              onClick={() => apply(swatch)}
+            />
+          ))}
+        </div>
+      )}
+      <input
+        type="text"
+        className={`${pickerStyles.hexInput} ${valid || !custom ? '' : pickerStyles.hexInputInvalid}`}
+        value={custom}
+        placeholder="#rrggbb"
+        onChange={(e) => setCustom(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && valid) onChange(custom.trim());
+        }}
+      />
+    </div>
   );
 };
 
@@ -125,50 +99,66 @@ const ColorSection: FC<{
 interface GroupColorPickerProps {
   /** Initial config to pre-populate the picker. */
   value?: GroupColorConfig;
-  onSelect: (config: GroupColorConfig) => void;
+  /** When keepOpen is true, the host applies the config without closing. */
+  onSelect: (config: GroupColorConfig, keepOpen?: boolean) => void;
   onClose?: () => void;
 }
 
 /**
  * Color picker for group base colors.
  *
- * Distinct from the per-cohort `ColorPicker` in two key ways:
- *   1. No `usedColors` — group base colors don't carry "taken" swatch semantics.
- *   2. Two modes via a dropdown:
- *      - **Single color**: applies an alpha-fade ramp from the chosen color across
- *        all subcohorts (matching the default getCohortColor behavior).
- *      - **Two colors**: generates a perceptually uniform LCh-interpolated palette
- *        between a start and end color (equidistant steps, like learnui.design),
- *        with a short/long toggle for which way the hue rotates around the wheel.
+ * Two modes via a dropdown:
+ *   - **Two colors** (default): generates a perceptually uniform LCh-interpolated
+ *     palette between a start and end tone (equidistant steps, like
+ *     learnui.design), with a short/long toggle for the hue rotation direction.
+ *     Both tones are picked with side-by-side HSV wheels and applied live.
+ *   - **Single color**: applies an alpha-fade ramp from the chosen color across
+ *     all subcohorts (matching the default getCohortColor behavior).
  */
 export const GroupColorPicker: FC<GroupColorPickerProps> = ({ value, onSelect, onClose }) => {
-  const [mode, setMode] = useState<GroupColorMode>(value?.mode ?? 'single');
+  const [mode, setMode] = useState<GroupColorMode>(value?.mode ?? 'two-color');
   const [startColor, setStartColor] = useState(value?.startColor ?? COHORT_BASE_COLORS[0]);
-  const [endColor, setEndColor] = useState(
-    value?.endColor ?? COHORT_BASE_COLORS[Math.min(3, COHORT_BASE_COLORS.length - 1)],
-  );
+  const [endColor, setEndColor] = useState(value?.endColor ?? DEFAULT_END_COLOR);
   const [direction, setDirection] = useState<HueDirection>(value?.direction ?? 'short');
 
-  const handleModeChange = useCallback((next: GroupColorMode) => {
-    setMode(next);
-  }, []);
-
-  const handleSingleColorChange = useCallback(
-    (color: string) => {
-      setStartColor(color);
-      onSelect({ mode: 'single', startColor: color });
+  const handleModeChange = useCallback(
+    (next: GroupColorMode) => {
+      setMode(next);
+      if (next === 'single') onSelect({ mode: 'single', startColor }, true);
+      else onSelect({ mode: 'two-color', startColor, endColor, direction }, true);
     },
-    [onSelect],
+    [onSelect, startColor, endColor, direction],
   );
 
-  const handleApplyTwoColor = useCallback(() => {
-    onSelect({ mode: 'two-color', startColor, endColor, direction });
-  }, [onSelect, startColor, endColor, direction]);
+  const handleStartChange = useCallback(
+    (color: string) => {
+      setStartColor(color);
+      if (mode === 'single') onSelect({ mode: 'single', startColor: color }, true);
+      else onSelect({ mode: 'two-color', startColor: color, endColor, direction }, true);
+    },
+    [onSelect, mode, endColor, direction],
+  );
+
+  const handleEndChange = useCallback(
+    (color: string) => {
+      setEndColor(color);
+      onSelect({ mode: 'two-color', startColor, endColor: color, direction }, true);
+    },
+    [onSelect, startColor, direction],
+  );
+
+  const handleDirectionChange = useCallback(
+    (next: HueDirection) => {
+      setDirection(next);
+      onSelect({ mode: 'two-color', startColor, endColor, direction: next }, true);
+    },
+    [onSelect, startColor, endColor],
+  );
 
   return (
     <div className={pickerStyles.picker}>
       <div className={`${pickerStyles.header} ${groupColorPickerDragHandle}`}>
-        <span className={pickerStyles.headerTitle}>Group base color</span>
+        <span className={pickerStyles.headerTitle}>Group colors</span>
         {onClose && (
           <button
             type="button"
@@ -189,20 +179,31 @@ export const GroupColorPicker: FC<GroupColorPickerProps> = ({ value, onSelect, o
           value={mode}
           onChange={(e) => handleModeChange(e.target.value as GroupColorMode)}
         >
-          <option value="single">Single color</option>
           <option value="two-color">Two colors</option>
+          <option value="single">Single color</option>
         </select>
       </div>
 
       {mode === 'single' && (
-        <ColorSection value={startColor} onChange={handleSingleColorChange} />
+        <ToneColumn label="Color" value={startColor} onChange={handleStartChange} />
       )}
 
       {mode === 'two-color' && (
         <>
-          <ColorSection label="Start color" value={startColor} onChange={setStartColor} />
-          <div className={styles.divider} />
-          <ColorSection label="End color" value={endColor} onChange={setEndColor} />
+          <div className={styles.toneRow}>
+            <ToneColumn
+              label="Start"
+              value={startColor}
+              swatches={TWO_COLOR_START_SWATCHES}
+              onChange={handleStartChange}
+            />
+            <ToneColumn
+              label="End"
+              value={endColor}
+              swatches={TWO_COLOR_END_SWATCHES}
+              onChange={handleEndChange}
+            />
+          </div>
           <div className={styles.directionRow}>
             <span className={styles.directionLabel}>Hue path</span>
             <div className={styles.directionToggle}>
@@ -211,20 +212,13 @@ export const GroupColorPicker: FC<GroupColorPickerProps> = ({ value, onSelect, o
                   key={dir}
                   type="button"
                   className={`${styles.directionOption} ${direction === dir ? styles.directionOptionActive : ''}`}
-                  onClick={() => setDirection(dir)}
+                  onClick={() => handleDirectionChange(dir)}
                 >
                   {dir === 'short' ? 'Short' : 'Long'}
                 </button>
               ))}
             </div>
           </div>
-          <button
-            type="button"
-            className={styles.applyPaletteButton}
-            onClick={handleApplyTwoColor}
-          >
-            Apply palette
-          </button>
         </>
       )}
     </div>

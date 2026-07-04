@@ -62,7 +62,30 @@ export const colorConfig = {
       Cyan_60:[0, 114, 195] as const,
       Cyan_70:[0, 83, 154] as const,
       Cyan_80:[0, 58, 109] as const,
-    }
+    },
+  },
+
+  /**
+   * Quick-pick default swatches for the two-color group ramp. Distinct sets for
+   * the start (cool/dark endpoints) and end (warm/light endpoints) tones.
+   */
+  twoColorDefaults: {
+    start: [
+      [17, 146, 232] as const,  // blue
+      [0, 93, 93] as const,     // teal
+      [105, 41, 196] as const,  // purple
+      [25, 128, 56] as const,   // green
+      [0, 59, 51] as const,     // dark green
+      [159, 24, 83] as const,   // magenta
+    ],
+    end: [
+      [250, 77, 86] as const,   // red
+      [226, 96, 51] as const,   // orange
+      [204, 122, 10] as const,  // yellow
+      [141, 198, 63] as const,  // light green
+      [238, 83, 139] as const,  // pink
+      [66, 184, 234] as const,  // cyan
+    ],
   },
 
   cohortColorOrder: [

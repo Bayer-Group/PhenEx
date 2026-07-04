@@ -46,11 +46,11 @@ function normalize(color: string): string {
 }
 
 /** Validate a hex (#rgb/#rrggbb) or rgb()/rgba() color string. */
-function isValidColor(input: string): boolean {
+export function isValidColor(input: string): boolean {
   return parseColor(input) != null;
 }
 
-function parseColor(input: string): RGB | null {
+export function parseColor(input: string): RGB | null {
   const v = input.trim();
   const hexMatch = v.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
   if (hexMatch) {
@@ -77,7 +77,7 @@ function parseColor(input: string): RGB | null {
   return null;
 }
 
-function rgbToHex({ r, g, b }: RGB): string {
+export function rgbToHex({ r, g, b }: RGB): string {
   const toHex = (channel: number) =>
     Math.max(0, Math.min(255, Math.round(channel))).toString(16).padStart(2, '0');
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -174,7 +174,7 @@ function useDrag(onMove: (clientX: number, clientY: number) => void) {
   }, []);
 }
 
-const InlineColorWheel: FC<{
+export const InlineColorWheel: FC<{
   color: string;
   onChange: (hex: string) => void;
 }> = ({ color, onChange }) => {

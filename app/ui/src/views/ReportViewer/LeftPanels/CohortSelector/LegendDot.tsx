@@ -38,10 +38,12 @@ interface LegendDotProps {
   usedColors?: ColorUsage[];
   /**
    * When provided, the dot shows a picker button that opens the `GroupColorPicker`
-   * (palette + custom hex, no HSV wheel, no used-color blurring).
+   * (side-by-side start/end HSV wheels + short/long hue toggle).
    * Mutually exclusive with `onColorChange`.
    */
   onGroupColorChange?: (config: GroupColorConfig) => void;
+  /** Current group color config, used to pre-populate the group picker. */
+  groupColorValue?: GroupColorConfig;
 }
 
 /** Clamp the picker so it stays fully within the viewport. */
@@ -66,6 +68,7 @@ export const LegendDot: FC<LegendDotProps> = ({
   onColorChange,
   usedColors = [],
   onGroupColorChange,
+  groupColorValue,
 }) => {
   const hasPickerButton = onColorChange != null || onGroupColorChange != null;
   const ref = useRef<HTMLDivElement>(null);
@@ -168,8 +171,8 @@ export const LegendDot: FC<LegendDotProps> = ({
             clampToViewport
           >
             <GroupColorPicker
-              value={color ? { mode: 'single', startColor: color } : undefined}
-              onSelect={(config) => { onGroupColorChange(config); closePicker(); }}
+              value={groupColorValue ?? (color ? { mode: 'single', startColor: color } : undefined)}
+              onSelect={(config, keepOpen) => { onGroupColorChange(config); if (!keepOpen) closePicker(); }}
               onClose={closePicker}
             />
           </DraggablePortal>

@@ -19,6 +19,14 @@ export const COLOR_PALETTES = Object.entries(colorConfig.palettes).map(([name, c
   })),
 }));
 
+/** Default quick-pick swatches for the two-color group ramp (distinct per tone). */
+export const TWO_COLOR_START_SWATCHES: string[] = colorConfig.twoColorDefaults.start.map(
+  ([r, g, b]) => `rgb(${r}, ${g}, ${b})`,
+);
+export const TWO_COLOR_END_SWATCHES: string[] = colorConfig.twoColorDefaults.end.map(
+  ([r, g, b]) => `rgb(${r}, ${g}, ${b})`,
+);
+
 /**
  * Get the color for a selection, based on its cohort group index and
  * subcohort position within that group. Subcohorts fade in alpha.

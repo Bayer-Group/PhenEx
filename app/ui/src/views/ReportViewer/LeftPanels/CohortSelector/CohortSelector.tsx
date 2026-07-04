@@ -287,6 +287,18 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         const groupColor = firstOverride
           ? firstOverride.replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)[^)]*\)/, 'rgb($1, $2, $3)')
           : getCohortColor(gi, 0, group.subcohorts.length);
+        // Reconstruct the group's two-tone config from the persisted per-subcohort
+        // overrides: the first sub is the start tone, the last is the end tone.
+        const lastSub = group.subcohorts[group.subcohorts.length - 1];
+        const endOverride =
+          group.subcohorts.length > 1 && lastSub ? colorOverrides?.[lastSub.fullName] : undefined;
+        const groupColorValue: GroupColorConfig = {
+          mode: 'two-color',
+          startColor: groupColor,
+          endColor: endOverride
+            ? endOverride.replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)[^)]*\)/, 'rgb($1, $2, $3)')
+            : undefined,
+        };
         const visibleSubs = showAll
           ? group.subcohorts
           : group.subcohorts.filter((sub) => activeSet.has(sub.fullName));
@@ -303,6 +315,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                   tooltipLabel={group.subcohorts.every((s) => activeSet.has(s.fullName)) ? 'Click to deselect all' : group.subcohorts.some((s) => activeSet.has(s.fullName)) ? 'Click to select all' : 'Click to select all'}
                   scale={1.3}
                   onGroupColorChange={onSetColor ? (c) => handleSetGroupColor(gi, c) : undefined}
+                  groupColorValue={groupColorValue}
                 />
               </div>
               <div className={styles.legendGroupTitleContent} onClick={() => toggleGroupCollapse(gi)}>

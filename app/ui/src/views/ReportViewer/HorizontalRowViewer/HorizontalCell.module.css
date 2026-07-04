@@ -161,7 +161,7 @@
   width: 100%;
   text-align: left;
   border: var(--border);
-  background: white;
+  background: transparent;
   padding: 12px 16px;
   border-radius: 10px;
   cursor: pointer;
