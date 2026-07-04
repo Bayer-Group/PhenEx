@@ -6,12 +6,9 @@ import { TimeToEventContent } from '../GraphsAndTables/ModalRenderers/TimeToEven
 import { Table2Content } from '../GraphsAndTables/ModalRenderers/Table2Content';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { StudyInfoCellRenderer } from '../GraphsAndTables/RowRenderers/StudyInfoCellRenderer';
-import { BarChartCellRendererCompact } from '../GraphsAndTables/RowRenderers/BarChartCellRendererCompact';
-import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
-import { BoxPlotCellRenderer } from '../GraphsAndTables/RowRenderers/BoxPlotCellRenderer';
-import { KaplanMeierCellRenderer } from '../GraphsAndTables/RowRenderers/KaplanMeierCellRenderer';
-import { Table2CellRenderer } from '../GraphsAndTables/RowRenderers/Table2CellRenderer';
 import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../CellLayouts';
+import { SectionCellContent } from '../SectionLayouts/SectionCellContent';
+import { getSectionLayoutId } from '../SectionLayouts/sectionLayoutStore';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import styles from './HorizontalCell.module.css';
@@ -46,7 +43,7 @@ export interface HorizontalCellProps {
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, initialScrollTop, studyTitle = '', studyDescription, waterfallData, groups, cohortDescriptions, colorOverrides, onSetColor }, ref) => {
+  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, initialScrollTop, studyTitle = '', studyDescription, waterfallData, groups, cohortDescriptions, onSetColor }, ref) => {
     const isSection = entry.kind === 'section';
     const isCategory = entry.kind === 'category';
     const reporter = entry.kind === 'row' ? entry.row.reporter : entry.reporter;
@@ -148,78 +145,21 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
       if (!nearby) return null;
       if (isCategory) return renderCategoryContent();
       if (!isSection) return renderRowContent(cellRows[0]);
-      // Multi-row section card: lightweight rendering using the same chart
-      // renderers as CharacteristicsChart (no FlexLayout per row).
+      // Multi-row section card: delegates to the list/grid view toggle. Both
+      // views share the same underlying chart renderers.
+      if (entry.kind !== 'section') return null;
       return (
-        <div className={styles.multiRowList}>
-          {cellRows.map((row, index) => {
-            const hideBarChartHeader = row.rowType === 'boolean'
-              && index > 0
-              && cellRows[index - 1].rowType === 'boolean';
-
-            return (
-            <div
-              key={row.index}
-              className={styles.multiRowBlock}
-              onClick={(e) => { e.stopPropagation(); onNavigateToRow?.(row); }}
-            >
-              <div className={styles.multiRowTitle}>
-                {row.displayName || row.registry?.display_name || row.name}
-              </div>
-              <div className={styles.multiRowContent}>
-                {renderSectionRow(row, hideBarChartHeader)}
-              </div>
-            </div>
-            );
-          })}
-        </div>
+        <SectionCellContent
+          sectionId={getSectionLayoutId(entry)}
+          rows={cellRows}
+          cohortData={cohortData}
+          finalCohortSizes={finalCohortSizes}
+          spacers={spacers}
+          tteCohorts={tteCohorts}
+          table2Cohorts={table2Cohorts}
+          onNavigateToRow={onNavigateToRow}
+        />
       );
-    };
-
-    const renderSectionRow = (row: SequentialRow, hideBarChartHeader = false) => {
-      switch (row.rowType) {
-        case 'boolean':
-          return (
-            <BarChartCellRendererCompact
-              data={{ name: row.name, _meta: { cohortData, finalCohortSizes, spacers } }}
-              isModal
-              hideHeader={hideBarChartHeader}
-            />
-          );
-        case 'categorical':
-          return <CategoricalBarChartCellRenderer baseName={row.name} cohortData={cohortData} finalCohortSizes={finalCohortSizes} orientation="vertical"/>;
-        case 'numeric': {
-          let lo = Infinity, hi = -Infinity;
-          for (const cd of cohortData) {
-            const r = cd.data.rows.find((r) => r.Name === row.name);
-            if (!r) continue;
-            if (r.Min != null && r.Min < lo) lo = r.Min;
-            if (r.Max != null && r.Max > hi) hi = r.Max;
-          }
-          if (!isFinite(lo)) { lo = 0; hi = 1; }
-          return <BoxPlotCellRenderer name={row.name} cohortData={cohortData} xMin={lo} xMax={hi} spacers={spacers} />;
-        }
-        case 'time_to_event': {
-          const kmCurves = (tteCohorts ?? [])
-            .map((c) => ({
-              color: c.color,
-              cohortName: c.name,
-              steps: c.timeToEvent.filter((r) => r.Outcome === row.name),
-            }))
-            .filter((c) => c.steps.length > 0);
-          return <KaplanMeierCellRenderer curves={kmCurves} mode="compact" />;
-        }
-        case 'table2': {
-          const t2cohorts = (table2Cohorts ?? []).map((c) => ({
-            name: c.name,
-            color: c.color,
-            table2: c.table2,
-          }));
-          return <Table2CellRenderer outcome={row.name} cohorts={t2cohorts} />;
-        }
-        default:
-          return null;
-      }
     };
 
     return (

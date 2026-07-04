@@ -1,0 +1,103 @@
+.grid {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding-bottom: 200px;
+}
+
+.item {
+  position: absolute;
+  box-sizing: border-box;
+  border: var(--border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow 0.12s;
+  user-select: none;
+}
+
+.item:hover {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.itemDragging {
+  z-index: 20;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  opacity: 0.95;
+  transition: none;
+}
+
+.itemHeader {
+  flex-shrink: 0;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: 13px;
+  color: black;
+  padding: 8px 10px 4px;
+  cursor: grab;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemDragging .itemHeader {
+  cursor: grabbing;
+}
+
+.itemBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  padding: 0 8px 8px;
+}
+
+.itemBody > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* Resize handles */
+.handle {
+  position: absolute;
+  z-index: 5;
+}
+
+.handleRight {
+  top: 8px;
+  bottom: 16px;
+  right: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.handleBottom {
+  left: 8px;
+  right: 16px;
+  bottom: 0;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.handleCorner {
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+.handleCorner::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid rgba(0, 0, 0, 0.25);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.25);
+  border-bottom-right-radius: 3px;
+}

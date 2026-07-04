@@ -9,7 +9,15 @@ import {
 import { OUTLINE_CATEGORY, isOutlineRow } from './outlineModel';
 import styles from './OutlinePanel.module.css';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import { RightClickMenu } from '../../../../components/RightClickMenu/RightClickMenu';
+import { RightClickMenu, type RightClickMenuItem } from '../../../../components/RightClickMenu/RightClickMenu';
+import {
+  getSectionLayoutId,
+  getSectionState,
+  sectionLayoutActions,
+  buildDefaultLayoutItems,
+} from '../../SectionLayouts/sectionLayoutStore';
+
+type SectionEntry = Extract<ViewerEntry, { kind: 'section' }>;
 
 interface OutlinePanelProps {
   /** The exact list of navigable cells currently in the viewer. */
@@ -31,7 +39,9 @@ interface OutlinePanelProps {
 type Renaming = { kind: 'section' | 'row'; id: string };
 
 /** Context-menu target. */
-type Menu = { x: number; y: number; kind: 'section' | 'row'; id: string };
+type Menu =
+  | { x: number; y: number; kind: 'row'; id: string }
+  | { x: number; y: number; kind: 'section'; id: string; entry: SectionEntry };
 
 /** A small auto-focusing inline text input used for renaming. */
 const InlineEdit: FC<{ value: string; onCommit: (v: string) => void; onCancel: () => void }> = ({
@@ -102,6 +112,67 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
     return next && next.kind === 'row' && next.row.sectionId === entry.row.sectionId ? next.row.name : null;
   };
 
+  /** Build the right-click menu items for a section: layout switching + rename. */
+  const buildSectionMenuItems = (menu: Extract<Menu, { kind: 'section' }>): RightClickMenuItem[] => {
+    const { entry } = menu;
+    const sectionLayoutId = getSectionLayoutId(entry);
+    const { layouts, activeLayoutId } = getSectionState(sectionLayoutId);
+
+    const layoutItems: RightClickMenuItem[] = [
+      {
+        label: `${activeLayoutId === null ? '● ' : '   '}List`,
+        onClick: () => { sectionLayoutActions.setActiveLayout(sectionLayoutId, null); setMenu(null); },
+      },
+      ...layouts.map((l): RightClickMenuItem => ({
+        label: `${activeLayoutId === l.id ? '● ' : '   '}${l.name}`,
+        onClick: () => { sectionLayoutActions.setActiveLayout(sectionLayoutId, l.id); setMenu(null); },
+        submenu: [
+          {
+            label: 'Switch to',
+            onClick: () => { sectionLayoutActions.setActiveLayout(sectionLayoutId, l.id); setMenu(null); },
+          },
+          {
+            label: 'Rename…',
+            onClick: () => {
+              const name = window.prompt('Layout name', l.name)?.trim();
+              if (name) sectionLayoutActions.renameLayout(sectionLayoutId, l.id, name);
+              setMenu(null);
+            },
+          },
+          {
+            label: 'Delete',
+            onClick: () => { sectionLayoutActions.deleteLayout(sectionLayoutId, l.id); setMenu(null); },
+          },
+        ],
+      })),
+      {
+        label: '＋ New grid layout',
+        divider: true,
+        onClick: () => {
+          const keys = entry.rows.map((r) => r.name);
+          const name = `Grid ${layouts.length + 1}`;
+          sectionLayoutActions.createLayout(sectionLayoutId, name, buildDefaultLayoutItems(keys));
+          setMenu(null);
+        },
+      },
+    ];
+
+    const renameItem: RightClickMenuItem[] = entry.sectionId
+      ? [{
+          label: 'Rename section',
+          onClick: () => { if (entry.sectionId) setRenaming({ kind: 'section', id: entry.sectionId }); },
+        }]
+      : [];
+
+    return [...layoutItems, ...renameItem];
+  };
+
+  const openSectionMenu = (e: React.MouseEvent, entry: SectionEntry) => {
+    e.preventDefault();
+    setMenu({ x: e.clientX, y: e.clientY, kind: 'section', id: getSectionLayoutId(entry), entry });
+  };
+
+
   const renderChevron = (toggleKey: string | null, isExpanded: boolean) =>
     toggleKey ? (
       <button
@@ -146,13 +217,14 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
     level: number,
     entryIndex: number,
     toggleKey: string | null,
+    onContextMenu?: (e: React.MouseEvent) => void,
   ) => {
     const isActive = currentIndex === entryIndex;
     const isExpanded = toggleKey ? expandedKeys.has(toggleKey) : false;
     return (
       <div key={key} className={styles.row} style={{ paddingLeft: level * 8 }}>
         {renderChevron(toggleKey, isExpanded)}
-        {renderLabel(label, level, entryIndex, isActive, false, () => {})}
+        {renderLabel(label, level, entryIndex, isActive, false, () => {}, onContextMenu)}
       </div>
     );
   };
@@ -186,7 +258,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
           isActive,
           !!editing,
           (v) => { if (sectionId) onRenameSection(sectionId, v); setRenaming(null); },
-          sectionId ? (e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, kind: 'section', id: sectionId }); } : undefined,
+          (e) => openSectionMenu(e, entry),
         )}
       </div>
     );
@@ -263,7 +335,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
             const toggleKey = entry.rows.length >= 2 ? entry.key : null;
             return entry.category === OUTLINE_CATEGORY
               ? renderEditableSection(entry, toggleKey)
-              : renderPlainItem(entry.key, entry.section, 1, entry.index, toggleKey);
+              : renderPlainItem(entry.key, entry.section, 1, entry.index, toggleKey, (e) => openSectionMenu(e, entry));
           }
           // Individual rows: only appear when their parent is expanded. The
           // study_info intro cell has no outline entry.
@@ -278,12 +350,16 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
         <RightClickMenu
           position={{ x: menu.x, y: menu.y }}
           onClose={() => setMenu(null)}
-          items={[
-            {
-              label: 'Rename',
-              onClick: () => setRenaming({ kind: menu.kind, id: menu.id }),
-            },
-          ]}
+          items={
+            menu.kind === 'section'
+              ? buildSectionMenuItems(menu)
+              : [
+                  {
+                    label: 'Rename',
+                    onClick: () => setRenaming({ kind: menu.kind, id: menu.id }),
+                  },
+                ]
+          }
         />
       )}
 

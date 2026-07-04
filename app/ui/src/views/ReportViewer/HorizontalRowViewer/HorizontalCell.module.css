@@ -73,62 +73,6 @@
   position: relative;
 }
 
-.multiRowList {
-  display: flex;
-  flex-direction: column;
-  gap: 0px;
-  padding-bottom: 200px;
-}
-
-.multiRowBlock {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  gap: 12px;
-  width: 100%;
-  /* border: var(--border); */
-  max-width: 100%;
-}
-
-.multiRowTitle {
-  width: 250px;
-  flex-shrink: 0;
-  font-family: "IBMPlexSans-regular", sans-serif;
-  color: black;
-  font-size: var(--font_size_phenotypename, 18px);
-  padding: 35px 4px 5px 5px;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: background-color 0.1s;
-  box-sizing: border-box;
-  line-height: 1.25;
-  text-align: right;
-  white-space: normal;
-  overflow-wrap: break-word;
-  word-break: break-word;
-}
-
-.multiRowContent {
-  /* border: var(--border); */
-  border-radius: 10px;
-  flex: 1 1 auto;
-  min-width: 350px;
-  min-height: fit-content;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  /* width: min(500px, 100%); */
-  max-width: 10000px;
-  padding: 0 12px 0px 12px;
-  box-sizing: border-box;
-  overflow: visible;
-}
-
-/* .multiRowContent > * {
-  flex: 1 1 auto;
-  min-height: fit-content;
-} */
-
 /* ── Category (overview) cell ─────────────────────────────────────────── */
 
 .categoryBody {
