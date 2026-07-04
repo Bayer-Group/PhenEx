@@ -7,6 +7,7 @@ import { FigureLegend } from './LeftPanels/FigureLegend/FigureLegend';
 import { OutlinePanel } from './LeftPanels/OutlinePanel/OutlinePanel';
 import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
+import { SingleRowContentHorizontalRowViewer } from './HorizontalRowViewer/SingleRowContentHorizontalRowViewer';
 import { BreadcrumbTitle } from './BreadcrumbTitle';
 import { CellLayoutStoreProvider } from './CellLayouts';
 import { ThreePanelCollapseProvider, useThreePanelCollapse } from '../../contexts/ThreePanelCollapseContext';
@@ -28,7 +29,7 @@ import {
 } from './types';
 import { type BarChartSpacer } from './GraphsAndTables/RowRenderers/barChartShared';
 import { loadSpacers, saveSpacers, loadColorOverrides, saveColorOverrides, type StoredSpacer } from './reportCache';
-import { buildSequentialRowList, buildAccordionEntries, keyMatchesRow, sectionKey, categoryKey, type SequentialRow, type ViewerEntry, type StudyRegistry } from './studyRegistryUtils';
+import { buildSequentialRowList, buildAccordionEntries, type SequentialRow, type ViewerEntry, type StudyRegistry } from './studyRegistryUtils';
 import {
   deriveOutlineModel,
   reconcileOutlineModel,
@@ -84,6 +85,9 @@ export interface ReportViewerProps {
 const LEFT_BORDER_SIZE = 300;
 const LEFT_BORDER_MIN = 250;
 
+/** Stable empty set for building the (never-expanded) main viewer cells. */
+const EMPTY_KEYS: Set<string> = new Set();
+
 function createLayoutModel(): Model {
   const json: IJsonModel = {
     global: {
@@ -131,23 +135,24 @@ function createLayoutModel(): Model {
 
 // ── Component ───────────────────────────────────────────────────────────
 
-/** Lightweight store so the OutlinePanel can subscribe to index changes
- *  without the factory callback needing to be recreated on each navigation. */
-class IndexStore {
-  private _index = 0;
+/** Lightweight store so the OutlinePanel can subscribe to the active cell
+ *  without the factory callback needing to be recreated on each navigation.
+ *  Identity is by cell `key` so the outline and the (row-free) main viewer can
+ *  use independent, differently-indexed entry lists. */
+class ActiveKeyStore {
+  private _key = '';
   private _listeners = new Set<() => void>();
 
-  get index() { return this._index; }
-  set(index: number) {
-    if (index === this._index) return;
-    this._index = index;
+  set(key: string) {
+    if (key === this._key) return;
+    this._key = key;
     this._listeners.forEach((l) => l());
   }
   subscribe = (listener: () => void) => {
     this._listeners.add(listener);
     return () => { this._listeners.delete(listener); };
   };
-  getSnapshot = () => this._index;
+  getSnapshot = () => this._key;
 }
 
 export const ReportViewer: FC<ReportViewerProps> = (props) => (
@@ -366,13 +371,23 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [sequentialRows, outlineModel],
   );
 
-  // ── Outline accordion + viewer entries ───────────────────────────────
-  // `expandedKeys` is the single source of truth shared by the outline and the
-  // viewer: it decides which sections are expanded into individual row cells.
+  // ── Outline accordion entries ─────────────────────────────────────────
+  // `expandedKeys` drives ONLY the outline's accordion (which sections are
+  // expanded into individual phenotype rows). The main viewer no longer shows
+  // individual rows, so it is independent of this state.
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => new Set());
-  const viewerEntries = useMemo(
+  const outlineEntries = useMemo(
     () => buildAccordionEntries(effectiveRows, expandedKeys),
     [effectiveRows, expandedKeys],
+  );
+
+  // ── Main viewer cells ─────────────────────────────────────────────────
+  // The horizontal viewer only ever displays category and (multi-row) section
+  // cells — never individual rows. Building with an empty expanded-set yields
+  // exactly that, independent of the outline's accordion state.
+  const viewerCells = useMemo(
+    () => buildAccordionEntries(effectiveRows, EMPTY_KEYS),
+    [effectiveRows],
   );
 
   // Edit operations mutate the stored model, seeding it from the current
@@ -409,61 +424,68 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
 
   // ── HorizontalRowViewer state ─────────────────────────────────────────
   const [viewerIndex, setViewerIndex] = useState(0);
-  const viewerIndexRef = useRef(viewerIndex);
-  viewerIndexRef.current = viewerIndex;
-  // Store for OutlinePanel to subscribe to without factory recreation
-  const indexStoreRef = useRef(new IndexStore());
-  useEffect(() => { indexStoreRef.current.set(viewerIndex); }, [viewerIndex]);
-  // External navigation: only updated by outline clicks / accordion changes,
-  // NOT by the onIndexChange feedback from HorizontalRowViewer itself.
-  // This prevents the factory→HorizontalRowViewer→onIndexChange→factory loop.
+  // Store the active cell KEY so the OutlinePanel can subscribe and highlight
+  // its matching entry, regardless of the accordion's (independent) indexing.
+  const keyStoreRef = useRef(new ActiveKeyStore());
+  useEffect(() => {
+    keyStoreRef.current.set(viewerCells[viewerIndex]?.key ?? '');
+  }, [viewerIndex, viewerCells]);
+  // External navigation: only updated by outline clicks, NOT by the
+  // onIndexChange feedback from HorizontalRowViewer itself. This prevents the
+  // factory→HorizontalRowViewer→onIndexChange→factory loop.
   const [externalNavIndex, setExternalNavIndex] = useState(0);
-  const handleOutlineNavigate = useCallback((index: number) => {
-    setViewerIndex(index);
-    setExternalNavIndex(index);
-  }, []);
   const [showRowTitle, setShowRowTitle] = useState(false);
 
-  // Expand/collapse a section (or sectionless category) in the outline. This
-  // adds/removes its row cells from the viewer. Because the entry list is
-  // re-indexed, we re-anchor the viewer onto a stable entry key:
-  //  - expanding: stay on the current cell,
-  //  - collapsing while viewing one of the removed rows: jump to that section.
-  const handleToggleExpand = useCallback((key: string) => {
-    const wasExpanded = expandedKeys.has(key);
-    const nextExpanded = new Set(expandedKeys);
-    if (wasExpanded) nextExpanded.delete(key);
-    else nextExpanded.add(key);
+  // ── Single-row modal ──────────────────────────────────────────────────
+  // Clicking an individual phenotype/row (in the outline or inside a section
+  // cell) opens a modal that scrolls through that section's rows only.
+  const [rowModal, setRowModal] = useState<{ rows: SequentialRow[]; index: number } | null>(null);
+  const openRowModal = useCallback((row: SequentialRow) => {
+    const sectionRows = effectiveRows.filter(
+      (r) => r.category === row.category && r.section === row.section,
+    );
+    const index = sectionRows.findIndex((r) => r.index === row.index);
+    setRowModal({ rows: sectionRows, index: index < 0 ? 0 : index });
+  }, [effectiveRows]);
+  const closeRowModal = useCallback(() => setRowModal(null), []);
 
-    const nextEntries = buildAccordionEntries(effectiveRows, nextExpanded);
-    const idx = viewerIndexRef.current;
-    const current = viewerEntries[idx];
-    let targetKey = current?.key;
-    if (wasExpanded && current?.kind === 'row' && keyMatchesRow(key, current.row)) {
-      targetKey = key;
+  // Navigate the main viewer to a category/section cell; open the modal for an
+  // individual phenotype row. Driven by outline clicks (index into outlineEntries).
+  const handleOutlineNavigate = useCallback((outlineIndex: number) => {
+    const entry = outlineEntries[outlineIndex];
+    if (!entry) return;
+    if (entry.kind === 'row') {
+      openRowModal(entry.row);
+      return;
     }
-    const nextIndex = targetKey ? nextEntries.findIndex((e) => e.key === targetKey) : -1;
-    const finalIndex = nextIndex >= 0 ? nextIndex : Math.min(idx, Math.max(0, nextEntries.length - 1));
-
-    setExpandedKeys(nextExpanded);
-    setViewerIndex(finalIndex);
-    setExternalNavIndex(finalIndex);
-  }, [expandedKeys, effectiveRows, viewerEntries]);
-
-  // Expand a row's section (if collapsed) and focus that row's individual cell.
-  // Used when clicking a row title inside a multi-row section cell.
-  const handleNavigateToRow = useCallback((row: SequentialRow) => {
-    const key = row.section ? sectionKey(row.category, row.section) : categoryKey(row.category);
-    const nextExpanded = new Set(expandedKeys);
-    nextExpanded.add(key);
-    const nextEntries = buildAccordionEntries(effectiveRows, nextExpanded);
-    const idx = nextEntries.findIndex((e) => e.kind === 'row' && e.row.index === row.index);
-    setExpandedKeys(nextExpanded);
+    const idx = viewerCells.findIndex((c) => c.key === entry.key);
     if (idx >= 0) {
       setViewerIndex(idx);
       setExternalNavIndex(idx);
     }
-  }, [expandedKeys, effectiveRows]);
+  }, [outlineEntries, viewerCells, openRowModal]);
+
+  // Navigate the main viewer directly by its own cell index (breadcrumb clicks).
+  const handleViewerNavigate = useCallback((index: number) => {
+    setViewerIndex(index);
+    setExternalNavIndex(index);
+  }, []);
+
+  // Toggle a section (or sectionless category) in the outline accordion. This
+  // only affects the outline's own entry list; the main viewer is unaffected.
+  const handleToggleExpand = useCallback((key: string) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  // Clicking a row title inside a multi-row section cell opens the modal.
+  const handleNavigateToRow = useCallback((row: SequentialRow) => {
+    openRowModal(row);
+  }, [openRowModal]);
 
   // ── FlexLayout + left border collapse ─────────────────────────────────
   const { isLeftPanelShown, setLeftPanelShown, toggleLeftPanel } = useThreePanelCollapse();
@@ -725,9 +747,9 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [],
   );
 
-  // Wrapper that subscribes to viewerIndex changes without factory recreation
+  // Wrapper that subscribes to the active cell key without factory recreation
   const OutlinePanelConnected = useMemo(() => {
-    const store = indexStoreRef.current;
+    const store = keyStoreRef.current;
     const Connected: FC<{
       entries: ViewerEntry[];
       onNavigate: (index: number) => void;
@@ -737,7 +759,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       onRenamePhenotype: (name: string, displayName: string) => void;
       onRenameSection: (sectionId: string, displayName: string) => void;
     }> = ({ entries, onNavigate, expandedKeys: ek, onToggleExpand: ote, onMovePhenotype, onRenamePhenotype, onRenameSection }) => {
-      const currentIndex = useSyncExternalStore(store.subscribe, store.getSnapshot);
+      const activeKey = useSyncExternalStore(store.subscribe, store.getSnapshot);
+      const currentIndex = entries.findIndex((e) => e.key === activeKey);
       return (
         <OutlinePanel
           entries={entries}
@@ -777,7 +800,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         case 'outline':
           return (
             <OutlinePanelConnected
-              entries={viewerEntries}
+              entries={outlineEntries}
               onNavigate={handleOutlineNavigate}
               expandedKeys={expandedKeys}
               onToggleExpand={handleToggleExpand}
@@ -802,7 +825,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     },
     [
       groups, selections, handleReplace, handleAdd, updateSelections,
-      cohortDescriptions, finalCohortSizes, viewerEntries, handleOutlineNavigate,
+      cohortDescriptions, finalCohortSizes, outlineEntries, handleOutlineNavigate,
       expandedKeys, handleToggleExpand, legendItems, handleLegendChange, OutlinePanelConnected,
       colorOverrides, handleSetColor,
       handleMovePhenotype, handleRenamePhenotype, handleRenameSection,
@@ -822,7 +845,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           return (
             <div className={styles.centerPanel}>
               <HorizontalRowViewer
-                entries={viewerEntries}
+                entries={viewerCells}
                 rows={effectiveRows}
                 initialIndex={0}
                 navigateToIndex={externalNavIndex}
@@ -851,7 +874,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       }
     },
     [
-      displayTitle, effectiveRows, viewerEntries, externalNavIndex,
+      displayTitle, effectiveRows, viewerCells, externalNavIndex,
       handleNavigateToRow, handleOutlineNavigate,
       finalCohortSizes, cohortDataMap, barChartSpacers,
       tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,
@@ -866,10 +889,10 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     <div className={styles.container}>
       <div className={styles.titleGroup}>
           <BreadcrumbTitle
-            entries={viewerEntries}
+            entries={viewerCells}
             currentIndex={viewerIndex}
             studyTitle={displayTitle}
-            onNavigate={handleOutlineNavigate}
+            onNavigate={handleViewerNavigate}
           />
       </div>
       <div className={styles.page}>
@@ -879,6 +902,24 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           onModelChange={handleLayoutModelChange}
         />
       </div>
+      {rowModal && (
+        <SingleRowContentHorizontalRowViewer
+          rows={rowModal.rows}
+          initialIndex={rowModal.index}
+          allRows={effectiveRows}
+          onClose={closeRowModal}
+          cohortDataMap={cohortDataMap}
+          finalCohortSizes={finalCohortSizes}
+          spacers={barChartSpacers}
+          tteCohorts={tteCohorts}
+          table2Cohorts={table2Cohorts}
+          waterfallData={waterfallData}
+          groups={groups}
+          cohortDescriptions={cohortDescriptions}
+          colorOverrides={colorOverrides}
+          onSetColor={handleSetColor}
+        />
+      )}
     </div>
     </CellLayoutStoreProvider>
   );

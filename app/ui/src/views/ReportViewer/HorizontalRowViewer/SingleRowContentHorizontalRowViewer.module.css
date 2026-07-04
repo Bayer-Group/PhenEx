@@ -1,0 +1,27 @@
+/* Full-screen modal wrapping a horizontal row viewer */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.35);
+  animation: modalFadeIn 0.15s ease-out;
+}
+
+.modal {
+  position: relative;
+  width: 92vw;
+  height: 90vh;
+  max-width: 1400px;
+  overflow: hidden;
+  border-radius: 14px;
+  background-color: var(--background_color_light);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
