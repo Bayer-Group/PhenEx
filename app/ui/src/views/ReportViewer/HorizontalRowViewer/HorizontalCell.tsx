@@ -52,7 +52,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
     const reporter = entry.kind === 'row' ? entry.row.reporter : entry.reporter;
     const cellRows = entry.kind === 'section' ? entry.rows : entry.kind === 'row' ? [entry.row] : [];
     const title =
-      entry.kind === 'row' ? (entry.row.registry?.display_name || entry.row.name)
+      entry.kind === 'row' ? (entry.row.displayName || entry.row.registry?.display_name || entry.row.name)
         : entry.kind === 'section' ? entry.section
           : getCategoryLabel(entry.category);
 
@@ -164,7 +164,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
               onClick={(e) => { e.stopPropagation(); onNavigateToRow?.(row); }}
             >
               <div className={styles.multiRowTitle}>
-                {row.registry?.display_name || row.name}
+                {row.displayName || row.registry?.display_name || row.name}
               </div>
               <div className={styles.multiRowContent}>
                 {renderSectionRow(row, hideBarChartHeader)}

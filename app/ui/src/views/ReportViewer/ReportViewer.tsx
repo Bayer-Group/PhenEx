@@ -29,6 +29,15 @@ import {
 import { type BarChartSpacer } from './GraphsAndTables/RowRenderers/barChartShared';
 import { loadSpacers, saveSpacers, loadColorOverrides, saveColorOverrides, type StoredSpacer } from './reportCache';
 import { buildSequentialRowList, buildAccordionEntries, keyMatchesRow, sectionKey, categoryKey, type SequentialRow, type ViewerEntry, type StudyRegistry } from './studyRegistryUtils';
+import {
+  deriveOutlineModel,
+  reconcileOutlineModel,
+  applyOutlineModel,
+  movePhenotype,
+  renamePhenotype,
+  renameSection,
+  type OutlineModel,
+} from './LeftPanels/OutlinePanel/outlineModel';
 
 interface WaterfallInfoRow {
   Name: string;
@@ -342,14 +351,44 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     );
   }, [studyRegistry, cohortEntries, outcomesEntries, waterfallData, table2Data, timeToEventData, selectedCohortNames]);
 
+  // ── Editable outline model ────────────────────────────────────────────
+  // A user-editable sections dictionary (drag phenotypes between sections,
+  // rename sections/phenotypes) that is the single source of truth for both
+  // the outline and the viewer. Stored edits are reconciled against the
+  // currently available phenotypes; `null` means "not edited yet".
+  const [storedOutline, setStoredOutline] = useState<OutlineModel | null>(null);
+  const outlineModel = useMemo(
+    () => (storedOutline ? reconcileOutlineModel(storedOutline, sequentialRows) : deriveOutlineModel(sequentialRows)),
+    [storedOutline, sequentialRows],
+  );
+  const effectiveRows = useMemo(
+    () => applyOutlineModel(sequentialRows, outlineModel),
+    [sequentialRows, outlineModel],
+  );
+
   // ── Outline accordion + viewer entries ───────────────────────────────
   // `expandedKeys` is the single source of truth shared by the outline and the
   // viewer: it decides which sections are expanded into individual row cells.
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => new Set());
   const viewerEntries = useMemo(
-    () => buildAccordionEntries(sequentialRows, expandedKeys),
-    [sequentialRows, expandedKeys],
+    () => buildAccordionEntries(effectiveRows, expandedKeys),
+    [effectiveRows, expandedKeys],
   );
+
+  // Edit operations mutate the stored model, seeding it from the current
+  // effective model on first edit.
+  const handleMovePhenotype = useCallback((name: string, targetSectionId: string, beforeName: string | null) => {
+    setStoredOutline((prev) => movePhenotype(prev ?? outlineModel, name, targetSectionId, beforeName));
+  }, [outlineModel]);
+
+  const handleRenamePhenotype = useCallback((name: string, displayName: string) => {
+    setStoredOutline((prev) => renamePhenotype(prev ?? outlineModel, name, displayName));
+  }, [outlineModel]);
+
+  const handleRenameSection = useCallback((sectionId: string, displayName: string) => {
+    setStoredOutline((prev) => renameSection(prev ?? outlineModel, sectionId, displayName));
+  }, [outlineModel]);
+
 
   // Map of reporter → cohort data so HorizontalRowViewer can render any reporter
   const cohortDataMap = useMemo(() => {
@@ -396,7 +435,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     if (wasExpanded) nextExpanded.delete(key);
     else nextExpanded.add(key);
 
-    const nextEntries = buildAccordionEntries(sequentialRows, nextExpanded);
+    const nextEntries = buildAccordionEntries(effectiveRows, nextExpanded);
     const idx = viewerIndexRef.current;
     const current = viewerEntries[idx];
     let targetKey = current?.key;
@@ -409,7 +448,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     setExpandedKeys(nextExpanded);
     setViewerIndex(finalIndex);
     setExternalNavIndex(finalIndex);
-  }, [expandedKeys, sequentialRows, viewerEntries]);
+  }, [expandedKeys, effectiveRows, viewerEntries]);
 
   // Expand a row's section (if collapsed) and focus that row's individual cell.
   // Used when clicking a row title inside a multi-row section cell.
@@ -417,14 +456,14 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     const key = row.section ? sectionKey(row.category, row.section) : categoryKey(row.category);
     const nextExpanded = new Set(expandedKeys);
     nextExpanded.add(key);
-    const nextEntries = buildAccordionEntries(sequentialRows, nextExpanded);
+    const nextEntries = buildAccordionEntries(effectiveRows, nextExpanded);
     const idx = nextEntries.findIndex((e) => e.kind === 'row' && e.row.index === row.index);
     setExpandedKeys(nextExpanded);
     if (idx >= 0) {
       setViewerIndex(idx);
       setExternalNavIndex(idx);
     }
-  }, [expandedKeys, sequentialRows]);
+  }, [expandedKeys, effectiveRows]);
 
   // ── FlexLayout + left border collapse ─────────────────────────────────
   const { isLeftPanelShown, setLeftPanelShown, toggleLeftPanel } = useThreePanelCollapse();
@@ -694,7 +733,10 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       onNavigate: (index: number) => void;
       expandedKeys: Set<string>;
       onToggleExpand: (key: string) => void;
-    }> = ({ entries, onNavigate, expandedKeys: ek, onToggleExpand: ote }) => {
+      onMovePhenotype: (name: string, targetSectionId: string, beforeName: string | null) => void;
+      onRenamePhenotype: (name: string, displayName: string) => void;
+      onRenameSection: (sectionId: string, displayName: string) => void;
+    }> = ({ entries, onNavigate, expandedKeys: ek, onToggleExpand: ote, onMovePhenotype, onRenamePhenotype, onRenameSection }) => {
       const currentIndex = useSyncExternalStore(store.subscribe, store.getSnapshot);
       return (
         <OutlinePanel
@@ -703,6 +745,9 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           onNavigate={onNavigate}
           expandedKeys={ek}
           onToggleExpand={ote}
+          onMovePhenotype={onMovePhenotype}
+          onRenamePhenotype={onRenamePhenotype}
+          onRenameSection={onRenameSection}
         />
       );
     };
@@ -736,6 +781,9 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               onNavigate={handleOutlineNavigate}
               expandedKeys={expandedKeys}
               onToggleExpand={handleToggleExpand}
+              onMovePhenotype={handleMovePhenotype}
+              onRenamePhenotype={handleRenamePhenotype}
+              onRenameSection={handleRenameSection}
             />
           );
         case 'figureLegend':
@@ -757,6 +805,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       cohortDescriptions, finalCohortSizes, viewerEntries, handleOutlineNavigate,
       expandedKeys, handleToggleExpand, legendItems, handleLegendChange, OutlinePanelConnected,
       colorOverrides, handleSetColor,
+      handleMovePhenotype, handleRenamePhenotype, handleRenameSection,
     ],
   );
   console.log(" waterfalldata", waterfallData);
@@ -774,7 +823,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
             <div className={styles.centerPanel}>
               <HorizontalRowViewer
                 entries={viewerEntries}
-                rows={sequentialRows}
+                rows={effectiveRows}
                 initialIndex={0}
                 navigateToIndex={externalNavIndex}
                 onIndexChange={setViewerIndex}
@@ -802,7 +851,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       }
     },
     [
-      displayTitle, sequentialRows, viewerEntries, externalNavIndex,
+      displayTitle, effectiveRows, viewerEntries, externalNavIndex,
       handleNavigateToRow, handleOutlineNavigate,
       finalCohortSizes, cohortDataMap, barChartSpacers,
       tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,

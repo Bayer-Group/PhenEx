@@ -127,3 +127,64 @@
 .scrollBarTrack:hover {
   background-color: transparent;
 }
+
+.rowDraggable {
+  cursor: grab;
+}
+
+.rowDraggable:active {
+  cursor: grabbing;
+}
+
+.dropBefore,
+.dropAfter {
+  position: relative;
+}
+
+.dropBefore::before,
+.dropAfter::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 23px;
+  height: 2px;
+  background: var(--accent_color, #4a7fff);
+  border-radius: 1px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dropBefore::before {
+  top: -1px;
+}
+
+.dropAfter::after {
+  bottom: -1px;
+}
+
+.dropInto {
+  background: var(--background_color_light, #f0f0f0);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--accent_color, #4a7fff);
+}
+
+/* Applied momentarily to the label so the drag image is just the pill. */
+.dragImage {
+  background: var(--background_color_light, #f0f0f0) !important;
+  border: var(--border) !important;
+  border-radius: 6px;
+}
+
+.renameInput {
+  flex: 1;
+  min-width: 0;
+  margin-right: 23px;
+  padding: 2px 7px;
+  font-size: var(--font_size_items, 12px);
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text_color_notfocus, #333);
+  background: var(--background_color, #fff);
+  border: var(--border, 1px solid #4a7fff);
+  border-radius: 6px;
+  outline: none;
+}

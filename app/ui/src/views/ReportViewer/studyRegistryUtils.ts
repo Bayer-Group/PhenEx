@@ -48,8 +48,12 @@ export interface SequentialRow {
   reporter: string;
   /** Section within the reporter (e.g. "Demographics"), or null */
   section: string | null;
+  /** Stable id of the editable outline section this row belongs to, if any. */
+  sectionId?: string;
   /** Row name as it appears in the data */
   name: string;
+  /** Editable display label; falls back to registry.display_name || name. */
+  displayName?: string;
   /** What type of modal content to render */
   rowType: RowType;
   /** Registry metadata (if found) */
@@ -67,7 +71,7 @@ export interface SequentialSection {
 
 export type ViewerEntry =
   | { kind: 'row'; index: number; key: string; row: SequentialRow }
-  | { kind: 'section'; index: number; key: string; section: string; rows: SequentialRow[]; reporter: string; category: string }
+  | { kind: 'section'; index: number; key: string; section: string; sectionId?: string; rows: SequentialRow[]; reporter: string; category: string }
   | { kind: 'category'; index: number; key: string; category: string; reporter: string; sectionNames: string[]; hasSectionlessRows: boolean };
 
 /** Distributive `Omit` so each union member keeps its own discriminated props. */
@@ -203,6 +207,7 @@ export function buildAccordionEntries(
         kind: 'section',
         key,
         section: section.section,
+        sectionId: section.rows[0].sectionId,
         rows: section.rows,
         reporter: section.rows[0].reporter,
         category: group.category,
@@ -269,7 +274,7 @@ export function getEntrySection(entry: ViewerEntry): string | null {
 export function getEntryLabel(entry: ViewerEntry): string {
   if (entry.kind === 'section') return entry.section;
   if (entry.kind === 'category') return getCategoryLabel(entry.category);
-  return entry.row.registry?.display_name || entry.row.name;
+  return entry.row.displayName || entry.row.registry?.display_name || entry.row.name;
 }
 
 /** Group sequential rows by their `section` field, preserving order. */
