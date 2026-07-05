@@ -1,7 +1,8 @@
 import { FC, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
-import { Layout, Model, IJsonModel, Actions, BorderNode, TabSetNode, DockLocation, type Action, type ITabSetRenderValues } from 'flexlayout-react';
+import { Layout, Model, IJsonModel, Actions, BorderNode, TabSetNode, TabNode, DockLocation, type Action, type ITabSetRenderValues } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
+import { FloatingPanel } from '../../components/FloatingPanel';
 import { FullCohortSelector } from './LeftPanels/CohortSelector/FullCohortSelector';
 import { FigureLegend } from './LeftPanels/FigureLegend/FigureLegend';
 import { OutlinePanel } from './LeftPanels/OutlinePanel/OutlinePanel';
@@ -87,6 +88,13 @@ const LEFT_BORDER_MIN = 250;
 
 /** Stable empty set for building the (never-expanded) main viewer cells. */
 const EMPTY_KEYS: Set<string> = new Set();
+
+/** Left-panel component id → floating-window title. */
+const LEFT_PANEL_TITLES: Record<string, string> = {
+  cohortSelector: 'Cohorts',
+  outline: 'Outline',
+  figureLegend: 'Legend',
+};
 
 function createLayoutModel(): Model {
   const json: IJsonModel = {
@@ -501,7 +509,6 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         tabSetEnableMaximize: true,
         tabSetEnableDrop: true,
         splitterSize: 4,
-        tabEnablePopout: true,
       },
       borders: [],
       layout: {
@@ -523,6 +530,40 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   const lastBorderSizeRef = useRef(LEFT_BORDER_SIZE);
   const lastSelectedTabRef = useRef(0);
   const syncingBorderRef = useRef(false);
+
+  // ── Custom floating popouts (Cohorts / Outline / Legend) ─────────────
+  // Instead of FlexLayout's popout (which is bound to its Layout container),
+  // a "floated" component is rendered in a FloatingPanel portaled to the body
+  // so it can be dragged anywhere in the viewport. The docked slot shows a
+  // lightweight placeholder while it is floating.
+  const [floatingComponents, setFloatingComponents] = useState<string[]>([]);
+  const floatComponent = useCallback((component: string) => {
+    setFloatingComponents((prev) => (prev.includes(component) ? prev : [...prev, component]));
+  }, []);
+  const dockComponent = useCallback((component: string) => {
+    setFloatingComponents((prev) => prev.filter((c) => c !== component));
+  }, []);
+
+  // Adds a "pop out" button to the active tab of the left panel's tab strip.
+  const handleRenderLeftTabSet = useCallback(
+    (node: TabSetNode | BorderNode, renderValues: ITabSetRenderValues) => {
+      const selected = node.getSelectedNode() as TabNode | undefined;
+      const component = selected?.getComponent();
+      if (!component || !(component in LEFT_PANEL_TITLES)) return;
+      renderValues.stickyButtons.push(
+        <button
+          key="float"
+          className="flexlayout__tab_toolbar_button"
+          title="Pop out into floating window"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => floatComponent(component)}
+        >
+          ⧉
+        </button>,
+      );
+    },
+    [floatComponent],
+  );
 
   const getLeftBorder = useCallback(
     () => layoutModelRef.current.getBorderSet().getBorderMap().get(DockLocation.LEFT),
@@ -778,11 +819,11 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Factory for the inner left-panel layout (Cohorts / Outline / Legend).
-  // Kept separate so leftPanel case in the outer factory can pass it as a stable prop.
-  const leftPanelFactory = useCallback(
-    (node: { getComponent: () => string | undefined }) => {
-      switch (node.getComponent()) {
+  // Renders a single left-panel component (Cohorts / Outline / Legend). Shared
+  // by both the docked FlexLayout tab and the floating popout window.
+  const renderLeftComponent = useCallback(
+    (component: string) => {
+      switch (component) {
         case 'cohortSelector':
           return (
             <FullCohortSelector
@@ -831,6 +872,25 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       handleMovePhenotype, handleRenamePhenotype, handleRenameSection,
     ],
   );
+
+  // Factory for the inner left-panel layout. When a component is floating, the
+  // docked slot shows a placeholder; otherwise it renders the real content.
+  const leftPanelFactory = useCallback(
+    (node: { getComponent: () => string | undefined }) => {
+      const component = node.getComponent();
+      if (!component) return null;
+      if (floatingComponents.includes(component)) {
+        return (
+          <div className={styles.floatingPlaceholder}>
+            <span>Popped out</span>
+            <button type="button" onClick={() => dockComponent(component)}>Dock back</button>
+          </div>
+        );
+      }
+      return renderLeftComponent(component);
+    },
+    [floatingComponents, renderLeftComponent, dockComponent],
+  );
   console.log(" waterfalldata", waterfallData);
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
@@ -838,7 +898,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         case 'leftPanel':
           return (
             <div className={styles.leftPanel}>
-              <Layout model={leftPanelModelRef.current!} factory={leftPanelFactory} />
+              <Layout model={leftPanelModelRef.current!} factory={leftPanelFactory} onRenderTabSet={handleRenderLeftTabSet} />
             </div>
           );
         case 'center':
@@ -878,7 +938,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       handleNavigateToRow, handleOutlineNavigate,
       finalCohortSizes, cohortDataMap, barChartSpacers,
       tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,
-      leftPanelFactory,
+      leftPanelFactory, handleRenderLeftTabSet,
     ],
   );
 
@@ -920,6 +980,17 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           onSetColor={handleSetColor}
         />
       )}
+      {floatingComponents.map((component, i) => (
+        <FloatingPanel
+          key={component}
+          title={LEFT_PANEL_TITLES[component] ?? component}
+          initialX={140 + i * 32}
+          initialY={120 + i * 32}
+          onClose={() => dockComponent(component)}
+        >
+          {renderLeftComponent(component)}
+        </FloatingPanel>
+      ))}
     </div>
     </CellLayoutStoreProvider>
   );

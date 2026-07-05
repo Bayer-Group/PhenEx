@@ -93,11 +93,17 @@
 .handleCorner::after {
   content: '';
   position: absolute;
-  right: 3px;
-  bottom: 3px;
-  width: 7px;
-  height: 7px;
+  right: 3;
+  bottom: 3;
+  width: 12px;
+  height: 12px;
   border-right: 2px solid rgba(0, 0, 0, 0.25);
   border-bottom: 2px solid rgba(0, 0, 0, 0.25);
-  border-bottom-right-radius: 3px;
+  border-bottom-right-radius: 12px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.item:hover .handleCorner::after {
+  opacity: 1;
 }

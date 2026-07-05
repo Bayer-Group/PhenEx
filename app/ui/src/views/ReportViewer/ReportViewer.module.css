@@ -88,6 +88,32 @@
   overflow: hidden;
 }
 
+/* Shown in the docked slot while a panel is popped out into a floating window. */
+.floatingPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 100%;
+  color: #888;
+  font-size: 13px;
+}
+
+.floatingPlaceholder button {
+  padding: 5px 12px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.floatingPlaceholder button:hover {
+  background: #f2f2f2;
+}
+
 /* ── Title bar (breadcrumb navigation) ───────────────────────────────── */
 
 .titleGroup {
