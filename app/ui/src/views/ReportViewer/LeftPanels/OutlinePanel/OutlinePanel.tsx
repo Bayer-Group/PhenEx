@@ -1,4 +1,6 @@
-import { FC, useEffect, useRef, useState } from 'react';
+import { FC, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import EyeSolidIcon from '../../../../assets/icons/eye-solid.svg';
+import EyeClosedIcon from '../../../../assets/icons/eye-closed.svg';
 import {
   type ViewerEntry,
   STUDY_INFO_CATEGORY,
@@ -15,9 +17,44 @@ import {
   getSectionState,
   sectionLayoutActions,
   buildDefaultLayoutItems,
+  subscribeSectionLayouts,
+  getHiddenKeys,
 } from '../../SectionLayouts/sectionLayoutStore';
 
 type SectionEntry = Extract<ViewerEntry, { kind: 'section' }>;
+
+/** Eye toggle shown on hover: reflects + controls visibility of a row in the active layout. */
+const RowEyeToggle: FC<{ sectionLayoutId: string; itemKey: string }> = memo(({ sectionLayoutId, itemKey }) => {
+  const isHidden = useSyncExternalStore(
+    subscribeSectionLayouts,
+    () => getHiddenKeys(sectionLayoutId, getSectionState(sectionLayoutId).activeLayoutId).includes(itemKey),
+  );
+  return (
+    <button
+      type="button"
+      className={styles.eyeBtn}
+      title={isHidden ? 'Show in current layout' : 'Hide in current layout'}
+      onClick={(e) => {
+        e.stopPropagation();
+        const { activeLayoutId } = getSectionState(sectionLayoutId);
+        sectionLayoutActions.toggleItemVisibility(sectionLayoutId, activeLayoutId, itemKey);
+      }}
+    >
+      <img src={isHidden ? EyeClosedIcon : EyeSolidIcon} alt="" className={styles.eyeIcon} />
+    </button>
+  );
+});
+RowEyeToggle.displayName = 'RowEyeToggle';
+
+/** Dims its children when the item is hidden in the section's active layout. */
+const RowHiddenDim: FC<{ sectionLayoutId: string; itemKey: string; children: React.ReactNode }> = memo(({ sectionLayoutId, itemKey, children }) => {
+  const isHidden = useSyncExternalStore(
+    subscribeSectionLayouts,
+    () => getHiddenKeys(sectionLayoutId, getSectionState(sectionLayoutId).activeLayoutId).includes(itemKey),
+  );
+  return <span className={isHidden ? styles.labelHidden : undefined}>{children}</span>;
+});
+RowHiddenDim.displayName = 'RowHiddenDim';
 
 interface OutlinePanelProps {
   /** The exact list of navigable cells currently in the viewer. */
@@ -100,6 +137,18 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
   const [dropTarget, setDropTarget] = useState<{ key: string; pos: 'before' | 'after' | 'into' } | null>(null);
   const [renaming, setRenaming] = useState<Renaming | null>(null);
   const [menu, setMenu] = useState<Menu | null>(null);
+  const [hoveredRowKey, setHoveredRowKey] = useState<string | null>(null);
+
+  /** Maps each row.name to the sectionLayoutId of its parent section. */
+  const rowSectionMap = useMemo(() => {
+    const map = new Map<string, string>();
+    let currentSectionLayoutId: string | null = null;
+    for (const entry of entries) {
+      if (entry.kind === 'section') currentSectionLayoutId = getSectionLayoutId(entry);
+      else if (entry.kind === 'row' && currentSectionLayoutId) map.set(entry.row.name, currentSectionLayoutId);
+    }
+    return map;
+  }, [entries]);
 
   const clearDrag = () => {
     setDragName(null);
@@ -218,13 +267,26 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
     entryIndex: number,
     toggleKey: string | null,
     onContextMenu?: (e: React.MouseEvent) => void,
+    eyeConfig?: { sectionLayoutId: string; itemKey: string },
   ) => {
     const isActive = currentIndex === entryIndex;
     const isExpanded = toggleKey ? expandedKeys.has(toggleKey) : false;
     return (
-      <div key={key} className={styles.row} style={{ paddingLeft: level * 8 }}>
+      <div
+        key={key}
+        className={styles.row}
+        style={{ paddingLeft: level * 8 }}
+        onMouseEnter={eyeConfig ? () => setHoveredRowKey(eyeConfig.itemKey) : undefined}
+        onMouseLeave={eyeConfig ? () => setHoveredRowKey(null) : undefined}
+      >
         {renderChevron(toggleKey, isExpanded)}
-        {renderLabel(label, level, entryIndex, isActive, false, () => {}, onContextMenu)}
+        {eyeConfig
+          ? <RowHiddenDim sectionLayoutId={eyeConfig.sectionLayoutId} itemKey={eyeConfig.itemKey}>{renderLabel(label, level, entryIndex, isActive, false, () => {}, onContextMenu)}</RowHiddenDim>
+          : renderLabel(label, level, entryIndex, isActive, false, () => {}, onContextMenu)
+        }
+        {eyeConfig && hoveredRowKey === eyeConfig.itemKey && (
+          <RowEyeToggle sectionLayoutId={eyeConfig.sectionLayoutId} itemKey={eyeConfig.itemKey} />
+        )}
       </div>
     );
   };
@@ -270,12 +332,15 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
     const editing = renaming?.kind === 'row' && renaming.id === row.name;
     const isTarget = dragName != null && dragName !== row.name && dropTarget?.key === entry.key;
     const dropClass = isTarget ? (dropTarget!.pos === 'after' ? styles.dropAfter : styles.dropBefore) : '';
+    const sectionLayoutId = rowSectionMap.get(row.name);
     return (
       <div
         key={entry.key}
         className={`${styles.row} ${styles.rowDraggable} ${dropClass}`}
         style={{ paddingLeft: 16 }}
         draggable={!editing}
+        onMouseEnter={() => setHoveredRowKey(row.name)}
+        onMouseLeave={() => setHoveredRowKey(null)}
         onDragStart={(e) => {
           e.dataTransfer.effectAllowed = 'move';
           const btn = e.currentTarget.querySelector('button');
@@ -305,14 +370,20 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
         }}
       >
         <span className={styles.chevronSpacer} />
-        {renderLabel(
-          getEntryLabel(entry),
-          2,
-          entry.index,
-          isActive,
-          editing,
-          (v) => { onRenamePhenotype(row.name, v); setRenaming(null); },
-          (e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, kind: 'row', id: row.name }); },
+        {sectionLayoutId
+          ? <RowHiddenDim sectionLayoutId={sectionLayoutId} itemKey={row.name}>{renderLabel(
+              getEntryLabel(entry), 2, entry.index, isActive, editing,
+              (v) => { onRenamePhenotype(row.name, v); setRenaming(null); },
+              (e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, kind: 'row', id: row.name }); },
+            )}</RowHiddenDim>
+          : renderLabel(
+              getEntryLabel(entry), 2, entry.index, isActive, editing,
+              (v) => { onRenamePhenotype(row.name, v); setRenaming(null); },
+              (e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, kind: 'row', id: row.name }); },
+            )
+        }
+        {hoveredRowKey === row.name && sectionLayoutId && (
+          <RowEyeToggle sectionLayoutId={sectionLayoutId} itemKey={row.name} />
         )}
       </div>
     );
@@ -332,7 +403,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
             );
           }
           if (entry.kind === 'section') {
-            const toggleKey = entry.rows.length >= 2 ? entry.key : null;
+            const toggleKey = entry.rows.length >= 1 ? entry.key : null;
             return entry.category === OUTLINE_CATEGORY
               ? renderEditableSection(entry, toggleKey)
               : renderPlainItem(entry.key, entry.section, 1, entry.index, toggleKey, (e) => openSectionMenu(e, entry));
@@ -342,7 +413,17 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
           if (entry.row.category === STUDY_INFO_CATEGORY) return null;
           return isOutlineRow(entry.row)
             ? renderEditableRow(entry)
-            : renderPlainItem(entry.key, getEntryLabel(entry), 2, entry.index, null);
+            : renderPlainItem(
+                entry.key,
+                getEntryLabel(entry),
+                2,
+                entry.index,
+                null,
+                undefined,
+                rowSectionMap.has(entry.row.name)
+                  ? { sectionLayoutId: rowSectionMap.get(entry.row.name)!, itemKey: entry.row.name }
+                  : undefined,
+              );
         })}
       </div>
 

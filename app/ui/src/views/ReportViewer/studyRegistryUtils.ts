@@ -212,8 +212,8 @@ export function buildAccordionEntries(
         reporter: section.rows[0].reporter,
         category: group.category,
       });
-      // Only multi-row sections expand into individual row cells.
-      if (section.rows.length >= 2 && expandedKeys.has(key)) {
+      // Sections expand into individual row cells when expanded.
+      if (section.rows.length >= 1 && expandedKeys.has(key)) {
         for (const row of section.rows) push({ kind: 'row', key: rowKey(row), row });
       }
     }

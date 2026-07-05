@@ -501,6 +501,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         tabSetEnableMaximize: true,
         tabSetEnableDrop: true,
         splitterSize: 4,
+        tabEnablePopout: true,
       },
       borders: [],
       layout: {

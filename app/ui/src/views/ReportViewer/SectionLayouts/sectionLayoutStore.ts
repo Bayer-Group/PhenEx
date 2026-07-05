@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import type { ViewerEntry } from '../studyRegistryUtils';
 
 /**
@@ -30,12 +30,16 @@ export interface SectionLayout {
   id: string;
   name: string;
   items: GridItem[];
+  /** Keys of items hidden in this grid layout. */
+  hiddenKeys?: string[];
 }
 
 /** Per-section persisted state. `activeLayoutId === null` ⇒ list view. */
 interface SectionState {
   layouts: SectionLayout[];
   activeLayoutId: string | null;
+  /** Keys of items hidden while in list view. */
+  listHiddenKeys?: string[];
 }
 
 type PersistedState = Record<string, SectionState>;
@@ -134,6 +138,29 @@ class SectionLayoutStore {
     this.update(sectionId, { ...section, layouts });
   }
 
+  toggleItemVisibility(sectionId: string, layoutId: string | null, key: string) {
+    const section = this.getSection(sectionId);
+    if (layoutId === null) {
+      const current = section.listHiddenKeys ?? [];
+      const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
+      this.update(sectionId, { ...section, listHiddenKeys: next });
+    } else {
+      const layouts = section.layouts.map((l) => {
+        if (l.id !== layoutId) return l;
+        const current = l.hiddenKeys ?? [];
+        const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
+        return { ...l, hiddenKeys: next };
+      });
+      this.update(sectionId, { ...section, layouts });
+    }
+  }
+
+  getHiddenKeys(sectionId: string, layoutId: string | null): string[] {
+    const section = this.getSection(sectionId);
+    if (layoutId === null) return section.listHiddenKeys ?? [];
+    return section.layouts.find((l) => l.id === layoutId)?.hiddenKeys ?? [];
+  }
+
   deleteLayout(sectionId: string, layoutId: string) {
     const section = this.getSection(sectionId);
     const layouts = section.layouts.filter((l) => l.id !== layoutId);
@@ -173,11 +200,14 @@ export interface UseSectionLayouts {
   layouts: SectionLayout[];
   activeLayoutId: string | null;
   activeLayout: SectionLayout | null;
+  /** Hidden item keys for the currently active layout (or list view). */
+  hiddenKeys: Set<string>;
   setActiveLayout: (layoutId: string | null) => void;
   createLayout: (name: string, items: GridItem[]) => string;
   updateLayoutItems: (layoutId: string, items: GridItem[]) => void;
   renameLayout: (layoutId: string, name: string) => void;
   deleteLayout: (layoutId: string) => void;
+  toggleItemVisibility: (key: string) => void;
 }
 
 export function useSectionLayouts(sectionId: string): UseSectionLayouts {
@@ -191,18 +221,22 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
   const updateLayoutItems = useCallback((layoutId: string, items: GridItem[]) => store.updateLayoutItems(sectionId, layoutId, items), [sectionId]);
   const renameLayout = useCallback((layoutId: string, name: string) => store.renameLayout(sectionId, layoutId, name), [sectionId]);
   const deleteLayout = useCallback((layoutId: string) => store.deleteLayout(sectionId, layoutId), [sectionId]);
+  const toggleItemVisibility = useCallback((key: string) => store.toggleItemVisibility(sectionId, store.getSection(sectionId).activeLayoutId, key), [sectionId]);
 
   const activeLayout = section.layouts.find((l) => l.id === section.activeLayoutId) ?? null;
+  const hiddenKeys = useMemo(() => new Set(store.getHiddenKeys(sectionId, section.activeLayoutId)), [sectionId, section]);
 
   return {
     layouts: section.layouts,
     activeLayoutId: section.activeLayoutId,
     activeLayout,
+    hiddenKeys,
     setActiveLayout,
     createLayout,
     updateLayoutItems,
     renameLayout,
     deleteLayout,
+    toggleItemVisibility,
   };
 }
 
@@ -226,7 +260,13 @@ export const sectionLayoutActions = {
   createLayout: (sectionId: string, name: string, items: GridItem[]) => store.createLayout(sectionId, name, items),
   renameLayout: (sectionId: string, layoutId: string, name: string) => store.renameLayout(sectionId, layoutId, name),
   deleteLayout: (sectionId: string, layoutId: string) => store.deleteLayout(sectionId, layoutId),
+  toggleItemVisibility: (sectionId: string, layoutId: string | null, key: string) => store.toggleItemVisibility(sectionId, layoutId, key),
 };
+
+/** Return the hidden keys for a given section + layout (or list view). */
+export function getHiddenKeys(sectionId: string, layoutId: string | null): string[] {
+  return store.getHiddenKeys(sectionId, layoutId);
+}
 
 /** Subscribe to store changes (for components that render menus off it). */
 export function subscribeSectionLayouts(listener: () => void): () => void {

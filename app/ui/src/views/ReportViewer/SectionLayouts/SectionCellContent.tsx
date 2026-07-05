@@ -28,11 +28,13 @@ export interface SectionCellContentProps {
  * chart renderers.
  */
 export const SectionCellContent = memo<SectionCellContentProps>((props) => {
-  const { sectionId, ...rest } = props;
-  const { activeLayout } = useSectionLayouts(sectionId);
+  const { sectionId, rows, ...rest } = props;
+  const { activeLayout, hiddenKeys } = useSectionLayouts(sectionId);
+
+  const visibleRows = hiddenKeys.size > 0 ? rows.filter((r) => !hiddenKeys.has(r.name)) : rows;
 
   if (activeLayout) {
-    return <SectionGridContent sectionId={sectionId} layout={activeLayout} {...rest} />;
+    return <SectionGridContent sectionId={sectionId} layout={activeLayout} rows={visibleRows} {...rest} />;
   }
-  return <SectionListContent {...rest} />;
+  return <SectionListContent rows={visibleRows} {...rest} />;
 });
