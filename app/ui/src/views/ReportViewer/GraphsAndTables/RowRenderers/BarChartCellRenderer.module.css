@@ -455,6 +455,7 @@
 .containerFillHeight .headerRow {
   position: static;
   flex-shrink: 0;
+  padding-left: 15px;
   padding-right: var(--fill-label-space);
   box-sizing: border-box;
 }
@@ -467,15 +468,19 @@
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  padding-left: 15px;
   padding-right: var(--fill-label-space);
+  padding-bottom: 1px;
   box-sizing: border-box;
+  margin-bottom: 10px;
 }
 
-/* The grid overlay is position:absolute so width:100% resolves to the
- * containing block's *padding-box* width — 130px wider than the content-box
- * that the bars occupy. Subtract the same amount to re-align grid lines. */
+/* The grid overlay is position:absolute so left/width are relative to the
+ * containing block's padding-box. Offset by fill-label-space on both sides
+ * to align grid lines with the bars in the content box. */
 .containerFillHeight .gridOverlayCompact {
-  width: calc(100% - var(--fill-label-space));
+  left: 15px;
+  width: calc(100% - 15px - var(--fill-label-space));
 }
 
 /* Rows no longer need the padding that compensated for the absolute header. */

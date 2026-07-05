@@ -11,6 +11,7 @@ import {
   SPACER_UNIT_PX,
 } from './barChartShared';
 import { BarChartGridOverlay, BarChartHeader } from './barChartParts';
+import { useGridItemCols } from '../../SectionLayouts/GridItemContext';
 import styles from './BarChartCellRenderer.module.css';
 
 export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
@@ -32,8 +33,16 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
   const closeModal = useCallback(() => setModalOpen(false), []);
 
   const scale = usePanZoomScale();
+  const cols = useGridItemCols();
+  const narrow = cols < 2;
   const hideLabels = scale < 0.5;
+  const hideN = narrow;
   const flatItems = buildFlatItems(cohortData, spacers);
+
+  // Reserve right padding only when bars are long enough that end-labels would overflow.
+  const maxPct = flatItems.reduce((max, item) =>
+    item.type === 'row' ? Math.max(max, getCohortRowValues(item.row, name, finalCohortSizes).pct) : max, 0);
+  const fillLabelSpace = narrow ? '15px' : maxPct > 80 ? '100px' : '15px';
 
   const renderRow = (entry: RenderRow) => {
     const { pct, n } = getCohortRowValues(entry, name, finalCohortSizes);
@@ -73,7 +82,7 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
               style={{ left: `calc(${barPct}% + var(--BOOLEAN_BAR_LABEL_GAP, 6px))` }}
               {...hoverHandlers}
             >
-              <strong>{pct.toFixed(pctDecimals)}%</strong> ({n.toLocaleString()})
+              <strong>{pct.toFixed(pctDecimals)}%</strong>{!hideN && ` (${n.toLocaleString()})`}
             </span>
           )}
         </div>
@@ -89,7 +98,7 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
         hideHeader && styles.containerCompactNoHeader,
         fillHeight && styles.containerFillHeight,
       ].filter(Boolean).join(' ')}
-      style={{ '--cohort-count': cohortData.length } as React.CSSProperties}
+      style={{ '--cohort-count': cohortData.length, ...(fillHeight ? { '--fill-label-space': fillLabelSpace } : {}) } as React.CSSProperties}
     >
       {!hideHeader && <BarChartHeader compact />}
       <div className={styles.compactChartBody}>

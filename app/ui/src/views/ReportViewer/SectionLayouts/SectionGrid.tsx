@@ -1,5 +1,6 @@
 import { ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP } from './sectionLayoutStore';
+import { GridItemContext } from './GridItemContext';
 import styles from './SectionGrid.module.css';
 
 // ── Types ────────────────────────────────────────────────────────────────
@@ -219,7 +220,9 @@ export function SectionGrid({
               {item.title}
             </div>
             <div className={styles.itemBody}>
-              {item.content}
+              <GridItemContext.Provider value={{ cols: pos.w }}>
+                {item.content}
+              </GridItemContext.Provider>
             </div>
             {editable && (
               <>
