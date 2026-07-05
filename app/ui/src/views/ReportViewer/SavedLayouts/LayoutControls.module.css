@@ -1,0 +1,147 @@
+.container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 13px;
+  color: black;
+  background: rgba(255, 255, 255, 0.9);
+  border: var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background-color 0.1s, box-shadow 0.1s;
+  backdrop-filter: blur(4px);
+}
+
+.trigger:hover {
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+
+.triggerLabel {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.caret {
+  font-size: 10px;
+  color: #666;
+}
+
+.saveButton {
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 13px;
+  color: black;
+  background: rgba(255, 255, 255, 0.9);
+  border: var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background-color 0.1s, box-shadow 0.1s;
+  backdrop-filter: blur(4px);
+}
+
+.saveButton:hover {
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #fff;
+  border: var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  padding: 6px;
+  z-index: 40;
+}
+
+.groupLabel {
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #999;
+  padding: 8px 10px 4px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 13px;
+  color: black;
+}
+
+.item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.itemActive {
+  font-family: "IBMPlexSans-bold", sans-serif;
+}
+
+.itemLabel {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.check {
+  width: 14px;
+  flex-shrink: 0;
+  color: var(--color_accent, #2f6fed);
+}
+
+.itemAction {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.itemAction:hover {
+  color: #d33;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 6px 4px;
+}
+
+.addItem {
+  color: var(--color_accent, #2f6fed);
+}

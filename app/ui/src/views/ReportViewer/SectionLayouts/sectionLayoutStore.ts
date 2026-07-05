@@ -111,6 +111,35 @@ class SectionLayoutStore {
     this.update(sectionId, { ...section, activeLayoutId: layoutId });
   }
 
+  /** Snapshot every section's currently active layout id (arrangement). */
+  getActiveLayoutMap(): Record<string, string | null> {
+    const map: Record<string, string | null> = {};
+    for (const [sectionId, section] of Object.entries(this.state)) {
+      map[sectionId] = section.activeLayoutId;
+    }
+    return map;
+  }
+
+  /** Restore active layouts from a snapshot; unknown sections are left as-is. */
+  applyActiveLayoutMap(map: Record<string, string | null>) {
+    let changed = false;
+    const next = { ...this.state };
+    for (const [sectionId, layoutId] of Object.entries(map)) {
+      const section = next[sectionId] ?? this.getSection(sectionId);
+      // Only restore layouts that still exist for the section.
+      const valid = layoutId === null || section.layouts.some((l) => l.id === layoutId);
+      const resolved = valid ? layoutId : null;
+      if (section.activeLayoutId !== resolved) {
+        next[sectionId] = { ...section, activeLayoutId: resolved };
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    this.state = next;
+    saveState(this.state);
+    this.notify();
+  }
+
   createLayout(sectionId: string, name: string, items: GridItem[]): string {
     const section = this.getSection(sectionId);
     const id = `layout_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
@@ -226,6 +255,8 @@ export const sectionLayoutActions = {
   createLayout: (sectionId: string, name: string, items: GridItem[]) => store.createLayout(sectionId, name, items),
   renameLayout: (sectionId: string, layoutId: string, name: string) => store.renameLayout(sectionId, layoutId, name),
   deleteLayout: (sectionId: string, layoutId: string) => store.deleteLayout(sectionId, layoutId),
+  getActiveLayoutMap: () => store.getActiveLayoutMap(),
+  applyActiveLayoutMap: (map: Record<string, string | null>) => store.applyActiveLayoutMap(map),
 };
 
 /** Subscribe to store changes (for components that render menus off it). */

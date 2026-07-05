@@ -41,10 +41,17 @@ export function isOutlineRow(row: SequentialRow): boolean {
   return row.category === OUTLINE_CATEGORY && row.reporter === OUTLINE_REPORTER;
 }
 
-function newId(): string {
-  return typeof crypto !== 'undefined' && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `osec-${Math.random().toString(36).slice(2)}`;
+/**
+ * Stable, deterministic section identity derived from the section label.
+ *
+ * Using a deterministic id (instead of a random UUID) is essential: the outline
+ * model is re-derived whenever the underlying cohort data changes (e.g. a cohort
+ * is added), and a fresh random id each time would orphan anything keyed by the
+ * section id — such as saved grid layouts. The id is fixed at creation time, so
+ * later renames (which only change `displayName`) keep it stable.
+ */
+function sectionIdForLabel(label: string): string {
+  return `osec:${label}`;
 }
 
 /**
@@ -60,7 +67,7 @@ export function deriveOutlineModel(baseRows: SequentialRow[]): OutlineModel {
     const label = row.section ?? UNGROUPED_SECTION;
     let section = byLabel.get(label);
     if (!section) {
-      section = { id: newId(), displayName: label, itemNames: [] };
+      section = { id: sectionIdForLabel(label), displayName: label, itemNames: [] };
       byLabel.set(label, section);
       sections.push(section);
     }
@@ -102,7 +109,7 @@ export function reconcileOutlineModel(model: OutlineModel, baseRows: SequentialR
     const label = baseSectionByName.get(name) ?? UNGROUPED_SECTION;
     let section = sections.find((s) => s.displayName === label);
     if (!section) {
-      section = { id: newId(), displayName: label, itemNames: [] };
+      section = { id: sectionIdForLabel(label), displayName: label, itemNames: [] };
       sections.push(section);
     }
     section.itemNames.push(name);

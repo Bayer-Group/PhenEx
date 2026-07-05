@@ -9,6 +9,7 @@ import { StudyInfoCellRenderer } from '../GraphsAndTables/RowRenderers/StudyInfo
 import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../CellLayouts';
 import { SectionCellContent } from '../SectionLayouts/SectionCellContent';
 import { getSectionLayoutId } from '../SectionLayouts/sectionLayoutStore';
+import { LayoutControls } from '../SavedLayouts/LayoutControls';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import styles from './HorizontalCell.module.css';
@@ -170,6 +171,9 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
               className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
               onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(entry.index); }}
             >
+              {isFocused && entry.kind === 'section' && (
+                <LayoutControls sectionId={getSectionLayoutId(entry)} rows={cellRows} />
+              )}
               <div
                 className={`${styles.cardTitle} ${isSection || isCategory ? styles.cardTitleSection : ''}`}
               >
