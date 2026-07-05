@@ -439,25 +439,43 @@
  * When fillHeight=true the bar chart expands to fill the grid item's body.
  * Bars share the available height equally (flex) with a minimum so they
  * never collapse; when they overflow the chart body scrolls vertically.
+ *
+ * --fill-label-space: right padding reserved for end-labels. Defined here so
+ * the header, chart body, and grid overlay all reference the same value.
  */
 .containerFillHeight {
   max-width: none;
   display: flex;
   flex-direction: column;
+  --fill-label-space: 100px;
 }
 
-/* Header flows normally instead of being positioned absolutely. */
+/* Header flows normally instead of being positioned absolutely.
+   Right padding matches the chart body so the 100% tick aligns with bars. */
 .containerFillHeight .headerRow {
   position: static;
   flex-shrink: 0;
+  padding-right: var(--fill-label-space);
+  box-sizing: border-box;
 }
 
-/* Chart body (grid overlay + rows) fills remaining height and scrolls. */
+/* Chart body fills remaining height and scrolls vertically.
+ * padding-right is the label safe-zone: overflow-x: hidden clips at the
+ * border edge, so labels overflowing into the padding area are still shown. */
 .containerFillHeight .compactChartBody {
   flex: 1 1 0;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  padding-right: var(--fill-label-space);
+  box-sizing: border-box;
+}
+
+/* The grid overlay is position:absolute so width:100% resolves to the
+ * containing block's *padding-box* width — 130px wider than the content-box
+ * that the bars occupy. Subtract the same amount to re-align grid lines. */
+.containerFillHeight .gridOverlayCompact {
+  width: calc(100% - var(--fill-label-space));
 }
 
 /* Rows no longer need the padding that compensated for the absolute header. */
@@ -473,7 +491,6 @@
   flex: 1 1 0;
   height: auto;
   min-height: 10px;
-  overflow: hidden;
 }
 
 /* Spacers must not flex-grow. */
