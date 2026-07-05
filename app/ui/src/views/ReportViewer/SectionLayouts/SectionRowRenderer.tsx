@@ -20,6 +20,8 @@ export interface SectionRowRendererProps {
   table2Cohorts?: Table2Cohort[];
   /** Suppress the bar-chart header (e.g. consecutive boolean rows in a list). */
   hideBarChartHeader?: boolean;
+  /** Bars expand to fill grid item height; body scrolls on overflow (grid context). */
+  fillHeight?: boolean;
 }
 
 /**
@@ -35,6 +37,7 @@ export const SectionRowRenderer = memo<SectionRowRendererProps>(({
   tteCohorts,
   table2Cohorts,
   hideBarChartHeader = false,
+  fillHeight = false,
 }) => {
   switch (row.rowType) {
     case 'boolean':
@@ -43,6 +46,7 @@ export const SectionRowRenderer = memo<SectionRowRendererProps>(({
           data={{ name: row.name, _meta: { cohortData, finalCohortSizes, spacers } }}
           isModal
           hideHeader={hideBarChartHeader}
+          fillHeight={fillHeight}
         />
       );
     case 'categorical':

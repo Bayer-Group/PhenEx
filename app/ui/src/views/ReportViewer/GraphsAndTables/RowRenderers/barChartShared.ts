@@ -39,6 +39,11 @@ export interface BarChartBaseProps {
    * Defaults to a compact value; pass a larger value for presentation contexts.
    */
   spacerUnitPx?: number;
+  /**
+   * When true (grid context), bars expand to fill available height and the
+   * chart body scrolls vertically when bars overflow the container.
+   */
+  fillHeight?: boolean;
 }
 
 /** Base pixels per spacer "size" unit in compact contexts. */

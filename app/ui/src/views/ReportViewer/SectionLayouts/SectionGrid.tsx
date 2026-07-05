@@ -56,6 +56,12 @@ export function SectionGrid({
   const [containerWidth, setContainerWidth] = useState(0);
   const [draft, setDraft] = useState<GridItem[] | null>(null);
   const interactionRef = useRef<Interaction | null>(null);
+  // Keys ordered bottom→top; last entry has highest z-index.
+  const [zOrder, setZOrder] = useState<string[]>(() => items.map((i) => i.key));
+
+  const bringToFront = useCallback((key: string) => {
+    setZOrder((prev) => [...prev.filter((k) => k !== key), key]);
+  }, []);
 
   // Measure available width (drives cell size).
   useLayoutEffect(() => {
@@ -172,8 +178,9 @@ export function SectionGrid({
     const origin = layoutMap.get(key);
     if (!origin) return;
     e.preventDefault();
+    bringToFront(key);
     interactionRef.current = { type: 'move', key, origin, startX: e.clientX, startY: e.clientY, moved: false, pointerId: e.pointerId };
-  }, [editable, layoutMap, onItemClick]);
+  }, [editable, layoutMap, onItemClick, bringToFront]);
 
   const startResize = useCallback((e: React.PointerEvent, key: string, edge: 'right' | 'bottom' | 'corner') => {
     if (!editable) return;
@@ -181,8 +188,9 @@ export function SectionGrid({
     if (!origin) return;
     e.preventDefault();
     e.stopPropagation();
+    bringToFront(key);
     interactionRef.current = { type: 'resize', edge, key, origin, startX: e.clientX, startY: e.clientY, pointerId: e.pointerId };
-  }, [editable, layoutMap]);
+  }, [editable, layoutMap, bringToFront]);
 
   const draggingKey = interactionRef.current?.key ?? null;
 
@@ -196,11 +204,12 @@ export function SectionGrid({
         const width = pos.w * cellWidth + (pos.w - 1) * gap;
         const height = pos.h * rowHeight + (pos.h - 1) * gap;
         const isDragging = draggingKey === item.key;
+        const zIndex = zOrder.indexOf(item.key) + 1;
         return (
           <div
             key={item.key}
             className={`${styles.item} ${isDragging ? styles.itemDragging : ''}`}
-            style={{ left, top, width, height }}
+            style={{ left, top, width, height, zIndex }}
           >
             <div
               className={styles.itemHeader}

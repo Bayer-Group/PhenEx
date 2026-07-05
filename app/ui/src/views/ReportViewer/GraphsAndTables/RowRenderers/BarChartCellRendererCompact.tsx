@@ -20,6 +20,7 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
   pctDecimals = 0,
   hideHeader = false,
   spacerUnitPx = SPACER_UNIT_PX,
+  fillHeight = false,
 }) => {
   const { cohortData, finalCohortSizes = {}, spacers = [] } = data._meta;
   const { name } = data;
@@ -82,7 +83,12 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
 
   return (
     <div
-      className={`${styles.container} ${styles.containerCompact}${hideHeader ? ` ${styles.containerCompactNoHeader}` : ''}`}
+      className={[
+        styles.container,
+        styles.containerCompact,
+        hideHeader && styles.containerCompactNoHeader,
+        fillHeight && styles.containerFillHeight,
+      ].filter(Boolean).join(' ')}
       style={{ '--cohort-count': cohortData.length } as React.CSSProperties}
     >
       {!hideHeader && <BarChartHeader compact />}

@@ -34,7 +34,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 2;
+  z-index: 0;
 }
 
 .containerCompactNoHeader .rows {
@@ -197,7 +197,7 @@
 /* ── Rows ──────────────────────────────────────────────────────────────── */
 .rows {
   position: relative;
-  z-index: 1;
+  z-index: 0;
   overflow: visible;
 }
 
@@ -326,7 +326,7 @@
   white-space: nowrap;
   line-height: 1;
   pointer-events: auto;
-  z-index: 2;
+  z-index: 0;
 }
 
 .barEndLabel strong {
@@ -432,4 +432,50 @@
   white-space: nowrap;
   pointer-events: none;
   z-index: 9999;
+}
+
+/* ── Fill-height (grid widget) mode ──────────────────────────────────── */
+/*
+ * When fillHeight=true the bar chart expands to fill the grid item's body.
+ * Bars share the available height equally (flex) with a minimum so they
+ * never collapse; when they overflow the chart body scrolls vertically.
+ */
+.containerFillHeight {
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header flows normally instead of being positioned absolutely. */
+.containerFillHeight .headerRow {
+  position: static;
+  flex-shrink: 0;
+}
+
+/* Chart body (grid overlay + rows) fills remaining height and scrolls. */
+.containerFillHeight .compactChartBody {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: visible;
+}
+
+/* Rows no longer need the padding that compensated for the absolute header. */
+.containerFillHeight .rows {
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Each bar row grows to fill available space; minimum keeps bars visible. */
+.containerFillHeight .cohortRow {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 10px;
+}
+
+/* Spacers must not flex-grow. */
+.containerFillHeight .barSpacer {
+  flex: 0 0 auto;
 }
