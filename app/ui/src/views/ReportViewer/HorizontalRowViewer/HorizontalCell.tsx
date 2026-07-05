@@ -8,8 +8,8 @@ import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/Ou
 import { StudyInfoCellRenderer } from '../GraphsAndTables/RowRenderers/StudyInfoCellRenderer';
 import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../CellLayouts';
 import { SectionCellContent } from '../SectionLayouts/SectionCellContent';
+import { LayoutControls } from '../SectionLayouts/LayoutControls';
 import { getSectionLayoutId } from '../SectionLayouts/sectionLayoutStore';
-import { LayoutControls } from '../SavedLayouts/LayoutControls';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import styles from './HorizontalCell.module.css';
@@ -171,8 +171,11 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
               className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
               onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(entry.index); }}
             >
-              {isFocused && entry.kind === 'section' && (
-                <LayoutControls sectionId={getSectionLayoutId(entry)} rows={cellRows} />
+              {isFocused && isSection && entry.kind === 'section' && (
+                <LayoutControls
+                  sectionId={getSectionLayoutId(entry)}
+                  rowKeys={cellRows.map((r) => r.name)}
+                />
               )}
               <div
                 className={`${styles.cardTitle} ${isSection || isCategory ? styles.cardTitleSection : ''}`}

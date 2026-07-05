@@ -41,29 +41,11 @@
   color: #666;
 }
 
-.saveButton {
-  font-family: "IBMPlexSans-regular", sans-serif;
-  font-size: 13px;
-  color: black;
-  background: rgba(255, 255, 255, 0.9);
-  border: var(--border);
-  border-radius: 8px;
-  padding: 5px 10px;
-  cursor: pointer;
-  transition: background-color 0.1s, box-shadow 0.1s;
-  backdrop-filter: blur(4px);
-}
-
-.saveButton:hover {
-  background: #fff;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
-}
-
 .menu {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  min-width: 220px;
+  min-width: 200px;
   max-height: 60vh;
   overflow-y: auto;
   background: #fff;
@@ -72,15 +54,6 @@
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
   padding: 6px;
   z-index: 40;
-}
-
-.groupLabel {
-  font-family: "IBMPlexSans-bold", sans-serif;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #999;
-  padding: 8px 10px 4px;
 }
 
 .item {

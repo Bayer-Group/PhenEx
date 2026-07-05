@@ -10,7 +10,6 @@ import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { SingleRowContentHorizontalRowViewer } from './HorizontalRowViewer/SingleRowContentHorizontalRowViewer';
 import { BreadcrumbTitle } from './BreadcrumbTitle';
 import { CellLayoutStoreProvider } from './CellLayouts';
-import { SavedLayoutProvider } from './SavedLayouts/SavedLayoutContext';
 import { ThreePanelCollapseProvider, useThreePanelCollapse } from '../../contexts/ThreePanelCollapseContext';
 import {
   classifyRows,
@@ -174,7 +173,6 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   runId: _runId,
   loading = false,
   title = 'Loading study...',
-  storageKey,
   initialSelections,
   onSelectionsChange,
 }) => {
@@ -887,11 +885,6 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
 
   return (
     <CellLayoutStoreProvider>
-    <SavedLayoutProvider
-      reportKey={storageKey ?? _runId ?? 'default'}
-      selections={selections}
-      colorOverrides={colorOverrides}
-    >
     <div className={styles.container}>
       <div className={styles.titleGroup}>
           <BreadcrumbTitle
@@ -927,7 +920,6 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         />
       )}
     </div>
-    </SavedLayoutProvider>
     </CellLayoutStoreProvider>
   );
 };
