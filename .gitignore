@@ -170,3 +170,6 @@ phenex/test/serialization/artifacts
 app/ui/public/assets/databases.json
 app/ui/.vite
 r-package/man/
+
+
+.DS_Store

@@ -18,6 +18,7 @@ type Execution = { execution_id: string; started_at: string | null; status: stri
 export const StudyExecutePanel: React.FC = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [logFilter, setLogFilter] = useState<string>('all');
   const [executions, setExecutions] = useState<Execution[]>([]);
   const [selectedExecId, setSelectedExecId] = useState<string | null>(null);
   const [showRunsDropdown, setShowRunsDropdown] = useState(false);
@@ -150,6 +151,18 @@ export const StudyExecutePanel: React.FC = () => {
     }
   };
 
+  const shouldShowLog = (message: string) => {
+    if (logFilter === 'all') return true;
+    const lower = message.toLowerCase();
+    switch (logFilter) {
+      case 'error': return lower.includes('[error]') || lower.includes('[stderr]');
+      case 'warning': return lower.includes('[warning]') || lower.includes('[warn]');
+      case 'info': return lower.includes('[info]') || lower.includes('[stdout]');
+      case 'debug': return lower.includes('[debug]');
+      default: return true;
+    }
+  };
+
   const getLogClassName = (type: string, message: string) => {
     if (type === 'error' || message.includes('[ERROR]') || message.includes('[STDERR]')) return styles.errorLog;
     if (type === 'complete') return styles.completeLog;
@@ -163,9 +176,25 @@ export const StudyExecutePanel: React.FC = () => {
     return `${date} — ${exec.status}`;
   };
 
+  const renderFilterDropdown = () => (
+    <div style={{ padding: '8px' }}>
+      <select
+        value={logFilter}
+        onChange={e => setLogFilter(e.target.value)}
+        style={{ width: '100%' }}
+      >
+        <option value="all">All Logs</option>
+        <option value="info">Info</option>
+        <option value="warning">Warnings</option>
+        <option value="error">Errors</option>
+        <option value="debug">Debug</option>
+      </select>
+    </div>
+  );
+
   const renderControls = () => {
     const executingLabel = isExecuting ? 'Executing...' : 'Execute Study';
-    const tabs = [executingLabel, 'Clear Logs'];
+    const tabs = [executingLabel, 'Clear Logs', 'Filter'];
     const handleTabChange = (index: number) => {
       if (tabs[index] === executingLabel) handleExecute();
       else if (tabs[index] === 'Clear Logs') { setLogs([]); setLogFileContent(null); setViewMode(null); }
@@ -177,7 +206,7 @@ export const StudyExecutePanel: React.FC = () => {
           height={25}
           tabs={tabs}
           onTabChange={handleTabChange}
-          dropdown_items={{}}
+          dropdown_items={{ 2: renderFilterDropdown() }}
           active_tab_index={-1}
           outline_tab_index={0}
         />
@@ -237,7 +266,7 @@ export const StudyExecutePanel: React.FC = () => {
     if (viewMode === 'logs' || logs.length > 0) {
       return (
         <div className={styles.logsContainer} ref={logsContainerRef}>
-          {logs.length === 0 ? <div className={styles.emptyState} /> : logs.map((log, i) => (
+          {logs.length === 0 ? <div className={styles.emptyState} /> : logs.filter(log => shouldShowLog(log.message)).map((log, i) => (
             <div key={i} className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}>
               <span className={styles.timestamp}>[{log.timestamp.toLocaleTimeString()}]</span>
               <span className={styles.logMessage}>{log.message}</span>

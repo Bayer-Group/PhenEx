@@ -187,11 +187,6 @@ from .routes.cohort import router as cohort_router
 
 app.include_router(cohort_router)
 
-# Include the cohort execution router
-from .routes.execute import router as execute_router
-
-app.include_router(execute_router, prefix="/cohort")
-
 # Include the new AI router
 from .routes.ai import router as ai_router
 

@@ -185,7 +185,13 @@ export const StudiesGridView = () => {
         </div>
         {study.description && (
           <div className={styles.studyCardDescription}>
-            {study.description}
+            {(() => {
+              try {
+                const delta = JSON.parse(study.description);
+                if (delta?.ops) return delta.ops.map((op: { insert?: unknown }) => typeof op.insert === 'string' ? op.insert : '').join('');
+              } catch {}
+              return study.description;
+            })()}
           </div>
         )}
         <div className={styles.studyCardFooter}>

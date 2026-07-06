@@ -7,7 +7,6 @@ import { CategoricalFilterPanel } from '../../SlideoverPanels/ConstantsPanels/Ca
 import { TimeRangePanel } from '../../SlideoverPanels/ConstantsPanels/TimeRangePanel';
 import { VisibilityPanel } from '../../SlideoverPanels/VisibilityPanel/VisibilityPanel';
 import { CohortReportView } from '../../SlideoverPanels/CohortReportView/CohortReportView';
-import { ExecutePanel } from '../../SlideoverPanels/ExecutePanel/ExecutePanel';
 import { StudyExecutePanel } from '../../SlideoverPanels/StudyExecutePanel/StudyExecutePanel';
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar';
 import styles from './CohortRightPanel.module.css';
@@ -30,7 +29,7 @@ export const CohortRightPanel: React.FC<CohortRightPanelProps> = ({ contentMode 
         <CategoricalFilterPanel />
         <TimeRangePanel />
         <CodelistsViewer />
-        {contentMode === 'study' ? <StudyExecutePanel /> : <ExecutePanel />}
+        {contentMode === 'study' && <StudyExecutePanel />}
       </div>
       <SimpleCustomScrollbar targetRef={containerRef} 
         marginToEnd={2}
