@@ -1996,4 +1996,226 @@ class DatabaseManager:
                 await conn.close()
 
 
+    # -------------------------------------------------------------------------
+    # Chat history
+    # -------------------------------------------------------------------------
+
+    async def create_chat_session(
+        self, user_id: str, study_id: Optional[str], title: Optional[str] = None, session_id: Optional[str] = None
+    ) -> Dict:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            if session_id:
+                row = await conn.fetchrow(
+                    """
+                    INSERT INTO chat_session (id, user_id, study_id, title)
+                    VALUES ($1::uuid, $2::uuid, $3, $4)
+                    ON CONFLICT (id) DO UPDATE SET updated_at = CURRENT_TIMESTAMP
+                    RETURNING id, user_id, study_id, title, created_at, updated_at
+                    """,
+                    session_id,
+                    user_id,
+                    study_id,
+                    title,
+                )
+            else:
+                row = await conn.fetchrow(
+                    """
+                    INSERT INTO chat_session (user_id, study_id, title)
+                    VALUES ($1::uuid, $2, $3)
+                    RETURNING id, user_id, study_id, title, created_at, updated_at
+                    """,
+                    user_id,
+                    study_id,
+                    title,
+                )
+            return {
+                "id": str(row["id"]),
+                "user_id": str(row["user_id"]),
+                "study_id": str(row["study_id"]) if row["study_id"] else None,
+                "title": row["title"],
+                "created_at": row["created_at"].isoformat(),
+                "updated_at": row["updated_at"].isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to create chat session: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_chat_sessions(self, user_id: str, study_id: Optional[str]) -> List[Dict]:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            if study_id:
+                rows = await conn.fetch(
+                    """
+                    SELECT s.id, s.user_id, s.study_id, s.title, s.created_at, s.updated_at,
+                           (SELECT text FROM chat_message WHERE session_id = s.id ORDER BY created_at LIMIT 1) AS first_message
+                    FROM chat_session s
+                    WHERE s.user_id = $1::uuid AND s.study_id = $2
+                    ORDER BY s.updated_at DESC
+                    """,
+                    user_id,
+                    study_id,
+                )
+            else:
+                rows = await conn.fetch(
+                    """
+                    SELECT s.id, s.user_id, s.study_id, s.title, s.created_at, s.updated_at,
+                           (SELECT text FROM chat_message WHERE session_id = s.id ORDER BY created_at LIMIT 1) AS first_message
+                    FROM chat_session s
+                    WHERE s.user_id = $1::uuid AND s.study_id IS NULL
+                    ORDER BY s.updated_at DESC
+                    """,
+                    user_id,
+                )
+            return [
+                {
+                    "id": str(r["id"]),
+                    "user_id": str(r["user_id"]),
+                    "study_id": str(r["study_id"]) if r["study_id"] else None,
+                    "title": r["title"],
+                    "created_at": r["created_at"].isoformat(),
+                    "updated_at": r["updated_at"].isoformat(),
+                    "first_message": r["first_message"],
+                }
+                for r in rows
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get chat sessions: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def add_chat_message(
+        self,
+        session_id: str,
+        user_id: str,
+        study_id: Optional[str],
+        role: str,
+        text: str,
+        metadata: Optional[Dict] = None,
+    ) -> Dict:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            # Upsert session (update updated_at) and insert message atomically
+            await conn.execute(
+                """
+                UPDATE chat_session SET updated_at = CURRENT_TIMESTAMP
+                WHERE id = $1::uuid
+                """,
+                session_id,
+            )
+            row = await conn.fetchrow(
+                """
+                INSERT INTO chat_message (session_id, user_id, study_id, role, text, metadata)
+                VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6)
+                RETURNING id, session_id, user_id, study_id, role, text, created_at, metadata
+                """,
+                session_id,
+                user_id,
+                study_id,
+                role,
+                text,
+                json.dumps(metadata) if metadata else None,
+            )
+            return {
+                "id": str(row["id"]),
+                "session_id": str(row["session_id"]),
+                "user_id": str(row["user_id"]),
+                "study_id": str(row["study_id"]) if row["study_id"] else None,
+                "role": row["role"],
+                "text": row["text"],
+                "created_at": row["created_at"].isoformat(),
+                "metadata": json.loads(row["metadata"]) if row["metadata"] else None,
+            }
+        except Exception as e:
+            logger.error(f"Failed to add chat message: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_chat_messages(self, session_id: str, user_id: str) -> List[Dict]:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            rows = await conn.fetch(
+                """
+                SELECT m.id, m.session_id, m.user_id, m.study_id, m.role, m.text, m.created_at, m.metadata
+                FROM chat_message m
+                JOIN chat_session s ON s.id = m.session_id
+                WHERE m.session_id = $1::uuid AND s.user_id = $2::uuid
+                ORDER BY m.created_at ASC
+                """,
+                session_id,
+                user_id,
+            )
+            return [
+                {
+                    "id": str(r["id"]),
+                    "session_id": str(r["session_id"]),
+                    "user_id": str(r["user_id"]),
+                    "study_id": str(r["study_id"]) if r["study_id"] else None,
+                    "role": r["role"],
+                    "text": r["text"],
+                    "created_at": r["created_at"].isoformat(),
+                    "metadata": json.loads(r["metadata"]) if r["metadata"] else None,
+                }
+                for r in rows
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get chat messages: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_chat_session_title(self, session_id: str, user_id: str, title: str) -> bool:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            await conn.execute(
+                """
+                UPDATE chat_session SET title = $1, updated_at = CURRENT_TIMESTAMP
+                WHERE id = $2::uuid AND user_id = $3::uuid
+                """,
+                title,
+                session_id,
+                user_id,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update chat session title: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def delete_chat_session(self, session_id: str, user_id: str) -> bool:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            await conn.execute(
+                "DELETE FROM chat_message WHERE session_id = $1::uuid", session_id
+            )
+            await conn.execute(
+                "DELETE FROM chat_session WHERE id = $1::uuid AND user_id = $2::uuid",
+                session_id,
+                user_id,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete chat session: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+
 db_manager = DatabaseManager()

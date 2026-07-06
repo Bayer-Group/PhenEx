@@ -11,9 +11,10 @@ interface InteractionBarProps {
   onReject?: () => void;
   onRetry?: () => void;
   onNewChat?: () => void;
+  onHistory?: () => void;
 }
 
-export const InteractionBar: FC<InteractionBarProps> = ({ state, isProvisional = false, onAccept, onReject, onRetry, onNewChat }) => {
+export const InteractionBar: FC<InteractionBarProps> = ({ state, isProvisional = false, onAccept, onReject, onRetry, onNewChat, onHistory }) => {
   const [dots, setDots] = useState('');
 
   useEffect(() => {
@@ -58,28 +59,30 @@ export const InteractionBar: FC<InteractionBarProps> = ({ state, isProvisional =
     // Only show ACCEPT/REJECT if the cohort is provisional
     if (isProvisional) {
       console.log('✅ InteractionBar: Showing Accept/Reject buttons (provisional=true)');
-      buttons = ['Accept', 'Reject', 'New Chat'];
+      buttons = ['Accept', 'Reject', 'New Chat', 'History'];
       actions = [
         onAccept || (() => {}),
         onReject || (() => {}),
-        onNewChat || (() => {})
+        onNewChat || (() => {}),
+        onHistory || (() => {})
       ];
     } else {
       console.log('❌ InteractionBar: NOT showing Accept/Reject (provisional=false)');
-      buttons = ['New Chat'];
-      actions = [onNewChat || (() => {})];
+      buttons = ['New Chat', 'History'];
+      actions = [onNewChat || (() => {}), onHistory || (() => {})];
     }
   } else if (state === 'retry') {
     // Show RETRY NEW CHAT
-    buttons = ['Retry', 'New Chat'];
+    buttons = ['Retry', 'New Chat', 'History'];
     actions = [
       onRetry || (() => {}),
-      onNewChat || (() => {})
+      onNewChat || (() => {}),
+      onHistory || (() => {})
     ];
   } else {
     // For 'empty' state, show only NEW CHAT
-    buttons = ['New Chat'];
-    actions = [onNewChat || (() => {})];
+    buttons = ['New Chat', 'History'];
+    actions = [onNewChat || (() => {}), onHistory || (() => {})];
   }
 
   return (

@@ -8,8 +8,19 @@ import {
   rejectChanges,
 } from '../../api/text_to_cohort/route';
 
+import {
+  createChatSession,
+  addChatMessage,
+  getChatMessages,
+  type ChatMessage as DBChatMessage,
+  type ChatSession,
+} from '../../api/chat_history/route';
+
 type MessageCallback = (messages: Message[]) => void;
 type AICompletionCallback = (success: boolean) => void;
+type SessionChangeCallback = (sessionId: string | null) => void;
+
+export { type ChatSession };
 
 export interface Message {
   id: number;
@@ -41,7 +52,11 @@ class ChatPanelDataService {
   private readonly MAX_HISTORY_ENTRIES = 25;
   private listeners: Set<MessageCallback> = new Set();
   private aiCompletionListeners: Set<AICompletionCallback> = new Set();
+  private sessionChangeListeners: Set<SessionChangeCallback> = new Set();
   private _cohortDataService: CohortDataService | null = null;
+
+  // Current DB session
+  private _sessionId: string | null = null;
 
   // Study-mode fields
   private _studyMode: boolean = false;
@@ -83,6 +98,7 @@ class ChatPanelDataService {
     this.messages.push(newMessage);
     this.addUserMessageToHistory(text);
     this.notifyListeners();
+    this.persistMessage('user', text);
     this.sendAIRequest(text);
     return newMessage;
   }
@@ -114,6 +130,90 @@ class ChatPanelDataService {
     this.aiCompletionListeners.delete(callback);
   }
 
+  public onSessionChange(callback: SessionChangeCallback): void {
+    this.sessionChangeListeners.add(callback);
+  }
+
+  public removeSessionChangeListener(callback: SessionChangeCallback): void {
+    this.sessionChangeListeners.delete(callback);
+  }
+
+  private notifySessionChangeListeners(): void {
+    this.sessionChangeListeners.forEach(l => l(this._sessionId));
+  }
+
+  public getSessionId(): string | null {
+    return this._sessionId;
+  }
+
+  /** Ensure a DB session exists for the current context, creating one if needed. */
+  private async ensureSession(): Promise<string> {
+    if (this._sessionId) return this._sessionId;
+    try {
+      const session = await createChatSession({
+        study_id: this._studyMode ? this._studyId || undefined : undefined,
+      });
+      this._sessionId = session.id;
+      this.notifySessionChangeListeners();
+    } catch (e) {
+      console.warn('Could not create chat session in DB:', e);
+      // Generate a temporary client-side UUID so persistence can be retried later
+      this._sessionId = crypto.randomUUID();
+    }
+    return this._sessionId!;
+  }
+
+  /** Persist a single message to the DB (fire-and-forget, errors are logged only). */
+  private async persistMessage(role: 'user' | 'assistant', text: string): Promise<void> {
+    if (!text.trim()) return;
+    try {
+      const sessionId = await this.ensureSession();
+      await addChatMessage(sessionId, {
+        study_id: this._studyMode ? this._studyId || undefined : undefined,
+        role,
+        text,
+      });
+    } catch (e) {
+      console.warn('Failed to persist chat message:', e);
+    }
+  }
+
+  /** Load a historical session: replace current messages and resume. */
+  public async loadSession(session: ChatSession): Promise<void> {
+    try {
+      const dbMessages = await getChatMessages(session.id);
+      this._sessionId = session.id;
+      if (session.study_id) {
+        this._studyMode = true;
+        this._studyId = session.study_id;
+      }
+      // Rebuild messages array from DB records
+      this.messages = [
+        {
+          id: 123,
+          text: '# Hi, I\'m Fox. How can I help?\n1. **Create an entire cohort from scratch:**  enter a description of your entry criterion and any inclusion or exclusion criteria. \n2. **Modify an existing cohort:** ask for help on a single aspect of your study.',
+          isUser: false,
+        },
+      ];
+      this.lastMessageId = 123;
+      this.conversationHistory = [];
+      dbMessages.forEach((m: DBChatMessage) => {
+        const msg: Message = {
+          id: ++this.lastMessageId,
+          text: m.text,
+          isUser: m.role === 'user',
+        };
+        this.messages.push(msg);
+        if (m.role === 'user') this.addUserMessageToHistory(m.text);
+        else this.addSystemResponseToHistory(m.text);
+      });
+      this.notifyListeners();
+      this.notifySessionChangeListeners();
+    } catch (e) {
+      console.error('Failed to load chat session:', e);
+    }
+  }
+
   public clearMessages(): void {
     this.messages = [
       {
@@ -126,6 +226,9 @@ class ChatPanelDataService {
     this.conversationHistory = [];
     this.modifiedCohortIds = [];
     this.modifiedCohortNames = [];
+    // Start a fresh DB session
+    this._sessionId = null;
+    this.notifySessionChangeListeners();
     this.notifyListeners();
   }
 
@@ -331,6 +434,7 @@ class ChatPanelDataService {
       // Add the complete assistant response to history
       if (assistantMessage.text.trim()) {
         this.addSystemResponseToHistory(assistantMessage.text.trim());
+        this.persistMessage('assistant', assistantMessage.text.trim());
       }
 
       // In legacy cohort mode, refresh the active cohort

@@ -6,13 +6,14 @@ import { InteractionBar } from './InteractionBar';
 
 interface InteractionAreaProps {
   userHasInteracted?: boolean;
+  onHistory?: () => void;
 }
 
 export interface InteractionAreaRef {
   focus: () => void;
 }
 
-export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaProps>(({ userHasInteracted = false }, ref) => {
+export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaProps>(({ userHasInteracted = false, onHistory }, ref) => {
   const textBoxRef = useRef<HTMLDivElement>(null);
   const [interactionState, setInteractionState] = useState<
     'empty' | 'thinking' | 'interactive' | 'retry'
@@ -170,6 +171,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
           onReject={handleReject}
           onRetry={handleRetry}
           onNewChat={handleNewChat}
+          onHistory={onHistory}
         />
       </div>
       <div className={styles.transparentHeaderGradient} />

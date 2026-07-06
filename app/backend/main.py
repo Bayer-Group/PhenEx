@@ -204,6 +204,11 @@ from .routes.study_execute import router as study_execute_router
 
 app.include_router(study_execute_router)
 
+# Include the chat history router
+from .routes.chat_history import router as chat_history_router
+
+app.include_router(chat_history_router)
+
 # Include the codelist routers
 from .routes.codelist import (
     router as codelist_router,
