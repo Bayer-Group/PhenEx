@@ -822,7 +822,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   // Renders a single left-panel component (Cohorts / Outline / Legend). Shared
   // by both the docked FlexLayout tab and the floating popout window.
   const renderLeftComponent = useCallback(
-    (component: string) => {
+    (component: string, isFloating = false) => {
       switch (component) {
         case 'cohortSelector':
           return (
@@ -858,6 +858,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               cohortDescriptions={cohortDescriptions}
               colorOverrides={colorOverrides}
               onSetColor={handleSetColor}
+              isFloating={isFloating}
             />
           );
         default:
@@ -988,7 +989,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           initialY={120 + i * 32}
           onClose={() => dockComponent(component)}
         >
-          {renderLeftComponent(component)}
+          {renderLeftComponent(component, true)}
         </FloatingPanel>
       ))}
     </div>

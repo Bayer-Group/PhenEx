@@ -21,6 +21,7 @@ interface FigureLegendProps {
   cohortDescriptions?: CohortDescriptions;
   colorOverrides?: ColorOverrides;
   onSetColor?: (cohortName: string, color: string) => void;
+  isFloating?: boolean;
 }
 
 function getLabel(sel: LegendSelection, cohortDescriptions?: CohortDescriptions): string {
@@ -34,7 +35,7 @@ function makeSpacerId(): string {
   return `spacer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDescriptions, colorOverrides, onSetColor }) => {
+export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDescriptions, colorOverrides, onSetColor, isFloating }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragIndexRef = useRef<number | null>(null);
   // dropLineIndex: the gap index where the line will appear.
@@ -139,7 +140,7 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
       <div className={styles.scrollRegion}>
         <div ref={scrollRef} className={styles.scrollContent}>
           <div className={styles.hint}>Drag to reorder</div>
-          <div className={styles.card}>
+          <div className={`${styles.card}${isFloating ? ` ${styles.cardFloating}` : ''}`}>
             {items.map((item, i) => {
               const dragHandle = (
                 <span className={styles.dragHandle} aria-hidden>
@@ -237,20 +238,17 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
             + Add spacer
           </button>
         </div>
-        {/* <div className={styles.scrollbarRegion}> */}
-   
-        {/* </div> */}
-      </div>
-      <SimpleCustomScrollbar
+        <div className={styles.scrollbarRegion}>
+          <SimpleCustomScrollbar
             targetRef={scrollRef}
             orientation="vertical"
-            // marginTop={100}
-            // marginBottom={100}
             marginToEnd={0}
             classNameTrack={styles.scrollBarTrack}
             classNameThumb={styles.scrollBarThumb}
             showOnHover={true}
           />
+        </div>
+      </div>
     </div>
   );
 };

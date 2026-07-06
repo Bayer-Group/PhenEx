@@ -69,6 +69,12 @@
   padding: 4px;
 }
 
+.cardFloating {
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+}
+
 .row {
   display: flex;
   align-items: center;
