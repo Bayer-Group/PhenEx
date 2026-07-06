@@ -159,6 +159,8 @@ class CohortContext(BaseModel):
     cohort_names: Dict = {}     # cohort_id → display name
     active_cohort_id: Optional[str] = None   # hint: which cohort user is viewing
     modified_cohort_ids: List[str] = []      # cohorts changed this AI turn
+    cohort_snapshots: Dict = {}              # cohort_id → deep copy before agent runs
+    cohort_diffs: Dict = {}                  # cohort_id → diff summary (for visualization)
     db_manager: Any = None
 
     class Config:
@@ -3156,7 +3158,6 @@ User request: {req_body.user_request}
 
         # Create and setup streaming context BEFORE running the agent
         streaming_ctx = StreamingContext()
-        actual_tool_calls = []  # Track actual tool executions (not UI messages)
 
         def collect_message(message_data):
             # Put message in queue for immediate streaming
@@ -3182,6 +3183,10 @@ User request: {req_body.user_request}
                     break
 
         try:
+            # Snapshot all cohort state before the agent runs so we can diff afterwards
+            import copy
+            context.cohort_snapshots = {cid: copy.deepcopy(data) for cid, data in context.cohorts.items()}
+
             # Stream the agent response in real-time using Pydantic AI's streaming API
             async with agent.run_stream(user_message, deps=context, model_settings={"max_tokens": 8192}) as result:
                 # Interleave AI text tokens with tool call messages
@@ -3195,48 +3200,43 @@ User request: {req_body.user_request}
                         yield f"data: {json.dumps({'type': 'content', 'message': text_chunk})}\n\n"
                         await asyncio.sleep(0)  # Force immediate delivery
 
-            # After streaming completes, result object contains all_messages for tool call extraction
-            # Extract actual tool calls from agent result for change detection
-            # Define WRITE operations (tools that modify the cohort)
-            WRITE_TOOLS = {
-                "create_phenotype",
-                "update_phenotype",
-                "delete_phenotype",
-                "atomic_update_value_filter",
-                "atomic_update_relative_time_range",
-                "atomic_update_codelist",
-                "atomic_update_name",
-                "atomic_update_description",
-                "atomic_update_domain",
-                "atomic_update_type",
-                "atomic_update_return_date",
-                "atomic_update_categorical_filter",
-                "atomic_update_nested_phenotype",
-            }
+            print(f"💾 FINAL_SAVE: Agent run complete, computing diffs...")
 
-            if hasattr(result, "all_messages"):
-                for msg in result.all_messages():
-                    if hasattr(msg, "tool_calls") and msg.tool_calls:
-                        for tool_call in msg.tool_calls:
-                            # Only track write operations
-                            if tool_call.tool_name in WRITE_TOOLS:
-                                actual_tool_calls.append(tool_call.tool_name)
+            # Diff-based change detection: compare each cohort against its pre-run snapshot.
+            # This is ground truth — we know what actually changed, not just what was attempted.
+            # It also builds the diff payload needed for future visualization.
+            context.modified_cohort_ids = []
+            context.cohort_diffs = {}
+            for cid, current_data in context.cohorts.items():
+                snapshot = context.cohort_snapshots.get(cid)
+                if snapshot is None:
+                    # Cohort was created during this turn — always modified
+                    context.modified_cohort_ids.append(cid)
+                    context.cohort_diffs[cid] = {"type": "created"}
+                    continue
+                # Canonical JSON comparison (sort keys for stability)
+                before = json.dumps(snapshot, sort_keys=True)
+                after = json.dumps(current_data, sort_keys=True)
+                if before != after:
+                    context.modified_cohort_ids.append(cid)
+                    # Store a lightweight diff: added/removed/changed phenotype ids
+                    before_phenotypes = {p["id"]: p for p in snapshot.get("phenotypes", []) if "id" in p}
+                    after_phenotypes = {p["id"]: p for p in current_data.get("phenotypes", []) if "id" in p}
+                    diff = {
+                        "type": "modified",
+                        "added": [pid for pid in after_phenotypes if pid not in before_phenotypes],
+                        "removed": [pid for pid in before_phenotypes if pid not in after_phenotypes],
+                        "changed": [
+                            pid for pid in before_phenotypes
+                            if pid in after_phenotypes
+                            and json.dumps(before_phenotypes[pid], sort_keys=True) != json.dumps(after_phenotypes[pid], sort_keys=True)
+                        ],
+                        "before": snapshot,
+                        "after": current_data,
+                    }
+                    context.cohort_diffs[cid] = diff
 
-            print(f"💾 FINAL_SAVE: Write operations detected: {actual_tool_calls}")
-
-            # Save final context state to database (all operations are now complete)
-            # modified_cohort_ids was populated by update_context_only at the moment
-            # each change was applied — no diff comparison needed.
-
-            # Save every cohort that may have been modified this turn.
-            # modified_cohort_ids is populated by:
-            #   - update_context_only (create/delete tools)
-            #   - switch_target_cohort (marks the cohort being left as dirty)
-            # We also always add the currently-targeted cohort here because atomic
-            # update tools (name, domain, value_filter, etc.) mutate
-            # ctx.deps.current_cohort in-place without going through update_context_only.
-            if context.cohort_id and context.cohort_id not in context.modified_cohort_ids:
-                context.modified_cohort_ids.append(context.cohort_id)
+            print(f"💾 FINAL_SAVE: Cohorts with actual changes: {context.modified_cohort_ids}")
             cohorts_to_save = list(context.modified_cohort_ids)
             print(f"💾 FINAL_SAVE: Cohorts to save: {cohorts_to_save}")
 
