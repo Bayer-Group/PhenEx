@@ -343,7 +343,6 @@ async def create_demo_study(request: Request):
             description=study_data["description"],
             baseline_characteristics=study_data.get("baseline_characteristics"),
             outcomes=study_data.get("outcomes"),
-            analysis=study_data.get("analysis"),
             visible_by=[],
             is_public=False,
         )
