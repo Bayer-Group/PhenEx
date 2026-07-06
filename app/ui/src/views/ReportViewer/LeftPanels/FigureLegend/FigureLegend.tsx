@@ -283,10 +283,10 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
 
   return (
     <div className={styles.container}>
-      <div className={styles.scrollRegion}>
-        <div ref={scrollRef} className={styles.scrollContent}>
+            <div className={`${styles.topGradient}${isFloating ? ` ${styles.topGradientFloating}` : ''}`} />
+
           <div className={styles.headerRow}>
-            <span className={styles.hint}>Drag to reorder</span>
+            {/* <span className={styles.hint}>Drag to reorder</span> */}
             <FigureLegendControls
               colorValue={groupColorValue}
               onApplyColor={handleApplyGroupColor}
@@ -295,6 +295,9 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
               onToggleFloat={onToggleFloat}
             />
           </div>
+
+      <div className={styles.scrollRegion}>
+        <div ref={scrollRef} className={`${styles.scrollContent}${isFloating ? ` ${styles.scrollContentFloating}` : ''}`}>
           <div
             ref={cardRef}
             className={`${styles.card}${isFloating ? ` ${styles.cardFloating}` : ''}`}
@@ -411,9 +414,9 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
           <SimpleCustomScrollbar
             targetRef={scrollRef}
             orientation="vertical"
-            marginTop={10}
+            marginTop={40}
             marginBottom={10}
-            marginToEnd={10}
+            marginToEnd={5}
             classNameTrack={styles.scrollBarTrack}
             classNameThumb={styles.scrollBarThumb}
             showOnHover={true}

@@ -7,9 +7,9 @@
   flex-direction: column;
   min-width: 0;
   background: var(--background_color_light, #f9f9f9);
-  border: 4px solid white;
+  border: 2px solid var(--line-color);
   border-radius: 15px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 30px hsl(30, 18%, 80%);
   overflow: hidden;
 }
 
@@ -20,9 +20,13 @@
   justify-content: space-between;
   height: 30px;
   padding: 0 6px 0 10px;
-  background: var(--background_color_light, #f3f3f3);
+  
+  /* background: var(--background_color_light, #f3f3f3); */
   cursor: move;
   user-select: none;
+  position:absolute;
+  z-index: 100;
+  width: calc(100% - 100px) !important;
 }
 
 .title {
@@ -34,6 +38,7 @@
   text-overflow: ellipsis;
   font-family: "IBMPlexSans-bold", sans-serif;
   padding-left:10px;
+  width: 100% !important;
 }
 
 .dockButton {

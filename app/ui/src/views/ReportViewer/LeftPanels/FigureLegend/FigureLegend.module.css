@@ -1,19 +1,23 @@
 .container {
   display: flex;
   flex-direction: column;
-  padding: 0px 0px 0px 0px;
   font-family: "IBMPlexSans-regular", sans-serif;
+  overflow: visible;
+  /* padding-top: 30px; */
   height: 100%;
-  box-sizing: border-box;
-  overflow: hidden;
+  
 }
 
 .headerRow {
-  display: flex;
+  /* display: flex; */
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   padding: 0 8px 8px 14px;
+  position: absolute;
+  right:5px;
+  top:5px;
+  z-index: 10;
 }
 
 .hint {
@@ -35,7 +39,31 @@
   flex-direction: column;
   overflow-y: auto;
   scrollbar-width: none;
-  padding-right: 30px;
+  padding-right: var(--left_panel_margin_right, 0px);
+  padding-top:30px;
+  margin-left:var(--left_panel_margin_left, 0px);
+
+}
+
+.scrollContentFloating {
+  padding-top: 50px;
+  margin-left:0px;
+
+}
+
+.topGradient {
+  position: absolute;
+  top: 0px;
+  height: 30px;
+  background: linear-gradient(to bottom, var(--background_color_dark, #2a2a2a) 6px, transparent);
+  pointer-events: none;
+  z-index: 2;
+  width:100%;
+}
+
+.topGradientFloating {
+  height: 50px;
+  background: linear-gradient(to bottom, var(--background_color_light, #f0f0f0) 30px, transparent);
 }
 
 .scrollContent::-webkit-scrollbar {
@@ -516,3 +544,4 @@
   background-color: rgba(74, 144, 226, 0.08);
   border-color: #4a90e2;
 }
+

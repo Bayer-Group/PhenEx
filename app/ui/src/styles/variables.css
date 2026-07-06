@@ -20,6 +20,8 @@
 
   --padding_horizontal_item: 5px;
   --padding_vertical_item: 2px;
+  --left_panel_margin_left: 15px;
+  --left_panel_margin_right: 20px;
 
   --text-color-normal: var(--color-accent-bright);
   --text-color-inactive: hsl(0, 0%, 0%);

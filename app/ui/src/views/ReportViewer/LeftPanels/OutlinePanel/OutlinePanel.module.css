@@ -4,6 +4,8 @@
   box-sizing: border-box;
   overflow-y: hidden;
   height: 100%;
+  margin-left:var(--left_panel_margin_left, 0px);
+
   /* height: calc(100% - 5px); */
   /* background-color: white !important; */
   /* border-radius:8px;
