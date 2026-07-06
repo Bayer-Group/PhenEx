@@ -101,7 +101,7 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
     hoverTimerRef.current = setTimeout(() => {
       followingRef.current = true;
       setHover(pos);
-    }, 500);
+    }, 400); // SET TIME DELAY HERE
   }, []);
 
   const dismissCrosshair = useCallback(() => {
