@@ -363,6 +363,10 @@
   color: var(--text_color_default, #555);
 }
 
+.setsHeader:focus {
+  outline: none;
+}
+
 .setsCaret {
   flex-shrink: 0;
   transition: transform 0.15s ease;
@@ -373,13 +377,36 @@
 }
 
 .setsBody {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding-right: 10px;
+}
+
+.setsBody::-webkit-scrollbar {
+  display: none;
+}
+
+.setsScrollRegion {
+  position: relative;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
+}
+
+.setsScrollbarRegion {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.setsScrollbarRegion > * {
+  pointer-events: auto;
 }
 
 .setRow {
@@ -387,6 +414,8 @@
   align-items: center;
   gap: 6px;
   width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
   padding: 4px 6px;
   font-family: inherit;
   font-size: var(--font_size_infotext, 12px);

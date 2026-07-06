@@ -1,4 +1,5 @@
 import { FC, useState, useCallback, useEffect, useRef } from 'react';
+import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import type { FigureLegendSet } from './figureLegendSetStore';
 import styles from './FigureLegend.module.css';
 
@@ -50,6 +51,7 @@ export const FigureLegendSets: FC<FigureLegendSetsProps> = ({
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === '1');
   const [height, setHeight] = useState(loadHeight);
   const rootRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startY: number; startHeight: number } | null>(null);
 
   useEffect(() => {
@@ -133,64 +135,78 @@ export const FigureLegendSets: FC<FigureLegendSetsProps> = ({
       </button>
 
       {!collapsed && (
-        <div className={styles.setsBody}>
-          <button
-            type="button"
-            className={`${styles.setRow} ${activeSetId === null ? styles.setRowActive : ''}`}
-            onClick={onActivateScratch}
-            title="Live, unsaved arrangement"
-          >
-            <span className={styles.setName}>
-              <em>Working draft</em>
-            </span>
-          </button>
+        <div className={styles.setsScrollRegion}>
+          <div ref={bodyRef} className={styles.setsBody}>
+            <button
+              type="button"
+              className={`${styles.setRow} ${activeSetId === null ? styles.setRowActive : ''}`}
+              onClick={onActivateScratch}
+              title="Live, unsaved arrangement"
+            >
+              <span className={styles.setName}>
+                <em>Working draft</em>
+              </span>
+            </button>
 
-          {sets.map((set) => {
-            const isActive = set.id === activeSetId;
-            return (
-              <div
-                key={set.id}
-                className={`${styles.setRow} ${isActive ? styles.setRowActive : ''}`}
-                onClick={() => editingId !== set.id && onActivateSet(set.id)}
-                onDoubleClick={() => startRename(set)}
-                role="button"
-                tabIndex={0}
-              >
-                {editingId === set.id ? (
-                  <input
-                    ref={inputRef}
-                    className={styles.setNameInput}
-                    value={draftName}
-                    onChange={(e) => setDraftName(e.target.value)}
-                    onBlur={commitRename}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') commitRename();
-                      else if (e.key === 'Escape') setEditingId(null);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ) : (
-                  <span className={styles.setName}>{set.name}</span>
-                )}
-                <button
-                  type="button"
-                  className={styles.setDelete}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteSet(set.id);
-                  }}
-                  title="Delete set"
-                  aria-label="Delete set"
+            {sets.map((set) => {
+              const isActive = set.id === activeSetId;
+              return (
+                <div
+                  key={set.id}
+                  className={`${styles.setRow} ${isActive ? styles.setRowActive : ''}`}
+                  onClick={() => editingId !== set.id && onActivateSet(set.id)}
+                  onDoubleClick={() => startRename(set)}
+                  role="button"
+                  tabIndex={0}
                 >
-                  ×
-                </button>
-              </div>
-            );
-          })}
+                  {editingId === set.id ? (
+                    <input
+                      ref={inputRef}
+                      className={styles.setNameInput}
+                      value={draftName}
+                      onChange={(e) => setDraftName(e.target.value)}
+                      onBlur={commitRename}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitRename();
+                        else if (e.key === 'Escape') setEditingId(null);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <span className={styles.setName}>{set.name}</span>
+                  )}
+                  <button
+                    type="button"
+                    className={styles.setDelete}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteSet(set.id);
+                    }}
+                    title="Delete set"
+                    aria-label="Delete set"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
 
-          <button type="button" className={styles.saveSetButton} onClick={onSaveNewSet}>
-            + Save current as new set
-          </button>
+            <button type="button" className={styles.saveSetButton} onClick={onSaveNewSet}>
+              + Save current as new set
+            </button>
+          </div>
+          <div className={styles.setsScrollbarRegion}>
+            <SimpleCustomScrollbar
+              targetRef={bodyRef}
+              orientation="vertical"
+              marginTop={4}
+              marginBottom={4}
+              marginToEnd={2}
+              classNameTrack={styles.scrollBarTrack}
+              classNameThumb={styles.scrollBarThumb}
+              showOnHover={true}
+            />
+          </div>
         </div>
       )}
     </div>

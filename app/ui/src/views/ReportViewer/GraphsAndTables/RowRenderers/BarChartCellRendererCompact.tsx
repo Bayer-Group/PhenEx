@@ -1,6 +1,7 @@
 import { FC, useState, useRef, useCallback } from 'react';
 import { BooleanRowModal } from '../ModalRenderers/BooleanRowModal';
 import { usePanZoomScale } from '../../../../hooks/PanZoomScaleContext';
+import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { CohortNameTooltip } from './CohortNameTooltip';
 import {
   type BarChartBaseProps,
@@ -28,6 +29,7 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
   const [hover, setHover] = useState<{ index: number; x: number; top: number } | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const barRefs = useRef<Record<number, HTMLDivElement>>({});
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   const openModal = useCallback(() => { if (!isModal) setModalOpen(true); }, [isModal]);
   const closeModal = useCallback(() => setModalOpen(false), []);
@@ -101,7 +103,7 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
       style={{ '--cohort-count': cohortData.length, ...(fillHeight ? { '--fill-label-space': fillLabelSpace } : {}) } as React.CSSProperties}
     >
       {!hideHeader && <BarChartHeader compact />}
-      <div className={styles.compactChartBody}>
+      <div ref={bodyRef} className={styles.compactChartBody}>
         <BarChartGridOverlay lines={COMPACT_GRID_LINES} compact />
         <div className={styles.rows}>
           {flatItems.map((item) =>
@@ -120,6 +122,18 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
           )}
         </div>
       </div>
+
+      {fillHeight && (
+        <SimpleCustomScrollbar
+          targetRef={bodyRef}
+          orientation="vertical"
+          marginTop={hideHeader ? 0 : 'var(--BOOLEAN_COMPACT_HEADER_HEIGHT)'}
+          marginBottom={10}
+          classNameTrack={styles.fillScrollBarTrack}
+          classNameThumb={styles.fillScrollBarThumb}
+          showOnHover
+        />
+      )}
 
       {hover && (
         <CohortNameTooltip
