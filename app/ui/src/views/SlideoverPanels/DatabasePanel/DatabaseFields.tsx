@@ -35,8 +35,8 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode, contentMode = 's
   const cohortDataService = CohortDataService.getInstance();
 
   const getCurrentConfig = () => contentMode === 'cohort'
-    ? (cohortDataService.database_config ?? {})
-    : (studyDataService.database_config ?? {});
+    ? (cohortDataService.database ?? {})
+    : (studyDataService.database ?? {});
 
   const saveConfig = (config: Record<string, any>) => contentMode === 'cohort'
     ? cohortDataService.setCohortDatabaseConfig(config)

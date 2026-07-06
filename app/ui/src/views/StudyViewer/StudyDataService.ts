@@ -63,12 +63,12 @@ export class StudyDataService {
     this._study_data = value;
   }
 
-  public get database_config(): Record<string, any> | null {
-    return this._study_data?.database_config ?? null;
+  public get database(): Record<string, any> | null {
+    return this._study_data?.database ?? null;
   }
 
   public async setDatabaseConfig(config: Record<string, any> | null): Promise<void> {
-    this._study_data.database_config = config;
+    this._study_data.database = config;
     await updateStudyDatabaseConfig(this._study_data.id, config);
   }
 
@@ -103,7 +103,7 @@ export class StudyDataService {
     //   name: 'Name your cohort...',
     //   class_name: 'Cohort',
     //   phenotypes: [],
-    //   database_config: {},
+    //   database: {},
     //   constants: [],
     // };
     // this._cohort_name = this._cohort_data.name;

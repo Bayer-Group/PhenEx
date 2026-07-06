@@ -2622,7 +2622,7 @@ async def save_updated_cohort(
                 "class_name": context.current_cohort["class_name"],
                 "phenotypes": updated_phenotypes,
                 "constants": context.current_cohort.get("constants", []),
-                "database_config": context.current_cohort.get("database_config", {}),
+                "database": context.current_cohort.get("database", {}),
             }
 
             # Verify phenotypes-only format

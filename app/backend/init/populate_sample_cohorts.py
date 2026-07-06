@@ -51,7 +51,7 @@ class SampleCohortsInitializer:
             ),
             "baseline_characteristics": {},
             "outcomes": {},
-            "database_config": {
+            "database": {
                 "mapper": "OMOP",
                 "connector": "mocker",
                 "config": {"n_patients": 25000},
@@ -295,7 +295,7 @@ class SampleCohortsInitializer:
                 description=study_data["description"],
                 baseline_characteristics=study_data.get("baseline_characteristics"),
                 outcomes=study_data.get("outcomes"),
-                database_config=study_data.get("database_config"),
+                database=study_data.get("database"),
                 visible_by=[],
                 is_public=True,
             )

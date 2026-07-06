@@ -86,9 +86,9 @@ export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   }
 };
 
-export const updateCohortDatabaseConfig = async (cohort_id: string, database_config: Record<string, any> | null) => {
+export const updateCohortDatabaseConfig = async (cohort_id: string, database: Record<string, any> | null) => {
   try {
-    const response = await api.patch('/cohort/database_config', { database_config }, {
+    const response = await api.patch('/cohort/database', { database }, {
       params: { cohort_id },
     });
     return response.data;
@@ -326,9 +326,9 @@ export const createDemoStudy = async (): Promise<{ study_id: string }> => {
   }
 };
 
-export const updateStudyDatabaseConfig = async (study_id: string, database_config: Record<string, any> | null) => {
+export const updateStudyDatabaseConfig = async (study_id: string, database: Record<string, any> | null) => {
   try {
-    const response = await api.patch('/study/database_config', { database_config }, {
+    const response = await api.patch('/study/database', { database }, {
       params: { study_id },
     });
     return response.data;

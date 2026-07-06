@@ -35,7 +35,7 @@ export class CohortExecutionService {
       const response = await executeStudy(
         {
           cohort: cohortForExecution,
-          database_config: databaseConfig,
+          database: databaseConfig,
         },
         (message: string, type: 'log' | 'error' | 'result' | 'complete') => {
           // Handle streaming messages

@@ -271,26 +271,26 @@ async def create_or_update_cohort(
         raise HTTPException(status_code=500, detail="Failed to create/update cohort.")
 
 
-@router.patch("/cohort/database_config", tags=["cohort"])
-async def update_cohort_database_config(
+@router.patch("/cohort/database", tags=["cohort"])
+async def update_cohort_database(
     request: Request,
     cohort_id: str,
     body: Dict = Body(...),
 ):
     """
-    Update the database_config column for a cohort (cohort-level override).
+    Update the database column for a cohort (cohort-level override).
 
     Query Parameters:
     - cohort_id (str): The unique identifier of the cohort.
 
     Request Body:
-    - database_config (dict | null): The database configuration object, or null to clear it.
+    - database (dict | null): The database configuration object, or null to clear it.
     """
     user_id = get_authenticated_user_id(request)
-    database_config = body.get("database_config")
+    database = body.get("database")
     try:
-        success = await db_manager.update_cohort_database_config(
-            user_id, cohort_id, database_config
+        success = await db_manager.update_cohort_database(
+            user_id, cohort_id, database
         )
         if not success:
             raise HTTPException(status_code=404, detail=f"Cohort {cohort_id} not found")
@@ -298,8 +298,8 @@ async def update_cohort_database_config(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update database_config for cohort {cohort_id}: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update database_config.")
+        logger.error(f"Failed to update database for cohort {cohort_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update database.")
 
 
 @router.delete("/cohort", tags=["cohort"])

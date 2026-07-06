@@ -355,7 +355,7 @@ async def create_or_update_study(
             description=study.get("description", ""),
             baseline_characteristics=study.get("baseline_characteristics", {}),
             outcomes=study.get("outcomes", {}),
-            database_config=study.get("database_config"),
+            database=study.get("database"),
             visible_by=study.get("visible_by", []),
             is_public=study.get("is_public", False),
         )
@@ -491,26 +491,26 @@ async def update_study_display_order(
         )
 
 
-@router.patch("/study/database_config", tags=["study"])
-async def update_study_database_config(
+@router.patch("/study/database", tags=["study"])
+async def update_study_database(
     request: Request,
     study_id: str,
     body: Dict = Body(...),
 ):
     """
-    Update the database_config column for a study.
+    Update the database column for a study.
 
     Query Parameters:
     - study_id (str): The unique identifier of the study.
 
     Request Body:
-    - database_config (dict | null): The database configuration object, or null to clear it.
+    - database (dict | null): The database configuration object, or null to clear it.
     """
     user_id = get_authenticated_user_id(request)
-    database_config = body.get("database_config")
+    database = body.get("database")
     try:
-        success = await db_manager.update_study_database_config(
-            user_id, study_id, database_config
+        success = await db_manager.update_study_database(
+            user_id, study_id, database
         )
         if not success:
             raise HTTPException(status_code=404, detail=f"Study {study_id} not found")
@@ -518,8 +518,8 @@ async def update_study_database_config(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update database_config for study {study_id}: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update database_config.")
+        logger.error(f"Failed to update database for study {study_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update database.")
 
 
 @router.get("/study/cohorts", tags=["study"])

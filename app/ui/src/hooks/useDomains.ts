@@ -5,7 +5,7 @@ import { StudyDataService } from '../views/StudyViewer/StudyDataService';
 /**
  * Custom hook to load and manage domain information based on the current mapper configuration.
  * 
- * This hook fetches the mapper from the StudyDataService (study-level database_config) and
+ * This hook fetches the mapper from the StudyDataService (study-level database) and
  * returns the corresponding domains from the MapperDomains configuration.
  * 
  * @returns {Object} Object containing:
@@ -21,7 +21,7 @@ export const useDomains = () => {
 
   useEffect(() => {
     const loadDomains = () => {
-      const currentMapper = studyDataService.database_config?.mapper as Mapper;
+      const currentMapper = studyDataService.database?.mapper as Mapper;
       
       if (currentMapper && currentMapper in MapperDomains) {
         setMapper(currentMapper);

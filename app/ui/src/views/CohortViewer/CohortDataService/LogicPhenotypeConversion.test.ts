@@ -75,7 +75,7 @@ const mockCohort = {
   name: 'Test Cohort',
   class_name: 'Cohort',
   phenotypes: [...mockPhenotypes, uiLogicPhenotype],
-  database_config: {},
+  database: {},
   constants: []
 };
 
