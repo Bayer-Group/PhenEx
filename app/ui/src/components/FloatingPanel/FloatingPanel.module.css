@@ -1,6 +1,8 @@
 .panel {
   position: fixed;
-  z-index: 10000;
+  /* Sit below the popup-portal layer (DraggablePortal/tooltips use 9999) so
+     popups launched from inside a floated panel appear above it. */
+  z-index: 9000;
   display: flex;
   flex-direction: column;
   min-width: 0;

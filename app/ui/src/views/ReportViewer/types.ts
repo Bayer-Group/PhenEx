@@ -333,6 +333,32 @@ export interface CohortDescriptionEntry {
 
 export type CohortDescriptions = Record<string, CohortDescriptionEntry>;
 
+/**
+ * Resolve the human-readable parent/sub label parts for a cohort name.
+ *
+ * Cohort names follow the convention `parentName__subName`; cohorts without
+ * `__` are top-level cohorts with no sub-label.
+ *
+ * @param cohortName    Full cohort directory name (may contain `__`).
+ * @param getDisplayName  Function mapping a raw name to its display override,
+ *                        or `undefined` when no override exists.
+ */
+export function getCohortLabelParts(
+  cohortName: string,
+  getDisplayName: (name: string) => string | null | undefined,
+): { parent: string; sub: string | null } {
+  const idx = cohortName.indexOf('__');
+  if (idx === -1) {
+    return { parent: getDisplayName(cohortName) || cohortName, sub: null };
+  }
+  const parentName = cohortName.substring(0, idx);
+  const subName = cohortName.substring(idx + 2);
+  return {
+    parent: getDisplayName(parentName) || parentName,
+    sub: getDisplayName(cohortName) || subName,
+  };
+}
+
 /* ── Reports ───────────────────────────────────────────────────────── */
 
 export interface ReportRow {

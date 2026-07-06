@@ -1,5 +1,5 @@
 import { FC, useRef, useState, useLayoutEffect } from 'react';
-import { type CohortClassified } from '../../types';
+import { type CohortClassified, getCohortLabelParts } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { NumericChartFrame } from './NumericChartFrame';
 import { BoxPlotModal } from '../ModalRenderers/BoxPlotModal';
@@ -155,16 +155,11 @@ interface CohortLabel {
 function getCohortLabel(cohortData: CohortClassified[], index: number): CohortLabel {
   const cohort = cohortData[index];
   if (!cohort) return { parent: '', sub: null, color: '' };
-  const name = cohort.name;
-  const idx = name.indexOf('__');
-  if (idx === -1) return { parent: cohort.displayName || name, sub: null, color: cohort.color };
-  const parentName = name.substring(0, idx);
-  const parent = cohortData.find((c) => c.name === parentName);
-  return {
-    parent: parent?.displayName || parentName,
-    sub: cohort.displayName || name.substring(idx + 2),
-    color: parent?.color || cohort.color,
-  };
+  const getDisplayName = (n: string) => cohortData.find((c) => c.name === n)?.displayName;
+  const { parent, sub } = getCohortLabelParts(cohort.name, getDisplayName);
+  const parentIdx = cohort.name.indexOf('__');
+  const parentCohort = parentIdx !== -1 ? cohortData.find((c) => c.name === cohort.name.substring(0, parentIdx)) : null;
+  return { parent, sub, color: parentCohort?.color ?? cohort.color };
 }
 
 interface BoxStats {

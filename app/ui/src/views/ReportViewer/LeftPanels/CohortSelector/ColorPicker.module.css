@@ -10,6 +10,7 @@
   border-radius: 10px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
   font-family: "IBMPlexSans-regular", sans-serif;
+  z-index: 100000;
 }
 
 .header {

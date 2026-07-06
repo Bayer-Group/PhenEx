@@ -7,6 +7,7 @@ import {
   isSpacer,
   isCohortSelection,
   SPACER_SIZES,
+  getCohortLabelParts,
   type LegendItem,
   type LegendSelection,
   type LegendSpacer,
@@ -24,11 +25,14 @@ interface FigureLegendProps {
   isFloating?: boolean;
 }
 
-function getLabel(sel: LegendSelection, cohortDescriptions?: CohortDescriptions): string {
-  const dn = cohortDescriptions?.[sel.cohortName]?.display_name;
-  if (dn) return dn;
-  const idx = sel.cohortName.indexOf('__');
-  return idx === -1 ? 'Main Cohort' : sel.cohortName.substring(idx + 2);
+function getLabelParts(
+  sel: LegendSelection,
+  cohortDescriptions?: CohortDescriptions,
+): { parent: string; sub: string | null } {
+  return getCohortLabelParts(
+    sel.cohortName,
+    (name) => cohortDescriptions?.[name]?.display_name,
+  );
 }
 
 function makeSpacerId(): string {
@@ -48,7 +52,7 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
     (cohortName: string): ColorUsage[] =>
       items.flatMap((it) =>
         isCohortSelection(it) && it.cohortName !== cohortName
-          ? [{ color: getSelectionColor(it, colorOverrides), cohortLabel: getLabel(it, cohortDescriptions) }]
+          ? [{ color: getSelectionColor(it, colorOverrides), cohortLabel: getLabelParts(it, cohortDescriptions).parent }]
           : [],
       ),
     [items, colorOverrides, cohortDescriptions],
@@ -203,7 +207,7 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
               }
 
               const color = getSelectionColor(item, colorOverrides);
-              const label = getLabel(item, cohortDescriptions);
+              const { parent, sub } = getLabelParts(item, cohortDescriptions);
               const isDragging = dragIndexRef.current === i;
               return (
                 <div key={item.cohortName} className={styles.rowWrapper}>
@@ -226,7 +230,10 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
                         usedColors={usedColorsFor(item.cohortName)}
                       />
                     </div>
-                    <span className={styles.label}>{label}</span>
+                    <div className={styles.labelContainer}>
+                      <span className={styles.labelParent}>{parent}</span>
+                      <span className={styles.labelSub}>{sub ?? 'main cohort'}</span>
+                    </div>
                     {dragHandle}
                   </div>
                 </div>
@@ -242,7 +249,9 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
           <SimpleCustomScrollbar
             targetRef={scrollRef}
             orientation="vertical"
-            marginToEnd={0}
+            marginTop={10}
+            marginBottom={10}
+            marginToEnd={10}
             classNameTrack={styles.scrollBarTrack}
             classNameThumb={styles.scrollBarThumb}
             showOnHover={true}
