@@ -8,10 +8,17 @@
   overflow: hidden;
 }
 
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px 8px 14px;
+}
+
 .hint {
   font-size: var(--font_size_infotext, 11px);
   color: var(--text_color_notfocus, #aaa);
-  padding: 0 4px 8px 14px;
 }
 
 .scrollRegion {

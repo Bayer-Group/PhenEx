@@ -1,4 +1,4 @@
-import { FC, useState, useCallback, useRef } from 'react';
+import { FC, useState, useCallback, useRef, useMemo } from 'react';
 import { LegendDot } from '../CohortSelector/LegendDot';
 import { type ColorUsage } from '../CohortSelector/ColorPicker';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
@@ -6,6 +6,7 @@ import {
   getSelectionColor,
   isSpacer,
   isCohortSelection,
+  generateGroupColors,
   SPACER_SIZES,
   getCohortLabelParts,
   type LegendItem,
@@ -13,7 +14,9 @@ import {
   type LegendSpacer,
   type CohortDescriptions,
   type ColorOverrides,
+  type GroupColorConfig,
 } from '../../types';
+import { FigureLegendControls } from './FigureLegendControls';
 import { FigureLegendSets } from './FigureLegendSets';
 import { useFigureLegendSets, type FigureLegendSetData } from './figureLegendSetStore';
 import styles from './FigureLegend.module.css';
@@ -79,6 +82,41 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
     },
     [onSetColor, activeSetId, sets, colorOverrides, items],
   );
+
+  // Apply a two-tone ramp across every currently selected cohort at once. The
+  // number of generated colors equals the number of selected cohorts, and each
+  // color is assigned in display order. Unlike the cohort selector's group
+  // action (which ramps a single cohort's subcohorts), this spans all cohorts.
+  const handleApplyGroupColor = useCallback(
+    (config: GroupColorConfig) => {
+      const cohortItems = items.filter(isCohortSelection);
+      if (cohortItems.length === 0) return;
+      const colors = generateGroupColors(config, cohortItems.length);
+      const nextOverrides = { ...(colorOverrides ?? {}) };
+      cohortItems.forEach((it, i) => {
+        nextOverrides[it.cohortName] = colors[i];
+      });
+      if (onReplaceColorOverrides) onReplaceColorOverrides(nextOverrides);
+      else cohortItems.forEach((it, i) => onSetColor?.(it.cohortName, colors[i]));
+      if (activeSetId) sets.updateSetData(activeSetId, { items, colorOverrides: nextOverrides });
+    },
+    [items, colorOverrides, onReplaceColorOverrides, onSetColor, activeSetId, sets],
+  );
+
+  // Seed the group picker from the first and last selected cohort's effective
+  // colors so reopening it reflects the current ramp.
+  const groupColorValue = useMemo<GroupColorConfig | undefined>(() => {
+    const cohortItems = items.filter(isCohortSelection);
+    if (cohortItems.length === 0) return undefined;
+    const toRgb = (c: string) => c.replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)[^)]*\)/, 'rgb($1, $2, $3)');
+    const first = cohortItems[0];
+    const last = cohortItems[cohortItems.length - 1];
+    return {
+      mode: 'two-color',
+      startColor: toRgb(getSelectionColor(first, colorOverrides)),
+      endColor: last !== first ? toRgb(getSelectionColor(last, colorOverrides)) : undefined,
+    };
+  }, [items, colorOverrides]);
 
   // Build the "used colors" list for a given cohort's picker: every other
   // cohort's effective color, so the picker can blur out taken colors.
@@ -245,7 +283,14 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
     <div className={styles.container}>
       <div className={styles.scrollRegion}>
         <div ref={scrollRef} className={styles.scrollContent}>
-          <div className={styles.hint}>Drag to reorder</div>
+          <div className={styles.headerRow}>
+            <span className={styles.hint}>Drag to reorder</span>
+            <FigureLegendControls
+              colorValue={groupColorValue}
+              onApplyColor={handleApplyGroupColor}
+              disabled={!onSetColor && !onReplaceColorOverrides}
+            />
+          </div>
           <div
             ref={cardRef}
             className={`${styles.card}${isFloating ? ` ${styles.cardFloating}` : ''}`}
