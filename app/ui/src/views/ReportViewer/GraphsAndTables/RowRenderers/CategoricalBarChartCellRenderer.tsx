@@ -1,4 +1,4 @@
-import { FC, useMemo, useRef } from 'react';
+import { FC, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type CohortClassified } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
@@ -99,6 +99,10 @@ const HorizontalChart: FC<{
 
 const MIN_GROUP_WIDTH_PX = 40;
 const MIN_BAR_WIDTH_PX = 8;
+// Must stay in sync with `.vBar { max-width }` and `.vGroup { padding }` / `.vGroup { gap }` in the CSS module.
+const MAX_BAR_WIDTH_PX = 16;
+const GROUP_PADDING_PX = 16; // 8px left + 8px right
+const BAR_GAP_PX = 1;
 
 const VerticalChart: FC<{
   categories: CategoryData[];
@@ -107,10 +111,24 @@ const VerticalChart: FC<{
   const ceiling = 100;
   const ticks = [0, 20, 40, 60, 80, 100];
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [availableWidth, setAvailableWidth] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setAvailableWidth(entry.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const cohortCount = categories[0]?.values.length ?? 1;
   const groupMinWidth = Math.max(MIN_GROUP_WIDTH_PX, cohortCount * MIN_BAR_WIDTH_PX);
   const minChartWidth = categories.length * groupMinWidth;
+  // Width at which every bar reaches its max width — bars stop growing past this point.
+  const groupMaxWidth = cohortCount * MAX_BAR_WIDTH_PX + (cohortCount - 1) * BAR_GAP_PX + GROUP_PADDING_PX;
+  const maxChartWidth = categories.length * groupMaxWidth;
+  // Fill the available width (growing bars up to their max); scroll once even the min width overflows.
+  const innerWidth = Math.min(maxChartWidth, Math.max(minChartWidth, availableWidth));
 
   return (
     <div className={styles.vSizer}>
@@ -130,7 +148,7 @@ const VerticalChart: FC<{
         <div ref={scrollRef} className={styles.vScrollArea}>
           <div
             className={styles.vScrollInner}
-            style={{ minWidth: minChartWidth, ['--group-min-width' as string]: `${groupMinWidth}px` }}
+            style={{ width: innerWidth, ['--group-min-width' as string]: `${groupMinWidth}px` }}
           >
             <div className={styles.vChartArea}>
               {ticks.map((t) => (

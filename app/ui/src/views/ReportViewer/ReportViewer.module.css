@@ -314,11 +314,11 @@
 /* Tab bar gutter: dark background, no border-bottom */
 :global(.flexlayout__tabset_tabbar_outer) {
   background-color: var(--background_color_dark) !important;
-  border-bottom: var(--border) !important;
+  /* border-bottom: var(--border) !important; */
   border-top: var(--border) !important;
 
-  padding-bottom: 5px;
-  padding-top: 5px;
+  padding-bottom: 0px;
+  padding-top: 0px;
 }
 :global(.flexlayout__tabset_tabbar_outer_top) {
   border-bottom: none;

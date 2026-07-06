@@ -140,13 +140,13 @@
 }
 
 /* Sets the scrollable width; column so plot sits above the label row.
-   min-width (set inline) is at least the container width; content may grow wider → scrolls. */
+   width is set inline: it fills the available width (growing bars up to their
+   max width) and only exceeds the container — triggering horizontal scroll —
+   once the min chart width no longer fits. */
 .vScrollInner {
   display: flex;
   flex-direction: column;
   height: 100%;
-  /* Grow to fit all groups (label row in normal flow drives this); inline min-width is the floor */
-  width: max-content;
 }
 
 .vChartArea {
@@ -203,6 +203,11 @@
   min-width: var(--group-min-width, 48px);
   padding: 0 8px;
   box-sizing: border-box;
+}
+
+/* Vertical separator between categories, matching the horizontal grid lines */
+.vGroup:not(:first-child) {
+  border-left: 1px solid rgba(224, 224, 224, 0.5);
 }
 
 .vBar {
