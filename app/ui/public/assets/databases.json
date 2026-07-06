@@ -1,5 +1,14 @@
 [
     {
+        "database": "MOCKER",
+        "mapper": "OMOP",
+        "connector": "mocker",
+        "n_patients": 25000,
+        "schemas": [
+            "25000 patients"
+        ]
+    },
+    {
         "database": "OPTUM_EHR_CKD",
         "mapper": "Optum EHR",
         "schemas": [

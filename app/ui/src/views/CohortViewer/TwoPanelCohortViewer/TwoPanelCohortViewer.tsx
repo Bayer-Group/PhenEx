@@ -6,6 +6,7 @@ import { CohortViewType } from '../CohortViewer';
 import { CodelistsViewer } from '../../SlideoverPanels/CodelistsViewer/CodelistsViewer';
 import { CohortReportView } from '../../SlideoverPanels/CohortReportView/CohortReportView';
 import { ExecutePanel } from '../../SlideoverPanels/ExecutePanel/ExecutePanel';
+import { StudyExecutePanel } from '../../SlideoverPanels/StudyExecutePanel/StudyExecutePanel';
 import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel';
 import { ConstantsPanel } from '../../SlideoverPanels/ConstantsPanel/ConstantsPanel';
 import { VisibilityPanel } from '../../SlideoverPanels/VisibilityPanel/VisibilityPanel';
@@ -383,7 +384,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     if (viewType === 'phenotype') {
       return <PhenotypePanel data={extraData} />;
     } else if (viewType === 'execute') {
-      return <ExecutePanel />;
+      return contentMode === 'study' ? <StudyExecutePanel /> : <ExecutePanel />;
     } else if (viewType === 'database') {
       return <DatabasePanel />;
     } else if (viewType === 'constants') {

@@ -46,6 +46,16 @@
   transform: scale(0.95);
 }
 
+.deleteButton {
+  color: var(--color_danger, #e05252);
+}
+
+.deleteButton:hover {
+  background: var(--color_danger, #e05252) !important;
+  border-color: var(--color_danger, #e05252) !important;
+  color: white !important;
+}
+
 .addMenuTabsContainer {
   background-color: transparent !important;
   border: none !important;

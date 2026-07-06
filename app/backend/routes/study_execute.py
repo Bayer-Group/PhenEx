@@ -190,7 +190,7 @@ async def execute_study(request: Request):
 
                 px_study = Study(
                     path=artifacts_dir,
-                    name=study_id,
+                    name=study.get("name", study_id),
                     cohorts=px_cohorts,
                     description=study.get("description", ""),
                 )
@@ -380,3 +380,56 @@ async def get_study_report(request: Request, study_id: str):
     with open(report_path, "r", encoding="utf-8") as f:
         content = f.read()
     return HTMLResponse(content=content)
+
+
+@router.get("/study/{study_id}/execution/{execution_id}/report", tags=["study"])
+async def get_execution_report(request: Request, study_id: str, execution_id: str):
+    """Return the index.html report for a specific execution."""
+    user_id = get_authenticated_user_id(request)
+    executions = await db_manager.get_study_executions(study_id, user_id)
+    exec_record = next((e for e in executions if e["execution_id"] == execution_id), None)
+    if not exec_record or not exec_record.get("manifest_path"):
+        raise HTTPException(status_code=404, detail="Execution not found")
+
+    exec_dir = os.path.dirname(exec_record["manifest_path"])
+    report_path = os.path.join(exec_dir, "index.html")
+    if not os.path.isfile(report_path):
+        raise HTTPException(status_code=404, detail="Report not found for this execution")
+
+    with open(report_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    return HTMLResponse(content=content)
+
+
+@router.get("/study/{study_id}/execution/{execution_id}/log", tags=["study"])
+async def get_execution_log(request: Request, study_id: str, execution_id: str):
+    """Return the analysis.log for a specific execution as plain text."""
+    user_id = get_authenticated_user_id(request)
+    executions = await db_manager.get_study_executions(study_id, user_id)
+    exec_record = next((e for e in executions if e["execution_id"] == execution_id), None)
+    if not exec_record or not exec_record.get("manifest_path"):
+        raise HTTPException(status_code=404, detail="Execution not found")
+
+    exec_dir = os.path.dirname(exec_record["manifest_path"])
+    log_path = os.path.join(exec_dir, "analysis.log")
+    if not os.path.isfile(log_path):
+        raise HTTPException(status_code=404, detail="Log not found for this execution")
+
+    with open(log_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(content=content)
+
+
+@router.delete("/study/{study_id}/execution/{execution_id}", tags=["study"])
+async def delete_execution(request: Request, study_id: str, execution_id: str):
+    """Delete a study execution record and its artifact directory."""
+    user_id = get_authenticated_user_id(request)
+    result = await db_manager.delete_study_execution(execution_id, user_id)
+    manifest_path = result.get("manifest_path")
+    if manifest_path:
+        exec_dir = os.path.dirname(manifest_path)
+        if os.path.isdir(exec_dir):
+            import shutil
+            shutil.rmtree(exec_dir)
+    return {"deleted": True}

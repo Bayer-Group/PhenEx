@@ -10,10 +10,11 @@ interface CohortCardActionsProps {
   studyDataService: any;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  onDeleteCohort?: () => void;
 }
 
 export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsProps>(
-  ({ cohortId, studyDataService, onMouseEnter, onMouseLeave }, ref) => {
+  ({ cohortId, studyDataService, onMouseEnter, onMouseLeave, onDeleteCohort }, ref) => {
     const { isOpen: isAddMenuOpen, open: openAddMenu, close: closeAddMenu } = useNavBarMenu('cohort-card-add');
     const { isOpen: isOptionsMenuOpen, open: openOptionsMenu, close: closeOptionsMenu } = useNavBarMenu('cohort-card-options');
     const addButtonRef = useRef<HTMLButtonElement>(null);
@@ -109,6 +110,29 @@ export const CohortCardActions = forwardRef<HTMLDivElement, CohortCardActionsPro
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
         </button>
+
+        {onDeleteCohort && (
+          <button
+            className={`${styles.actionButton} ${styles.deleteButton}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteCohort();
+            }}
+            title="Delete cohort"
+            style={{
+              width: 'var(--dynamic-button-size)',
+              height: 'var(--dynamic-button-size)',
+              fontSize: 'var(--dynamic-font-size)',
+            }}
+          >
+            <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6M14 11v6" />
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+            </svg>
+          </button>
+        )}
 
         {/* <button
           ref={optionsButtonRef}

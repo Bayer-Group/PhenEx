@@ -23,6 +23,7 @@ interface CohortCardLightWeightProps {
   isScrolling: boolean;
   isShiftPressed: boolean;
   isCommandPressed: boolean;
+  onDeleteCohort?: (cohortDef: CohortWithTableData) => void;
 }
 
 export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React.memo(({
@@ -35,6 +36,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   isScrolling,
   isShiftPressed,
   isCommandPressed,
+  onDeleteCohort,
 }) => {
   const { isReportMode } = useReportMode();
   const [isHovered, setIsHovered] = useState(false);
@@ -502,6 +504,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
               studyDataService={studyDataService}
               onMouseEnter={handleActionsMouseEnter}
               onMouseLeave={handleActionsMouseLeave}
+              onDeleteCohort={onDeleteCohort ? () => onDeleteCohort(cohortDef) : undefined}
             />
           )}
         </div>

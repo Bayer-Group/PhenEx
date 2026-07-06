@@ -247,8 +247,8 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode }) => {
         const newMapper = dbConfig.mapper;
         setSelectedMapper(newMapper);
         
-        // Set connector to Snowflake
-        const newConnector = 'Snowflake';
+        // Set connector based on the database config (default to Snowflake)
+        const newConnector = dbConfig.connector || 'Snowflake';
         setSelectedConnector(newConnector);
         
         // Set destination database if not already set
@@ -270,34 +270,49 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode }) => {
       setSelectedSchema(schemaName);
       
       if (selectedDatabase && schemaName) {
-        // Set the sourceDb as database.schema
-        const sourceDb = `${selectedDatabase}.${schemaName}`;
-        
-        // Set destination database if not already set
-        const destinationDb = snowflakeConfig.destinationDb || createDefaultDestinationDb();
+        const dbConfig = databasesData.find(db => db.database === selectedDatabase);
+        const connectorForDb = dbConfig?.connector || 'Snowflake';
 
-        setSnowflakeConfig(prev => ({
-          ...prev,
-          sourceDb: sourceDb,
-          destinationDb: destinationDb
-        }));
-        
-        // Save both source and destination database
-        const databaseConfig = {
-          mapper: selectedMapper,
-          connector: selectedConnector,
-          config: {
-            source_database: sourceDb,
-            destination_database: destinationDb,
-            user: snowflakeConfig.user,
-            account: snowflakeConfig.account,
-            warehouse: snowflakeConfig.warehouse,
-            role: snowflakeConfig.role,
-            password: snowflakeConfig.password,
-          },
-        };
-        
-        dataService.setDatabaseSettings(databaseConfig);
+        if (connectorForDb === 'mocker') {
+          // Mocker connector: save a minimal config with n_patients
+          const databaseConfig = {
+            mapper: selectedMapper,
+            connector: 'mocker',
+            config: {
+              n_patients: dbConfig?.n_patients || 25000,
+            },
+          };
+          dataService.setDatabaseSettings(databaseConfig);
+        } else {
+          // Set the sourceDb as database.schema
+          const sourceDb = `${selectedDatabase}.${schemaName}`;
+          
+          // Set destination database if not already set
+          const destinationDb = snowflakeConfig.destinationDb || createDefaultDestinationDb();
+
+          setSnowflakeConfig(prev => ({
+            ...prev,
+            sourceDb: sourceDb,
+            destinationDb: destinationDb
+          }));
+          
+          // Save both source and destination database
+          const databaseConfig = {
+            mapper: selectedMapper,
+            connector: selectedConnector,
+            config: {
+              source_database: sourceDb,
+              destination_database: destinationDb,
+              user: snowflakeConfig.user,
+              account: snowflakeConfig.account,
+              warehouse: snowflakeConfig.warehouse,
+              role: snowflakeConfig.role,
+              password: snowflakeConfig.password,
+            },
+          };
+          
+          dataService.setDatabaseSettings(databaseConfig);
+        }
       }
     };
 

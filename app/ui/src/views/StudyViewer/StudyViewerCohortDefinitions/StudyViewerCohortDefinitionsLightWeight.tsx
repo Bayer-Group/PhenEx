@@ -584,6 +584,7 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
             isShiftPressed={isShiftPressed}
             isCommandPressed={isCommandPressed}
             zoomScale={currentTransform.current.scale}
+            onDeleteCohort={setDeleteConfirmCohort}
           />
         </div>
       </div>
@@ -614,6 +615,7 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
                 if (deleteConfirmCohort) {
                   await deleteCohort(deleteConfirmCohort.cohort.id);
                   setDeleteConfirmCohort(null);
+                  await studyDataService.refreshStudyData();
                 }
               }}>
                 Delete Cohort

@@ -1862,4 +1862,27 @@ class DatabaseManager:
 
 
 # Global instance
+    async def delete_study_execution(self, execution_id: str, user_id: str) -> Dict:
+        """Delete an execution record and return its manifest_path so the caller can clean up files."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            row = await conn.fetchrow(
+                """
+                DELETE FROM study_execution
+                WHERE execution_id = $1 AND user_id = $2
+                RETURNING manifest_path
+                """,
+                execution_id,
+                user_id,
+            )
+            return {"manifest_path": row["manifest_path"] if row else None}
+        except Exception as e:
+            logger.error(f"Failed to delete study execution {execution_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+
 db_manager = DatabaseManager()

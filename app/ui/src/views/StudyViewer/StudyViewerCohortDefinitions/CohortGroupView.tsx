@@ -14,6 +14,7 @@ interface CohortGroupViewProps {
   isShiftPressed: boolean;
   isCommandPressed: boolean;
   zoomScale: number;
+  onDeleteCohort?: (cohortDef: CohortWithTableData) => void;
 }
 
 // Memoized view component to prevent re-renders during zoom/pan
@@ -28,6 +29,7 @@ export const CohortGroupView = React.memo<CohortGroupViewProps>(({
   isShiftPressed,
   isCommandPressed,
   zoomScale,
+  onDeleteCohort,
 }) => {
   return (
     <div
@@ -60,6 +62,7 @@ export const CohortGroupView = React.memo<CohortGroupViewProps>(({
                 isScrolling={isScrolling}
                 isShiftPressed={isShiftPressed}
                 isCommandPressed={isCommandPressed}
+                onDeleteCohort={onDeleteCohort}
             />
           </div>
         );

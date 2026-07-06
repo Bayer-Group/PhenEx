@@ -388,3 +388,32 @@ export const generateStudyReport = async (
     throw error;
   }
 };
+
+export const getStudyExecutions = async (studyId: string): Promise<any[]> => {
+  try {
+    const response = await api.get(`/study/${studyId}/executions`);
+    return response.data;
+  } catch (error) {
+    console.error('Error in getStudyExecutions:', error);
+    throw error;
+  }
+};
+
+export const getExecutionReport = async (studyId: string, executionId: string): Promise<string> => {
+  const resp = await authFetch(`${BACKEND_URL}/study/${studyId}/execution/${executionId}/report`);
+  if (!resp.ok) throw new Error(`${resp.status}`);
+  return resp.text();
+};
+
+export const getExecutionLog = async (studyId: string, executionId: string): Promise<string> => {
+  const resp = await authFetch(`${BACKEND_URL}/study/${studyId}/execution/${executionId}/log`);
+  if (!resp.ok) throw new Error(`${resp.status}`);
+  return resp.text();
+};
+
+export const deleteExecution = async (studyId: string, executionId: string): Promise<void> => {
+  const resp = await authFetch(`${BACKEND_URL}/study/${studyId}/execution/${executionId}`, {
+    method: 'DELETE',
+  });
+  if (!resp.ok) throw new Error(`${resp.status}`);
+};
