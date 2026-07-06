@@ -1004,8 +1004,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         <FloatingPanel
           key={component}
           title={LEFT_PANEL_TITLES[component] ?? component}
-          initialX={140 + i * 32}
-          initialY={120 + i * 32}
+          initialX={window.innerWidth - 250 - 40 - i * 32}
+          initialY={30}
           onClose={() => dockComponent(component)}
           // The legend provides its own dock control in its top-right actions.
           showDockButton={component !== 'figureLegend'}

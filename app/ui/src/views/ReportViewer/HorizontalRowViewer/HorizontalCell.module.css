@@ -138,7 +138,7 @@
 }
 
 .scrollBarThumb {
-  background-color: rgba(101, 96, 96, 0.2) !important;
+  background-color: rgba(0, 0, 0, 0.2) !important;
   width: 10px;
 }
 

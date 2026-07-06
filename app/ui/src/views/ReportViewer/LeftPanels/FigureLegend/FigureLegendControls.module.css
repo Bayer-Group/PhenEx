@@ -30,6 +30,10 @@
   cursor: default;
 }
 
+.controlButton:focus{
+    outline: none;
+}
+
 .controlIcon {
   width: 14px;
   height: 14px;

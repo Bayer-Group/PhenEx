@@ -51,16 +51,18 @@ export const LegendRow: FC<LegendRowProps> = ({
         <span className={styles.labelParent}>{parent}</span>
         <span className={styles.labelSub}>{sub ?? 'main cohort'}</span>
       </div>
-      <button
-        type="button"
-        className={styles.removeButton}
-        onClick={onRemove}
-        title="Remove cohort"
-        aria-label="Remove cohort"
-      >
-        ×
-      </button>
-      <DragHandle className={styles.dragHandle} />
+      <div className={styles.actions}>
+        <button
+          type="button"
+          className={styles.removeButton}
+          onClick={onRemove}
+          title="Remove cohort"
+          aria-label="Remove cohort"
+        >
+          ×
+        </button>
+        <DragHandle className={styles.dragHandle} />
+      </div>
     </div>
   </div>
 );

@@ -141,8 +141,8 @@
 
 .navPillContainer {
   position: absolute;
-  bottom: 10%;
-  right: 10%;
+  bottom: 30px;
+  right: 155px;
   z-index: 10;
 }
 
@@ -157,9 +157,16 @@
   box-shadow: 0 4px 16px var(--background_color_dark);
   padding: 0 4px;
   transition: transform 0.15s, box-shadow 0.15s;
+
+  background: hsl(30, 60%, 94%, 0.8);
+  border: 2px solid var(--line-color);
+  border-radius: 15px;
+  box-shadow: 0 8px 30px hsl(30, 18%, 80%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .navPill:hover{
-  transform: scale(1.3);
+  transform: scale(1.05);
 }
 
 .navArrow {

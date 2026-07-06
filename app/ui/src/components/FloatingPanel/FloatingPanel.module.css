@@ -6,11 +6,15 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: var(--background_color_light, #f9f9f9);
-  border: 2px solid var(--line-color);
-  border-radius: 15px;
-  box-shadow: 0 8px 30px hsl(30, 18%, 80%);
   overflow: hidden;
+
+    background: hsl(30, 60%, 94%, 0.8);
+    border: 2px solid var(--line-color);
+    border-radius: 15px;
+    box-shadow: 0 8px 30px hsl(30, 18%, 80%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
 }
 
 .header {
