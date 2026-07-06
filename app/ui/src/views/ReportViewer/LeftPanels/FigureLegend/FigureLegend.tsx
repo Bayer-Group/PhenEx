@@ -32,6 +32,8 @@ interface FigureLegendProps {
   /** Run this legend belongs to; enables saved legend sets when provided. */
   runId?: string;
   isFloating?: boolean;
+  /** Pop the legend out to (or dock it back from) a floating window. */
+  onToggleFloat?: () => void;
 }
 
 function getLabelParts(
@@ -48,7 +50,7 @@ function makeSpacerId(): string {
   return `spacer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDescriptions, colorOverrides, onSetColor, onReplaceColorOverrides, runId, isFloating }) => {
+export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDescriptions, colorOverrides, onSetColor, onReplaceColorOverrides, runId, isFloating, onToggleFloat }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const dragIndexRef = useRef<number | null>(null);
@@ -289,6 +291,8 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
               colorValue={groupColorValue}
               onApplyColor={handleApplyGroupColor}
               disabled={!onSetColor && !onReplaceColorOverrides}
+              isFloating={isFloating}
+              onToggleFloat={onToggleFloat}
             />
           </div>
           <div

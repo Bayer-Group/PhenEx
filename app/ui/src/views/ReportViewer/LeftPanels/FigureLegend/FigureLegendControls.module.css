@@ -36,6 +36,11 @@
   display: block;
 }
 
+.glyph {
+  font-size: 14px;
+  line-height: 1;
+}
+
 .pickerBackdrop {
   position: fixed;
   inset: 0;

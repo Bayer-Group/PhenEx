@@ -10,6 +10,7 @@ import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/Out
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { SingleRowContentHorizontalRowViewer } from './HorizontalRowViewer/SingleRowContentHorizontalRowViewer';
 import { BreadcrumbTitle } from './BreadcrumbTitle';
+import leftPanelIcon from '../../assets/icons/left_panel.svg';
 import { CellLayoutStoreProvider } from './CellLayouts';
 import { ThreePanelCollapseProvider, useThreePanelCollapse } from '../../contexts/ThreePanelCollapseContext';
 import {
@@ -95,6 +96,15 @@ const LEFT_PANEL_TITLES: Record<string, string> = {
   outline: 'Outline',
   figureLegend: 'Legend',
 };
+
+/** Left-panel tabs, in display order. Ids are stable so a tab can be removed
+ *  from the tabset when floated and re-inserted (in order) when docked. */
+const LEFT_TABSET_ID = 'leftTabset';
+const LEFT_PANEL_TABS: { id: string; name: string }[] = [
+  { id: 'cohortSelector', name: 'Cohorts' },
+  { id: 'outline', name: 'Outline' },
+  { id: 'figureLegend', name: 'Legend' },
+];
 
 function createLayoutModel(): Model {
   const json: IJsonModel = {
@@ -525,11 +535,11 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         children: [
           {
             type: 'tabset',
-            children: [
-              { type: 'tab', name: 'Cohorts', component: 'cohortSelector', enableClose: false },
-              { type: 'tab', name: 'Outline', component: 'outline', enableClose: false },
-              { type: 'tab', name: 'Legend', component: 'figureLegend', enableClose: false },
-            ],
+            id: LEFT_TABSET_ID,
+            enableDeleteWhenEmpty: false,
+            children: LEFT_PANEL_TABS.map((t) => ({
+              type: 'tab', id: t.id, name: t.name, component: t.id, enableClose: false,
+            })),
           },
         ],
       },
@@ -543,13 +553,29 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   // ── Custom floating popouts (Cohorts / Outline / Legend) ─────────────
   // Instead of FlexLayout's popout (which is bound to its Layout container),
   // a "floated" component is rendered in a FloatingPanel portaled to the body
-  // so it can be dragged anywhere in the viewport. The docked slot shows a
-  // lightweight placeholder while it is floating.
+  // so it can be dragged anywhere in the viewport. Floating removes the tab
+  // from the tabset entirely; docking re-inserts it at its original position.
   const [floatingComponents, setFloatingComponents] = useState<string[]>([]);
   const floatComponent = useCallback((component: string) => {
+    const model = leftPanelModelRef.current;
+    if (model?.getNodeById(component)) {
+      model.doAction(Actions.deleteTab(component));
+    }
     setFloatingComponents((prev) => (prev.includes(component) ? prev : [...prev, component]));
   }, []);
   const dockComponent = useCallback((component: string) => {
+    const model = leftPanelModelRef.current;
+    const originalIndex = LEFT_PANEL_TABS.findIndex((t) => t.id === component);
+    if (model && originalIndex >= 0 && !model.getNodeById(component)) {
+      // Insert after any earlier-ordered tabs that are currently docked.
+      const insertIndex = LEFT_PANEL_TABS.filter(
+        (t, idx) => idx < originalIndex && model.getNodeById(t.id),
+      ).length;
+      model.doAction(Actions.addTab(
+        { type: 'tab', id: component, name: LEFT_PANEL_TABS[originalIndex].name, component, enableClose: false },
+        LEFT_TABSET_ID, DockLocation.CENTER, insertIndex, true,
+      ));
+    }
     setFloatingComponents((prev) => prev.filter((c) => c !== component));
   }, []);
 
@@ -870,6 +896,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               onReplaceColorOverrides={handleReplaceColorOverrides}
               runId={_runId ?? undefined}
               isFloating={isFloating}
+              onToggleFloat={() => (isFloating ? dockComponent('figureLegend') : floatComponent('figureLegend'))}
             />
           );
         default:
@@ -882,26 +909,18 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       expandedKeys, handleToggleExpand, legendItems, handleLegendChange, OutlinePanelConnected,
       colorOverrides, handleSetColor, handleReplaceColorOverrides, _runId,
       handleMovePhenotype, handleRenamePhenotype, handleRenameSection,
+      floatComponent, dockComponent,
     ],
   );
 
-  // Factory for the inner left-panel layout. When a component is floating, the
-  // docked slot shows a placeholder; otherwise it renders the real content.
+  // Factory for the inner left-panel layout. Floated components are removed
+  // from the tabset, so the factory only ever renders docked content.
   const leftPanelFactory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       const component = node.getComponent();
-      if (!component) return null;
-      if (floatingComponents.includes(component)) {
-        return (
-          <div className={styles.floatingPlaceholder}>
-            <span>Currently popped out as a floating panel</span>
-            <button type="button" onClick={() => dockComponent(component)}>Click to redock</button>
-          </div>
-        );
-      }
-      return renderLeftComponent(component);
+      return component ? renderLeftComponent(component) : null;
     },
-    [floatingComponents, renderLeftComponent, dockComponent],
+    [renderLeftComponent],
   );
   console.log(" waterfalldata", waterfallData);
   const factory = useCallback(
@@ -960,6 +979,16 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     <CellLayoutStoreProvider>
     <div className={styles.container}>
       <div className={styles.titleGroup}>
+          <button
+            type="button"
+            className={styles.leftBorderCollapseBtn}
+            title={isLeftPanelShown ? 'Collapse left panel (⌘B)' : 'Expand left panel (⌘B)'}
+            aria-label={isLeftPanelShown ? 'Collapse left panel' : 'Expand left panel'}
+            aria-pressed={isLeftPanelShown}
+            onClick={toggleLeftPanel}
+          >
+            <img src={leftPanelIcon} alt="" aria-hidden="true" />
+          </button>
           <BreadcrumbTitle
             entries={viewerCells}
             currentIndex={viewerIndex}

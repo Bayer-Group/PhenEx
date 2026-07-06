@@ -1,6 +1,6 @@
 import { FC, useCallback, useState } from 'react';
 import ColorFilterIcon from '../../../../assets/icons/color-filter.svg';
-import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
+import ArrowUpRightIcon from '../../../../assets/icons/arrow-up-right.svg';
 import { DraggablePortal } from '../../../../components/Portal/DraggablePortal';
 import {
   GroupColorPicker,
@@ -17,8 +17,12 @@ interface FigureLegendControlsProps {
   colorValue?: GroupColorConfig;
   /** Apply a generated color ramp across all currently selected cohorts. */
   onApplyColor: (config: GroupColorConfig) => void;
-  /** Disable the controls when there are no cohorts to color. */
+  /** Disable the color control when there are no cohorts to color. */
   disabled?: boolean;
+  /** Whether the legend is currently shown in a floating window. */
+  isFloating?: boolean;
+  /** Pop the legend out to (or dock it back from) a floating window. */
+  onToggleFloat?: () => void;
 }
 
 /** Clamp the picker so it stays fully within the viewport. */
@@ -33,14 +37,20 @@ function clampToViewport(x: number, y: number): { x: number; y: number } {
 }
 
 /**
- * The row of controls shown at the top-right of the figure legend. For now it
- * exposes a single "color" action that opens the two-tone `GroupColorPicker`
- * and applies the generated ramp across every currently selected cohort at once.
+ * The row of controls shown at the top-right of the figure legend:
+ *   - a "color" action that opens the two-tone `GroupColorPicker` and applies
+ *     the generated ramp across every currently selected cohort at once, and
+ *   - a float toggle that pops the legend out to a floating window (up-right
+ *     arrow) or docks it back (down arrow) depending on its current state.
  */
-export const FigureLegendControls: FC<FigureLegendControlsProps> = ({ colorValue, onApplyColor, disabled }) => {
+export const FigureLegendControls: FC<FigureLegendControlsProps> = ({
+  colorValue,
+  onApplyColor,
+  disabled,
+  isFloating,
+  onToggleFloat,
+}) => {
   const [pickerPos, setPickerPos] = useState<{ x: number; y: number } | null>(null);
-  const [hovered, setHovered] = useState(false);
-  const [buttonEl, setButtonEl] = useState<HTMLButtonElement | null>(null);
 
   const openPicker = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -52,25 +62,30 @@ export const FigureLegendControls: FC<FigureLegendControlsProps> = ({ colorValue
   return (
     <div className={styles.controls}>
       <button
-        ref={setButtonEl}
         type="button"
         className={styles.controlButton}
         onClick={openPicker}
         disabled={disabled}
         aria-label="Color selected cohorts"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        title="Color selected cohorts"
       >
         <img src={ColorFilterIcon} alt="" className={styles.controlIcon} />
       </button>
-      <PhenExNavBarTooltip
-        isVisible={hovered && pickerPos == null}
-        anchorElement={buttonEl}
-        label="Color selected cohorts"
-        verticalPosition="below"
-        horizontalAlignment="right"
-        delay={400}
-      />
+      {onToggleFloat && (
+        <button
+          type="button"
+          className={styles.controlButton}
+          onClick={onToggleFloat}
+          aria-label={isFloating ? 'Dock legend' : 'Pop out legend'}
+          title={isFloating ? 'Dock legend' : 'Pop out into floating window'}
+        >
+          {isFloating ? (
+            <span className={styles.glyph}>⤵</span>
+          ) : (
+            <img src={ArrowUpRightIcon} alt="" className={styles.controlIcon} />
+          )}
+        </button>
+      )}
       {pickerPos && (
         <>
           <div className={styles.pickerBackdrop} onMouseDown={closePicker} />

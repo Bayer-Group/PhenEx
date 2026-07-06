@@ -104,8 +104,15 @@ function labToRgb(L: number, a: number, b: number): [number, number, number] {
   return [labDelinearize(r), labDelinearize(g), labDelinearize(bv)];
 }
 
+/** Parse the RGB channels of a hex (#rgb/#rrggbb) or rgb()/rgba() color string. */
 function parseRgbChannels(color: string): [number, number, number] | null {
-  const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  const c = color.trim();
+  const hex = c.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    const h = hex[1].length === 3 ? hex[1].replace(/(.)/g, '$1$1') : hex[1];
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  }
+  const m = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
   return m ? [+m[1], +m[2], +m[3]] : null;
 }
 
@@ -168,12 +175,13 @@ export function generateGroupColors(config: GroupColorConfig, count: number): st
   }
 
   // single: alpha-fade ramp
-  const m = config.startColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-  if (!m) return Array(count).fill(config.startColor);
+  const rgb = parseRgbChannels(config.startColor);
+  if (!rgb) return Array(count).fill(config.startColor);
+  const [r, g, b] = rgb;
   return Array.from({ length: count }, (_, i) => {
     if (count <= 1) return config.startColor;
     const alpha = 1.0 - (i / count) * 0.65;
-    return `rgba(${m[1]}, ${m[2]}, ${m[3]}, ${alpha})`;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   });
 }
 
