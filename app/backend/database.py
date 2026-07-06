@@ -1546,6 +1546,47 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
+    async def update_study_database_config(
+        self, user_id: str, study_id: str, database_config: Optional[Dict]
+    ) -> bool:
+        """
+        Update the database_config column for a study.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the study.
+            study_id (str): The ID of the study to update.
+            database_config (Optional[Dict]): The database configuration to store, or None to clear.
+
+        Returns:
+            bool: True if successful, False if study not found or access denied.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+            result = await conn.execute(
+                """
+                UPDATE study
+                SET database_config = $3, updated_at = NOW()
+                WHERE study_id = $1 AND user_id = $2
+                """,
+                study_id,
+                user_id,
+                json.dumps(database_config) if database_config is not None else None,
+            )
+            if result == "UPDATE 0":
+                logger.error(
+                    f"User {user_id} is not authorized to update study {study_id} or study not found"
+                )
+                return False
+            logger.info(f"Successfully updated database_config for study {study_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update database_config for study {study_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
     async def update_study_display_order(
         self, user_id: str, study_id: str, display_order: int
     ) -> bool:

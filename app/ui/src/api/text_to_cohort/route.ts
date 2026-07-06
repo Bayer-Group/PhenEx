@@ -326,6 +326,18 @@ export const createDemoStudy = async (): Promise<{ study_id: string }> => {
   }
 };
 
+export const updateStudyDatabaseConfig = async (study_id: string, database_config: Record<string, any> | null) => {
+  try {
+    const response = await api.patch('/study/database_config', { database_config }, {
+      params: { study_id },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in updateStudyDatabaseConfig:', error);
+    throw error;
+  }
+};
+
 export const updateStudyDisplayOrder = async (study_id: string, display_order: number) => {
   try {
     const response = await api.patch('/study/display_order', null, {

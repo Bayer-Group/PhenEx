@@ -9,7 +9,8 @@ import {
   deleteCohort,
   deleteStudy,
   getStudy,
-  updateStudy
+  updateStudy,
+  updateStudyDatabaseConfig
 } from '../../api/text_to_cohort/route';
 import { createID } from '../../types/createID';
 import { StudyViewerCohortDefinitionsDataService } from './StudyViewerCohortDefinitions/StudyViewerCohortDefinitionsDataService';
@@ -68,7 +69,7 @@ export class StudyDataService {
 
   public async setDatabaseConfig(config: Record<string, any> | null): Promise<void> {
     this._study_data.database_config = config;
-    await this.saveChangesToStudy(false, false);
+    await updateStudyDatabaseConfig(this._study_data.id, config);
   }
 
 
