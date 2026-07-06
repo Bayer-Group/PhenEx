@@ -10,8 +10,7 @@
   margin-bottom: 20px;
 
   --col-category:  60px;
-  --col-index:     40px;
-  --col-name:     200px;
+  --col-index:     20px;
   --col-pctSource: 70px;
   --col-remaining:210px;
   --col-delta:     80px;
@@ -39,7 +38,7 @@
 
 .th.category,  .td.category  { width: var(--col-category); }
 .th.index,     .td.index     { width: var(--col-index); }
-.th.name,      .td.name      { width: var(--col-name); }
+.th.name,      .td.name      { width: auto; min-width: 80px; }
 .th.pctSource, .td.pctSource { width: var(--col-pctSource); }
 .th.remaining, .td.remaining { width: var(--col-remaining); }
 .th.delta,    .td.delta    { width: var(--col-delta); }
@@ -82,6 +81,7 @@
 .td.name {
   white-space: normal !important;
   word-break: break-word;
+  overflow: hidden;
 }
 
 /* ── Category column ────────────────────────────────────────────────── */

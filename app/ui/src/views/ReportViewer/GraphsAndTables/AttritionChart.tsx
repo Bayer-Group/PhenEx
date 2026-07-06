@@ -257,7 +257,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
                   <LegendDot
                     color={entry.isParent ? entry.color : entry.parentColor}
                     isActive
-                    showDot
+                    showDot={false}
                     onClick={() => {}}
                     onColorChange={
                       onSetColor
@@ -282,7 +282,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
                       <LegendDot
                         color={entry.color}
                         isActive
-                        showDot
+                        showDot={false}
                         onClick={() => {}}
                         onColorChange={onSetColor ? (c) => onSetColor(entry.cohortName, c) : undefined}
                         usedColors={usedColorsFor(entry.cohortName)}
