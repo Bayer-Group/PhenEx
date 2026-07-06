@@ -27,8 +27,6 @@ export const StudyExecutePanel: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const getStudyId = (): string | null => StudyDataService.getInstance().study_data?.id ?? null;
-  const getDatabaseConfig = (): Record<string, any> | null =>
-    CohortDataService.getInstance().cohort_data?.database_config ?? null;
 
   const fetchExecutions = async () => {
     const studyId = getStudyId();
@@ -79,13 +77,7 @@ export const StudyExecutePanel: React.FC = () => {
 
   const handleExecute = async () => {
     const studyId = getStudyId();
-    const databaseConfig = getDatabaseConfig();
     if (!studyId || isExecuting) return;
-    if (!databaseConfig?.mapper) {
-      setLogs([{ message: 'No database configuration found.', type: 'error', timestamp: new Date() }]);
-      setViewMode('logs');
-      return;
-    }
 
     setIsExecuting(true);
     setLogs([]);
@@ -104,7 +96,6 @@ export const StudyExecutePanel: React.FC = () => {
           if (event.type === 'complete')
             setLogs(prev => [...prev, { message: 'Execution complete.', type: 'complete', timestamp: new Date() }]);
         },
-        databaseConfig,
       );
       if (execId) setSelectedExecId(execId);
     } catch (err: any) {

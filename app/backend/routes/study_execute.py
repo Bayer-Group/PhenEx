@@ -56,16 +56,20 @@ async def execute_study(request: Request):
 
     body = await request.json()
     study_id = body.get("study_id")
-    database_config = body.get("database_config")
 
     if not study_id:
         raise HTTPException(status_code=400, detail="study_id is required")
-    if not database_config:
-        raise HTTPException(status_code=400, detail="database_config is required")
 
     study = await db_manager.get_study_for_user(user_id, study_id)
     if not study:
         raise HTTPException(status_code=404, detail="Study not found")
+
+    database_config = study.get("database_config")
+    if not database_config:
+        raise HTTPException(
+            status_code=400,
+            detail="No database_config configured for this study. Configure database settings first.",
+        )
 
     cohorts = await db_manager.get_cohorts_for_study(study_id, user_id)
     if not cohorts:

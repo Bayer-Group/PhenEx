@@ -86,6 +86,18 @@ export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   }
 };
 
+export const updateCohortDatabaseConfig = async (cohort_id: string, database_config: Record<string, any> | null) => {
+  try {
+    const response = await api.patch('/cohort/database_config', { database_config }, {
+      params: { cohort_id },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in updateCohortDatabaseConfig:', error);
+    throw error;
+  }
+};
+
 export const deleteCohort = async (cohort_id: string) => {
   try {
     const response = await api.delete('/cohort', {
@@ -329,12 +341,11 @@ export const updateStudyDisplayOrder = async (study_id: string, display_order: n
 export const executeStudy = async (
   studyId: string,
   onEvent?: (event: { type: 'log' | 'error' | 'complete'; message?: string; execution_id?: string }) => void,
-  databaseConfig?: Record<string, any>
 ): Promise<string | null> => {
   const response = await authFetch(`${BACKEND_URL}/study/execute`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ study_id: studyId, database_config: databaseConfig }),
+    body: JSON.stringify({ study_id: studyId }),
   });
 
   if (!response.ok) {

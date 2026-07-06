@@ -70,6 +70,8 @@ export class CohortDataService {
   public tableDataFromCohortData(): TableData { return this._activeCohort.tableDataFromCohortData(); }
   public loadCohortData(cohortData: any): void { return this._activeCohort.loadCohortData(cohortData); }
   public setDatabaseSettings(databaseConfig: any) { return this._activeCohort.setDatabaseSettings(databaseConfig); }
+  public get database_config(): Record<string, any> | null { return this._activeCohort.database_config; }
+  public async setCohortDatabaseConfig(config: Record<string, any> | null) { return this._activeCohort.setCohortDatabaseConfig(config); }
   
   public createEmptyCohortDefaultPhenotypes = () => { return this._activeCohort.createEmptyCohortDefaultPhenotypes(); }
 

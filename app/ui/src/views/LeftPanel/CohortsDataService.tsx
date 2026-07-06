@@ -324,7 +324,6 @@ export class CohortsDataService {
       class_name: 'Cohort',
       study_id: studyId,           // IMPORTANT: Include study_id in cohort_data!
       phenotypes: [],
-      database_config: {},
       constants: [],
     };
     
@@ -353,7 +352,6 @@ export class CohortsDataService {
       class_name: cohortJson.class_name,
       study_id: studyId,
       phenotypes: cohortJson.phenotypes,
-      database_config: cohortJson.database_config,
       constants: cohortJson.constants,
       display_order: newCohortData.display_order,
     };

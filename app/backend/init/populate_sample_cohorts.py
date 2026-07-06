@@ -51,7 +51,11 @@ class SampleCohortsInitializer:
             ),
             "baseline_characteristics": {},
             "outcomes": {},
-            "analysis": {},
+            "database_config": {
+                "mapper": "OMOP",
+                "connector": "mocker",
+                "config": {"n_patients": 25000},
+            },
         }
 
         # OMOP concept IDs for AF (from DomainsMocker)
@@ -67,11 +71,6 @@ class SampleCohortsInitializer:
             "name": "Atrial Fibrillation",
             "class_name": "Cohort",
             "description": "Adults with a first recorded atrial fibrillation diagnosis, excluding prior myocardial infarction.",
-            "database_config": {
-                "mapper": "OMOP",
-                "connector": "mocker",
-                "config": {"n_patients": 25000},
-            },
             "phenotypes": [
                 {
                     "id": "entry_1",
@@ -160,11 +159,6 @@ class SampleCohortsInitializer:
             "name": "Acute Myocardial Infarction",
             "class_name": "Cohort",
             "description": "Adults with a first recorded myocardial infarction, excluding prior atrial fibrillation.",
-            "database_config": {
-                "mapper": "OMOP",
-                "connector": "mocker",
-                "config": {"n_patients": 25000},
-            },
             "phenotypes": [
                 {
                     "id": "entry_1",
@@ -301,7 +295,7 @@ class SampleCohortsInitializer:
                 description=study_data["description"],
                 baseline_characteristics=study_data.get("baseline_characteristics"),
                 outcomes=study_data.get("outcomes"),
-                analysis=study_data.get("analysis"),
+                database_config=study_data.get("database_config"),
                 visible_by=[],
                 is_public=True,
             )

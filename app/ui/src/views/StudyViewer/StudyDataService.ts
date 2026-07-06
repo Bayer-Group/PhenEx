@@ -62,6 +62,15 @@ export class StudyDataService {
     this._study_data = value;
   }
 
+  public get database_config(): Record<string, any> | null {
+    return this._study_data?.database_config ?? null;
+  }
+
+  public async setDatabaseConfig(config: Record<string, any> | null): Promise<void> {
+    this._study_data.database_config = config;
+    await this.saveChangesToStudy(false, false);
+  }
+
 
   public loadStudyData(studyData: any) {
     try {

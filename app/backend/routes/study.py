@@ -355,7 +355,7 @@ async def create_or_update_study(
             description=study.get("description", ""),
             baseline_characteristics=study.get("baseline_characteristics", {}),
             outcomes=study.get("outcomes", {}),
-            analysis=study.get("analysis", {}),
+            database_config=study.get("database_config"),
             visible_by=study.get("visible_by", []),
             is_public=study.get("is_public", False),
         )

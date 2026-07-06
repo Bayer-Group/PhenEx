@@ -3,6 +3,7 @@ import {
   createCohort,
   updateCohort,
   deleteCohort,
+  updateCohortDatabaseConfig,
 } from '../../../api/text_to_cohort/route';
 import { defaultColumns, componentPhenotypeColumns } from './CohortColumnDefinitions';
 import { createID } from '../../../types/createID';
@@ -16,6 +17,7 @@ export class CohortModel {
   public _cohort_name: string = '';
   private _cohort_data: Record<string, any> = {};
   private _study_data: Record<string, any> = {};
+  private _database_config: Record<string, any> | null = null;
 
   public issues_service: CohortIssuesService;
   public constants_service: ConstantsDataService;
@@ -158,6 +160,7 @@ export class CohortModel {
 
       this._study_data = cohortData.study
       this._cohort_data = cohortResponse;
+      this._database_config = cohortData.database_config ?? null;
       
       // Preserve is_provisional flag from top-level cohortData (only if explicitly true or false)
       // Backend always returns this field, so we need to copy it
@@ -208,16 +211,20 @@ export class CohortModel {
   }
 
   public setDatabaseSettings(databaseConfig: any) {
-    this._cohort_data.database_config = databaseConfig;
+    // database_config is now stored at the study level via StudyDataService.setDatabaseConfig().
+    // This method is kept for backward compatibility but delegates to the study service.
+    import('../../StudyViewer/StudyDataService').then(({ StudyDataService }) => {
+      StudyDataService.getInstance().setDatabaseConfig(databaseConfig);
+    });
+  }
 
-    // Update domain values based on mapper type
-    const domainColumn = this.columns.find(col => col.field === 'domain');
-    if (domainColumn) {
-      // domainColumn.cellEditorParams.values = MapperDomains[databaseConfig.mapper];
-    }
+  public get database_config(): Record<string, any> | null {
+    return this._database_config;
+  }
 
-    // Refresh table data to reflect the updated domain values
-    this.saveChangesToCohort();
+  public async setCohortDatabaseConfig(config: Record<string, any> | null): Promise<void> {
+    this._database_config = config;
+    await updateCohortDatabaseConfig(this._cohort_data.id, config);
   }
 
 
@@ -406,11 +413,12 @@ export class CohortModel {
 
   private stripLegacyStructuredKeys(cohortData: Record<string, any>): Record<string, any> {
     /**
-     * Strips legacy structured keys (entry_criterion, inclusions, etc.) from cohort data
-     * before sending to backend. Frontend keeps these keys internally for execution service,
-     * but backend expects only phenotypes array.
+     * Strips legacy structured keys (entry_criterion, inclusions, etc.) and database_config
+     * from cohort data before sending to backend. Frontend keeps these keys internally for
+     * execution service, but backend expects only phenotypes array. database_config is now
+     * stored at the study level, not in cohort_data.
      */
-    const { entry_criterion, inclusions, exclusions, characteristics, outcomes, ...cleanedCohort } = cohortData;
+    const { entry_criterion, inclusions, exclusions, characteristics, outcomes, database_config, ...cleanedCohort } = cohortData;
     return cleanedCohort;
   }
 

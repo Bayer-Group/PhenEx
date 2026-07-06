@@ -388,7 +388,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     } else if (viewType === 'execute') {
       return contentMode === 'study' ? <StudyExecutePanel /> : <ExecutePanel />;
     } else if (viewType === 'database') {
-      return <DatabasePanel />;
+      return <DatabasePanel contentMode={contentMode} />;
     } else if (viewType === 'constants') {
       return <ConstantsPanel />;
     } else if (viewType === 'info') {

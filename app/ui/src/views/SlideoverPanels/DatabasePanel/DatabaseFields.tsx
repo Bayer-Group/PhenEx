@@ -1,6 +1,7 @@
 import { FC, useState, useEffect } from 'react';
 import styles from './DatabaseFields.module.css';
 import { Mapper } from '../../../types/mappers';
+import { StudyDataService } from '../../StudyViewer/StudyDataService';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { SnowflakeConnectorFields } from './SnowflakeConnectorFields';
 import { DuckDbFields } from './DuckDbFields';
@@ -15,6 +16,7 @@ export enum DatabaseTabTypes {
 
 interface DatabaseFieldsProps {
   mode: DatabaseTabTypes;
+  contentMode?: 'cohort' | 'study';
 }
 
 const mappers = Object.values(Mapper);
@@ -28,10 +30,20 @@ const snowflakeDefaults = {
   password: 'default_password',
 };
 
-export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode }) => {
-  const dataService = CohortDataService.getInstance();
+export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode, contentMode = 'study' }) => {
+  const studyDataService = StudyDataService.getInstance();
+  const cohortDataService = CohortDataService.getInstance();
+
+  const getCurrentConfig = () => contentMode === 'cohort'
+    ? (cohortDataService.database_config ?? {})
+    : (studyDataService.database_config ?? {});
+
+  const saveConfig = (config: Record<string, any>) => contentMode === 'cohort'
+    ? cohortDataService.setCohortDatabaseConfig(config)
+    : studyDataService.setDatabaseConfig(config);
+
   const [existingConfig, setExistingConfig] = useState(
-    dataService.cohort_data.database_config || {}
+    getCurrentConfig()
   );
 
   const [selectedMapper, setSelectedMapper] = useState(existingConfig.mapper || mappers[0]);
@@ -46,9 +58,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode }) => {
   const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
 
   const createDefaultDestinationDb = () => {
-    return `IEG_PROJECTS.PXUI_${dataService.cohort_data.id}`;
-
-
+    return `IEG_PROJECTS.PXUI_${studyDataService.study_data?.id ?? cohortDataService.cohort_data?.id ?? 'id'}`;
   };
 
   const [snowflakeConfig, setSnowflakeConfig] = useState({
@@ -62,9 +72,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode }) => {
   });
 
   const updateConfig = () => {
-    console.log('🚨 updateConfig called');
-    const newConfig = dataService.cohort_data.database_config || {};
-    console.log('🚨 newConfig from dataService:', newConfig);
+    const newConfig = getCurrentConfig();
     
     setExistingConfig(newConfig);
     setSelectedMapper(newConfig.mapper || mappers[0]);
@@ -82,23 +90,34 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode }) => {
       password: newConfig.config?.password || snowflakeDefaults.password,
     });
 
-    // If destination database was auto-generated and we have a connector, save it
+    // If destination database was auto-generated and we have a Snowflake connector, save it
     if (!newConfig.config?.destination_database && newConfig.connector === 'Snowflake') {
       const updatedConfig = {
         ...newConfig,
-        config: {
-          ...newConfig.config,
-          destination_database: destinationDb,
-        },
+        config: { ...newConfig.config, destination_database: destinationDb },
       };
-      dataService.setDatabaseSettings(updatedConfig);
+      saveConfig(updatedConfig);
     }
 
     // Parse source_database to set default database and schema selections
     const sourceDb = newConfig.config?.source_database;
-    console.log('🚨 sourceDb from config:', sourceDb);
-    
-    if (sourceDb && sourceDb.includes('.')) {
+
+    if (newConfig.connector === 'mocker') {
+      // Mocker: find the matching database entry by n_patients
+      const n_patients = newConfig.config?.n_patients;
+      const dbConfig = databasesData.find((db: any) =>
+        db.connector === 'mocker' && (!n_patients || db.n_patients === n_patients)
+      );
+      if (dbConfig) {
+        setSelectedDatabase(dbConfig.database);
+        setAvailableSchemas(dbConfig.schemas || []);
+        setSelectedSchema(dbConfig.schemas?.[0] || '');
+      } else {
+        setSelectedDatabase('');
+        setSelectedSchema('');
+        setAvailableSchemas([]);
+      }
+    } else if (sourceDb && sourceDb.includes('.')) {
       const [database, schema] = sourceDb.split('.');
       console.log('🚨 Parsed database:', database, 'schema:', schema);
       
@@ -139,11 +158,14 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode }) => {
 
   useEffect(() => {
     updateConfig();
-    dataService.addListener(updateConfig);
-    return () => {
-      dataService.removeListener(updateConfig);
-    };
-  }, []); // Remove the dependency on dataService.cohort_data to prevent infinite loops
+    if (contentMode === 'cohort') {
+      cohortDataService.addListener(updateConfig);
+      return () => { cohortDataService.removeListener(updateConfig); };
+    } else {
+      studyDataService.addStudyDataServiceListener(updateConfig);
+      return () => { studyDataService.removeStudyDataServiceListener(updateConfig); };
+    }
+  }, [contentMode]);
 
   const handleSaveChanges = (key?: string, value?: any) => {
     const databaseConfig = {
@@ -164,7 +186,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode }) => {
             },
     };
 
-    dataService.setDatabaseSettings(databaseConfig);
+    saveConfig(databaseConfig);
   };
 
   const renderConnectorFields = () => {
@@ -282,7 +304,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode }) => {
               n_patients: dbConfig?.n_patients || 25000,
             },
           };
-          dataService.setDatabaseSettings(databaseConfig);
+          saveConfig(databaseConfig);
         } else {
           // Set the sourceDb as database.schema
           const sourceDb = `${selectedDatabase}.${schemaName}`;
@@ -311,7 +333,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode }) => {
             },
           };
           
-          dataService.setDatabaseSettings(databaseConfig);
+          saveConfig(databaseConfig);
         }
       }
     };

@@ -153,7 +153,6 @@ class CohortUtils:
             "exclusions": [],
             "characteristics": [],
             "outcomes": [],
-            "database_config": cohort.get("database_config"),
         }
 
         for phenotype in cohort.get("phenotypes", []):
@@ -198,7 +197,6 @@ class CohortUtils:
             "name": cohort.get("name"),
             "class_name": cohort.get("class_name"),
             "phenotypes": phenotypes,
-            "database_config": cohort.get("database_config"),
         }
 
     @staticmethod

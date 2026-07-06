@@ -192,7 +192,7 @@ class DatabaseManager:
 
             # Check if there's a provisional version at the highest version number
             provisional_query = f"""
-                SELECT cohort_data, version, is_provisional, created_at, updated_at, study_id
+                SELECT cohort_data, version, is_provisional, created_at, updated_at, study_id, database_config
                 FROM {self.full_table_name} 
                 WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = TRUE
             """
@@ -215,6 +215,7 @@ class DatabaseManager:
                     "version": provisional_row["version"],
                     "is_provisional": provisional_row["is_provisional"],
                     "study_id": provisional_row["study_id"],
+                    "database_config": json.loads(provisional_row["database_config"]) if provisional_row["database_config"] else None,
                     "created_at": (
                         provisional_row["created_at"].isoformat()
                         if provisional_row["created_at"]
@@ -230,7 +231,7 @@ class DatabaseManager:
 
             # No provisional at highest version, get the highest version non-provisional
             non_provisional_query = f"""
-                SELECT cohort_data, version, is_provisional, created_at, updated_at, study_id
+                SELECT cohort_data, version, is_provisional, created_at, updated_at, study_id, database_config
                 FROM {self.full_table_name} 
                 WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = FALSE
             """
@@ -255,6 +256,7 @@ class DatabaseManager:
                 "version": non_provisional_row["version"],
                 "is_provisional": non_provisional_row["is_provisional"],
                 "study_id": non_provisional_row["study_id"],
+                "database_config": json.loads(non_provisional_row["database_config"]) if non_provisional_row["database_config"] else None,
                 "created_at": (
                     non_provisional_row["created_at"].isoformat()
                     if non_provisional_row["created_at"]
@@ -306,6 +308,9 @@ class DatabaseManager:
         # Validate cohort data format using centralized validation function
         # ValueError will bubble up to caller
         validate_cohort_data_format(cohort_data)
+
+        # Ensure database_config is never stored inside cohort_data — it belongs in its own column
+        cohort_data = {k: v for k, v in cohort_data.items() if k != "database_config"}
 
         conn = None
         try:
@@ -476,6 +481,49 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(f"Failed to update cohort {cohort_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_cohort_database_config(
+        self, user_id: str, cohort_id: str, database_config: Optional[Dict]
+    ) -> bool:
+        """
+        Update the database_config column for the latest version of a cohort.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the cohort.
+            cohort_id (str): The ID of the cohort to update.
+            database_config (Optional[Dict]): The database configuration to store.
+
+        Returns:
+            bool: True if successful, False if cohort not found.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+            query = f"""
+                UPDATE {self.full_table_name}
+                SET database_config = $3, updated_at = NOW()
+                WHERE user_id = $1 AND cohort_id = $2
+                  AND version = (
+                      SELECT MAX(version) FROM {self.full_table_name}
+                      WHERE user_id = $1 AND cohort_id = $2
+                  )
+            """
+            result = await conn.execute(
+                query,
+                user_id,
+                cohort_id,
+                json.dumps(database_config) if database_config is not None else None,
+            )
+            if result == "UPDATE 0":
+                return False
+            logger.info(f"Updated database_config for cohort {cohort_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update database_config for cohort {cohort_id}: {e}")
             raise
         finally:
             if conn:
@@ -1243,7 +1291,7 @@ class DatabaseManager:
             # Query to get studies where user is creator or in visible_by list
             query = """
                 SELECT study_id, name, description, is_public, created_at, updated_at,
-                       user_id as creator_id, visible_by, display_order
+                       user_id as creator_id, visible_by, display_order, database_config
                 FROM study 
                 WHERE user_id = $1 OR $1 = ANY(visible_by)
                 ORDER BY display_order ASC, updated_at DESC
@@ -1262,6 +1310,7 @@ class DatabaseManager:
                         "creator_id": row["creator_id"],
                         "visible_by": row["visible_by"],
                         "display_order": row["display_order"],
+                        "database_config": json.loads(row["database_config"]) if row["database_config"] else None,
                         "created_at": (
                             row["created_at"].isoformat() if row["created_at"] else None
                         ),
@@ -1295,7 +1344,7 @@ class DatabaseManager:
             # Query to get only studies that are marked as public
             query = """
                 SELECT study_id, name, description, is_public, created_at, updated_at,
-                       user_id as creator_id, visible_by, display_order
+                       user_id as creator_id, visible_by, display_order, database_config
                 FROM study 
                 WHERE is_public = TRUE
                 ORDER BY display_order ASC, updated_at DESC
@@ -1314,6 +1363,7 @@ class DatabaseManager:
                         "creator_id": row["creator_id"],
                         "visible_by": row["visible_by"],
                         "display_order": row["display_order"],
+                        "database_config": json.loads(row["database_config"]) if row["database_config"] else None,
                         "created_at": (
                             row["created_at"].isoformat() if row["created_at"] else None
                         ),
@@ -1350,8 +1400,9 @@ class DatabaseManager:
             conn = await self.get_connection()
 
             query = """
-                SELECT study_id, name, description, baseline_characteristics, outcomes, analysis,
-                       is_public, user_id as creator_id, visible_by, created_at, updated_at
+                SELECT study_id, name, description, baseline_characteristics, outcomes,
+                       database_config, is_public, user_id as creator_id, visible_by,
+                       created_at, updated_at
                 FROM study 
                 WHERE study_id = $1 AND (user_id = $2 OR $2 = ANY(visible_by) OR is_public = TRUE)
             """
@@ -1367,7 +1418,7 @@ class DatabaseManager:
                 "description": row["description"],
                 "baseline_characteristics": row["baseline_characteristics"],
                 "outcomes": row["outcomes"],
-                "analysis": row["analysis"],
+                "database_config": json.loads(row["database_config"]) if row["database_config"] else None,
                 "is_public": row["is_public"],
                 "creator_id": row["creator_id"],
                 "visible_by": row["visible_by"],
@@ -1396,7 +1447,7 @@ class DatabaseManager:
         description: str = None,
         baseline_characteristics: Dict = None,
         outcomes: Dict = None,
-        analysis: Dict = None,
+        database_config: Dict = None,
         visible_by: List[str] = None,
         is_public: bool = False,
     ) -> bool:
@@ -1410,7 +1461,7 @@ class DatabaseManager:
             description (str, optional): The description of the study.
             baseline_characteristics (Dict, optional): The baseline characteristics.
             outcomes (Dict, optional): The outcomes.
-            analysis (Dict, optional): The analysis parameters.
+            database_config (Dict, optional): The database connection configuration.
             visible_by (List[str], optional): List of user IDs who can see this study.
             is_public (bool): Whether the study is public.
 
@@ -1430,7 +1481,7 @@ class DatabaseManager:
                 update_query = """
                     UPDATE study 
                     SET name = $3, description = $4, baseline_characteristics = $5, 
-                        outcomes = $6, analysis = $7, visible_by = $8, is_public = $9,
+                        outcomes = $6, database_config = $7, visible_by = $8, is_public = $9,
                         updated_at = NOW()
                     WHERE study_id = $1 AND user_id = $2
                 """
@@ -1447,7 +1498,7 @@ class DatabaseManager:
                         else None
                     ),
                     json.dumps(outcomes) if outcomes else None,
-                    json.dumps(analysis) if analysis else None,
+                    json.dumps(database_config) if database_config else None,
                     visible_by or [],
                     is_public,
                 )
@@ -1463,7 +1514,7 @@ class DatabaseManager:
                 # Create new study
                 insert_query = """
                     INSERT INTO study (study_id, user_id, name, description, baseline_characteristics,
-                                     outcomes, analysis, visible_by, is_public, created_at, updated_at)
+                                     outcomes, database_config, visible_by, is_public, created_at, updated_at)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
                 """
 
@@ -1479,7 +1530,7 @@ class DatabaseManager:
                         else None
                     ),
                     json.dumps(outcomes) if outcomes else None,
-                    json.dumps(analysis) if analysis else None,
+                    json.dumps(database_config) if database_config else None,
                     visible_by or [],
                     is_public,
                 )
