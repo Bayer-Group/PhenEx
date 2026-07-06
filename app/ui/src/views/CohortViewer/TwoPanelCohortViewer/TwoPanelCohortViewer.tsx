@@ -200,14 +200,16 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     service['notifyListeners']();
   };
 
+  const renderPopoverContentRef = React.useRef<(viewType: any, extraData: any) => React.ReactNode>(() => null);
+
   React.useEffect(() => {
     const updateState = (viewType: any, extraData: any, isCollapsed: boolean) => {
       setViewType(viewType);
       setExtraData(extraData);
       // Show popover when there's content (viewType is set)
       if (viewType && extraData) {
-        setPopoverContent(renderPopoverContent(viewType, extraData));
-        panelRef.current?.showPopover(renderPopoverContent(viewType, extraData));
+        setPopoverContent(renderPopoverContentRef.current(viewType, extraData));
+        panelRef.current?.showPopover(renderPopoverContentRef.current(viewType, extraData));
       } else {
         setPopoverContent(null);
         panelRef.current?.hidePopover();
@@ -390,7 +392,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     } else if (viewType === 'constants') {
       return <ConstantsPanel />;
     } else if (viewType === 'info') {
-      return <InfoPanel />;
+      return <InfoPanel contentMode={contentMode} />;
     } else if (viewType === 'codelists') {
       return <CodelistsViewer />;
     } else if (viewType === 'newcohort') {
@@ -398,6 +400,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
     }
     return null;
   };
+  renderPopoverContentRef.current = renderPopoverContent;
   
   const renderSlideoverPanel = () => {
     return <CohortRightPanel contentMode={contentMode} />;

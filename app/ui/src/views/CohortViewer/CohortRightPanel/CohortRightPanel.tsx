@@ -24,7 +24,7 @@ export const CohortRightPanel: React.FC<CohortRightPanelProps> = ({ contentMode 
 
       <div ref={containerRef} className={styles.container}>
 
-        <InfoPanel />
+        <InfoPanel contentMode={contentMode} />
         <DatabasePanel />
         <RelativeTimeRangePanel />
         <CategoricalFilterPanel />

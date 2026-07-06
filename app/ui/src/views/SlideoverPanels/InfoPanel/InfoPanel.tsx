@@ -2,10 +2,15 @@ import React, { useState } from 'react';
 import styles from './InfoPanel.module.css';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 import { CohortTextArea } from './CohortTextArea/CohortTextArea';
+import { StudyTextArea } from './StudyTextArea/StudyTextArea';
 import { CohortSettingsEditor } from './CohortSettingsEditor/CohortSettingsEditor';
 import { TabsWithDropdown } from '../../../components/ButtonsAndTabs/Tabs/TabsWithDropdown';
 
-export const InfoPanel: React.FC = () => {
+interface InfoPanelProps {
+  contentMode?: 'cohort' | 'study';
+}
+
+export const InfoPanel: React.FC<InfoPanelProps> = ({ contentMode = 'cohort' }) => {
   const [tabs] = useState<string[]>(['Description', 'Settings']);
   const [activeTabIndex, setActiveTabIndex] = useState<number>(0);
 
@@ -50,7 +55,7 @@ export const InfoPanel: React.FC = () => {
   const renderDescription = () => {
     return (
       <div>
-        <CohortTextArea />
+        {contentMode === 'study' ? <StudyTextArea /> : <CohortTextArea />}
       </div>
     );
   };
