@@ -99,6 +99,7 @@ def _get_openai_client():
         azure_endpoint=endpoint,
         api_key=api_key,
         api_version=api_version,
+        http_client=__import__("httpx").Client(verify=False),
     )
 
 
@@ -162,7 +163,7 @@ async def analyze_report(request: AnalyzeRequest):
 
     # Call Azure OpenAI
     client = _get_openai_client()
-    model = os.getenv("OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
+    model = os.getenv("OPENAI_DEPLOYMENT_NAME", "gpt-4o")
 
     try:
         response = client.chat.completions.create(

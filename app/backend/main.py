@@ -50,12 +50,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Configure OpenAI client for Azure OpenAI
+import httpx as _httpx_main
 from openai import AzureOpenAI
 
 openai_client = AzureOpenAI(
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
     api_key=os.getenv("AZURE_OPENAI_API_KEY"),
     api_version=os.getenv("OPENAI_API_VERSION", "2025-01-01-preview"),
+    http_client=_httpx_main.Client(verify=False),
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -187,10 +189,10 @@ from .routes.cohort import router as cohort_router
 
 app.include_router(cohort_router)
 
-# Include the new AI router
+# Include the AI router under /copilot prefix
 from .routes.ai import router as ai_router
 
-app.include_router(ai_router, prefix="/cohort")
+app.include_router(ai_router, prefix="/copilot")
 
 # Include the study router
 from .routes.study import router as study_router

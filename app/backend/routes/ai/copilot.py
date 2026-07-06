@@ -148,12 +148,17 @@ class DeletePhenotypeCall(BaseModel):
     explanation: str
 
 
-# Context for the AI agent
+# Context for the AI agent — operates at study level, targets one cohort at a time
 class CohortContext(BaseModel):
     user_id: str
-    cohort_id: str
+    cohort_id: str          # currently-targeted cohort (mutable — tools switch this)
     study_id: str
-    current_cohort: Dict
+    current_cohort: Dict    # data for cohort_id (mutable — tools switch this)
+    # Study-level fields
+    cohorts: Dict = {}          # cohort_id → full cohort_data for all study cohorts
+    cohort_names: Dict = {}     # cohort_id → display name
+    active_cohort_id: Optional[str] = None   # hint: which cohort user is viewing
+    modified_cohort_ids: List[str] = []      # cohorts changed this AI turn
     db_manager: Any = None
 
     class Config:
@@ -167,16 +172,23 @@ from pydantic_ai.providers.openai import OpenAIProvider
 
 # Configure the Pydantic AI agent with Azure OpenAI
 try:
+    import httpx as _httpx
+
+    # Use a custom httpx client that disables SSL verification — needed when running
+    # inside Docker on networks with SSL inspection (corporate proxy / VPN).
+    _http_client = _httpx.AsyncClient(verify=False)
+
     # Create Azure OpenAI client
     azure_client = AsyncAzureOpenAI(
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
         api_version=os.getenv("OPENAI_API_VERSION", "2024-07-01-preview"),
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        http_client=_http_client,
     )
 
     # Create OpenAI model with Azure client
     azure_model = OpenAIChatModel(
-        "gpt-4o-mini",
+        "gpt-4o",
         provider=OpenAIProvider(openai_client=azure_client),
     )
 
@@ -202,6 +214,17 @@ Your job is to modify cohorts by adding, updating, or deleting phenotypes based 
    - "How many patients will this capture?"
    → **RESPONSE: Provide information, explanations, or advice. DO NOT call any tools. DO NOT modify the cohort.**
 
+1b. **RESULTS / RUN HISTORY QUERIES** (Use study execution tools):
+   - "What do the results tell me?"
+   - "Show me the latest run results"
+   - "How many patients were in the last run?"
+   - "What files were produced?"
+   - "Show me the output of the last execution"
+   → **RESPONSE: Call get_study_run_history to find the most recent successful run,
+      then get_execution_manifest to list files, then read_execution_file to read
+      relevant files (e.g., patient counts CSVs, summary parquets).
+      Summarise the findings for the user in plain language.**
+
 2. **ACTION REQUESTS** (Execute changes):
    - "Add [phenotype]"
    - "Remove [phenotype]"
@@ -226,18 +249,18 @@ Your job is to modify cohorts by adding, updating, or deleting phenotypes based 
 ✅ **DO THIS:**
 - Read the user's request carefully to understand their intent
 - If they want information → Give information (no tools)
-- If they want action → Take action (use tools)
+- If they want action → **CALL TOOLS IMMEDIATELY. Do NOT narrate what you are about to do. Just do it.**
 - If it's unclear → Ask for clarification first
 - Do EXACTLY what they ask for - no more, no less
-- Explain your reasoning when helpful
+- When editing multiple cohorts: call switch_target_cohort, then immediately call the editing tools — do not explain between steps
 
 ❌ **DO NOT DO THIS:**
 - Don't start implementing things when user just wants information
-- Don't ignore questions and just start working
+- **Don't say "I will now switch to cohort X" and then stop — just call switch_target_cohort immediately**
+- **Don't narrate your plan before executing — execute, then summarise what you did**
 - Don't do more than asked (e.g., user asks to add 1 phenotype, you add 3)
 - Don't do less than asked (e.g., user asks for 3 exclusions, you only add 2)
 - Don't guess what the user wants when it's ambiguous
-- Don't assume - when in doubt, ask!
 
 **📝 EXAMPLES:**
 
@@ -2466,6 +2489,18 @@ Total Phenotypes: {len(phenotypes)}
         return f"❌ Error retrieving current cohort state: {str(e)}"
 
 
+def _mark_modified(ctx: RunContext[CohortContext]) -> None:
+    """Record that the currently-targeted cohort has been changed in memory.
+
+    Called by every atomic tool wrapper after a successful mutation so that
+    modified_cohort_ids is populated regardless of whether update_context_only
+    was used (atomic tools mutate current_cohort directly without that helper).
+    """
+    cid = ctx.deps.cohort_id
+    if cid and cid not in ctx.deps.modified_cohort_ids:
+        ctx.deps.modified_cohort_ids.append(cid)
+
+
 async def auto_inject_cohort_state(
     ctx: RunContext[CohortContext], operation_description: str
 ) -> str:
@@ -2552,6 +2587,283 @@ Allowed domains: {', '.join(capabilities.get('domain_restrictions', ['any']))}
 
 
 @agent.tool
+async def get_study_run_history(ctx: RunContext[CohortContext]) -> str:
+    """Return the execution history for the current study.
+
+    Lists all past runs with their execution_id, status, start/end times and
+    whether a manifest is available.  Use this when the user asks about previous
+    runs, latest results, or wants to examine output files.
+    """
+    try:
+        executions = await ctx.deps.db_manager.get_study_executions(
+            ctx.deps.study_id, ctx.deps.user_id
+        )
+        if not executions:
+            return "No execution history found for this study."
+        lines = ["📋 **Study Execution History** (most recent first):\n"]
+        for ex in executions:
+            has_manifest = "✅" if ex.get("manifest_path") else "❌"
+            lines.append(
+                f"- **{ex['execution_id']}** | status={ex['status']} | "
+                f"started={ex.get('started_at', 'unknown')} | "
+                f"ended={ex.get('ended_at', 'unknown')} | manifest={has_manifest}"
+            )
+            if ex.get("error_message"):
+                lines.append(f"  ⚠️ error: {ex['error_message'][:200]}")
+        return "\n".join(lines)
+    except Exception as e:
+        logger.error(f"Error fetching run history: {e}")
+        return f"❌ Could not fetch run history: {str(e)}"
+
+
+@agent.tool
+async def get_execution_manifest(ctx: RunContext[CohortContext], execution_id: str) -> str:
+    """Return the manifest for a specific execution, listing all output files.
+
+    Use this after get_study_run_history to see which files were produced by a
+    given run so you can decide which ones to read with read_execution_file.
+
+    Args:
+        execution_id: The execution_id from the run history.
+    """
+    try:
+        executions = await ctx.deps.db_manager.get_study_executions(
+            ctx.deps.study_id, ctx.deps.user_id
+        )
+        record = next((e for e in executions if e["execution_id"] == execution_id), None)
+        if not record:
+            return f"❌ Execution '{execution_id}' not found."
+        manifest_path = record.get("manifest_path")
+        if not manifest_path or not os.path.isfile(manifest_path):
+            return f"❌ No manifest file found for execution '{execution_id}'."
+        with open(manifest_path, "r") as f:
+            manifest = json.load(f)
+        files = manifest.get("files", [])
+        lines = [
+            f"📦 **Manifest for execution {execution_id}**",
+            f"Study: {manifest.get('study_name', ctx.deps.study_id)}",
+            f"Executed at: {manifest.get('executed_at', 'unknown')}",
+            f"Artifacts dir: {manifest.get('artifacts_dir', 'unknown')}",
+            f"\nFiles ({len(files)}):",
+        ]
+        for f_path in files:
+            lines.append(f"  - {f_path}")
+        return "\n".join(lines)
+    except Exception as e:
+        logger.error(f"Error reading manifest: {e}")
+        return f"❌ Could not read manifest: {str(e)}"
+
+
+@agent.tool
+async def read_execution_file(
+    ctx: RunContext[CohortContext], execution_id: str, file_path: str
+) -> str:
+    """Read and summarise a file from a study execution's output artifacts.
+
+    Use the file_path values returned by get_execution_manifest.
+    Supports parquet (returns shape + column stats), CSV, JSON, and plain text.
+    For large files a concise summary is returned rather than the full contents.
+
+    Args:
+        execution_id: The execution_id whose artifacts you want to read.
+        file_path: Relative path of the file within the execution directory
+                   (as returned by get_execution_manifest).
+    """
+    try:
+        executions = await ctx.deps.db_manager.get_study_executions(
+            ctx.deps.study_id, ctx.deps.user_id
+        )
+        record = next((e for e in executions if e["execution_id"] == execution_id), None)
+        if not record:
+            return f"❌ Execution '{execution_id}' not found."
+        manifest_path = record.get("manifest_path")
+        if not manifest_path:
+            return f"❌ No manifest for execution '{execution_id}'."
+        artifacts_dir = os.path.dirname(manifest_path)
+        full_path = os.path.normpath(os.path.join(artifacts_dir, file_path))
+        # Security: ensure the resolved path stays inside the artifacts directory
+        if not full_path.startswith(os.path.normpath(artifacts_dir)):
+            return "❌ Path traversal detected — access denied."
+        if not os.path.isfile(full_path):
+            return f"❌ File not found: {file_path}"
+
+        ext = os.path.splitext(full_path)[1].lower()
+
+        if ext == ".parquet":
+            try:
+                import pandas as pd
+                df = pd.read_parquet(full_path)
+                rows, cols = df.shape
+                summary_lines = [
+                    f"📊 **{file_path}** — {rows:,} rows × {cols} columns\n",
+                    "**Columns:**",
+                ]
+                for col in df.columns:
+                    dtype = str(df[col].dtype)
+                    n_null = int(df[col].isna().sum())
+                    if df[col].dtype in ("object", "string", "category"):
+                        n_unique = df[col].nunique()
+                        summary_lines.append(
+                            f"  - `{col}` ({dtype}): {n_unique} unique values, {n_null} nulls"
+                        )
+                    else:
+                        try:
+                            summary_lines.append(
+                                f"  - `{col}` ({dtype}): min={df[col].min()}, max={df[col].max()}, "
+                                f"mean={df[col].mean():.4g}, nulls={n_null}"
+                            )
+                        except Exception:
+                            summary_lines.append(f"  - `{col}` ({dtype}): {n_null} nulls")
+                if rows <= 20:
+                    summary_lines.append("\n**All rows:**")
+                    summary_lines.append(df.to_string(index=False))
+                else:
+                    summary_lines.append("\n**First 10 rows:**")
+                    summary_lines.append(df.head(10).to_string(index=False))
+                return "\n".join(summary_lines)
+            except ImportError:
+                return "❌ pandas is not installed; cannot read parquet files."
+
+        elif ext == ".csv":
+            try:
+                import pandas as pd
+                df = pd.read_csv(full_path)
+                rows, cols = df.shape
+                lines = [f"📄 **{file_path}** — {rows:,} rows × {cols} columns\n"]
+                if rows <= 50:
+                    lines.append(df.to_string(index=False))
+                else:
+                    lines.append("**First 20 rows:**")
+                    lines.append(df.head(20).to_string(index=False))
+                return "\n".join(lines)
+            except ImportError:
+                with open(full_path, "r", encoding="utf-8", errors="replace") as fh:
+                    content = fh.read(8000)
+                return f"📄 **{file_path}** (CSV preview):\n{content}"
+
+        elif ext == ".json":
+            with open(full_path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+            text = json.dumps(data, indent=2)
+            if len(text) > 6000:
+                text = text[:6000] + "\n… (truncated)"
+            return f"📄 **{file_path}** (JSON):\n{text}"
+
+        else:
+            with open(full_path, "r", encoding="utf-8", errors="replace") as fh:
+                content = fh.read(6000)
+            if len(content) == 6000:
+                content += "\n… (truncated)"
+            return f"📄 **{file_path}**:\n{content}"
+
+    except Exception as e:
+        logger.error(f"Error reading execution file {file_path}: {e}")
+        return f"❌ Could not read file: {str(e)}"
+
+
+@agent.tool
+async def list_cohorts(ctx: RunContext[CohortContext]) -> str:
+    """List all cohorts in the current study with their phenotype counts.
+
+    Use this to orient yourself before making edits — analogous to listing files
+    in a project.  Returns each cohort's name, id, and how many phenotypes it has.
+    """
+    cohorts = ctx.deps.cohorts
+    names = ctx.deps.cohort_names
+    if not cohorts:
+        return "No cohorts found in this study."
+    lines = [f"📂 **Study cohorts ({len(cohorts)} total):**\n"]
+    for cid, cdata in cohorts.items():
+        name = names.get(cid, cdata.get("name", cid))
+        n_phenotypes = len(cdata.get("phenotypes", []))
+        active_marker = " 👁️ (currently viewing)" if cid == ctx.deps.active_cohort_id else ""
+        lines.append(f"  - **{name}** (`{cid}`) — {n_phenotypes} phenotype(s){active_marker}")
+    return "\n".join(lines)
+
+
+@agent.tool
+async def get_cohort_state(ctx: RunContext[CohortContext], cohort_id: str) -> str:
+    """Get the full phenotype list for a specific cohort.
+
+    Use this to understand what's in a cohort before making changes to it —
+    analogous to opening a file in an editor.
+
+    Args:
+        cohort_id: The cohort id (from list_cohorts).
+    """
+    cohorts = ctx.deps.cohorts
+    names = ctx.deps.cohort_names
+    if cohort_id not in cohorts:
+        available = ", ".join(cohorts.keys())
+        return f"❌ Cohort '{cohort_id}' not found. Available: {available}"
+    cdata = cohorts[cohort_id]
+    name = names.get(cohort_id, cdata.get("name", cohort_id))
+    phenotypes = cdata.get("phenotypes", [])
+    lines = [f"📋 **{name}** — {len(phenotypes)} phenotype(s):\n"]
+    for i, p in enumerate(phenotypes, 1):
+        lines.append(
+            f"  {i}. **{p.get('name','?')}** (id=`{p.get('id','?')}`, "
+            f"type={p.get('type','?')}, class={p.get('class_name','?')})\n"
+            f"     {p.get('description','')}"
+        )
+    if not phenotypes:
+        lines.append("  (no phenotypes)")
+    return "\n".join(lines)
+
+
+@agent.tool
+async def switch_target_cohort(ctx: RunContext[CohortContext], cohort_id: str) -> str:
+    """Switch which cohort all editing tools will operate on.
+
+    Call this before using create_phenotype / atomic_update_* / delete_phenotype
+    when you want to edit a cohort other than the one currently active.
+    After calling this, all editing tools will affect the specified cohort.
+
+    Args:
+        cohort_id: The cohort to target (from list_cohorts).
+    """
+    if cohort_id not in ctx.deps.cohorts:
+        available = ", ".join(ctx.deps.cohorts.keys())
+        return f"❌ Cohort '{cohort_id}' not found. Available: {available}"
+    # Mark the cohort we're leaving as potentially dirty — any tool calls before
+    # this switch operated on it and we need to save it at turn end.
+    prev_id = ctx.deps.cohort_id
+    if prev_id and prev_id not in ctx.deps.modified_cohort_ids:
+        ctx.deps.modified_cohort_ids.append(prev_id)
+    ctx.deps.cohort_id = cohort_id
+    ctx.deps.current_cohort = ctx.deps.cohorts[cohort_id]
+    name = ctx.deps.cohort_names.get(cohort_id, cohort_id)
+    return f"✅ Now targeting cohort **{name}** — editing tools will operate on this cohort."
+
+
+@agent.tool
+async def get_latest_execution(ctx: RunContext[CohortContext]) -> str:
+    """Return the most recent successful execution for this study.
+
+    Convenience shortcut — use this instead of get_study_run_history when you
+    just want to work with the latest results.
+    """
+    try:
+        executions = await ctx.deps.db_manager.get_study_executions(
+            ctx.deps.study_id, ctx.deps.user_id
+        )
+        successful = [e for e in executions if e.get("status") == "success" and e.get("manifest_path")]
+        if not successful:
+            all_count = len(executions)
+            return f"No successful executions found (total runs: {all_count})."
+        latest = successful[0]  # already ordered by started_at DESC
+        return (
+            f"✅ Latest successful execution:\n"
+            f"  execution_id: `{latest['execution_id']}`\n"
+            f"  started: {latest.get('started_at','?')}\n"
+            f"  ended: {latest.get('ended_at','?')}\n\n"
+            f"Use get_execution_manifest('{latest['execution_id']}') to see output files."
+        )
+    except Exception as e:
+        return f"❌ Could not fetch latest execution: {str(e)}"
+
+
+@agent.tool
 async def lookup_documentation(ctx: RunContext[CohortContext], query: str) -> str:
     """Look up PhenEx documentation for parameter guidance."""
     try:
@@ -2584,6 +2896,11 @@ async def update_context_only(
             print(
                 f"🔄 UPDATE_CONTEXT: ✅ Updated context phenotypes to phenotype IDs: {[p.get('id') for p in updated_phenotypes]}"
             )
+            # Track which cohort was modified at the point the change is applied,
+            # not at the point of the DB save — this ensures multi-cohort edits are
+            # all saved at the end even if the AI switched target cohorts mid-turn.
+            if context.cohort_id and context.cohort_id not in context.modified_cohort_ids:
+                context.modified_cohort_ids.append(context.cohort_id)
         else:
             print(
                 f"🔄 UPDATE_CONTEXT: Warning - no 'phenotypes' key in context.current_cohort"
@@ -2670,6 +2987,11 @@ async def save_updated_cohort(
             print(f"💾 SAVE_COHORT: ✅ Successfully completed save operation")
             logger.info(f"Successfully saved cohort: {change_description}")
 
+            # Track which cohorts have been modified this AI turn
+            cid = context.cohort_id
+            if cid and cid not in context.modified_cohort_ids:
+                context.modified_cohort_ids.append(cid)
+
         except Exception as e:
             print(f"💾 SAVE_COHORT: ❌ Error during save: {e}")
             logger.error(f"Error saving cohort: {e}")
@@ -2684,212 +3006,146 @@ from ...utils.validation import validate_cohort_data_format
 router = APIRouter(tags=["AI"])
 
 
-@router.post("/suggest_changes", tags=["AI"])
+@router.post("/chat", tags=["AI"])
 async def suggest_changes_v2(
     request: Request,
     req_body: SuggestChangesRequest = Body(...),
-    cohort_id: str = Query(...),
-    model: Optional[str] = Query("gpt-4o-mini"),
-    return_updated_cohort: bool = Query(False),
+    study_id: str = Query(...),
+    active_cohort_id: Optional[str] = Query(None),
+    model: Optional[str] = Query("gpt-4o"),
 ):
     """
-    AI-powered cohort modification with streaming feedback.
+    Study-level AI assistant with streaming feedback.
+
+    Operates on all cohorts in the study (VS Code Copilot model — study = project,
+    cohorts = files).  Can edit any cohort and analyse execution results.
 
     Query Parameters:
-    - cohort_id (str): The unique identifier of the cohort to modify
-    - model (str, optional): AI model to use (default: "gpt-4o-mini")
-    - return_updated_cohort (bool, optional): If true, returns full cohort after modifications (default: false)
+    - study_id: The study to operate on
+    - active_cohort_id: Optional hint — which cohort the user is currently viewing
+    - model: AI model override (default: gpt-4o)
 
-    Request Body:
-    - SuggestChangesRequest: Contains the user's natural language request and conversation context:
-        - user_request (str): Natural language instruction for cohort modifications
-        - conversation_history (list[dict], optional): Previous conversation messages for context
-        - cohort_description (str, optional): Overall study/cohort description to inform AI decisions
-
-    Authentication:
-    - Requires authenticated user. Modifies cohorts owned by the authenticated user.
-
-    Behavior:
-    - Processes natural language requests to modify cohort definitions
-    - Creates, updates, or deletes phenotypes based on user instructions
-    - Maintains provisional changes that can be accepted or rejected
-    - Streams real-time feedback showing AI reasoning and tool usage
-    - Supports conversation context for multi-turn interactions
-
-    Streaming Response:
-    - Server-Sent Events (SSE) stream with multiple message types:
-        - "content": AI's textual response and explanations
-        - "tool_call": AI is executing a specific operation
-        - "tool_result": Result of a tool execution
-        - "tool_error": Error during tool execution
-        - "complete": Stream has finished
-        - "result": Final cohort data (if return_updated_cohort=true)
-
-    Example Request Body:
-    ```json
-    {
-        "user_request": "Add an exclusion criterion for patients with cancer history",
-        "conversation_history": [
-            {"user": "Add diabetes as inclusion"},
-            {"system": "I've added diabetes as an inclusion criterion..."}
-        ],
-        "cohort_description": "Type 2 diabetes study with 1-year follow-up"
-    }
-    ```
-
-    Example SSE Stream:
-    ```
-    data: {"type": "content", "message": "I'll add a cancer exclusion criterion..."}
-    data: {"type": "tool_call", "message": "➕ Creating phenotype: Cancer History"}
-    data: {"type": "tool_result", "message": "✅ Created Cancer History"}
-    data: {"type": "content", "message": "Successfully added the exclusion."}
-    data: {"type": "complete", "message": "Operation completed"}
-    ```
-
-    Supported Operations:
-    - Create phenotypes (CodelistPhenotype, AgePhenotype, MeasurementPhenotype, etc.)
-    - Update phenotype properties (codelists, time ranges, value filters)
-    - Delete phenotypes
-    - Modify phenotypes of any type (entry, inclusion, exclusion, baseline, outcome)
-
-    Raises:
-    - 401: If user is not authenticated
-    - 404: If cohort is not found
-    - 400: If study_id is missing from cohort
-    - 503: If AI agent is not properly configured
-    - 500: If there's an error during AI processing or database operations
+    Streaming Response (SSE):
+    - content, tool_call, tool_result, tool_error: standard AI events
+    - complete: includes modified_cohort_ids and modified_cohort_names lists
     """
-    # Check if AI agent is properly configured
     if agent is None:
-        raise HTTPException(
-            status_code=503,
-            detail="AI agent not configured. Check Azure OpenAI credentials and network connectivity.",
-        )
+        raise HTTPException(status_code=503, detail="AI agent not configured.")
 
     user_id = get_authenticated_user_id(request)
 
-    # Get current cohort — check user-owned first, then fall back to public cohorts
-    current_cohort_record = await db_manager.get_cohort_for_user(user_id, cohort_id)
-    if not current_cohort_record:
-        public_user_id = os.getenv("PUBLIC_USER_ID")
-        if public_user_id:
-            current_cohort_record = await db_manager.get_cohort_for_user(
-                public_user_id, cohort_id
-            )
-    if not current_cohort_record:
-        raise HTTPException(status_code=404, detail=f"Cohort {cohort_id} not found")
+    # Load all cohorts for this study
+    cohort_records = await db_manager.get_cohorts_for_study(study_id, user_id)
+    if not cohort_records:
+        raise HTTPException(status_code=404, detail=f"Study {study_id} not found or has no cohorts")
 
-    current_cohort = current_cohort_record["cohort_data"]
-    study_id = current_cohort_record["study_id"]
+    # Load full cohort data for each cohort
+    cohorts: Dict = {}
+    cohort_names: Dict = {}
+    for rec in cohort_records:
+        cid = rec["id"]
+        full = await db_manager.get_cohort_for_user(user_id, cid)
+        if full:
+            cdata = full.get("cohort_data", {})
+            name = full.get("name") or cdata.get("name", cid)
+            # Inject name into cohort_data so tools see it
+            cdata["name"] = name
+            # Strip legacy keys
+            for k in ("entry_criterion", "inclusions", "exclusions", "characteristics", "outcomes"):
+                cdata.pop(k, None)
+            cohorts[cid] = cdata
+            cohort_names[cid] = name
 
-    if not study_id:
-        raise HTTPException(status_code=400, detail="study_id is required")
+    if not cohorts:
+        raise HTTPException(status_code=404, detail="No cohort data could be loaded")
 
-    # Validate cohort uses phenotypes-only format
-    try:
-        validate_cohort_data_format(current_cohort)
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+    # Determine the initially targeted cohort
+    target_cohort_id = active_cohort_id if active_cohort_id in cohorts else next(iter(cohorts))
+    target_cohort = cohorts[target_cohort_id]
 
-    # Remove any legacy structured keys if they somehow exist (for backwards compatibility during migration)
-    legacy_keys = [
-        "entry_criterion",
-        "inclusions",
-        "exclusions",
-        "characteristics",
-        "outcomes",
-    ]
-    for field in legacy_keys:
-        current_cohort.pop(field, None)
-
-    # Prepare context and capture initial state for comparison
-    initial_cohort_data = current_cohort.copy()
     context = CohortContext(
         user_id=user_id,
-        cohort_id=cohort_id,
+        cohort_id=target_cohort_id,
         study_id=study_id,
-        current_cohort=current_cohort,
+        current_cohort=target_cohort,
+        cohorts=cohorts,
+        cohort_names=cohort_names,
+        active_cohort_id=active_cohort_id,
+        modified_cohort_ids=[],
         db_manager=db_manager,
     )
 
-    # Get initial cohort state for the AI
     global _last_operation_was_state_check
-    initial_state = await get_current_cohort_from_context(context)
-    _last_operation_was_state_check = True  # Mark that we just showed the state
+    _last_operation_was_state_check = True
 
-    # Extract phenotype IDs for explicit instruction
-    current_phenotypes = current_cohort.get("phenotypes", [])
-    phenotype_id_list = [
-        f"'{p.get('id')}' ({p.get('name')})" for p in current_phenotypes
+    # Build study summary context injected into every message
+    study_summary_lines = [
+        f"📂 **STUDY CONTEXT — you are working on a full study, not a single cohort.**",
+        f"Study ID: {study_id}",
+        f"",
+        f"**Cohorts in this study (like files in a project):**",
     ]
+    for cid, cdata in cohorts.items():
+        n = len(cdata.get("phenotypes", []))
+        active_marker = " 👁️ (currently viewing)" if cid == active_cohort_id else ""
+        study_summary_lines.append(
+            f"  - **{cohort_names[cid]}** (`{cid}`) — {n} phenotype(s){active_marker}"
+        )
+    study_summary_lines += [
+        "",
+        "Use `list_cohorts()` to see this list, `get_cohort_state(cohort_id)` to inspect a cohort,",
+        "and `switch_target_cohort(cohort_id)` before editing a cohort other than the active one.",
+        "",
+    ]
+    study_summary = "\n".join(study_summary_lines)
 
-    # Get available domains from the database configuration
+    # Show current targeted cohort phenotypes + valid IDs
+    initial_state = await get_current_cohort_from_context(context)
+    current_phenotypes = target_cohort.get("phenotypes", [])
+    phenotype_id_list = [f"'{p.get('id')}' ({p.get('name')})" for p in current_phenotypes]
+
     try:
-        # Use OMOP domains by default
         from phenex.mappers import OMOPDomains
-
-        mapper = OMOPDomains
-        logger.info("Using default OMOP domains")
-
-        available_domains = list(mapper.keys())
-        domain_info = f"\n\n🗂️ **AVAILABLE DATABASE DOMAINS (use these exact names):**\n{', '.join(available_domains)}\n"
-    except Exception as e:
-        logger.warning(f"Could not load domain mappers: {e}")
-        available_domains = []
+        domain_info = f"\n\n🗂️ **AVAILABLE DATABASE DOMAINS:**\n{', '.join(OMOPDomains.keys())}\n"
+    except Exception:
         domain_info = ""
 
-    # Build conversation history as a string to inject into the user message
     conversation_context = ""
-    print(f"\n🔍 DEBUG: CONVERSATION HISTORY:")
-    print(f"Received {len(req_body.conversation_history)} entries")
-
     if req_body.conversation_history:
         conversation_context = "\n📜 **CONVERSATION HISTORY:**\n"
-        for i, entry in enumerate(req_body.conversation_history):
-            print(f"  Entry {i}: {entry}")
-            if "user" in entry and entry["user"]:
+        for entry in req_body.conversation_history:
+            if entry.get("user"):
                 conversation_context += f"User: {entry['user']}\n"
-            elif "system" in entry and entry["system"]:
+            elif entry.get("system"):
                 conversation_context += f"Assistant: {entry['system']}\n"
-            elif "user_action" in entry and entry["user_action"]:
+            elif entry.get("user_action"):
                 conversation_context += f"[USER ACTION: {entry['user_action']}]\n"
         conversation_context += "\n"
 
-    # Build cohort description context
     description_context = ""
     if req_body.cohort_description:
-        print(f"\n📝 DEBUG: COHORT DESCRIPTION PROVIDED")
-        print(f"Description length: {len(req_body.cohort_description)} characters")
-        description_context = f"\n📋 **COHORT DESCRIPTION (User's Study Definition):**\n{req_body.cohort_description}\n\n"
+        description_context = f"\n📋 **STUDY DESCRIPTION:**\n{req_body.cohort_description}\n\n"
 
-    # Build the current user message with conversation history and description injected
-    user_message = f"""{conversation_context}{description_context}🔍 **CURRENT COHORT STATE:**
+    user_message = f"""{conversation_context}{description_context}{study_summary}
+🔍 **CURRENTLY TARGETED COHORT STATE** (editing tools default to this cohort):
 {initial_state}
 {domain_info}
-🚨🚨🚨 **MANDATORY: THESE ARE THE ONLY VALID PHENOTYPE IDs - DO NOT MODIFY OR GUESS ALTERNATIVES!** 🚨🚨🚨
-{', '.join(phenotype_id_list) if phenotype_id_list else 'No phenotypes in cohort'}
-
-🚨🚨🚨 **WARNING: IF YOU USE ANY ID NOT LISTED ABOVE, THE OPERATION WILL FAIL!** 🚨🚨🚨
+🚨 **VALID PHENOTYPE IDs FOR CURRENTLY TARGETED COHORT** (use exact IDs):
+{', '.join(phenotype_id_list) if phenotype_id_list else 'No phenotypes in targeted cohort'}
 
 User request: {req_body.user_request}
 
 🚨 **CRITICAL RULES:**
-- ONLY use the exact phenotype IDs listed above
-- DO NOT modify, abbreviate, or create variations of the IDs
-- DO NOT guess phenotype IDs based on names or descriptions
-- COPY the exact ID string from the list above
-- ONLY use the exact domain names from the AVAILABLE DATABASE DOMAINS list above
-- DO NOT abbreviate or modify domain names (use "CONDITION_OCCURRENCE" not "conditions")
-- If you need to delete "HbA1c measurement", use the exact ID from the list above
-
-Please modify this cohort according to the user's instructions. Use the available tools to add, update, or delete phenotypes as needed.
+- Use `switch_target_cohort(cohort_id)` before editing a different cohort
+- ONLY use exact phenotype IDs listed above for the targeted cohort
+- After switching cohorts, call `get_cohort_state(cohort_id)` to get valid IDs for that cohort
+- ONLY use exact domain names from the AVAILABLE DATABASE DOMAINS list
 """
 
-    # DEBUG: Print the exact message being sent to AI
-    print(f"\n🔍 DEBUG: USER MESSAGE BEING SENT TO AI:")
-    print(f"=" * 80)
-    print(user_message)
-    print(f"=" * 80)
+    # Snapshot of initial targeted cohort state for change detection in the closure
+    initial_cohort_data = target_cohort.copy()
+
+    print(f"\n🔍 DEBUG: STUDY-LEVEL USER MESSAGE:\n{'='*80}\n{user_message}\n{'='*80}")
 
     async def stream_ai_response():
         """Stream the AI response with real-time feedback about tool calls and reasoning."""
@@ -2927,7 +3183,7 @@ Please modify this cohort according to the user's instructions. Use the availabl
 
         try:
             # Stream the agent response in real-time using Pydantic AI's streaming API
-            async with agent.run_stream(user_message, deps=context) as result:
+            async with agent.run_stream(user_message, deps=context, model_settings={"max_tokens": 8192}) as result:
                 # Interleave AI text tokens with tool call messages
                 async for text_chunk in result.stream_text(delta=True):
                     # First, drain any pending tool messages
@@ -2969,97 +3225,35 @@ Please modify this cohort according to the user's instructions. Use the availabl
             print(f"💾 FINAL_SAVE: Write operations detected: {actual_tool_calls}")
 
             # Save final context state to database (all operations are now complete)
-            final_phenotypes = context.current_cohort.get("phenotypes", [])
-            initial_phenotypes = initial_cohort_data.get("phenotypes", [])
+            # modified_cohort_ids was populated by update_context_only at the moment
+            # each change was applied — no diff comparison needed.
 
-            # Compare by phenotype IDs AND content to detect changes
-            final_ids = {p.get("id") for p in final_phenotypes}
-            initial_ids = {p.get("id") for p in initial_phenotypes}
+            # Save every cohort that may have been modified this turn.
+            # modified_cohort_ids is populated by:
+            #   - update_context_only (create/delete tools)
+            #   - switch_target_cohort (marks the cohort being left as dirty)
+            # We also always add the currently-targeted cohort here because atomic
+            # update tools (name, domain, value_filter, etc.) mutate
+            # ctx.deps.current_cohort in-place without going through update_context_only.
+            if context.cohort_id and context.cohort_id not in context.modified_cohort_ids:
+                context.modified_cohort_ids.append(context.cohort_id)
+            cohorts_to_save = list(context.modified_cohort_ids)
+            print(f"💾 FINAL_SAVE: Cohorts to save: {cohorts_to_save}")
 
-            # Deep comparison - check if phenotype content has changed
-            def phenotypes_equal(p1, p2):
-                """Compare two phenotypes for equality, ignoring order-dependent differences."""
-                return json.dumps(p1, sort_keys=True) == json.dumps(p2, sort_keys=True)
-
-            # Create lookup dicts for efficient comparison
-            initial_lookup = {p.get("id"): p for p in initial_phenotypes}
-            final_lookup = {p.get("id"): p for p in final_phenotypes}
-
-            content_changed = False
-
-            # CRITICAL FIX: Check if any tool calls were made during the conversation
-            # If tools were called, assume changes were made (atomic functions update in-place)
-            print(f"💾 FINAL_SAVE: Actual tool calls executed: {actual_tool_calls}")
-            if actual_tool_calls:
-                print(
-                    f"💾 FINAL_SAVE: ✅ Tools were executed ({len(actual_tool_calls)} calls) - assuming changes were made"
-                )
-                content_changed = True
-            elif final_ids == initial_ids and len(final_phenotypes) == len(
-                initial_phenotypes
-            ):
-                # Only do expensive deep comparison if no tools were called
-                print(
-                    f"💾 FINAL_SAVE: No tools called - doing deep content comparison for {len(final_ids)} phenotypes"
-                )
-                for pid in final_ids:
-                    initial_pheno = initial_lookup[pid]
-                    final_pheno = final_lookup[pid]
-                    print(f"💾 FINAL_SAVE: Comparing phenotype {pid}:")
-                    print(
-                        f"💾 FINAL_SAVE:   Initial: {json.dumps(initial_pheno, sort_keys=True)[:200]}..."
-                    )
-                    print(
-                        f"💾 FINAL_SAVE:   Final:   {json.dumps(final_pheno, sort_keys=True)[:200]}..."
-                    )
-
-                    if not phenotypes_equal(initial_pheno, final_pheno):
-                        content_changed = True
-                        print(f"💾 FINAL_SAVE: ✅ Phenotype {pid} content changed")
-                        break
-                    else:
-                        print(f"💾 FINAL_SAVE: ❌ Phenotype {pid} content identical")
-
-                if not content_changed:
-                    print(
-                        f"💾 FINAL_SAVE: ❌ No content changes detected in any phenotype"
-                    )
-            else:
-                # Different phenotype sets detected
-                content_changed = True
-                print(
-                    f"💾 FINAL_SAVE: ✅ Structural changes detected (different phenotype sets)"
-                )
-
-            if (
-                final_ids != initial_ids
-                or len(final_phenotypes) != len(initial_phenotypes)
-                or content_changed
-            ):
-                print(f"\n💾 FINAL_SAVE: Changes detected - saving final state")
-                print(
-                    f"💾 FINAL_SAVE: Initial: {len(initial_phenotypes)} phenotypes {list(initial_ids)}"
-                )
-                print(
-                    f"💾 FINAL_SAVE: Final: {len(final_phenotypes)} phenotypes {list(final_ids)}"
-                )
-                if content_changed:
-                    print(
-                        f"💾 FINAL_SAVE: Content changes detected in existing phenotypes"
-                    )
-                if final_ids != initial_ids:
-                    added = final_ids - initial_ids
-                    removed = initial_ids - final_ids
-                    if added:
-                        print(f"💾 FINAL_SAVE: Added phenotypes: {added}")
-                    if removed:
-                        print(f"💾 FINAL_SAVE: Removed phenotypes: {removed}")
-                await save_final_cohort(
-                    context, "Final save after AI conversation completed"
-                )
-                # Don't show save messages or cohort state to user - they're too verbose
+            for cid in cohorts_to_save:
+                if cid not in context.cohorts:
+                    continue
+                saved_id = context.cohort_id
+                saved_cohort = context.current_cohort
+                context.cohort_id = cid
+                context.current_cohort = context.cohorts[cid]
+                print(f"\n💾 FINAL_SAVE: Saving cohort {cid} ({context.cohort_names.get(cid, cid)})")
+                await save_final_cohort(context, f"Final save for cohort {cid}")
                 await asyncio.sleep(0)
-            else:
+                context.cohort_id = saved_id
+                context.current_cohort = saved_cohort
+
+            if not cohorts_to_save:
                 print(f"\n💾 FINAL_SAVE: No changes detected, skipping database save")
 
             # Drain any remaining tool messages after text stream completes
@@ -3075,13 +3269,17 @@ Please modify this cohort according to the user's instructions. Use the availabl
                     logger.info(f"  {i}. {tool_call}")
                 logger.info("✅ All AI operations completed successfully")
 
-            # Send completion signal
-            yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+            # Send completion signal — include which cohorts were modified
+            modified = context.modified_cohort_ids
+            modified_names = [
+                context.cohort_names.get(cid, cid) for cid in modified
+            ]
+            yield f"data: {json.dumps({'type': 'complete', 'modified_cohort_ids': modified, 'modified_cohort_names': modified_names})}\n\n"
 
         except Exception as e:
             logger.error(f"Error in stream_ai_response: {e}")
             yield f"data: {json.dumps({'type': 'error', 'message': f'Error: {str(e)}'})}\n\n"
-            yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+            yield f"data: {json.dumps({'type': 'complete', 'modified_cohort_ids': [], 'modified_cohort_names': []})}\n\n"
         finally:
             # Clean up streaming context
             set_streaming_context(None)
@@ -3105,7 +3303,7 @@ Please modify this cohort according to the user's instructions. Use the availabl
     )
 
 
-@router.get("/accept_changes", tags=["AI"])
+@router.get("/cohort/accept_changes", tags=["AI"])
 async def accept_changes(request: Request, cohort_id: str):
     """
     Accept and finalize provisional AI-generated changes to a cohort.
@@ -3166,7 +3364,7 @@ async def accept_changes(request: Request, cohort_id: str):
         )
 
 
-@router.get("/reject_changes", tags=["AI"])
+@router.get("/cohort/reject_changes", tags=["AI"])
 async def reject_changes(request: Request, cohort_id: str):
     """
     Reject and discard provisional AI-generated changes to a cohort.
@@ -3236,7 +3434,7 @@ async def reject_changes(request: Request, cohort_id: str):
         )
 
 
-@router.get("/get_changes", tags=["AI"])
+@router.get("/cohort/get_changes", tags=["AI"])
 async def get_changes(request: Request, cohort_id: str):
     """
     Get a detailed diff showing AI-generated changes awaiting review.

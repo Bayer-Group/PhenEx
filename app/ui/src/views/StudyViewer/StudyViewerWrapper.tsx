@@ -4,6 +4,7 @@ import { UnauthorizedPage } from '../ErrorPages/UnauthorizedPage';
 import { NotFoundPage } from '../ErrorPages/NotFoundPage';
 import { getStudy } from '@/api/text_to_cohort/route';
 import { TwoPanelCohortViewer } from '../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
+import { chatPanelDataService } from '../ChatPanel/ChatPanelDataService';
 
 interface StudyViewerWrapperProps {
   data?: string;
@@ -12,6 +13,13 @@ interface StudyViewerWrapperProps {
 export const StudyViewerWrapper: FC<StudyViewerWrapperProps> = ({ data }) => {
   const [error, setError] = useState<'unauthorized' | 'not-found' | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Activate study mode for the AI chat whenever a study is open
+    if (data) {
+      chatPanelDataService.setStudyMode(data);
+    }
+  }, [data]);
 
   useEffect(() => {
     const checkStudyAccess = async () => {

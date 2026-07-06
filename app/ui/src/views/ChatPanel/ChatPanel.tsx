@@ -19,16 +19,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = () => {
   };
 
   useEffect(() => {
-    // Check initial state - only user messages count for interaction
     const userMessageCount = chatPanelDataService.getUserMessageCount();
     setUserHasInteracted(userMessageCount > 0);
 
-    // Listen for message updates to track when user first interacts
     const handleMessagesUpdated = () => {
       const currentUserMessageCount = chatPanelDataService.getUserMessageCount();
-      if (currentUserMessageCount > 0) {
-        setUserHasInteracted(true);
-      }
+      if (currentUserMessageCount > 0) setUserHasInteracted(true);
     };
 
     chatPanelDataService.onMessagesUpdated(handleMessagesUpdated);
@@ -36,7 +32,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = () => {
   }, []);
 
   return (
-    <div style={{ position: 'relative', height: '100%', width: '100%' }}>
+    <div style={{ position: 'relative', height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
       <MessagesDisplay bottomMargin={bottomContainerHeight} />
       <div className={styles.heightAdjustableContainer}>
         <HeightAdjustableContainer

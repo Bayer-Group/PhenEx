@@ -194,10 +194,13 @@ export const StudyExecutePanel: React.FC = () => {
 
   const renderControls = () => {
     const executingLabel = isExecuting ? 'Executing...' : 'Execute Study';
-    const tabs = [executingLabel, 'Clear Logs', 'Filter'];
+    const tabs = [executingLabel, 'Copy Logs', 'Filter'];
     const handleTabChange = (index: number) => {
       if (tabs[index] === executingLabel) handleExecute();
-      else if (tabs[index] === 'Clear Logs') { setLogs([]); setLogFileContent(null); setViewMode(null); }
+      else if (tabs[index] === 'Copy Logs') {
+        const text = logs.map(l => l.message).join('\n');
+        navigator.clipboard.writeText(text).catch(() => {});
+      }
     };
     return (
       <div className={styles.controls}>

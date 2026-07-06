@@ -148,18 +148,19 @@ async def execute_study(request: Request):
                 print(f"Starting study execution: {study.get('name', study_id)}")
                 logger.info(f"Executing study '{study.get('name')}' ({study_id})")
 
-                if database["mapper"] == "OMOP":
+                db_config = database
+                if db_config["mapper"] == "OMOP":
                     from phenex.mappers import OMOPDomains
                     mapper = OMOPDomains
                     print("Using OMOP mapper")
 
-                db_cfg = database["config"]
-                connector_type = database.get("connector", "snowflake")
+                db_cfg = db_config["config"]
+                connector_type = db_config.get("connector", "snowflake")
                 print("Creating database connection...")
 
                 if connector_type == "mocker":
                     n_patients = db_cfg.get("n_patients", 1000) if db_cfg else 1000
-                    database = _get_mock_database(mapper, n_patients)
+                    px_database = _get_mock_database(mapper, n_patients)
                 else:
                     try:
                         from phenex.connectors.snowflake import SnowflakeConnector
@@ -168,7 +169,7 @@ async def execute_study(request: Request):
                             SNOWFLAKE_SOURCE_DATABASE=db_cfg["source_database"],
                             SNOWFLAKE_DEST_DATABASE=db_cfg["destination_database"],
                         )
-                        database = Database(connector=con, mapper=mapper)
+                        px_database = Database(connector=con, mapper=mapper)
                     except ImportError:
                         raise RuntimeError("Snowflake connector not available")
 
@@ -178,12 +179,16 @@ async def execute_study(request: Request):
                 px_cohorts = []
                 for cohort_wrapper in full_cohorts:
                     cohort_data = cohort_wrapper.get("cohort_data", cohort_wrapper)
-                    cohort_name = cohort_wrapper.get("name", cohort_data.get("id", "unknown"))
+                    cohort_name = cohort_wrapper.get("name", cohort_data.get("name", cohort_data.get("id", "unknown")))
+                    # name/description live in dedicated DB columns now; inject into cohort_data
+                    # so prepare_cohort_for_phenex and from_dict see them
+                    cohort_data = dict(cohort_data)
+                    cohort_data.setdefault("name", cohort_name)
                     print(f"Preparing cohort: {cohort_name}")
                     processed = prepare_cohort_for_phenex(cohort_data, user_id)
                     px_cohort = from_dict(processed)
                     print(f"  -> created cohort object with name: {px_cohort.name!r}")
-                    px_cohort.database = database
+                    px_cohort.database = px_database
                     px_cohorts.append(px_cohort)
                 print(f"Total cohorts ready for execution: {len(px_cohorts)}")
 

@@ -29,9 +29,15 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
   }));
 
   // Check if cohort is provisional and update state accordingly
-  // This is the SINGLE SOURCE OF TRUTH for whether buttons should show
+  // In study mode the per-cohort accept/reject in ChatPanel handles this — skip here.
   useEffect(() => {
     const checkProvisionalState = () => {
+      // Study mode: accept/reject is handled per-cohort in ChatPanel, not here
+      if (chatPanelDataService['_studyMode']) {
+        setIsProvisional(false);
+        setInteractionState('empty');
+        return;
+      }
       const cohortDataService = CohortDataService.getInstance();
       const cohortData = cohortDataService.cohort_data;
       const provisional = cohortData?.is_provisional === true;

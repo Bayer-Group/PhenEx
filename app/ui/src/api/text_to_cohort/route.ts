@@ -112,7 +112,7 @@ export const deleteCohort = async (cohort_id: string) => {
 
 export const acceptChanges = async (cohort_id: string) => {
   try {
-    const response = await api.get('/cohort/accept_changes', {
+    const response = await api.get('/copilot/cohort/accept_changes', {
       params: { cohort_id },
     });
 
@@ -131,7 +131,7 @@ export const acceptChanges = async (cohort_id: string) => {
 
 export const rejectChanges = async (cohort_id: string) => {
   try {
-    const response = await api.get('/cohort/reject_changes', {
+    const response = await api.get('/copilot/cohort/reject_changes', {
       params: { cohort_id },
     });
 
@@ -148,79 +148,33 @@ export const rejectChanges = async (cohort_id: string) => {
   }
 };
 
-export const suggestChanges = async (
-  cohort_id: string,
+export const suggestChangesForStudy = async (
+  study_id: string,
   user_request: string,
-  model: string = 'gpt-4o-mini',
-  return_updated_cohort: boolean = false,
+  model: string = 'gpt-4o',
   conversation_history?: Array<{user?: string; system?: string; user_action?: string}>,
-  cohort_description?: string
-) => {
-  try {
-    console.log('suggestChanges: Starting request with params:', {
-      cohort_id: String(cohort_id),
-      model,
-      return_updated_cohort: String(return_updated_cohort),
-      user_request_length: user_request.length,
-      history_length: conversation_history?.length || 0,
-      has_description: !!cohort_description
-    });
+  cohort_description?: string,
+  active_cohort_id?: string,
+): Promise<ReadableStream<Uint8Array>> => {
+  const baseURL = (api.defaults.baseURL || '').replace(/\/$/, '');
+  const url = new URL(`${baseURL}/copilot/chat`);
+  url.searchParams.set('study_id', study_id);
+  url.searchParams.set('model', model);
+  if (active_cohort_id) url.searchParams.set('active_cohort_id', active_cohort_id);
 
-    // Build the URL correctly by combining baseURL and endpoint path
-    const baseURL = api.defaults.baseURL || '';
-    let fullURL = baseURL;
-    
-    // Ensure proper path joining - remove trailing slash from base, add leading slash to endpoint
-    if (fullURL.endsWith('/')) {
-      fullURL = fullURL.slice(0, -1);
-    }
-    fullURL += '/cohort/suggest_changes';
-    
-    // Build the URL with query parameters
-    const url = new URL(fullURL);
-    url.searchParams.set('cohort_id', String(cohort_id));
-    url.searchParams.set('model', model);
-    url.searchParams.set('return_updated_cohort', String(return_updated_cohort));
-
-    // Prepare the request body with conversation history and cohort description
-    const requestBody = {
+  const response = await authFetch(url.toString(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
       user_request,
       conversation_history: conversation_history || [],
-      cohort_description: cohort_description || null
-    };
+      cohort_description: cohort_description || null,
+    }),
+  });
 
-    // Use authFetch for streaming responses with proper authentication
-    const response = await authFetch(url.toString(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    console.log('suggestChanges: Received response, status:', response.status);
-
-    if (!response.ok) {
-      console.error('suggestChanges: Request failed with status:', response.status);
-      throw new Error(`Request failed with status code ${response.status}`);
-    }
-
-    if (!response.body) {
-      console.error('suggestChanges: No response body received');
-      throw new Error('No response body received.');
-    }
-
-    console.log('suggestChanges: Returning ReadableStream from response');
-    return response.body;
-  } catch (error: any) {
-    console.error('suggestChanges: Error occurred:', {
-      message: error?.message || 'Unknown error',
-      status: error?.status,
-      statusText: error?.statusText,
-      error: error
-    });
-    throw error;
-  }
+  if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+  if (!response.body) throw new Error('No response body received.');
+  return response.body;
 };
 
 // ========== STUDY API CALLS ==========

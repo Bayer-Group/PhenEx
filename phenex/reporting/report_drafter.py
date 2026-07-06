@@ -94,7 +94,7 @@ class ReportDrafter(Reporter):
     os.environ["OPENAI_API_VERSION"] = "2024-02-15-preview"
 
     from phenex.reporting import ReportDrafter
-    reporter = ReportDrafter(ai_model="gpt-4o-mini")  # or "gpt-4", "gpt-3.5-turbo"
+    reporter = ReportDrafter(ai_model="gpt-4o")  # or "gpt-4", "gpt-3.5-turbo"
     ```
 
     **Option 2: Standard OpenAI**
@@ -107,7 +107,7 @@ class ReportDrafter(Reporter):
     os.environ["OPENAI_API_KEY"] = "sk-your-api-key-here"
 
     from phenex.reporting import ReportDrafter
-    reporter = ReportDrafter(ai_model="gpt-4o-mini")  # or "gpt-4", "gpt-3.5-turbo"
+    reporter = ReportDrafter(ai_model="gpt-4o")  # or "gpt-4", "gpt-3.5-turbo"
     ```
 
     **Disabling AI**
@@ -120,7 +120,7 @@ class ReportDrafter(Reporter):
 
     Parameters:
         use_ai: Whether to use AI for generating descriptive text. If True but API keys are not available, automatically falls back to rule-based generation. Default is True.
-        ai_model: The model or deployment name to use when making API calls. Default is "gpt-4o-mini".
+        ai_model: The model or deployment name to use when making API calls. Default is "gpt-4o".
         include_plots: Whether to include plots in the report (e.g., waterfall charts). Default is True.
         plot_dpi: DPI (dots per inch) for plot image quality. Higher values produce better quality but larger file sizes. Default is 300.
         title: Report title. If None, will be generated from cohort name.
@@ -202,7 +202,7 @@ class ReportDrafter(Reporter):
     def __init__(
         self,
         use_ai: bool = True,
-        ai_model: str = "gpt-4o-mini",
+        ai_model: str = "gpt-4o",
         include_plots: bool = True,
         plot_dpi: int = 300,
         title: Optional[str] = None,

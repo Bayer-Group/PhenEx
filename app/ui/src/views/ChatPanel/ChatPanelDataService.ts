@@ -1,7 +1,7 @@
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 
 import {
-  suggestChanges,
+  suggestChangesForStudy,
   getUserCohort,
   getPublicCohort,
   acceptChanges,
@@ -16,6 +16,9 @@ export interface Message {
   text: string;
   isUser: boolean;
   isLoading?: boolean;
+  steps?: string[];
+  stepsExpanded?: boolean;
+  pendingChanges?: { cohortId: string; cohortName: string }[];
 }
 
 export interface ConversationEntry {
@@ -39,6 +42,13 @@ class ChatPanelDataService {
   private listeners: Set<MessageCallback> = new Set();
   private aiCompletionListeners: Set<AICompletionCallback> = new Set();
   private _cohortDataService: CohortDataService | null = null;
+
+  // Study-mode fields
+  private _studyMode: boolean = false;
+  private _studyId: string = '';
+  private _activeCohortId: string | null = null;
+  public modifiedCohortIds: string[] = [];
+  public modifiedCohortNames: string[] = [];
   
   private get cohortDataService(): CohortDataService {
     if (!this._cohortDataService) {
@@ -114,7 +124,19 @@ class ChatPanelDataService {
     ];
     this.lastMessageId = this.messages.length;
     this.conversationHistory = [];
+    this.modifiedCohortIds = [];
+    this.modifiedCohortNames = [];
     this.notifyListeners();
+  }
+
+  public setStudyMode(studyId: string, activeCohortId?: string): void {
+    this._studyMode = true;
+    this._studyId = studyId;
+    this._activeCohortId = activeCohortId ?? null;
+  }
+
+  public setActiveCohortHint(cohortId: string | null): void {
+    this._activeCohortId = cohortId;
   }
 
   public getConversationHistory(): ConversationEntry[] {
@@ -154,39 +176,77 @@ class ChatPanelDataService {
 
 
   private async sendAIRequest(inputText: string): Promise<void> {
-    // Check if cohort data is available
-    if (!this.cohortDataService.cohort_data || !this.cohortDataService.cohort_data.id) {
-      console.error('AI request failed: No cohort data available');
-      this.notifyAICompletionListeners(false);
-      return;
-    }
-    
-    const cohortId = this.cohortDataService.cohort_data.id;
-    
-    // Extract plain text from description (which is a Quill Delta object)
-    let cohortDescription: string | null = null;
-    if (this.cohortDataService.cohort_data.description) {
+    let stream: ReadableStream<Uint8Array>;
+
+    if (this._studyMode) {
+      if (!this._studyId) {
+        console.error('AI request failed: No study ID set in study mode');
+        this.notifyAICompletionListeners(false);
+        return;
+      }
       try {
-        const delta = this.cohortDataService.cohort_data.description;
-        // If it's a Quill Delta object, extract text from ops
-        if (delta.ops && Array.isArray(delta.ops)) {
-          cohortDescription = delta.ops
-            .map((op: any) => (typeof op.insert === 'string' ? op.insert : ''))
-            .join('')
-            .trim();
-        } else if (typeof delta === 'string') {
-          cohortDescription = delta.trim();
+        stream = await suggestChangesForStudy(
+          this._studyId,
+          inputText.trim(),
+          'gpt-4o',
+          this.getConversationHistory(),
+          undefined,
+          this._activeCohortId ?? undefined,
+        );
+      } catch (error) {
+        console.error('AI study request failed:', error);
+        this.notifyAICompletionListeners(false);
+        return;
+      }
+    } else {
+      // Cohort-editor mode: route through the unified study endpoint using the
+      // cohort's own study_id, passing the cohort_id as active_cohort_id hint.
+      if (!this.cohortDataService.cohort_data || !this.cohortDataService.cohort_data.id) {
+        console.error('AI request failed: No cohort data available');
+        this.notifyAICompletionListeners(false);
+        return;
+      }
+      const cohortId = this.cohortDataService.cohort_data.id;
+      const studyId = this.cohortDataService.cohort_data.study_id as string | undefined;
+      if (!studyId) {
+        console.error('AI request failed: No study_id on cohort data');
+        this.notifyAICompletionListeners(false);
+        return;
+      }
+      let cohortDescription: string | null = null;
+      if (this.cohortDataService.cohort_data.description) {
+        try {
+          const delta = this.cohortDataService.cohort_data.description;
+          if (delta.ops && Array.isArray(delta.ops)) {
+            cohortDescription = delta.ops
+              .map((op: any) => (typeof op.insert === 'string' ? op.insert : ''))
+              .join('')
+              .trim();
+          } else if (typeof delta === 'string') {
+            cohortDescription = delta.trim();
+          }
+        } catch (e) {
+          console.warn('Failed to extract cohort description:', e);
         }
-      } catch (e) {
-        console.warn('Failed to extract cohort description:', e);
+      }
+      try {
+        stream = await suggestChangesForStudy(
+          studyId,
+          inputText.trim(),
+          'gpt-4o',
+          this.getConversationHistory(),
+          cohortDescription || undefined,
+          cohortId,
+        );
+      } catch (error) {
+        console.error('AI cohort request failed:', error);
+        this.notifyAICompletionListeners(false);
+        return;
       }
     }
-    
-    console.log('Sending AI request for cohort:', cohortId, cohortDescription ? `(${cohortDescription.length} chars description)` : '(no description)');
-    
+
     try {
       // Create the loading indicator message BEFORE making the request
-      // so it appears immediately in the UI
       const assistantMessage: Message = {
         id: ++this.lastMessageId,
         text: '',
@@ -195,19 +255,12 @@ class ChatPanelDataService {
       };
       this.messages.push(assistantMessage);
       this.notifyListeners();
-      
-      const stream = await suggestChanges(
-        cohortId,
-        inputText.trim(),
-        "gpt-4o-mini",
-        false,
-        this.getConversationHistory(),
-        cohortDescription || undefined
-      );
 
       const reader = stream.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
+      let textBuffer = '';   // accumulate AI text, show all at once at end
+      const steps: string[] = [];  // tool operations, shown collapsed
       
       console.log('Receiving AI response stream...');
 
@@ -221,57 +274,48 @@ class ChatPanelDataService {
         const decodedChunk = decoder.decode(value, { stream: true });
         buffer += decodedChunk;
 
-        // Process SSE messages
         const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+        buffer = lines.pop() || '';
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
-              const data = JSON.parse(line.slice(6)); // Remove 'data: ' prefix
+              const data = JSON.parse(line.slice(6));
               
               if (data.type === 'content') {
-                // Regular AI content - just add to message
-                if (data.message) {
-                  assistantMessage.text += data.message;
-                  this.notifyListeners();
-                }
-              } else if (data.type === 'info') {
-                // Info messages - skip rendering
-                // These are not useful to display
+                // Buffer text — reveal all at once when complete (VS Code Copilot style)
+                if (data.message) textBuffer += data.message;
               } else if (data.type === 'tool_call') {
-                // Tool call messages - skip rendering (internal operations)
-                // User doesn't need to see these
-              } else if (data.type === 'tool_result') {
-                // Tool result messages - skip rendering (internal operations)
-                // User doesn't need to see these
+                // Accumulate tool steps — shown collapsed
+                if (data.message) {
+                  steps.push(data.message);
+                  assistantMessage.steps = [...steps];
+                  assistantMessage.isLoading = true;
+                  this.notifyListeners();
+                }
               } else if (data.type === 'tool_error') {
-                // Tool error messages
                 if (data.message) {
-                  assistantMessage.text += `\n❌ **Error:** ${data.message}\n`;
-                  this.notifyListeners();
-                }
-              } else if (data.type === 'function_explanation') {
-                // Function call explanation - add with special formatting (legacy support)
-                if (data.message) {
-                  assistantMessage.text += `\n\n**🔄 Making changes:** ${data.message}\n\n`;
-                  this.notifyListeners();
-                }
-              } else if (data.type === 'function_success') {
-                // Function call success - add confirmation (legacy support)
-                if (data.message) {
-                  assistantMessage.text += `\n✅ ${data.message}\n`;
+                  steps.push(`❌ ${data.message}`);
+                  assistantMessage.steps = [...steps];
                   this.notifyListeners();
                 }
               } else if (data.type === 'error') {
                 console.error('AI stream error:', data.message);
-                assistantMessage.text += `\n\n❌ **Error:** ${data.message}`;
-                this.notifyListeners();
+                textBuffer += `\n\n❌ **Error:** ${data.message}`;
                 break;
               } else if (data.type === 'complete') {
+                if (data.modified_cohort_ids?.length) {
+                  this.modifiedCohortIds = data.modified_cohort_ids;
+                  this.modifiedCohortNames = data.modified_cohort_names ?? [];
+                  // Attach pending changes to the message bubble itself
+                  assistantMessage.pendingChanges = data.modified_cohort_ids.map(
+                    (id: string, i: number) => ({
+                      cohortId: id,
+                      cohortName: (data.modified_cohort_names ?? [])[i] ?? id,
+                    })
+                  );
+                }
                 break;
-              } else if (data.type === 'result') {
-                // Handle result data if needed
               }
             } catch (parseError) {
               console.warn('Failed to parse SSE message:', parseError);
@@ -280,26 +324,25 @@ class ChatPanelDataService {
         }
       }
       
-      // Mark as no longer loading
+      // Reveal the full text response now that the stream is done
+      assistantMessage.text = textBuffer;
       assistantMessage.isLoading = false;
       
       // Add the complete assistant response to history
       if (assistantMessage.text.trim()) {
         this.addSystemResponseToHistory(assistantMessage.text.trim());
       }
-      
-      if (this.cohortDataService.cohort_data?.id) {
+
+      // In legacy cohort mode, refresh the active cohort
+      if (!this._studyMode && this.cohortDataService.cohort_data?.id) {
         try {
           console.log('Fetching updated cohort after AI changes...');
           let response: any;
           try {
             response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
           } catch (userCohortError: any) {
-            // If the cohort isn't owned by the current user (e.g. a public cohort),
-            // fall back to the public cohort endpoint.
             const status = userCohortError?.response?.status ?? userCohortError?.status;
             if (status === 404) {
-              console.log('getUserCohort returned 404, retrying as public cohort...');
               response = await getPublicCohort(this.cohortDataService.cohort_data.id, true);
             } else {
               throw userCohortError;
@@ -317,7 +360,6 @@ class ChatPanelDataService {
       console.log('AI request completed successfully');
     } catch (error) {
       console.error('AI request failed:', error);
-      // Mark the last assistant message as no longer loading if it exists
       const lastMessage = this.messages[this.messages.length - 1];
       if (lastMessage && !lastMessage.isUser && lastMessage.isLoading) {
         lastMessage.isLoading = false;
@@ -327,15 +369,55 @@ class ChatPanelDataService {
     }
   }
 
+  public async acceptForCohort(cohortId: string): Promise<void> {
+    try {
+      this.addUserActionToHistory(`ACCEPT_CHANGES:${cohortId}`);
+      const response = await acceptChanges(cohortId);
+      if (this.cohortDataService.cohort_data?.id === cohortId) {
+        this.cohortDataService.updateCohortFromChat(response);
+      }
+      this.modifiedCohortIds = this.modifiedCohortIds.filter(id => id !== cohortId);
+      this.modifiedCohortNames = this.modifiedCohortNames.filter((_, i) =>
+        this.modifiedCohortIds[i] !== cohortId
+      );
+      // Clear from message bubbles
+      this.messages.forEach(m => {
+        if (m.pendingChanges) m.pendingChanges = m.pendingChanges.filter(c => c.cohortId !== cohortId);
+      });
+      this.notifyListeners();
+    } catch (error) {
+      console.error(`Failed to accept changes for cohort ${cohortId}:`, error);
+    }
+  }
+
+  public async rejectForCohort(cohortId: string): Promise<void> {
+    try {
+      this.addUserActionToHistory(`REJECT_CHANGES:${cohortId}`);
+      const response = await rejectChanges(cohortId);
+      if (this.cohortDataService.cohort_data?.id === cohortId) {
+        this.cohortDataService.updateCohortFromChat(response);
+      }
+      this.modifiedCohortIds = this.modifiedCohortIds.filter(id => id !== cohortId);
+      this.modifiedCohortNames = this.modifiedCohortNames.filter((_, i) =>
+        this.modifiedCohortIds[i] !== cohortId
+      );
+      // Clear from message bubbles
+      this.messages.forEach(m => {
+        if (m.pendingChanges) m.pendingChanges = m.pendingChanges.filter(c => c.cohortId !== cohortId);
+      });
+      this.notifyListeners();
+    } catch (error) {
+      console.error(`Failed to reject changes for cohort ${cohortId}:`, error);
+    }
+  }
+
   public async acceptAIResult(): Promise<void> {
     try {
       if (!this.cohortDataService.cohort_data?.id) {
         console.error('Accept failed: No cohort ID available');
         return;
       }
-      
       console.log('Accepting AI changes...');
-      // Track the accept action in conversation history
       this.addUserActionToHistory('ACCEPT_CHANGES');
       
       const response = await acceptChanges(this.cohortDataService.cohort_data.id);
