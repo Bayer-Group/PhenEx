@@ -1,5 +1,4 @@
 import { FC, useState, useCallback, useRef, useMemo } from 'react';
-import { LegendDot } from '../CohortSelector/LegendDot';
 import { type ColorUsage } from '../CohortSelector/ColorPicker';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import {
@@ -7,7 +6,6 @@ import {
   isSpacer,
   isCohortSelection,
   generateGroupColors,
-  SPACER_SIZES,
   getCohortLabelParts,
   type LegendItem,
   type LegendSelection,
@@ -16,6 +14,8 @@ import {
   type ColorOverrides,
   type GroupColorConfig,
 } from '../../types';
+import { LegendRow } from './Row/LegendRow';
+import { LegendSpacerRow } from './Row/LegendSpacerRow';
 import { FigureLegendControls } from './FigureLegendControls';
 import { FigureLegendSets } from './FigureLegendSets';
 import { useFigureLegendSets, type FigureLegendSetData } from './figureLegendSetStore';
@@ -307,102 +307,37 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
           >
             {dropLine && <div className={styles.dropLine} style={{ top: dropLine.top }} />}
             {items.map((item, i) => {
-              const dragHandle = (
-                <span className={styles.dragHandle} aria-hidden>
-                  <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
-                    <circle cx="3" cy="2.5" r="1.2" /><circle cx="7" cy="2.5" r="1.2" />
-                    <circle cx="3" cy="7" r="1.2" /><circle cx="7" cy="7" r="1.2" />
-                    <circle cx="3" cy="11.5" r="1.2" /><circle cx="7" cy="11.5" r="1.2" />
-                  </svg>
-                </span>
-              );
-
               if (isSpacer(item)) {
                 return (
-                  <div key={item.id} className={styles.rowWrapper}>
-                    <div
-                      className={styles.spacerRow}
-                      data-drop-index={i}
-                      draggable
-                      onDragStart={() => handleDragStart(i)}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <input
-                        className={styles.spacerLabelInput}
-                        value={item.label ?? ''}
-                        placeholder="Spacer label"
-                        onChange={(e) => handleSetSpacerLabel(i, e.target.value)}
-                        // Prevent the parent row's drag from hijacking text selection.
-                        draggable={false}
-                        onDragStart={(e) => e.preventDefault()}
-                        onMouseDown={(e) => e.stopPropagation()}
-                      />
-                      <div className={styles.spacerSizes}>
-                        {SPACER_SIZES.map((s) => (
-                          <button
-                            key={s}
-                            type="button"
-                            className={`${styles.spacerSizeButton} ${item.size === s ? styles.spacerSizeButtonActive : ''}`}
-                            onClick={() => handleSetSpacerSize(i, s)}
-                            title={`Spacing ${s}`}
-                          >
-                            {s}
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        className={styles.spacerRemove}
-                        onClick={() => handleRemoveSpacer(i)}
-                        title="Remove spacer"
-                        aria-label="Remove spacer"
-                      >
-                        ×
-                      </button>
-                      {dragHandle}
-                    </div>
-                  </div>
+                  <LegendSpacerRow
+                    key={item.id}
+                    item={item}
+                    index={i}
+                    onDragStart={() => handleDragStart(i)}
+                    onDragEnd={handleDragEnd}
+                    onRemove={() => handleRemoveSpacer(i)}
+                    onSetSize={(size) => handleSetSpacerSize(i, size)}
+                    onSetLabel={(label) => handleSetSpacerLabel(i, label)}
+                  />
                 );
               }
 
               const color = getSelectionColor(item, colorOverrides);
               const { parent, sub } = getLabelParts(item, cohortDescriptions);
-              const isDragging = dragIndexRef.current === i;
               return (
-                <div key={item.cohortName} className={styles.rowWrapper}>
-                  <div
-                    className={`${styles.row} ${isDragging ? styles.rowDragging : ''}`}
-                    data-drop-index={i}
-                    draggable
-                    onDragStart={() => handleDragStart(i)}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <div className={styles.dot}>
-                      <LegendDot
-                        color={color}
-                        isActive
-                        showDot={false}
-                        onClick={() => {}}
-                        onColorChange={onSetColor ? (c) => commitColor(item.cohortName, c) : undefined}
-                        usedColors={usedColorsFor(item.cohortName)}
-                      />
-                    </div>
-                    <div className={styles.labelContainer}>
-                      <span className={styles.labelParent}>{parent}</span>
-                      <span className={styles.labelSub}>{sub ?? 'main cohort'}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className={`${styles.spacerRemove} ${styles.rowRemove}`}
-                      onClick={() => handleRemoveCohort(i)}
-                      title="Remove cohort"
-                      aria-label="Remove cohort"
-                    >
-                      ×
-                    </button>
-                    {dragHandle}
-                  </div>
-                </div>
+                <LegendRow
+                  key={item.cohortName}
+                  index={i}
+                  isDragging={dragIndexRef.current === i}
+                  color={color}
+                  parent={parent}
+                  sub={sub}
+                  onDragStart={() => handleDragStart(i)}
+                  onDragEnd={handleDragEnd}
+                  onRemove={() => handleRemoveCohort(i)}
+                  onColorChange={onSetColor ? (c) => commitColor(item.cohortName, c) : undefined}
+                  usedColors={usedColorsFor(item.cohortName)}
+                />
               );
             })}
           </div>

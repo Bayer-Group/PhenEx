@@ -1,0 +1,112 @@
+.rowWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.spacerRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 8px;
+  border-radius: 6px;
+  cursor: grab;
+  user-select: none;
+  border: 1px dashed var(--line-color, #d5d5d5);
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.02),
+    rgba(0, 0, 0, 0.02) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.spacerRow:active {
+  cursor: grabbing;
+  opacity: 0.6;
+}
+
+.spacerRow:hover {
+  border-color: var(--line-color, #bbb);
+}
+
+.spacerLabelInput {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font_size_infotext, 11px);
+  font-family: inherit;
+  color: #333;
+  background: var(--background_color_light, #fff);
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: text;
+}
+
+.spacerLabelInput::placeholder {
+  color: #bbb;
+}
+
+.spacerLabelInput:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.spacerSizes {
+  display: flex;
+  gap: 2px;
+}
+
+.spacerSizeButton {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 11px;
+  line-height: 1;
+  color: #777;
+  background: var(--background_color_light, #fff);
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.spacerSizeButton:hover {
+  border-color: #4a90e2;
+  color: #4a90e2;
+}
+
+.spacerSizeButtonActive {
+  background-color: #4a90e2;
+  border-color: #4a90e2;
+  color: #fff;
+}
+
+.dragHandle {
+  color: #ccc;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.removeButton {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  color: #aaa;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.1s, background 0.1s;
+}
+
+.removeButton:hover {
+  color: #e24a4a;
+  background-color: rgba(226, 74, 74, 0.1);
+}

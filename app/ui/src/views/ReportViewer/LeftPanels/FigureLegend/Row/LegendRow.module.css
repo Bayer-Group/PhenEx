@@ -1,0 +1,100 @@
+.rowWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 5px;
+  border-radius: 6px;
+  cursor: grab;
+  user-select: none;
+  border: 1px solid transparent;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.row:active {
+  cursor: grabbing;
+  opacity: 0.5;
+}
+
+.row:hover {
+  background-color: var(--background_color_medium, rgba(0, 0, 0, 0.04));
+  border-color: var(--line-color, #e0e0e0);
+}
+
+.rowDragging {
+  opacity: 0.4;
+}
+
+.dot {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.labelContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  min-width: 0;
+  padding: 1px 4px 0 4px;
+  overflow: hidden;
+}
+
+.labelParent {
+  font-size: 10px;
+  color: var(--text_color_notfocus, #999);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.labelSub {
+  font-size: 11px;
+  color: var(--text_color_default, #333);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dragHandle {
+  color: #ccc;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.row:hover .dragHandle {
+  opacity: 1;
+}
+
+.removeButton {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  color: #aaa;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.1s, background 0.1s;
+}
+
+.removeButton:hover {
+  color: #e24a4a;
+  background-color: rgba(226, 74, 74, 0.1);
+}
+
+.row:hover .removeButton {
+  opacity: 1;
+}
