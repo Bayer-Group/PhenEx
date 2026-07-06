@@ -165,6 +165,15 @@
   opacity: 1;
 }
 
+.rowRemove {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.row:hover .rowRemove {
+  opacity: 1;
+}
+
 .spacerRow {
   display: flex;
   align-items: center;
@@ -288,4 +297,123 @@
   padding: 20px 14px;
   text-align: center;
   line-height: 1.5;
+}
+
+/* ── Saved legend sets ─────────────────────────────────────────────── */
+
+.sets {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 14px 12px 14px;
+  border-top: 1px solid var(--line-color, #e0e0e0);
+}
+
+.setsHeader {
+  font-size: var(--font_size_infotext, 11px);
+  font-weight: 600;
+  color: var(--text_color_notfocus, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 2px 4px 2px;
+}
+
+.setRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: var(--font_size_infotext, 12px);
+  color: var(--text_color_default, #333);
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.setRow:hover {
+  background-color: var(--background_color_medium, rgba(0, 0, 0, 0.04));
+  border-color: var(--line-color, #e0e0e0);
+}
+
+.setRowActive {
+  background-color: rgba(74, 144, 226, 0.12);
+  border-color: #4a90e2;
+  color: #2f6fb3;
+}
+
+.setRowActive:hover {
+  background-color: rgba(74, 144, 226, 0.16);
+}
+
+.setName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setNameInput {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: var(--font_size_infotext, 12px);
+  color: #333;
+  background: var(--background_color_light, #fff);
+  border: 1px solid #4a90e2;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.setNameInput:focus {
+  outline: none;
+}
+
+.setDelete {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  color: #aaa;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: color 0.1s, background 0.1s, opacity 0.15s;
+}
+
+.setRow:hover .setDelete {
+  opacity: 1;
+}
+
+.setDelete:hover {
+  color: #e24a4a;
+  background-color: rgba(226, 74, 74, 0.1);
+}
+
+.saveSetButton {
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 4px 10px;
+  font-size: var(--font_size_infotext, 11px);
+  color: #4a90e2;
+  background: transparent;
+  border: 1px dashed var(--line-color, #ccd);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.saveSetButton:hover {
+  background-color: rgba(74, 144, 226, 0.08);
+  border-color: #4a90e2;
 }

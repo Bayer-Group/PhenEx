@@ -14,6 +14,8 @@ import {
   type CohortDescriptions,
   type ColorOverrides,
 } from '../../types';
+import { FigureLegendSets } from './FigureLegendSets';
+import { useFigureLegendSets, type FigureLegendSetData } from './figureLegendSetStore';
 import styles from './FigureLegend.module.css';
 
 interface FigureLegendProps {
@@ -22,6 +24,10 @@ interface FigureLegendProps {
   cohortDescriptions?: CohortDescriptions;
   colorOverrides?: ColorOverrides;
   onSetColor?: (cohortName: string, color: string) => void;
+  /** Bulk-replace all color overrides (used when applying a saved legend set). */
+  onReplaceColorOverrides?: (overrides: ColorOverrides) => void;
+  /** Run this legend belongs to; enables saved legend sets when provided. */
+  runId?: string;
   isFloating?: boolean;
 }
 
@@ -39,7 +45,7 @@ function makeSpacerId(): string {
   return `spacer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDescriptions, colorOverrides, onSetColor, isFloating }) => {
+export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDescriptions, colorOverrides, onSetColor, onReplaceColorOverrides, runId, isFloating }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const dragIndexRef = useRef<number | null>(null);
@@ -47,6 +53,32 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
   // (0 = before item 0, ..., n = after last item) and `top` is the overlay's
   // pixel offset within the card so it never shifts the row layout.
   const [dropLine, setDropLine] = useState<{ index: number; top: number } | null>(null);
+
+  // ── Saved legend sets ──────────────────────────────────────────────────
+  // A change to the ordered items or a cohort color is committed both to the
+  // report (via `onChange` / `onSetColor`) and, when a set is active, into that
+  // set so it always mirrors the live arrangement.
+  const sets = useFigureLegendSets(runId ?? '__no_run__');
+  const activeSetId = runId ? sets.activeSetId : null;
+
+  const commitItems = useCallback(
+    (next: LegendItem[]) => {
+      onChange(next);
+      if (activeSetId) sets.updateSetData(activeSetId, { items: next, colorOverrides: colorOverrides ?? {} });
+    },
+    [onChange, activeSetId, sets, colorOverrides],
+  );
+
+  const commitColor = useCallback(
+    (cohortName: string, color: string) => {
+      onSetColor?.(cohortName, color);
+      if (activeSetId) {
+        const nextColors = { ...(colorOverrides ?? {}), [cohortName]: color };
+        sets.updateSetData(activeSetId, { items, colorOverrides: nextColors });
+      }
+    },
+    [onSetColor, activeSetId, sets, colorOverrides, items],
+  );
 
   // Build the "used colors" list for a given cohort's picker: every other
   // cohort's effective color, so the picker can blur out taken colors.
@@ -109,9 +141,9 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
       const next = [...items];
       const [moved] = next.splice(from, 1);
       next.splice(insertAt, 0, moved);
-      onChange(next);
+      commitItems(next);
     },
-    [items, onChange, computeDropLine],
+    [items, commitItems, computeDropLine],
   );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -128,17 +160,17 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
 
   const handleAddSpacer = useCallback(() => {
     const spacer: LegendSpacer = { kind: 'spacer', id: makeSpacerId(), size: 1 };
-    onChange([...items, spacer]);
-  }, [items, onChange]);
+    commitItems([...items, spacer]);
+  }, [items, commitItems]);
 
   const handleSetSpacerSize = useCallback(
     (index: number, size: 1 | 2 | 3 | 4) => {
       const next = items.map((it, i) =>
         i === index && isSpacer(it) ? { ...it, size } : it,
       );
-      onChange(next);
+      commitItems(next);
     },
-    [items, onChange],
+    [items, commitItems],
   );
 
   const handleSetSpacerLabel = useCallback(
@@ -146,19 +178,60 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
       const next = items.map((it, i) =>
         i === index && isSpacer(it) ? { ...it, label } : it,
       );
-      onChange(next);
+      commitItems(next);
     },
-    [items, onChange],
+    [items, commitItems],
   );
 
   const handleRemoveSpacer = useCallback(
     (index: number) => {
-      onChange(items.filter((_, i) => i !== index));
+      commitItems(items.filter((_, i) => i !== index));
     },
-    [items, onChange],
+    [items, commitItems],
+  );
+
+  const handleRemoveCohort = useCallback(
+    (index: number) => {
+      commitItems(items.filter((_, i) => i !== index));
+    },
+    [items, commitItems],
   );
 
   const cohortCount = items.filter((it) => !isSpacer(it)).length;
+
+  // Apply a full set (order + spacers + colors) to the live report.
+  const applyData = useCallback(
+    (data: FigureLegendSetData) => {
+      onChange(data.items);
+      onReplaceColorOverrides?.(data.colorOverrides);
+    },
+    [onChange, onReplaceColorOverrides],
+  );
+
+  const handleActivateSet = useCallback(
+    (setId: string) => {
+      // Preserve the live working draft before leaving it for a named set.
+      if (sets.activeSetId === null) sets.setScratch({ items, colorOverrides: colorOverrides ?? {} });
+      const set = sets.sets.find((s) => s.id === setId);
+      if (!set) return;
+      applyData(set.data);
+      sets.setActive(setId);
+    },
+    [sets, items, colorOverrides, applyData],
+  );
+
+  const handleActivateScratch = useCallback(() => {
+    const data = sets.scratch ?? { items, colorOverrides: colorOverrides ?? {} };
+    applyData(data);
+    sets.setActive(null);
+  }, [sets, items, colorOverrides, applyData]);
+
+  const handleSaveNewSet = useCallback(() => {
+    const existing = new Set(sets.sets.map((s) => s.name));
+    let name = 'Legend set';
+    for (let n = 2; existing.has(name); n++) name = `Legend set ${n}`;
+    sets.createSet(name, { items, colorOverrides: colorOverrides ?? {} });
+  }, [sets, items, colorOverrides]);
 
   if (cohortCount === 0) {
     return (
@@ -258,7 +331,7 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
                         isActive
                         showDot={false}
                         onClick={() => {}}
-                        onColorChange={onSetColor ? (c) => onSetColor(item.cohortName, c) : undefined}
+                        onColorChange={onSetColor ? (c) => commitColor(item.cohortName, c) : undefined}
                         usedColors={usedColorsFor(item.cohortName)}
                       />
                     </div>
@@ -266,6 +339,15 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
                       <span className={styles.labelParent}>{parent}</span>
                       <span className={styles.labelSub}>{sub ?? 'main cohort'}</span>
                     </div>
+                    <button
+                      type="button"
+                      className={`${styles.spacerRemove} ${styles.rowRemove}`}
+                      onClick={() => handleRemoveCohort(i)}
+                      title="Remove cohort"
+                      aria-label="Remove cohort"
+                    >
+                      ×
+                    </button>
                     {dragHandle}
                   </div>
                 </div>
@@ -289,6 +371,17 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
           />
         </div>
       </div>
+      {runId && (
+        <FigureLegendSets
+          sets={sets.sets}
+          activeSetId={sets.activeSetId}
+          onActivateSet={handleActivateSet}
+          onActivateScratch={handleActivateScratch}
+          onSaveNewSet={handleSaveNewSet}
+          onRenameSet={sets.renameSet}
+          onDeleteSet={sets.deleteSet}
+        />
+      )}
     </div>
   );
 };

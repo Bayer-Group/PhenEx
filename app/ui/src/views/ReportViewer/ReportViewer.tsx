@@ -279,6 +279,15 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [_runId],
   );
 
+  // Bulk-replace all color overrides at once (used when applying a legend set).
+  const handleReplaceColorOverrides = useCallback(
+    (next: ColorOverrides) => {
+      setColorOverrides(next);
+      if (_runId) saveColorOverrides(_runId, next);
+    },
+    [_runId],
+  );
+
   const updateSelections = useCallback(
     (updater: LegendSelection[] | ((prev: LegendSelection[]) => LegendSelection[])) => {
       setSelections((prev) => {
@@ -858,6 +867,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               cohortDescriptions={cohortDescriptions}
               colorOverrides={colorOverrides}
               onSetColor={handleSetColor}
+              onReplaceColorOverrides={handleReplaceColorOverrides}
+              runId={_runId ?? undefined}
               isFloating={isFloating}
             />
           );
@@ -869,7 +880,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       groups, selections, handleReplace, handleAdd, updateSelections,
       cohortDescriptions, finalCohortSizes, outlineEntries, handleOutlineNavigate,
       expandedKeys, handleToggleExpand, legendItems, handleLegendChange, OutlinePanelConnected,
-      colorOverrides, handleSetColor,
+      colorOverrides, handleSetColor, handleReplaceColorOverrides, _runId,
       handleMovePhenotype, handleRenamePhenotype, handleRenameSection,
     ],
   );
