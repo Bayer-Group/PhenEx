@@ -60,6 +60,7 @@
 }
 
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -107,11 +108,15 @@
 }
 
 .dropLine {
+  position: absolute;
+  left: 4px;
+  right: 4px;
   height: 2px;
   background-color: #4a90e2;
   border-radius: 1px;
-  margin: 1px 4px;
+  transform: translateY(-1px);
   pointer-events: none;
+  z-index: 2;
 }
 
 .dot {

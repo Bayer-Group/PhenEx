@@ -41,10 +41,12 @@ function makeSpacerId(): string {
 
 export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDescriptions, colorOverrides, onSetColor, isFloating }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const dragIndexRef = useRef<number | null>(null);
-  // dropLineIndex: the gap index where the line will appear.
-  // 0 = before item 0, 1 = before item 1, ..., n = after last item.
-  const [dropLineIndex, setDropLineIndex] = useState<number | null>(null);
+  // The drop indicator: `index` is the gap where the item will be inserted
+  // (0 = before item 0, ..., n = after last item) and `top` is the overlay's
+  // pixel offset within the card so it never shifts the row layout.
+  const [dropLine, setDropLine] = useState<{ index: number; top: number } | null>(null);
 
   // Build the "used colors" list for a given cohort's picker: every other
   // cohort's effective color, so the picker can blur out taken colors.
@@ -62,39 +64,66 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
     dragIndexRef.current = index;
   }, []);
 
-  const getDropLineIndex = useCallback((e: React.DragEvent, rowIndex: number): number => {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const midY = rect.top + rect.height / 2;
-    return e.clientY < midY ? rowIndex : rowIndex + 1;
-  }, []);
+  // Resolve the drop gap (and overlay position) from the pointer's Y against the
+  // actual row rects. Reading live rects keeps this correct regardless of scroll.
+  const computeDropLine = useCallback(
+    (clientY: number): { index: number; top: number } | null => {
+      const card = cardRef.current;
+      if (!card) return null;
+      const cardTop = card.getBoundingClientRect().top;
+      const rows = Array.from(card.querySelectorAll<HTMLElement>('[data-drop-index]'));
+      for (const row of rows) {
+        const rect = row.getBoundingClientRect();
+        if (clientY < rect.top + rect.height / 2) {
+          return { index: Number(row.dataset.dropIndex), top: rect.top - cardTop };
+        }
+      }
+      const last = rows[rows.length - 1];
+      return { index: items.length, top: last ? last.getBoundingClientRect().bottom - cardTop : 0 };
+    },
+    [items.length],
+  );
 
-  const handleDragOver = useCallback((e: React.DragEvent, rowIndex: number) => {
-    e.preventDefault();
-    setDropLineIndex(getDropLineIndex(e, rowIndex));
-  }, [getDropLineIndex]);
+  // Drag-over/drop live on the card, not individual rows, so releasing anywhere
+  // in the list (including over the indicator gap) always lands a valid drop.
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (dragIndexRef.current == null) return;
+      e.preventDefault();
+      setDropLine(computeDropLine(e.clientY));
+    },
+    [computeDropLine],
+  );
 
   const handleDrop = useCallback(
-    (e: React.DragEvent, rowIndex: number) => {
+    (e: React.DragEvent) => {
       e.preventDefault();
       const from = dragIndexRef.current;
-      const lineIndex = getDropLineIndex(e, rowIndex);
+      const target = computeDropLine(e.clientY);
       dragIndexRef.current = null;
-      setDropLineIndex(null);
-      if (from == null) return;
+      setDropLine(null);
+      if (from == null || target == null) return;
       // Resolve insertion index accounting for the removal of `from`
-      const insertAt = lineIndex > from ? lineIndex - 1 : lineIndex;
+      const insertAt = target.index > from ? target.index - 1 : target.index;
       if (insertAt === from) return;
       const next = [...items];
       const [moved] = next.splice(from, 1);
       next.splice(insertAt, 0, moved);
       onChange(next);
     },
-    [items, onChange, getDropLineIndex],
+    [items, onChange, computeDropLine],
   );
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Clear the indicator only when the pointer actually leaves the card.
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setDropLine(null);
+    }
+  }, []);
 
   const handleDragEnd = useCallback(() => {
     dragIndexRef.current = null;
-    setDropLineIndex(null);
+    setDropLine(null);
   }, []);
 
   const handleAddSpacer = useCallback(() => {
@@ -144,7 +173,14 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
       <div className={styles.scrollRegion}>
         <div ref={scrollRef} className={styles.scrollContent}>
           <div className={styles.hint}>Drag to reorder</div>
-          <div className={`${styles.card}${isFloating ? ` ${styles.cardFloating}` : ''}`}>
+          <div
+            ref={cardRef}
+            className={`${styles.card}${isFloating ? ` ${styles.cardFloating}` : ''}`}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragLeave={handleDragLeave}
+          >
+            {dropLine && <div className={styles.dropLine} style={{ top: dropLine.top }} />}
             {items.map((item, i) => {
               const dragHandle = (
                 <span className={styles.dragHandle} aria-hidden>
@@ -159,13 +195,11 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
               if (isSpacer(item)) {
                 return (
                   <div key={item.id} className={styles.rowWrapper}>
-                    {dropLineIndex === i && <div className={styles.dropLine} />}
                     <div
                       className={styles.spacerRow}
+                      data-drop-index={i}
                       draggable
                       onDragStart={() => handleDragStart(i)}
-                      onDragOver={(e) => handleDragOver(e, i)}
-                      onDrop={(e) => handleDrop(e, i)}
                       onDragEnd={handleDragEnd}
                     >
                       <input
@@ -211,13 +245,11 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
               const isDragging = dragIndexRef.current === i;
               return (
                 <div key={item.cohortName} className={styles.rowWrapper}>
-                  {dropLineIndex === i && <div className={styles.dropLine} />}
                   <div
                     className={`${styles.row} ${isDragging ? styles.rowDragging : ''}`}
+                    data-drop-index={i}
                     draggable
                     onDragStart={() => handleDragStart(i)}
-                    onDragOver={(e) => handleDragOver(e, i)}
-                    onDrop={(e) => handleDrop(e, i)}
                     onDragEnd={handleDragEnd}
                   >
                     <div className={styles.dot}>
@@ -239,7 +271,6 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
                 </div>
               );
             })}
-            {dropLineIndex === items.length && <div className={styles.dropLine} />}
           </div>
           <button type="button" className={styles.addSpacerButton} onClick={handleAddSpacer}>
             + Add spacer
