@@ -882,8 +882,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       if (floatingComponents.includes(component)) {
         return (
           <div className={styles.floatingPlaceholder}>
-            <span>Popped out</span>
-            <button type="button" onClick={() => dockComponent(component)}>Dock back</button>
+            <span>Currently popped out as a floating panel</span>
+            <button type="button" onClick={() => dockComponent(component)}>Click to redock</button>
           </div>
         );
       }
