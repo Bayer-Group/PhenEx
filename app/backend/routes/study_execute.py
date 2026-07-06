@@ -41,7 +41,7 @@ async def execute_study(request: Request):
 
     Request Body:
     - study_id (str): ID of the study to execute
-    - database_config (dict): Database connection and mapper configuration
+    - database (dict): Database connection and mapper configuration
 
     Returns:
     - StreamingResponse: Server-Sent Events stream with log messages.
@@ -64,11 +64,11 @@ async def execute_study(request: Request):
     if not study:
         raise HTTPException(status_code=404, detail="Study not found")
 
-    database_config = study.get("database_config")
-    if not database_config:
+    database = study.get("database")
+    if not database:
         raise HTTPException(
             status_code=400,
-            detail="No database_config configured for this study. Configure database settings first.",
+            detail="No database configured for this study. Configure database settings first.",
         )
 
     cohorts = await db_manager.get_cohorts_for_study(study_id, user_id)
@@ -148,13 +148,13 @@ async def execute_study(request: Request):
                 print(f"Starting study execution: {study.get('name', study_id)}")
                 logger.info(f"Executing study '{study.get('name')}' ({study_id})")
 
-                if database_config["mapper"] == "OMOP":
+                if database["mapper"] == "OMOP":
                     from phenex.mappers import OMOPDomains
                     mapper = OMOPDomains
                     print("Using OMOP mapper")
 
-                db_cfg = database_config["config"]
-                connector_type = database_config.get("connector", "snowflake")
+                db_cfg = database["config"]
+                connector_type = database.get("connector", "snowflake")
                 print("Creating database connection...")
 
                 if connector_type == "mocker":
@@ -178,7 +178,7 @@ async def execute_study(request: Request):
                 px_cohorts = []
                 for cohort_wrapper in full_cohorts:
                     cohort_data = cohort_wrapper.get("cohort_data", cohort_wrapper)
-                    cohort_name = cohort_data.get("name", cohort_data.get("id", "unknown"))
+                    cohort_name = cohort_wrapper.get("name", cohort_data.get("id", "unknown"))
                     print(f"Preparing cohort: {cohort_name}")
                     processed = prepare_cohort_for_phenex(cohort_data, user_id)
                     px_cohort = from_dict(processed)

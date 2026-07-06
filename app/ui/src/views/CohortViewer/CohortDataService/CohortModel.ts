@@ -17,7 +17,7 @@ export class CohortModel {
   public _cohort_name: string = '';
   private _cohort_data: Record<string, any> = {};
   private _study_data: Record<string, any> = {};
-  private _database_config: Record<string, any> | null = null;
+  private _database: Record<string, any> | null = null;
 
   public issues_service: CohortIssuesService;
   public constants_service: ConstantsDataService;
@@ -160,11 +160,19 @@ export class CohortModel {
 
       this._study_data = cohortData.study
       this._cohort_data = cohortResponse;
-      this._database_config = cohortData.database_config ?? null;
+      this._database = cohortData.database ?? null;
       
       // Preserve is_provisional flag from top-level cohortData (only if explicitly true or false)
       // Backend always returns this field, so we need to copy it
       this._cohort_data.is_provisional = cohortData.is_provisional === true;
+      
+      // name and description are stored in dedicated DB columns; load from top-level fields
+      if (cohortData.name) {
+        this._cohort_data.name = cohortData.name;
+      }
+      if (cohortData.description !== undefined) {
+        this._cohort_data.description = cohortData.description;
+      }
       
       // Ensure phenotypes array exists before checking length
       if (!this._cohort_data.phenotypes) {
@@ -211,19 +219,19 @@ export class CohortModel {
   }
 
   public setDatabaseSettings(databaseConfig: any) {
-    // database_config is now stored at the study level via StudyDataService.setDatabaseConfig().
+    // database is now stored at the study level via StudyDataService.setDatabaseConfig().
     // This method is kept for backward compatibility but delegates to the study service.
     import('../../StudyViewer/StudyDataService').then(({ StudyDataService }) => {
       StudyDataService.getInstance().setDatabaseConfig(databaseConfig);
     });
   }
 
-  public get database_config(): Record<string, any> | null {
-    return this._database_config;
+  public get database(): Record<string, any> | null {
+    return this._database;
   }
 
   public async setCohortDatabaseConfig(config: Record<string, any> | null): Promise<void> {
-    this._database_config = config;
+    this._database = config;
     await updateCohortDatabaseConfig(this._cohort_data.id, config);
   }
 
@@ -413,13 +421,14 @@ export class CohortModel {
 
   private stripLegacyStructuredKeys(cohortData: Record<string, any>): Record<string, any> {
     /**
-     * Strips legacy structured keys (entry_criterion, inclusions, etc.) and database_config
-     * from cohort data before sending to backend. Frontend keeps these keys internally for
-     * execution service, but backend expects only phenotypes array. database_config is now
-     * stored at the study level, not in cohort_data.
+     * Strips legacy structured keys (entry_criterion, inclusions, etc.), database,
+     * name, and description from cohort data before sending to backend. Frontend keeps these
+     * keys internally but name/description are stored in dedicated DB columns and
+     * database is stored at the study level.
      */
-    const { entry_criterion, inclusions, exclusions, characteristics, outcomes, database_config, ...cleanedCohort } = cohortData;
-    return cleanedCohort;
+    const { entry_criterion, inclusions, exclusions, characteristics, outcomes, database, name, description, ...cleanedCohort } = cohortData;
+    // Pass name and description back at the top level so the backend can store them in their columns
+    return { ...cleanedCohort, name, description };
   }
 
   private sortPhenotypes() {
@@ -1024,7 +1033,7 @@ export class CohortModel {
       class_name: 'Cohort',
       study_id: studyId,
       phenotypes: [],
-      database_config: {},
+      database: {},
       constants: [],
     };
     this._cohort_name = this._cohort_data.name;
@@ -1148,7 +1157,7 @@ export class CohortModel {
       // Delegate to execution service
       const processedCohort = await this.execution_service.executeCohort(
         this._cohort_data,
-        this._cohort_data.database_config
+        this._cohort_data.database
       );
       
       // Update cohort data with execution results

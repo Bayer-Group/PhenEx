@@ -119,7 +119,7 @@ class DatabaseManager:
                 ),
                 prioritized_cohorts AS (
                     SELECT DISTINCT ON (c.cohort_id) 
-                           c.cohort_id, c.cohort_data->>'name' as name, c.version, c.is_provisional, c.created_at, c.updated_at
+                           c.cohort_id, c.name, c.version, c.is_provisional, c.created_at, c.updated_at
                     FROM {self.full_table_name} c
                     INNER JOIN latest_cohorts lc ON c.cohort_id = lc.cohort_id AND c.version = lc.max_version
                     WHERE c.user_id = $1
@@ -192,7 +192,7 @@ class DatabaseManager:
 
             # Check if there's a provisional version at the highest version number
             provisional_query = f"""
-                SELECT cohort_data, version, is_provisional, created_at, updated_at, study_id, database_config
+                SELECT cohort_data, name, description, version, is_provisional, created_at, updated_at, study_id, database
                 FROM {self.full_table_name} 
                 WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = TRUE
             """
@@ -212,10 +212,12 @@ class DatabaseManager:
 
                 cohort_data = {
                     "cohort_data": parsed_cohort_data,
+                    "name": provisional_row["name"],
+                    "description": provisional_row["description"],
                     "version": provisional_row["version"],
                     "is_provisional": provisional_row["is_provisional"],
                     "study_id": provisional_row["study_id"],
-                    "database_config": json.loads(provisional_row["database_config"]) if provisional_row["database_config"] else None,
+                    "database": json.loads(provisional_row["database"]) if provisional_row["database"] else None,
                     "created_at": (
                         provisional_row["created_at"].isoformat()
                         if provisional_row["created_at"]
@@ -231,7 +233,7 @@ class DatabaseManager:
 
             # No provisional at highest version, get the highest version non-provisional
             non_provisional_query = f"""
-                SELECT cohort_data, version, is_provisional, created_at, updated_at, study_id, database_config
+                SELECT cohort_data, name, description, version, is_provisional, created_at, updated_at, study_id, database
                 FROM {self.full_table_name} 
                 WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = FALSE
             """
@@ -253,10 +255,12 @@ class DatabaseManager:
 
             cohort_data = {
                 "cohort_data": parsed_cohort_data,
+                "name": non_provisional_row["name"],
+                "description": non_provisional_row["description"],
                 "version": non_provisional_row["version"],
                 "is_provisional": non_provisional_row["is_provisional"],
                 "study_id": non_provisional_row["study_id"],
-                "database_config": json.loads(non_provisional_row["database_config"]) if non_provisional_row["database_config"] else None,
+                "database": json.loads(non_provisional_row["database"]) if non_provisional_row["database"] else None,
                 "created_at": (
                     non_provisional_row["created_at"].isoformat()
                     if non_provisional_row["created_at"]
@@ -309,8 +313,10 @@ class DatabaseManager:
         # ValueError will bubble up to caller
         validate_cohort_data_format(cohort_data)
 
-        # Ensure database_config is never stored inside cohort_data — it belongs in its own column
-        cohort_data = {k: v for k, v in cohort_data.items() if k != "database_config"}
+        # Extract name and description to dedicated columns; strip them from stored JSON
+        cohort_name = cohort_data.get("name") or cohort_id
+        cohort_description = cohort_data.get("description")
+        cohort_data = {k: v for k, v in cohort_data.items() if k not in ("name", "description", "database")}
 
         conn = None
         try:
@@ -334,8 +340,8 @@ class DatabaseManager:
 
                 # Insert the new version
                 insert_query = f"""
-                    INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+                    INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, name, description, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
                 """
 
                 await conn.execute(
@@ -347,6 +353,8 @@ class DatabaseManager:
                     target_version,
                     json.dumps(cohort_data),
                     provisional,
+                    cohort_name,
+                    cohort_description,
                 )
 
                 logger.info(
@@ -373,8 +381,8 @@ class DatabaseManager:
                     target_version = 1
 
                     insert_query = f"""
-                        INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, created_at, updated_at)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+                        INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, name, description, created_at, updated_at)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
                     """
 
                     await conn.execute(
@@ -386,6 +394,8 @@ class DatabaseManager:
                         target_version,
                         json.dumps(cohort_data),
                         provisional,
+                        cohort_name,
+                        cohort_description,
                     )
 
                     logger.info(
@@ -398,7 +408,7 @@ class DatabaseManager:
                         # If provisional, first try to update existing provisional row, otherwise insert new one
                         update_provisional_query = f"""
                             UPDATE {self.full_table_name} 
-                            SET cohort_data = $3, updated_at = NOW()
+                            SET cohort_data = $3, name = $5, description = $6, updated_at = NOW()
                             WHERE user_id = $1 AND cohort_id = $2 AND version = $4 AND is_provisional = TRUE
                         """
 
@@ -408,13 +418,15 @@ class DatabaseManager:
                             cohort_id,
                             json.dumps(cohort_data),
                             target_version,
+                            cohort_name,
+                            cohort_description,
                         )
 
                         if result == "UPDATE 0":
                             # No existing provisional row found, insert new one
                             insert_query = f"""
-                                INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, created_at, updated_at)
-                                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+                                INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, name, description, created_at, updated_at)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
                             """
 
                             await conn.execute(
@@ -426,6 +438,8 @@ class DatabaseManager:
                                 target_version,
                                 json.dumps(cohort_data),
                                 True,  # Always provisional for this case
+                                cohort_name,
+                                cohort_description,
                             )
 
                             logger.info(
@@ -439,7 +453,7 @@ class DatabaseManager:
                         # Replace existing version (update the existing row)
                         update_query = f"""
                             UPDATE {self.full_table_name} 
-                            SET cohort_data = $3, updated_at = NOW()
+                            SET cohort_data = $3, name = $5, description = $6, updated_at = NOW()
                             WHERE user_id = $1 AND cohort_id = $2 AND version = $4 AND is_provisional = FALSE
                         """
 
@@ -449,13 +463,15 @@ class DatabaseManager:
                             cohort_id,
                             json.dumps(cohort_data),
                             target_version,
+                            cohort_name,
+                            cohort_description,
                         )
 
                         if result == "UPDATE 0":
                             # No non-provisional version found, insert new one
                             insert_query = f"""
-                                INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, created_at, updated_at)
-                                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+                                INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, name, description, created_at, updated_at)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
                             """
 
                             await conn.execute(
@@ -467,6 +483,8 @@ class DatabaseManager:
                                 target_version,
                                 json.dumps(cohort_data),
                                 False,
+                                cohort_name,
+                                cohort_description,
                             )
 
                             logger.info(
@@ -486,16 +504,16 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def update_cohort_database_config(
-        self, user_id: str, cohort_id: str, database_config: Optional[Dict]
+    async def update_cohort_database(
+        self, user_id: str, cohort_id: str, database: Optional[Dict]
     ) -> bool:
         """
-        Update the database_config column for the latest version of a cohort.
+        Update the database column for the latest version of a cohort.
 
         Args:
             user_id (str): The user ID (UUID) who owns the cohort.
             cohort_id (str): The ID of the cohort to update.
-            database_config (Optional[Dict]): The database configuration to store.
+            database (Optional[Dict]): The database configuration to store.
 
         Returns:
             bool: True if successful, False if cohort not found.
@@ -505,7 +523,7 @@ class DatabaseManager:
             conn = await self.get_connection()
             query = f"""
                 UPDATE {self.full_table_name}
-                SET database_config = $3, updated_at = NOW()
+                SET database = $3, updated_at = NOW()
                 WHERE user_id = $1 AND cohort_id = $2
                   AND version = (
                       SELECT MAX(version) FROM {self.full_table_name}
@@ -516,14 +534,14 @@ class DatabaseManager:
                 query,
                 user_id,
                 cohort_id,
-                json.dumps(database_config) if database_config is not None else None,
+                json.dumps(database) if database is not None else None,
             )
             if result == "UPDATE 0":
                 return False
-            logger.info(f"Updated database_config for cohort {cohort_id}")
+            logger.info(f"Updated database for cohort {cohort_id}")
             return True
         except Exception as e:
-            logger.error(f"Failed to update database_config for cohort {cohort_id}: {e}")
+            logger.error(f"Failed to update database for cohort {cohort_id}: {e}")
             raise
         finally:
             if conn:
@@ -693,7 +711,7 @@ class DatabaseManager:
                     WHERE is_public = TRUE
                     GROUP BY cohort_id, user_id
                 )
-                SELECT c.cohort_id, c.user_id, c.cohort_data->>'name' as name, c.version, c.created_at, c.updated_at 
+                SELECT c.cohort_id, c.user_id, c.name, c.version, c.created_at, c.updated_at 
                 FROM {self.full_table_name} c
                 INNER JOIN latest_public_cohorts lpc ON c.cohort_id = lpc.cohort_id 
                     AND c.user_id = lpc.user_id 
@@ -1291,7 +1309,7 @@ class DatabaseManager:
             # Query to get studies where user is creator or in visible_by list
             query = """
                 SELECT study_id, name, description, is_public, created_at, updated_at,
-                       user_id as creator_id, visible_by, display_order, database_config
+                       user_id as creator_id, visible_by, display_order, database
                 FROM study 
                 WHERE user_id = $1 OR $1 = ANY(visible_by)
                 ORDER BY display_order ASC, updated_at DESC
@@ -1310,7 +1328,7 @@ class DatabaseManager:
                         "creator_id": row["creator_id"],
                         "visible_by": row["visible_by"],
                         "display_order": row["display_order"],
-                        "database_config": json.loads(row["database_config"]) if row["database_config"] else None,
+                        "database": json.loads(row["database"]) if row["database"] else None,
                         "created_at": (
                             row["created_at"].isoformat() if row["created_at"] else None
                         ),
@@ -1344,7 +1362,7 @@ class DatabaseManager:
             # Query to get only studies that are marked as public
             query = """
                 SELECT study_id, name, description, is_public, created_at, updated_at,
-                       user_id as creator_id, visible_by, display_order, database_config
+                       user_id as creator_id, visible_by, display_order, database
                 FROM study 
                 WHERE is_public = TRUE
                 ORDER BY display_order ASC, updated_at DESC
@@ -1363,7 +1381,7 @@ class DatabaseManager:
                         "creator_id": row["creator_id"],
                         "visible_by": row["visible_by"],
                         "display_order": row["display_order"],
-                        "database_config": json.loads(row["database_config"]) if row["database_config"] else None,
+                        "database": json.loads(row["database"]) if row["database"] else None,
                         "created_at": (
                             row["created_at"].isoformat() if row["created_at"] else None
                         ),
@@ -1401,7 +1419,7 @@ class DatabaseManager:
 
             query = """
                 SELECT study_id, name, description, baseline_characteristics, outcomes,
-                       database_config, is_public, user_id as creator_id, visible_by,
+                       database, is_public, user_id as creator_id, visible_by,
                        created_at, updated_at
                 FROM study 
                 WHERE study_id = $1 AND (user_id = $2 OR $2 = ANY(visible_by) OR is_public = TRUE)
@@ -1418,7 +1436,7 @@ class DatabaseManager:
                 "description": row["description"],
                 "baseline_characteristics": row["baseline_characteristics"],
                 "outcomes": row["outcomes"],
-                "database_config": json.loads(row["database_config"]) if row["database_config"] else None,
+                "database": json.loads(row["database"]) if row["database"] else None,
                 "is_public": row["is_public"],
                 "creator_id": row["creator_id"],
                 "visible_by": row["visible_by"],
@@ -1447,7 +1465,7 @@ class DatabaseManager:
         description: str = None,
         baseline_characteristics: Dict = None,
         outcomes: Dict = None,
-        database_config: Dict = None,
+        database: Dict = None,
         visible_by: List[str] = None,
         is_public: bool = False,
     ) -> bool:
@@ -1461,7 +1479,7 @@ class DatabaseManager:
             description (str, optional): The description of the study.
             baseline_characteristics (Dict, optional): The baseline characteristics.
             outcomes (Dict, optional): The outcomes.
-            database_config (Dict, optional): The database connection configuration.
+            database (Dict, optional): The database connection configuration.
             visible_by (List[str], optional): List of user IDs who can see this study.
             is_public (bool): Whether the study is public.
 
@@ -1481,7 +1499,7 @@ class DatabaseManager:
                 update_query = """
                     UPDATE study 
                     SET name = $3, description = $4, baseline_characteristics = $5, 
-                        outcomes = $6, database_config = $7, visible_by = $8, is_public = $9,
+                        outcomes = $6, database = $7, visible_by = $8, is_public = $9,
                         updated_at = NOW()
                     WHERE study_id = $1 AND user_id = $2
                 """
@@ -1498,7 +1516,7 @@ class DatabaseManager:
                         else None
                     ),
                     json.dumps(outcomes) if outcomes else None,
-                    json.dumps(database_config) if database_config else None,
+                    json.dumps(database) if database else None,
                     visible_by or [],
                     is_public,
                 )
@@ -1514,7 +1532,7 @@ class DatabaseManager:
                 # Create new study
                 insert_query = """
                     INSERT INTO study (study_id, user_id, name, description, baseline_characteristics,
-                                     outcomes, database_config, visible_by, is_public, created_at, updated_at)
+                                     outcomes, database, visible_by, is_public, created_at, updated_at)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
                 """
 
@@ -1530,7 +1548,7 @@ class DatabaseManager:
                         else None
                     ),
                     json.dumps(outcomes) if outcomes else None,
-                    json.dumps(database_config) if database_config else None,
+                    json.dumps(database) if database else None,
                     visible_by or [],
                     is_public,
                 )
@@ -1546,16 +1564,16 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def update_study_database_config(
-        self, user_id: str, study_id: str, database_config: Optional[Dict]
+    async def update_study_database(
+        self, user_id: str, study_id: str, database: Optional[Dict]
     ) -> bool:
         """
-        Update the database_config column for a study.
+        Update the database column for a study.
 
         Args:
             user_id (str): The user ID (UUID) who owns the study.
             study_id (str): The ID of the study to update.
-            database_config (Optional[Dict]): The database configuration to store, or None to clear.
+            database (Optional[Dict]): The database configuration to store, or None to clear.
 
         Returns:
             bool: True if successful, False if study not found or access denied.
@@ -1566,22 +1584,22 @@ class DatabaseManager:
             result = await conn.execute(
                 """
                 UPDATE study
-                SET database_config = $3, updated_at = NOW()
+                SET database = $3, updated_at = NOW()
                 WHERE study_id = $1 AND user_id = $2
                 """,
                 study_id,
                 user_id,
-                json.dumps(database_config) if database_config is not None else None,
+                json.dumps(database) if database is not None else None,
             )
             if result == "UPDATE 0":
                 logger.error(
                     f"User {user_id} is not authorized to update study {study_id} or study not found"
                 )
                 return False
-            logger.info(f"Successfully updated database_config for study {study_id}")
+            logger.info(f"Successfully updated database for study {study_id}")
             return True
         except Exception as e:
-            logger.error(f"Failed to update database_config for study {study_id}: {e}")
+            logger.error(f"Failed to update database for study {study_id}: {e}")
             raise
         finally:
             if conn:
@@ -1724,7 +1742,7 @@ class DatabaseManager:
                 ),
                 prioritized_cohorts AS (
                     SELECT DISTINCT ON (c.cohort_id) 
-                           c.cohort_id, c.cohort_data->>'name' as name, c.version, 
+                           c.cohort_id, c.name, c.description, c.version, 
                            c.is_provisional, c.parent_cohort_id, c.created_at, c.updated_at, 
                            c.cohort_data, c.display_order
                     FROM {self.full_table_name} c
@@ -1746,6 +1764,7 @@ class DatabaseManager:
                     {
                         "id": row["cohort_id"],
                         "name": row["name"] or f"Cohort {row['cohort_id']}",
+                        "description": row["description"],
                         "version": row["version"],
                         "is_provisional": row["is_provisional"],
                         "parent_cohort_id": row["parent_cohort_id"],
