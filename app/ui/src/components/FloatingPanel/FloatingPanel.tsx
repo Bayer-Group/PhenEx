@@ -8,6 +8,11 @@ export interface FloatingPanelProps {
   /** Called when the user docks the panel back (title-bar button). */
   onClose: () => void;
   children: React.ReactNode;
+  /**
+   * Whether to render the default dock-back button in the header. Set false
+   * when the panel's content provides its own docking control. Defaults to true.
+   */
+  showDockButton?: boolean;
   initialX?: number;
   initialY?: number;
   initialWidth?: number;
@@ -40,6 +45,7 @@ export const FloatingPanel: React.FC<FloatingPanelProps> = ({
   title,
   onClose,
   children,
+  showDockButton = true,
   initialX = 120,
   initialY = 120,
   initialWidth = 320,
@@ -119,15 +125,17 @@ export const FloatingPanel: React.FC<FloatingPanelProps> = ({
     >
       <div className={styles.header} onMouseDown={startMove}>
         <span className={styles.title}>{title}</span>
-        <button
-          type="button"
-          className={styles.dockButton}
-          title="Dock back"
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={onClose}
-        >
-          ⤵
-        </button>
+        {showDockButton && (
+          <button
+            type="button"
+            className={styles.dockButton}
+            title="Dock back"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={onClose}
+          >
+            ⤵
+          </button>
+        )}
       </div>
       <div className={styles.body}>{children}</div>
       {RESIZE_DIRS.map((dir) => (

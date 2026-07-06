@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
-import { Layout, Model, IJsonModel, Actions, BorderNode, TabSetNode, TabNode, DockLocation, type Action, type ITabSetRenderValues } from 'flexlayout-react';
+import { Layout, Model, IJsonModel, Actions, BorderNode, DockLocation, type Action } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
 import { FloatingPanel } from '../../components/FloatingPanel';
@@ -579,27 +579,6 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     setFloatingComponents((prev) => prev.filter((c) => c !== component));
   }, []);
 
-  // Adds a "pop out" button to the active tab of the left panel's tab strip.
-  const handleRenderLeftTabSet = useCallback(
-    (node: TabSetNode | BorderNode, renderValues: ITabSetRenderValues) => {
-      const selected = node.getSelectedNode() as TabNode | undefined;
-      const component = selected?.getComponent();
-      if (!component || !(component in LEFT_PANEL_TITLES)) return;
-      renderValues.stickyButtons.push(
-        <button
-          key="float"
-          className="flexlayout__tab_toolbar_button"
-          title="Pop out into floating window"
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={() => floatComponent(component)}
-        >
-          ⧉
-        </button>,
-      );
-    },
-    [floatComponent],
-  );
-
   const getLeftBorder = useCallback(
     () => layoutModelRef.current.getBorderSet().getBorderMap().get(DockLocation.LEFT),
     [],
@@ -929,7 +908,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         case 'leftPanel':
           return (
             <div className={styles.leftPanel}>
-              <Layout model={leftPanelModelRef.current!} factory={leftPanelFactory} onRenderTabSet={handleRenderLeftTabSet} />
+              <Layout model={leftPanelModelRef.current!} factory={leftPanelFactory} />
             </div>
           );
         case 'center':
@@ -969,7 +948,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       handleNavigateToRow, handleOutlineNavigate,
       finalCohortSizes, cohortDataMap, barChartSpacers,
       tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,
-      leftPanelFactory, handleRenderLeftTabSet,
+      leftPanelFactory,
     ],
   );
 
@@ -1028,6 +1007,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           initialX={140 + i * 32}
           initialY={120 + i * 32}
           onClose={() => dockComponent(component)}
+          // The legend provides its own dock control in its top-right actions.
+          showDockButton={component !== 'figureLegend'}
         >
           {renderLeftComponent(component, true)}
         </FloatingPanel>
