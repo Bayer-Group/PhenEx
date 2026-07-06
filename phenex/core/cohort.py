@@ -41,7 +41,6 @@ class Cohort:
         derived_tables_post_entry: A list of derived tables to compute after the index stage, using index-subset tables. Their outputs are available as domains for the reporting stage.
         outcomes: A list of phenotypes representing outcomes of the cohort.
         description: A plain text description of the cohort.
-        data_period: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the data_period was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
         database: Optional Database object bundling a connector, mapper, and optional data_period. If provided, tables and connector are retrieved from this object at execute() time. A database defined at the cohort level overrides a database defined at the study level. Either the cohort or its parent study must have a database configured before execution.
         custom_reporters: Additional reporter instances to run on this cohort only, after the default Waterfall and Table1 reporters. Each reporter must implement ``execute(cohort)`` and ``to_json(path)``.
 
