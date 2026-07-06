@@ -71,6 +71,9 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(0);
   const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // True once the delay has fired — crosshair follows mouse until leave.
+  const followingRef = useRef(false);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -87,8 +90,31 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setHover({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    const pos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    if (followingRef.current) {
+      // Already past the delay — track the mouse directly.
+      setHover(pos);
+      return;
+    }
+    // Still in the initial delay: reset the timer on each move.
+    if (hoverTimerRef.current !== null) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      followingRef.current = true;
+      setHover(pos);
+    }, 500);
   }, []);
+
+  const dismissCrosshair = useCallback(() => {
+    if (hoverTimerRef.current !== null) clearTimeout(hoverTimerRef.current);
+    followingRef.current = false;
+    setHover(null);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') dismissCrosshair(); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [dismissCrosshair]);
 
   const hoverValue =
     hover !== null
@@ -100,7 +126,7 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
       ref={containerRef}
       className={styles.frame}
       onMouseMove={handleMouseMove}
-      onMouseLeave={() => setHover(null)}
+      onMouseLeave={dismissCrosshair}
     >
       {width > 0 && (
         <>
