@@ -1,5 +1,6 @@
 .title {
   cursor: text;
+  font-size: var(--font_size_phenotypename, 11px);
 }
 
 .input {

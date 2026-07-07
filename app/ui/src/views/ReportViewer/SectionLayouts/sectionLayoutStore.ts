@@ -50,6 +50,16 @@ export const GRID_COLUMNS = 10;
 export const GRID_ROW_HEIGHT = 50;
 export const GRID_GAP = 14;
 
+/**
+ * A new grid tile is sized so every selected cohort has room for its own
+ * bar/boxplot. Its height ≈ `PER_COHORT_HEIGHT` × cohortCount + `TILE_SPACER_HEIGHT`,
+ * rounded up to whole grid rows (px units).
+ */
+export const PER_COHORT_HEIGHT = 26;
+export const TILE_SPACER_HEIGHT = 60;
+/** Minimum tile height in grid rows (also the height for a single cohort). */
+export const MIN_TILE_ROWS = 2;
+
 // ── Persistence ──────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'phenex.sectionLayouts.v1';
@@ -188,12 +198,22 @@ const store = new SectionLayoutStore();
 // ── Default layout generation ────────────────────────────────────────────
 
 /**
- * Build a default flow-packed grid layout for a set of item keys: each item is
- * a 2×2 tile, laid left-to-right and wrapping to the next band.
+ * Grid-row span for a fresh tile given how many cohorts it must show. Each
+ * cohort needs a bar/boxplot row, so tall enough = per-cohort rows + spacer.
  */
-export function buildDefaultLayoutItems(keys: string[]): GridItem[] {
+export function defaultTileRows(cohortCount: number): number {
+  const contentPx = PER_COHORT_HEIGHT * Math.max(1, cohortCount) + TILE_SPACER_HEIGHT;
+  return Math.max(MIN_TILE_ROWS, Math.ceil(contentPx / GRID_ROW_HEIGHT));
+}
+
+/**
+ * Build a default flow-packed grid layout for a set of item keys: each item is
+ * a 2-column tile whose height scales with `cohortCount`, laid left-to-right
+ * and wrapping to the next band.
+ */
+export function buildDefaultLayoutItems(keys: string[], cohortCount = 1): GridItem[] {
   const w = 2;
-  const h = 2;
+  const h = defaultTileRows(cohortCount);
   const perRow = Math.max(1, Math.floor(GRID_COLUMNS / w));
   return keys.map((key, i) => ({
     key,

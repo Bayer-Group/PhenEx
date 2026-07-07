@@ -814,7 +814,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       onMovePhenotype: (name: string, targetSectionId: string, beforeName: string | null) => void;
       onRenamePhenotype: (name: string, displayName: string) => void;
       onRenameSection: (sectionId: string, displayName: string) => void;
-    }> = ({ entries, onNavigate, expandedKeys: ek, onToggleExpand: ote, onMovePhenotype, onRenamePhenotype, onRenameSection }) => {
+      cohortCount: number;
+    }> = ({ entries, onNavigate, expandedKeys: ek, onToggleExpand: ote, onMovePhenotype, onRenamePhenotype, onRenameSection, cohortCount }) => {
       const activeKey = useSyncExternalStore(store.subscribe, store.getSnapshot);
       const currentIndex = entries.findIndex((e) => e.key === activeKey);
       return (
@@ -827,6 +828,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           onMovePhenotype={onMovePhenotype}
           onRenamePhenotype={onRenamePhenotype}
           onRenameSection={onRenameSection}
+          cohortCount={cohortCount}
         />
       );
     };
@@ -863,6 +865,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               onMovePhenotype={handleMovePhenotype}
               onRenamePhenotype={handleRenamePhenotype}
               onRenameSection={handleRenameSection}
+              cohortCount={selections.length}
             />
           );
         case 'figureLegend':

@@ -5,7 +5,8 @@ import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { SectionRowRenderer, SectionRowTitle, sectionRowTitle } from './SectionRowRenderer';
 import { SectionGrid, type SectionGridRenderItem } from './SectionGrid';
-import { type SectionLayout, type GridItem, useSectionLayouts } from './sectionLayoutStore';
+import { cleanupGridLayout } from './CleanupGridLayout';
+import { type SectionLayout, type GridItem, GRID_COLUMNS, defaultTileRows, useSectionLayouts } from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,16 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     updateLayoutItems(layout.id, items);
   }, [updateLayoutItems, layout.id]);
 
+  // Tiles stay responsive to the cohort count: every tile is sized to fit the
+  // current cohorts (one bar/boxplot per cohort), then overlaps introduced by
+  // the height change are reflowed away. Positions/widths from a saved layout
+  // are preserved; only the cohort-driven height is (re)applied.
+  const responsiveLayout = useMemo<GridItem[]>(() => {
+    const h = defaultTileRows(cohortData.length);
+    const resized = layout.items.map((item) => (item.h === h ? item : { ...item, h }));
+    return cleanupGridLayout(resized, GRID_COLUMNS);
+  }, [layout.items, cohortData.length]);
+
   const handleItemClick = useCallback((key: string) => {
     const row = rowByKey.get(key);
     if (row) onNavigateToRow?.(row);
@@ -82,7 +93,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
   return (
     <SectionGrid
       items={gridItems}
-      layout={layout.items}
+      layout={responsiveLayout}
       onLayoutChange={handleLayoutChange}
       onItemClick={handleItemClick}
     />
