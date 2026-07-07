@@ -1,0 +1,28 @@
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin-left: auto;
+  margin-right: 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #666;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  margin-right:30px;
+}
+
+.button:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.button:focus {
+  outline: none;
+}
