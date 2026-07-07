@@ -141,6 +141,16 @@ class FigureLegendSetStore {
     this.update(runId, { ...run, scratch: data });
   }
 
+  exportState(): PersistedState {
+    return this.state;
+  }
+
+  replaceState(next: PersistedState) {
+    this.state = next;
+    saveState(next);
+    this.notify();
+  }
+
   private notify() {
     for (const l of this.listeners) l();
   }
@@ -183,4 +193,14 @@ export function useFigureLegendSets(runId: string): UseFigureLegendSets {
     setActive,
     setScratch,
   };
+}
+
+/** Snapshot of the entire figure-legend-set store, for export. */
+export function exportFigureLegendSets(): PersistedState {
+  return store.exportState();
+}
+
+/** Replace the entire figure-legend-set store with imported data. */
+export function importFigureLegendSets(state: PersistedState): void {
+  store.replaceState(state ?? {});
 }

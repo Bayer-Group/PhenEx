@@ -168,6 +168,16 @@ class SectionLayoutStore {
     this.update(sectionId, { layouts, activeLayoutId });
   }
 
+  exportState(): PersistedState {
+    return this.state;
+  }
+
+  replaceState(next: PersistedState) {
+    this.state = next;
+    saveState(next);
+    this.notify();
+  }
+
   private notify() {
     for (const l of this.listeners) l();
   }
@@ -271,4 +281,14 @@ export function getHiddenKeys(sectionId: string, layoutId: string | null): strin
 /** Subscribe to store changes (for components that render menus off it). */
 export function subscribeSectionLayouts(listener: () => void): () => void {
   return store.subscribe(listener);
+}
+
+/** Snapshot of the entire section-layout store, for export. */
+export function exportSectionLayouts(): PersistedState {
+  return store.exportState();
+}
+
+/** Replace the entire section-layout store with imported data. */
+export function importSectionLayouts(state: PersistedState): void {
+  store.replaceState(state ?? {});
 }

@@ -21,6 +21,21 @@ export const colorConfig = {
     monokai_purple: [254, 44, 55] as const,
   },
   palettes: {
+      ezn: {
+        white: [255, 255, 255] as const,
+        dark_green: [0, 59, 51] as const,
+        green: [46, 102, 55] as const,
+        light_green: [141, 198, 63] as const,
+        cyan: [66, 184, 234] as const,
+        grey: [127, 127, 127] as const,
+        purple: [148, 79, 220] as const,
+        mid_grey: [166, 166, 166] as const,
+        light_grey: [217, 217, 217] as const,
+        placebo: [191, 191, 191] as const,
+        hrt: [161, 127, 102] as const,
+        ssri: [233, 191, 191] as const,
+        fezolinetant: [199, 109, 102] as const,
+    },
     monokai:{
       pink: [225, 71, 118] as const,
       orange: [226, 96, 51] as const,

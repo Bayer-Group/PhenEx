@@ -182,7 +182,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
               <div
                 className={`${styles.cardTitle} ${isSection || isCategory ? styles.cardTitleSection : ''}`}
               >
-                {title}
+                {title=='study_info' ? '' : title}
               </div>
               <div className={isSection ? styles.cardContentSection : styles.cardContent}>
                 {renderContent()}

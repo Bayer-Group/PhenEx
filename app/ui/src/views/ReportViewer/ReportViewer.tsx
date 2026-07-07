@@ -10,6 +10,7 @@ import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/Out
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { SingleRowContentHorizontalRowViewer } from './HorizontalRowViewer/SingleRowContentHorizontalRowViewer';
 import { BreadcrumbTitle } from './BreadcrumbTitle';
+import { ReportStoreMenu } from './ReportStoreMenu';
 import leftPanelIcon from '../../assets/icons/left_panel.svg';
 import { CellLayoutStoreProvider } from './CellLayouts';
 import { ThreePanelCollapseProvider, useThreePanelCollapse } from '../../contexts/ThreePanelCollapseContext';
@@ -976,6 +977,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
             studyTitle={displayTitle}
             onNavigate={handleViewerNavigate}
           />
+          <ReportStoreMenu outline={storedOutline} onImportOutline={setStoredOutline} />
       </div>
       <div className={styles.page}>
         <Layout
