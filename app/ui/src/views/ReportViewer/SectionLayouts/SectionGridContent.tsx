@@ -1,11 +1,11 @@
-import { memo, useCallback, useEffect, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { type CohortClassified } from '../types';
 import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { SectionRowRenderer, SectionRowTitle, sectionRowTitle } from './SectionRowRenderer';
 import { SectionGrid, type SectionGridRenderItem } from './SectionGrid';
-import { restackForTileHeight } from './CleanupGridLayout';
+import { restackByCohortDelta } from './CleanupGridLayout';
 import { type SectionLayout, type GridItem, defaultTileRows, useSectionLayouts } from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
@@ -75,16 +75,20 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     updateLayoutItems(layout.id, items);
   }, [updateLayoutItems, layout.id]);
 
-  // Tiles are sized to fit the current cohorts (one bar/boxplot per cohort).
-  // This only re-runs when the cohort count changes: every tile takes the new
-  // height and is shifted by the height delta of the tiles above it, so shrunk
-  // cohorts pull items up (and grown ones push down) by exactly that delta.
-  // Between changes the stored layout is untouched, leaving manual moves free.
+  // Tiles react only to a *change* in the cohort count. On such a change every
+  // tile keeps its own (possibly manually resized) height and is grown/shrunk
+  // by the per-cohort row delta, so each cell holds its vertical scale relative
+  // to the 1-cohort baseline. Between changes the stored layout is untouched,
+  // leaving manual moves and resizes free.
+  const prevCohortCountRef = useRef(cohortData.length);
   useEffect(() => {
-    const newH = defaultTileRows(cohortData.length);
-    const oldH = layout.items[0]?.h;
-    if (oldH === undefined || oldH === newH) return;
-    updateLayoutItems(layout.id, restackForTileHeight(layout.items, oldH, newH));
+    const prev = prevCohortCountRef.current;
+    const next = cohortData.length;
+    if (prev === next) return;
+    prevCohortCountRef.current = next;
+    const deltaRows = defaultTileRows(next) - defaultTileRows(prev);
+    if (deltaRows === 0) return;
+    updateLayoutItems(layout.id, restackByCohortDelta(layout.items, deltaRows));
   }, [cohortData.length, layout.id, layout.items, updateLayoutItems]);
 
   const handleItemClick = useCallback((key: string) => {
