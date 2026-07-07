@@ -19,6 +19,7 @@ export interface SectionCellContentProps {
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   onNavigateToRow?: (row: SequentialRow) => void;
+  onRenameRow?: (name: string, displayName: string) => void;
 }
 
 /**

@@ -1,14 +1,34 @@
-.tooltip {
+.tooltipWrapper {
   position: fixed;
   transform: translate(-10px, -120%);
-  padding: 4px 8px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  font-size: 16px;
-  white-space: nowrap;
   pointer-events: none;
   z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.tooltipCohort {
+  font-family: "IBMPlexSans-regular", sans-serif;
+  background-color: white;
+  border: var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  padding: 4px 10px;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+}
+
+.tooltipParent {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.tooltipSub {
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: 14px;
 }
 
 .fadeIn {

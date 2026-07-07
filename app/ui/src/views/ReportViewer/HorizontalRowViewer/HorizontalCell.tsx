@@ -30,6 +30,7 @@ export interface HorizontalCellProps {
   table2Cohorts?: Table2Cohort[];
   onNavigate: (index: number) => void;
   onNavigateToRow?: (row: SequentialRow) => void;
+  onRenameRow?: (name: string, displayName: string) => void;
   onVerticalScroll?: (scrollTop: number, threshold: number) => void;
   initialScrollTop?: number;
   studyTitle?: string;
@@ -44,7 +45,7 @@ export interface HorizontalCellProps {
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, initialScrollTop, studyTitle = '', studyDescription, waterfallData, groups, cohortDescriptions, onSetColor }, ref) => {
+  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, onRenameRow, initialScrollTop, studyTitle = '', studyDescription, waterfallData, groups, cohortDescriptions, onSetColor }, ref) => {
     const isSection = entry.kind === 'section';
     const isCategory = entry.kind === 'category';
     const reporter = entry.kind === 'row' ? entry.row.reporter : entry.reporter;
@@ -159,6 +160,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
           tteCohorts={tteCohorts}
           table2Cohorts={table2Cohorts}
           onNavigateToRow={onNavigateToRow}
+          onRenameRow={onRenameRow}
         />
       );
     };

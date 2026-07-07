@@ -921,6 +921,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
                 navigateToIndex={externalNavIndex}
                 onIndexChange={setViewerIndex}
                 onNavigateToRow={handleNavigateToRow}
+                onRenameRow={handleRenamePhenotype}
                 onScrolledPastTitle={setShowRowTitle}
                 cohortDataMap={cohortDataMap}
                 finalCohortSizes={finalCohortSizes}
@@ -946,6 +947,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [
       displayTitle, effectiveRows, viewerCells, externalNavIndex,
       handleNavigateToRow, handleOutlineNavigate,
+      handleRenamePhenotype,
       finalCohortSizes, cohortDataMap, barChartSpacers,
       tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,
       leftPanelFactory,

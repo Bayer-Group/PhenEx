@@ -137,7 +137,8 @@ export const BarChartCellRendererCompact: FC<BarChartBaseProps> = ({
 
       {hover && (
         <CohortNameTooltip
-          name={cohortData[hover.index]?.displayName ?? cohortData[hover.index]?.name ?? ''}
+          cohortData={cohortData}
+          index={hover.index}
           x={hover.x}
           top={hover.top}
         />

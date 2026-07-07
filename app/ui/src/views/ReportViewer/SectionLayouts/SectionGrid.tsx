@@ -8,6 +8,8 @@ import styles from './SectionGrid.module.css';
 export interface SectionGridRenderItem {
   key: string;
   title: string;
+  /** Optional rich title (e.g. editable) rendered in place of `title`. */
+  titleNode?: ReactNode;
   content: ReactNode;
 }
 
@@ -217,7 +219,7 @@ export function SectionGrid({
               onPointerDown={(e) => startMove(e, item.key)}
               title={item.title}
             >
-              {item.title}
+              {item.titleNode ?? item.title}
             </div>
             <div className={styles.itemBody}>
               <GridItemContext.Provider value={{ cols: pos.w }}>

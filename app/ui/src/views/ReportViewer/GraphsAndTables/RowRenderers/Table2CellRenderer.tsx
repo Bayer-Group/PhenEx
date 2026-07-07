@@ -112,7 +112,8 @@ export const Table2CellRenderer: FC<Table2CellRendererProps> = ({ outcome, cohor
 
       {hover && (
         <CohortNameTooltip
-          name={cohorts[hover.index]?.displayName ?? cohorts[hover.index]?.name ?? ''}
+          cohortData={cohorts}
+          index={hover.index}
           x={hover.x}
           top={hover.top}
         />

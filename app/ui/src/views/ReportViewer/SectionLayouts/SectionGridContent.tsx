@@ -3,7 +3,7 @@ import { type CohortClassified } from '../types';
 import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
-import { SectionRowRenderer, sectionRowTitle } from './SectionRowRenderer';
+import { SectionRowRenderer, SectionRowTitle, sectionRowTitle } from './SectionRowRenderer';
 import { SectionGrid, type SectionGridRenderItem } from './SectionGrid';
 import { type SectionLayout, type GridItem, useSectionLayouts } from './sectionLayoutStore';
 
@@ -19,6 +19,7 @@ export interface SectionGridContentProps {
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   onNavigateToRow?: (row: SequentialRow) => void;
+  onRenameRow?: (name: string, displayName: string) => void;
 }
 
 /**
@@ -37,6 +38,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
   tteCohorts,
   table2Cohorts,
   onNavigateToRow,
+  onRenameRow,
 }) => {
   const { updateLayoutItems } = useSectionLayouts(sectionId);
 
@@ -50,6 +52,9 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     () => rows.map((row) => ({
       key: row.name,
       title: sectionRowTitle(row),
+      titleNode: (
+        <SectionRowTitle row={row} onRename={onRenameRow} onOpen={onNavigateToRow} />
+      ),
       content: (
         <SectionRowRenderer
           row={row}
@@ -62,7 +67,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
         />
       ),
     })),
-    [rows, cohortData, finalCohortSizes, spacers, tteCohorts, table2Cohorts],
+    [rows, cohortData, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigateToRow, onRenameRow],
   );
 
   const handleLayoutChange = useCallback((items: GridItem[]) => {

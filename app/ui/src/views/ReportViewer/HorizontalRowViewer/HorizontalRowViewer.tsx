@@ -41,6 +41,7 @@ interface HorizontalRowViewerProps {
   navigateToIndex?: number;
   onIndexChange?: (index: number) => void;
   onNavigateToRow?: (row: SequentialRow) => void;
+  onRenameRow?: (name: string, displayName: string) => void;
   onScrolledPastTitle?: (scrolled: boolean) => void;
   waterfallData: Record<string, unknown>;
   groups: CohortGroup[];
@@ -66,6 +67,7 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
   navigateToIndex,
   onIndexChange,
   onNavigateToRow,
+  onRenameRow,
   onScrolledPastTitle,
   waterfallData,
   groups,
@@ -328,6 +330,7 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
                   table2Cohorts={table2Cohorts}
                   onNavigate={navigate}
                   onNavigateToRow={onNavigateToRow}
+                  onRenameRow={onRenameRow}
                   onVerticalScroll={isFocused ? handleVerticalScroll : undefined}
                   initialScrollTop={sharedScrollTopRef.current}
                   studyTitle={studyTitle}

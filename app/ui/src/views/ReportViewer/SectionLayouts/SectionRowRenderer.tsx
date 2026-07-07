@@ -1,8 +1,10 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { type CohortClassified } from '../types';
 import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
+import { RightClickMenu, type RightClickMenuItem } from '../../../components/RightClickMenu/RightClickMenu';
+import titleStyles from './SectionRowTitle.module.css';
 import { BarChartCellRendererCompact } from '../GraphsAndTables/RowRenderers/BarChartCellRendererCompact';
 import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
 import { BoxPlotCellRenderer } from '../GraphsAndTables/RowRenderers/BoxPlotCellRenderer';
@@ -96,3 +98,88 @@ export const SectionRowRenderer = memo<SectionRowRendererProps>(({
 export function sectionRowTitle(row: SequentialRow): string {
   return row.displayName || row.registry?.display_name || row.name;
 }
+
+// ── Editable title ─────────────────────────────────────────────────────────
+
+export interface SectionRowTitleProps {
+  row: SequentialRow;
+  /** Styling for the title container (list cell / grid header). */
+  className?: string;
+  /** Commit a new editable display label for the phenotype. */
+  onRename?: (name: string, displayName: string) => void;
+  /** Open the phenotype in the single-row modal. */
+  onOpen?: (row: SequentialRow) => void;
+}
+
+/**
+ * The single, shared title used by both the list and grid section views.
+ * Behaves identically to the outline items: double-click starts an inline
+ * rename, right-click opens a menu whose primary action opens the modal. All
+ * interactions stop propagation so they never trigger the surrounding card's
+ * navigate/drag handlers.
+ */
+export const SectionRowTitle = memo<SectionRowTitleProps>(({ row, className, onRename, onOpen }) => {
+  const [editing, setEditing] = useState(false);
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const label = sectionRowTitle(row);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  const commit = () => {
+    const next = inputRef.current?.value.trim() ?? '';
+    if (next && next !== label) onRename?.(row.name, next);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        className={titleStyles.input}
+        defaultValue={label}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') { e.preventDefault(); commit(); }
+          else if (e.key === 'Escape') { e.preventDefault(); setEditing(false); }
+        }}
+        onBlur={commit}
+      />
+    );
+  }
+
+  const menuItems: RightClickMenuItem[] = [
+    ...(onOpen ? [{ label: 'Open', onClick: () => { onOpen(row); setMenu(null); } }] : []),
+    ...(onRename ? [{ label: 'Rename', onClick: () => { setEditing(true); setMenu(null); } }] : []),
+  ];
+
+  return (
+    <>
+      <span
+        className={`${titleStyles.title}${className ? ` ${className}` : ''}`}
+        title={label}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => { e.stopPropagation(); if (onRename) setEditing(true); }}
+        onContextMenu={(e) => {
+          if (menuItems.length === 0) return;
+          e.preventDefault();
+          e.stopPropagation();
+          setMenu({ x: e.clientX, y: e.clientY });
+        }}
+      >
+        {label}
+      </span>
+      {menu && menuItems.length > 0 && (
+        <RightClickMenu position={menu} onClose={() => setMenu(null)} items={menuItems} />
+      )}
+    </>
+  );
+});
+SectionRowTitle.displayName = 'SectionRowTitle';

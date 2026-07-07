@@ -3,7 +3,7 @@ import { type CohortClassified } from '../types';
 import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
-import { SectionRowRenderer, sectionRowTitle } from './SectionRowRenderer';
+import { SectionRowRenderer, SectionRowTitle } from './SectionRowRenderer';
 import styles from './SectionListContent.module.css';
 
 // ── Props ────────────────────────────────────────────────────────────────
@@ -16,6 +16,7 @@ export interface SectionListContentProps {
   tteCohorts?: TimeToEventCohort[];
   table2Cohorts?: Table2Cohort[];
   onNavigateToRow?: (row: SequentialRow) => void;
+  onRenameRow?: (name: string, displayName: string) => void;
 }
 
 /**
@@ -30,6 +31,7 @@ export const SectionListContent = memo<SectionListContentProps>(({
   tteCohorts,
   table2Cohorts,
   onNavigateToRow,
+  onRenameRow,
 }) => {
   return (
     <div className={styles.multiRowList}>
@@ -45,7 +47,7 @@ export const SectionListContent = memo<SectionListContentProps>(({
             onClick={(e) => { e.stopPropagation(); onNavigateToRow?.(row); }}
           >
             <div className={styles.multiRowTitle}>
-              {sectionRowTitle(row)}
+              <SectionRowTitle row={row} onRename={onRenameRow} onOpen={onNavigateToRow} />
             </div>
             <div className={styles.multiRowContent}>
               <SectionRowRenderer

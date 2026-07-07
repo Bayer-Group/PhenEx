@@ -1,10 +1,34 @@
 import { FC, useEffect, useRef, useState } from 'react';
 import { Portal } from '../../../../components/Portal/Portal';
+import { type CohortClassified, getCohortLabelParts } from '../../types';
 import styles from './CohortNameTooltip.module.css';
 
+interface CohortLabel {
+  parent: string;
+  sub: string | null;
+  color: string;
+}
+
+/**
+ * Resolve the box-plot-style parent/sub label parts (and parent color) for a
+ * cohort at the given index. Mirrors BoxPlotCellRenderer's getCohortLabel.
+ */
+function getCohortLabel(cohortData: CohortClassified[], index: number): CohortLabel {
+  const cohort = cohortData[index];
+  if (!cohort) return { parent: '', sub: null, color: '' };
+  const getDisplayName = (n: string) => cohortData.find((c) => c.name === n)?.displayName;
+  const { parent, sub } = getCohortLabelParts(cohort.name, getDisplayName);
+  const parentIdx = cohort.name.indexOf('__');
+  const parentCohort =
+    parentIdx !== -1 ? cohortData.find((c) => c.name === cohort.name.substring(0, parentIdx)) : null;
+  return { parent, sub, color: parentCohort?.color ?? cohort.color };
+}
+
 interface CohortNameTooltipProps {
-  /** Cohort display name. */
-  name: string;
+  /** All cohorts (used to resolve parent/sub label parts and color). */
+  cohortData: CohortClassified[];
+  /** Index of the hovered cohort within cohortData. */
+  index: number;
   /** Fixed-position X (clientX from mouse event). */
   x: number;
   /** Fixed-position Y — tooltip renders above this point. */
@@ -17,7 +41,8 @@ interface CohortNameTooltipProps {
  * Automatically hides during scroll / trackpad pan / pinch-zoom
  * so it never appears stuck in the wrong position.
  */
-export const CohortNameTooltip: FC<CohortNameTooltipProps> = ({ name, x, top }) => {
+export const CohortNameTooltip: FC<CohortNameTooltipProps> = ({ cohortData, index, x, top }) => {
+  const label = getCohortLabel(cohortData, index);
   const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
   const suppressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -36,7 +61,7 @@ export const CohortNameTooltip: FC<CohortNameTooltipProps> = ({ name, x, top }) 
       if (hideTimer.current) clearTimeout(hideTimer.current);
       if (fadeTimer.current) clearTimeout(fadeTimer.current);
     };
-  }, [name, x, top]);
+  }, [index, x, top]);
 
   // Hide during scroll / pan / pinch
   useEffect(() => {
@@ -69,10 +94,13 @@ export const CohortNameTooltip: FC<CohortNameTooltipProps> = ({ name, x, top }) 
   return (
     <Portal>
       <div
-        className={`${styles.tooltip} ${fading ? styles.fadeOut : styles.fadeIn}`}
+        className={`${styles.tooltipWrapper} ${fading ? styles.fadeOut : styles.fadeIn}`}
         style={{ left: x, top: top - 4 }}
       >
-        {name}
+        <div className={styles.tooltipCohort} style={{ color: label.color }}>
+          <div className={styles.tooltipParent}>{label.parent}</div>
+          {label.sub && <div className={styles.tooltipSub}>{label.sub}</div>}
+        </div>
       </div>
     </Portal>
   );

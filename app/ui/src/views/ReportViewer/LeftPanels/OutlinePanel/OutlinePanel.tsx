@@ -77,7 +77,7 @@ type Renaming = { kind: 'section' | 'row'; id: string };
 
 /** Context-menu target. */
 type Menu =
-  | { x: number; y: number; kind: 'row'; id: string }
+  | { x: number; y: number; kind: 'row'; id: string; index: number }
   | { x: number; y: number; kind: 'section'; id: string; entry: SectionEntry };
 
 /** A small auto-focusing inline text input used for renaming. */
@@ -244,6 +244,8 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
     editing: boolean,
     onCommit: (v: string) => void,
     onContextMenu?: (e: React.MouseEvent) => void,
+    onDoubleClick?: () => void,
+    navigateOnClick = true,
   ) => {
     if (editing) {
       return <InlineEdit value={label} onCommit={onCommit} onCancel={() => setRenaming(null)} />;
@@ -252,7 +254,8 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
       <button
         type="button"
         className={`${styles.item} ${isActive ? styles.itemActive : ''} ${styles[`level${level}`] ?? ''}`}
-        onClick={() => onNavigate(entryIndex)}
+        onClick={navigateOnClick ? () => onNavigate(entryIndex) : undefined}
+        onDoubleClick={onDoubleClick}
         onContextMenu={onContextMenu}
       >
         {label}
@@ -374,12 +377,16 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
           ? <RowHiddenDim sectionLayoutId={sectionLayoutId} itemKey={row.name}>{renderLabel(
               getEntryLabel(entry), 2, entry.index, isActive, editing,
               (v) => { onRenamePhenotype(row.name, v); setRenaming(null); },
-              (e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, kind: 'row', id: row.name }); },
+              (e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, kind: 'row', id: row.name, index: entry.index }); },
+              () => setRenaming({ kind: 'row', id: row.name }),
+              false,
             )}</RowHiddenDim>
           : renderLabel(
               getEntryLabel(entry), 2, entry.index, isActive, editing,
               (v) => { onRenamePhenotype(row.name, v); setRenaming(null); },
-              (e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, kind: 'row', id: row.name }); },
+              (e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, kind: 'row', id: row.name, index: entry.index }); },
+              () => setRenaming({ kind: 'row', id: row.name }),
+              false,
             )
         }
         {hoveredRowKey === row.name && sectionLayoutId && (
@@ -435,6 +442,10 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
             menu.kind === 'section'
               ? buildSectionMenuItems(menu)
               : [
+                  {
+                    label: 'Open',
+                    onClick: () => { onNavigate(menu.index); setMenu(null); },
+                  },
                   {
                     label: 'Rename',
                     onClick: () => setRenaming({ kind: menu.kind, id: menu.id }),
