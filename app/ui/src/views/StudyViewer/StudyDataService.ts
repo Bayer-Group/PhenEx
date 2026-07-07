@@ -190,6 +190,7 @@ export class StudyDataService {
       const cohortsDataService = CohortsDataService.getInstance();
       cohortsDataService.clearStudyCohortsCache(studyId);
       const cohorts = await cohortsDataService.getCohortsForStudy(studyId);
+      cohortsDataService.notifyListeners();
       
       // Add cohorts to study data
       const updatedStudyData = { ...studyData, cohorts };

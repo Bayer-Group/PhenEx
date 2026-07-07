@@ -491,7 +491,7 @@ export class CohortsDataService {
     }
   }
 
-  private notifyListeners() {
+  public notifyListeners() {
     this.listeners.forEach(listener => listener());
   }
 }
