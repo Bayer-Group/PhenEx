@@ -67,7 +67,7 @@ export const SectionRowRenderer = memo<SectionRowRendererProps>(({
         if (r.Max != null && r.Max > hi) hi = r.Max;
       }
       if (!isFinite(lo)) { lo = 0; hi = 1; }
-      return <BoxPlotCellRenderer name={row.name} cohortData={cohortData} xMin={lo} xMax={hi} spacers={spacers} />;
+      return <BoxPlotCellRenderer name={row.name} cohortData={cohortData} xMin={lo} xMax={hi} spacers={spacers} fillWidth={fillHeight} />;
     }
     case 'time_to_event': {
       const kmCurves = (tteCohorts ?? [])

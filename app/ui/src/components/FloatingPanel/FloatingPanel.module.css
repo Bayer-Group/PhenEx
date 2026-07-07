@@ -41,7 +41,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-family: "IBMPlexSans-bold", sans-serif;
-  padding-left:10px;
+  padding-left:5px;
+  padding-top:5px;
   width: 100% !important;
 }
 

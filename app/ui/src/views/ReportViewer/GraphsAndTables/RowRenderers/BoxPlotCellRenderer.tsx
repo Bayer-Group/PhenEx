@@ -258,6 +258,8 @@ interface BoxPlotCellRendererProps {
    * truncated region at each clipped edge.
    */
   clipMax?: boolean;
+  /** Expand to fill the available width (grid / fill-height context). */
+  fillWidth?: boolean;
 }
 
 export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
@@ -273,6 +275,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   cohortIndex,
   showLabels = false,
   clipMax = true,
+  fillWidth = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(0);
@@ -383,7 +386,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
   const content = (
     <div
       ref={containerRef}
-      className={styles.container}
+      className={`${styles.container}${fillWidth ? ` ${styles.containerFillWidth}` : ''}`}
       style={{ paddingTop: MARGIN_TOP, paddingBottom: MARGIN_BOTTOM }}
     >
       {containerW > 0 && rowEntries.length > 0 && (

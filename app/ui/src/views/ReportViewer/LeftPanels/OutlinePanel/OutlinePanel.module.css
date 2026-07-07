@@ -19,7 +19,6 @@
   position: relative;
   display: flex;
   align-items: center;
-  /* width: 100%; */
 }
 
 .chevron {
@@ -82,7 +81,7 @@
   border-radius: 6px;
   transition: background 0.1s;
   border: 1px solid transparent;
-  /* background-color: red !important; */
+  max-width: 100%;
 }
 
 .item:hover {
@@ -152,6 +151,12 @@
 
 .eyeBtn:hover .eyeIcon {
   opacity: 1;
+}
+
+.itemSpanWrapper {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .labelHidden {

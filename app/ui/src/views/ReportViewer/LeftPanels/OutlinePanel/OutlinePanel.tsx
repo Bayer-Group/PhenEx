@@ -52,7 +52,7 @@ const RowHiddenDim: FC<{ sectionLayoutId: string; itemKey: string; children: Rea
     subscribeSectionLayouts,
     () => getHiddenKeys(sectionLayoutId, getSectionState(sectionLayoutId).activeLayoutId).includes(itemKey),
   );
-  return <span className={isHidden ? styles.labelHidden : undefined}>{children}</span>;
+  return <span className={`${styles.itemSpanWrapper}${isHidden ? ` ${styles.labelHidden}` : ''}`}>{children}</span>;
 });
 RowHiddenDim.displayName = 'RowHiddenDim';
 

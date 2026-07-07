@@ -157,7 +157,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 0 14px 10px 14px;
+  padding: 0 14px 0px 14px;
   border-top: 1px solid var(--line-color, #e0e0e0);
 }
 
@@ -196,7 +196,7 @@
   gap: 6px;
   flex-shrink: 0;
   width: 100%;
-  padding: 8px 2px 6px 2px;
+  padding: 6px 2px 6px 2px;
   font-family: inherit;
   font-size: var(--font_size_infotext, 11px);
   font-weight: 600;
