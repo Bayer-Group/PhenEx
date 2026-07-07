@@ -26,10 +26,14 @@ export interface SectionGridProps {
 }
 
 type Interaction =
-  | { type: 'move'; key: string; origin: GridItem; startX: number; startY: number; moved: boolean; pointerId: number }
-  | { type: 'resize'; edge: 'right' | 'bottom' | 'corner'; key: string; origin: GridItem; startX: number; startY: number; pointerId: number };
+  | { type: 'move'; key: string; origin: GridItem; startX: number; startY: number; startScrollTop: number; moved: boolean; pointerId: number }
+  | { type: 'resize'; edge: 'right' | 'bottom' | 'corner'; key: string; origin: GridItem; startX: number; startY: number; startScrollTop: number; pointerId: number };
 
 const DRAG_THRESHOLD = 4;
+/** Distance from the scroll container edge (px) at which auto-scroll kicks in. */
+const EDGE_SCROLL_ZONE = 64;
+/** Maximum auto-scroll speed in px per frame. */
+const EDGE_SCROLL_SPEED = 22;
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -38,6 +42,17 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 /** Map layout array to a lookup by key. */
 function toMap(layout: GridItem[]): Map<string, GridItem> {
   return new Map(layout.map((it) => [it.key, it]));
+}
+
+/** Nearest vertically scrollable ancestor of `el` (falls back to the window). */
+function getScrollParent(el: HTMLElement | null): HTMLElement | null {
+  let node = el?.parentElement ?? null;
+  while (node) {
+    const overflowY = getComputedStyle(node).overflowY;
+    if (/(auto|scroll|overlay)/.test(overflowY) && node.scrollHeight > node.clientHeight) return node;
+    node = node.parentElement;
+  }
+  return null;
 }
 
 /**
@@ -59,7 +74,14 @@ export function SectionGrid({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [draft, setDraft] = useState<GridItem[] | null>(null);
+  const [interacting, setInteracting] = useState(false);
   const interactionRef = useRef<Interaction | null>(null);
+  const scrollParentRef = useRef<HTMLElement | null>(null);
+  const pointerRef = useRef({ x: 0, y: 0 });
+  const autoScrollRef = useRef<number | null>(null);
+  // Container height captured at drag start; the grid must not grow mid-drag.
+  const frozenHeightRef = useRef(0);
+  const gridHeightRef = useRef(0);
   // Keys ordered bottom→top; last entry has highest z-index.
   const [zOrder, setZOrder] = useState<string[]>(() => items.map((i) => i.key));
 
@@ -109,6 +131,10 @@ export function SectionGrid({
     [effectiveLayout],
   );
   const gridHeight = totalRows > 0 ? totalRows * rowSpan - gap : 0;
+  gridHeightRef.current = gridHeight;
+  // While dragging, pin the height to its pre-drag value so the container never
+  // grows under the pointer; auto-scroll reveals space via the padding instead.
+  const displayHeight = interacting ? frozenHeightRef.current : gridHeight;
 
   // ── Pointer interaction ─────────────────────────────────────────────────
 
@@ -121,11 +147,16 @@ export function SectionGrid({
   useEffect(() => {
     if (!editable) return;
 
-    const handleMove = (e: PointerEvent) => {
+    // Translate a pointer position into a draft placement. Includes any scroll
+    // that happened since drag start so the item keeps following the cursor
+    // while the container auto-scrolls.
+    const applyDrag = (clientX: number, clientY: number) => {
       const it = interactionRef.current;
-      if (!it || e.pointerId !== it.pointerId) return;
-      const dCol = Math.round((e.clientX - it.startX) / colSpan);
-      const dRow = Math.round((e.clientY - it.startY) / rowSpan);
+      if (!it) return;
+      const scrollTop = scrollParentRef.current?.scrollTop ?? 0;
+      const scrollDelta = scrollTop - it.startScrollTop;
+      const dCol = Math.round((clientX - it.startX) / colSpan);
+      const dRow = Math.round((clientY - it.startY + scrollDelta) / rowSpan);
 
       setDraft(() => {
         const map = toMap(effectiveLayout);
@@ -133,9 +164,6 @@ export function SectionGrid({
         if (!cur) return effectiveLayout;
         let next: GridItem;
         if (it.type === 'move') {
-          if (Math.abs(e.clientX - it.startX) > DRAG_THRESHOLD || Math.abs(e.clientY - it.startY) > DRAG_THRESHOLD) {
-            it.moved = true;
-          }
           next = {
             ...cur,
             x: clamp(it.origin.x + dCol, 0, columns - it.origin.w),
@@ -157,10 +185,51 @@ export function SectionGrid({
       });
     };
 
+    // rAF loop: while the pointer sits near a scroll edge, keep scrolling and
+    // re-applying the drag so the item tracks the cursor even when it's still.
+    const tick = () => {
+      autoScrollRef.current = requestAnimationFrame(tick);
+      const sp = scrollParentRef.current;
+      if (!sp || !interactionRef.current) return;
+      const rect = sp.getBoundingClientRect();
+      const { x, y } = pointerRef.current;
+      let dy = 0;
+      if (y < rect.top + EDGE_SCROLL_ZONE) {
+        dy = -EDGE_SCROLL_SPEED * Math.min(1, (rect.top + EDGE_SCROLL_ZONE - y) / EDGE_SCROLL_ZONE);
+      } else if (y > rect.bottom - EDGE_SCROLL_ZONE) {
+        dy = EDGE_SCROLL_SPEED * Math.min(1, (y - (rect.bottom - EDGE_SCROLL_ZONE)) / EDGE_SCROLL_ZONE);
+      }
+      if (dy !== 0) {
+        const before = sp.scrollTop;
+        sp.scrollTop = before + dy;
+        if (sp.scrollTop !== before) applyDrag(x, y);
+      }
+    };
+
+    const stopAutoScroll = () => {
+      if (autoScrollRef.current != null) {
+        cancelAnimationFrame(autoScrollRef.current);
+        autoScrollRef.current = null;
+      }
+    };
+
+    const handleMove = (e: PointerEvent) => {
+      const it = interactionRef.current;
+      if (!it || e.pointerId !== it.pointerId) return;
+      pointerRef.current = { x: e.clientX, y: e.clientY };
+      if (it.type === 'move' && (Math.abs(e.clientX - it.startX) > DRAG_THRESHOLD || Math.abs(e.clientY - it.startY) > DRAG_THRESHOLD)) {
+        it.moved = true;
+      }
+      if (autoScrollRef.current == null) autoScrollRef.current = requestAnimationFrame(tick);
+      applyDrag(e.clientX, e.clientY);
+    };
+
     const handleUp = (e: PointerEvent) => {
       const it = interactionRef.current;
       if (!it || e.pointerId !== it.pointerId) return;
       interactionRef.current = null;
+      stopAutoScroll();
+      setInteracting(false);
       setDraft((current) => {
         if (current) commit(cleanupGridLayout(current, columns));
         return null;
@@ -174,6 +243,7 @@ export function SectionGrid({
     return () => {
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
+      stopAutoScroll();
     };
   }, [editable, effectiveLayout, colSpan, rowSpan, columns, commit, onItemClick]);
 
@@ -183,7 +253,11 @@ export function SectionGrid({
     if (!origin) return;
     e.preventDefault();
     bringToFront(key);
-    interactionRef.current = { type: 'move', key, origin, startX: e.clientX, startY: e.clientY, moved: false, pointerId: e.pointerId };
+    scrollParentRef.current = getScrollParent(containerRef.current);
+    frozenHeightRef.current = gridHeightRef.current;
+    pointerRef.current = { x: e.clientX, y: e.clientY };
+    setInteracting(true);
+    interactionRef.current = { type: 'move', key, origin, startX: e.clientX, startY: e.clientY, startScrollTop: scrollParentRef.current?.scrollTop ?? 0, moved: false, pointerId: e.pointerId };
   }, [editable, layoutMap, onItemClick, bringToFront]);
 
   const startResize = useCallback((e: React.PointerEvent, key: string, edge: 'right' | 'bottom' | 'corner') => {
@@ -193,13 +267,17 @@ export function SectionGrid({
     e.preventDefault();
     e.stopPropagation();
     bringToFront(key);
-    interactionRef.current = { type: 'resize', edge, key, origin, startX: e.clientX, startY: e.clientY, pointerId: e.pointerId };
+    scrollParentRef.current = getScrollParent(containerRef.current);
+    frozenHeightRef.current = gridHeightRef.current;
+    pointerRef.current = { x: e.clientX, y: e.clientY };
+    setInteracting(true);
+    interactionRef.current = { type: 'resize', edge, key, origin, startX: e.clientX, startY: e.clientY, startScrollTop: scrollParentRef.current?.scrollTop ?? 0, pointerId: e.pointerId };
   }, [editable, layoutMap, bringToFront]);
 
   const draggingKey = interactionRef.current?.key ?? null;
 
   return (
-    <div ref={containerRef} className={styles.grid} style={{ height: gridHeight }}>
+    <div ref={containerRef} className={styles.grid} style={{ height: displayHeight }}>
       {containerWidth > 0 && items.map((item) => {
         const pos = layoutMap.get(item.key);
         if (!pos) return null;

@@ -3,16 +3,15 @@ import type { GridItem } from './sectionLayoutStore';
 /**
  * Overlap-free normalisation of a section grid.
  *
- * After a free-form drag or resize items can overlap or hang off the right
- * edge. `cleanupGridLayout` reflows them into a tidy, collision-free layout in
- * two sweeps over the grid:
+ * After a free-form drag or resize items can overlap. `cleanupGridLayout`
+ * reflows them into a collision-free layout with a single rule: an item may
+ * only ever move **down or right** — never up or left, and its left→right
+ * order is preserved.
  *
- *   1. Horizontal — walk items in reading order and slide each one right past
- *      whatever it collides with. When it no longer fits within `columns`, wrap
- *      it onto a fresh row directly below the blocker (x = 0). This sweep alone
- *      already guarantees zero overlaps.
- *   2. Vertical — pull every item straight up into any free space the wrapping
- *      opened up, so the result has no dangling gaps.
+ * Walking items in reading order, each one is slid right past whatever it
+ * collides with. When it no longer fits within `columns`, it wraps onto a
+ * fresh row directly below the blocker (x = 0). This alone guarantees zero
+ * overlaps.
  *
  * All coordinates are in whole grid cells.
  */
@@ -39,13 +38,12 @@ function readingOrder(items: GridItem[]): GridItem[] {
   );
 }
 
-/** Sweep 1: resolve overlaps by sliding right, wrapping to the next row. */
+/** Resolve overlaps by sliding items right, wrapping to the next row. */
 function resolveHorizontally(items: GridItem[], columns: number): GridItem[] {
   const placed: GridItem[] = [];
   for (const source of readingOrder(items)) {
-    // Clamp the width to the grid and pull it back inside the right edge.
-    const w = Math.min(source.w, columns);
-    const item: GridItem = { ...source, w, x: Math.max(0, Math.min(source.x, columns - w)) };
+    // Clamp width to the grid; leave x untouched so items never shift left.
+    const item: GridItem = { ...source, w: Math.min(source.w, columns) };
 
     for (let hit = firstCollision(item, placed); hit; hit = firstCollision(item, placed)) {
       const slidX = hit.x + hit.w;
@@ -63,27 +61,15 @@ function resolveHorizontally(items: GridItem[], columns: number): GridItem[] {
   return placed;
 }
 
-/** Sweep 2: pull each item up into any free space above it. */
-function compactVertically(items: GridItem[]): GridItem[] {
-  const placed: GridItem[] = [];
-  for (const source of readingOrder(items)) {
-    const item = { ...source };
-    while (item.y > 0 && !firstCollision({ ...item, y: item.y - 1 }, placed)) {
-      item.y -= 1;
-    }
-    placed.push(item);
-  }
-  return placed;
-}
-
 /**
- * Reflow `layout` into a collision-free, gap-free arrangement.
+ * Reflow `layout` into a collision-free arrangement, only ever moving items
+ * down or right.
  *
  * The returned array preserves the caller's original item order (keyed by
  * `key`) so React reconciliation stays stable.
  */
 export function cleanupGridLayout(layout: GridItem[], columns: number): GridItem[] {
-  const resolved = compactVertically(resolveHorizontally(layout, columns));
+  const resolved = resolveHorizontally(layout, columns);
   const byKey = new Map(resolved.map((it) => [it.key, it]));
   return layout.map((it) => byKey.get(it.key) ?? it);
 }
