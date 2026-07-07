@@ -1,5 +1,5 @@
 import { ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP } from './sectionLayoutStore';
+import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP, GRID_ROW_GAP } from './sectionLayoutStore';
 import { cleanupGridLayout } from './CleanupGridLayout';
 import { useGridSelection, type GridSelection } from './GridSelection';
 import { dropSelectionIntoGrid } from './DropSelectionLayout';
@@ -22,6 +22,7 @@ export interface SectionGridProps {
   columns?: number;
   rowHeight?: number;
   gap?: number;
+  rowGap?: number;
   editable?: boolean;
   onLayoutChange: (items: GridItem[]) => void;
   onItemClick?: (key: string) => void;
@@ -97,6 +98,7 @@ export function SectionGrid({
   columns = GRID_COLUMNS,
   rowHeight = GRID_ROW_HEIGHT,
   gap = GRID_GAP,
+  rowGap = GRID_ROW_GAP,
   editable = true,
   onLayoutChange,
   onItemClick,
@@ -165,13 +167,13 @@ export function SectionGrid({
 
   const cellWidth = containerWidth > 0 ? (containerWidth - gap * (columns - 1)) / columns : 0;
   const colSpan = cellWidth + gap;
-  const rowSpan = rowHeight + gap;
+  const rowSpan = rowHeight + rowGap;
 
   const totalRows = useMemo(
     () => effectiveLayout.reduce((max, it) => Math.max(max, it.y + it.h), 0),
     [effectiveLayout],
   );
-  const gridHeight = totalRows > 0 ? totalRows * rowSpan - gap : 0;
+  const gridHeight = totalRows > 0 ? totalRows * rowSpan - rowGap : 0;
   gridHeightRef.current = gridHeight;
   // While dragging, pin the height to its pre-drag value so the container never
   // grows under the pointer; auto-scroll reveals space via the padding instead.
@@ -388,7 +390,7 @@ export function SectionGrid({
         const pos = layoutMap.get(item.key);
         if (!pos) return null;
         const width = pos.w * cellWidth + (pos.w - 1) * gap;
-        const height = pos.h * rowHeight + (pos.h - 1) * gap;
+        const height = pos.h * rowHeight + (pos.h - 1) * rowGap;
         const isDragging = draggingKey === item.key;
         const isSelected = selection.isSelected(item.key);
 

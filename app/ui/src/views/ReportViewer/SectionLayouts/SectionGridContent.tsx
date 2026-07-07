@@ -1,12 +1,12 @@
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo } from 'react';
 import { type CohortClassified } from '../types';
 import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { SectionRowRenderer, SectionRowTitle, sectionRowTitle } from './SectionRowRenderer';
 import { SectionGrid, type SectionGridRenderItem } from './SectionGrid';
-import { cleanupGridLayout } from './CleanupGridLayout';
-import { type SectionLayout, type GridItem, GRID_COLUMNS, defaultTileRows, useSectionLayouts } from './sectionLayoutStore';
+import { restackForTileHeight } from './CleanupGridLayout';
+import { type SectionLayout, type GridItem, defaultTileRows, useSectionLayouts } from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -75,15 +75,17 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     updateLayoutItems(layout.id, items);
   }, [updateLayoutItems, layout.id]);
 
-  // Tiles stay responsive to the cohort count: every tile is sized to fit the
-  // current cohorts (one bar/boxplot per cohort), then overlaps introduced by
-  // the height change are reflowed away. Positions/widths from a saved layout
-  // are preserved; only the cohort-driven height is (re)applied.
-  const responsiveLayout = useMemo<GridItem[]>(() => {
-    const h = defaultTileRows(cohortData.length);
-    const resized = layout.items.map((item) => (item.h === h ? item : { ...item, h }));
-    return cleanupGridLayout(resized, GRID_COLUMNS);
-  }, [layout.items, cohortData.length]);
+  // Tiles are sized to fit the current cohorts (one bar/boxplot per cohort).
+  // This only re-runs when the cohort count changes: every tile takes the new
+  // height and is shifted by the height delta of the tiles above it, so shrunk
+  // cohorts pull items up (and grown ones push down) by exactly that delta.
+  // Between changes the stored layout is untouched, leaving manual moves free.
+  useEffect(() => {
+    const newH = defaultTileRows(cohortData.length);
+    const oldH = layout.items[0]?.h;
+    if (oldH === undefined || oldH === newH) return;
+    updateLayoutItems(layout.id, restackForTileHeight(layout.items, oldH, newH));
+  }, [cohortData.length, layout.id, layout.items, updateLayoutItems]);
 
   const handleItemClick = useCallback((key: string) => {
     const row = rowByKey.get(key);
@@ -93,7 +95,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
   return (
     <SectionGrid
       items={gridItems}
-      layout={responsiveLayout}
+      layout={layout.items}
       onLayoutChange={handleLayoutChange}
       onItemClick={handleItemClick}
     />

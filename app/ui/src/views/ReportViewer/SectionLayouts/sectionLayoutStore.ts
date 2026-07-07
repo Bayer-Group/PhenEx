@@ -47,18 +47,19 @@ type PersistedState = Record<string, SectionState>;
 // ── Grid constants ───────────────────────────────────────────────────────
 
 export const GRID_COLUMNS = 10;
-export const GRID_ROW_HEIGHT = 50;
+/** Vertical grid unit: one cohort-row. Kept small so a cohort ≈ 10px (row+gap). */
+export const GRID_ROW_HEIGHT = 8;
+/** Horizontal gap between tiles. */
 export const GRID_GAP = 14;
+/** Vertical gap between tiles. Small so cohort steps stay fine-grained. */
+export const GRID_ROW_GAP = 2;
 
 /**
- * A new grid tile is sized so every selected cohort has room for its own
- * bar/boxplot. Its height ≈ `PER_COHORT_HEIGHT` × cohortCount + `TILE_SPACER_HEIGHT`,
- * rounded up to whole grid rows (px units).
+ * A new grid tile gives each cohort one grid row (≈ `GRID_ROW_HEIGHT` + `GRID_ROW_GAP`
+ * ≈ 10px), plus `TILE_HEADER_ROWS` for the title/chrome and a readable base size.
+ * Adding one cohort therefore grows the tile by exactly one row (~10px).
  */
-export const PER_COHORT_HEIGHT = 26;
-export const TILE_SPACER_HEIGHT = 60;
-/** Minimum tile height in grid rows (also the height for a single cohort). */
-export const MIN_TILE_ROWS = 2;
+export const TILE_HEADER_ROWS = 11;
 
 // ── Persistence ──────────────────────────────────────────────────────────
 
@@ -198,12 +199,11 @@ const store = new SectionLayoutStore();
 // ── Default layout generation ────────────────────────────────────────────
 
 /**
- * Grid-row span for a fresh tile given how many cohorts it must show. Each
- * cohort needs a bar/boxplot row, so tall enough = per-cohort rows + spacer.
+ * Grid-row span for a fresh tile given how many cohorts it must show: one row
+ * per cohort plus the header rows, so each cohort added grows the tile by one.
  */
 export function defaultTileRows(cohortCount: number): number {
-  const contentPx = PER_COHORT_HEIGHT * Math.max(1, cohortCount) + TILE_SPACER_HEIGHT;
-  return Math.max(MIN_TILE_ROWS, Math.ceil(contentPx / GRID_ROW_HEIGHT));
+  return Math.max(1, cohortCount) + TILE_HEADER_ROWS;
 }
 
 /**

@@ -73,3 +73,22 @@ export function cleanupGridLayout(layout: GridItem[], columns: number): GridItem
   const byKey = new Map(resolved.map((it) => [it.key, it]));
   return layout.map((it) => byKey.get(it.key) ?? it);
 }
+
+/**
+ * Re-apply a cohort-driven tile height to every item, shifting each item's `y`
+ * by the height **delta** accumulated from the tiles stacked above it in the
+ * same column span. Shrinking cohorts pulls items up by exactly the space the
+ * shorter tiles freed (and growing pushes them down) — manual gaps between
+ * tiles are preserved because only the delta is applied, never a full compact.
+ *
+ * Columns (x) and widths (w) are untouched. The original item order is kept so
+ * React reconciliation stays stable.
+ */
+export function restackForTileHeight(layout: GridItem[], oldH: number, newH: number): GridItem[] {
+  const delta = newH - oldH;
+  const sharesColumn = (a: GridItem, b: GridItem) => a.x < b.x + b.w && a.x + a.w > b.x;
+  return layout.map((item) => {
+    const tilesAbove = layout.filter((o) => o.key !== item.key && o.y < item.y && sharesColumn(o, item)).length;
+    return { ...item, h: newH, y: Math.max(0, item.y + delta * tilesAbove) };
+  });
+}
