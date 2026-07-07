@@ -21,13 +21,23 @@ export class StudyViewerCohortDefinitionsDataService {
   }
 
   public setStudyData(studyData: Record<string, any>): void {
-    // Clean up models for cohorts that no longer exist
     const newCohortIds = new Set((studyData.cohorts || []).map((c: any) => c.id));
+
+    // Clean up models for cohorts that no longer exist
     for (const id of this._cohortModels.keys()) {
       if (!newCohortIds.has(id)) {
         this._cohortModels.delete(id);
       }
     }
+
+    // Reload existing models with fresh cohort data so AI/external changes are reflected
+    for (const cohort of (studyData.cohorts || [])) {
+      const model = this._cohortModels.get(cohort.id);
+      if (model) {
+        model.loadCohortData(cohort);
+      }
+    }
+
     this._study_data = studyData;
   }
 
@@ -41,7 +51,6 @@ export class StudyViewerCohortDefinitionsDataService {
     let model = this._cohortModels.get(cohort.id);
     if (!model) {
       model = new CohortModel();
-      model.loadCohortData(cohort);
       this._cohortModels.set(cohort.id, model);
       
       // Subscribe to model changes to notify StudyViewer
@@ -59,6 +68,9 @@ export class StudyViewerCohortDefinitionsDataService {
         cohortsDataService.notifyListeners();
       };
       model.addNameChangeListener(nameChangeListener);
+
+      // Load data for the first time
+      model.loadCohortData(cohort);
     }
     
     const tableData = model.table_data;
