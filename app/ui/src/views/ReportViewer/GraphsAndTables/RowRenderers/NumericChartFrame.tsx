@@ -56,6 +56,9 @@ interface NumericChartFrameProps {
   clippedLeft?: ClipEdge;
   /** If the right edge was clipped, provide the true maximum so a hatch tick is shown. */
   clippedRight?: ClipEdge;
+  /** Horizontal inset (px) applied to grid lines and ticks so they align with
+   *  padded content (e.g. fill-width box plots that reserve edge padding). */
+  insetX?: number;
   children: ReactNode;
 }
 
@@ -66,6 +69,7 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
   showTicks = true,
   clippedLeft: _clippedLeft,
   clippedRight: _clippedRight,
+  insetX = 0,
   children,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -118,7 +122,7 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
 
   const hoverValue =
     hover !== null
-      ? xMin + ((hover.x - PAD) / (width - PAD * 2)) * (xMax - xMin)
+      ? xMin + ((hover.x - PAD - insetX) / (width - PAD * 2)) * (xMax - xMin)
       : null;
 
   return (
@@ -131,7 +135,7 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
       {width > 0 && (
         <>
           {/* Grid lines */}
-          <div className={styles.gridOverlay} style={{ left: 0, width }}>
+          <div className={styles.gridOverlay} style={{ left: insetX, width }}>
             {ticks.map((t) => (
               <div key={t} className={styles.gridLine} style={{ left: px(t) }} />
             ))}
@@ -150,7 +154,7 @@ export const NumericChartFrame: FC<NumericChartFrameProps> = ({
           {showTicks && (
             <div className={styles.headerRow}>
               {ticks.map((t) => (
-                <span key={t} className={styles.headerTick} style={{ left: px(t) }}>
+                <span key={t} className={styles.headerTick} style={{ left: px(t) + insetX }}>
                   {fmtTick(t)}
                 </span>
               ))}

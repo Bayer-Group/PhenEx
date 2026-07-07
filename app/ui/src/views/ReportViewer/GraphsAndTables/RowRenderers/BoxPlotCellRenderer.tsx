@@ -17,6 +17,9 @@ const SPACER_H = 10;
 const MARGIN_TOP = 40;
 const MARGIN_BOTTOM = 40;
 const LABEL_ROW_H = 18; // height reserved for labels below the plot
+// Horizontal padding reserved at each edge in fill-width mode so the min/max
+// overflow value labels drawn just outside the axis aren't clipped.
+const FILL_WIDTH_EDGE_PAD = 28;
 
 /**
  * A whisker is considered a long tail when it extends beyond this many
@@ -387,7 +390,11 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
     <div
       ref={containerRef}
       className={`${styles.container}${fillWidth ? ` ${styles.containerFillWidth}` : ''}`}
-      style={{ paddingTop: MARGIN_TOP, paddingBottom: MARGIN_BOTTOM }}
+      style={{
+        paddingTop: MARGIN_TOP,
+        paddingBottom: MARGIN_BOTTOM,
+        ...(fillWidth ? { paddingLeft: FILL_WIDTH_EDGE_PAD, paddingRight: FILL_WIDTH_EDGE_PAD } : null),
+      }}
     >
       {containerW > 0 && rowEntries.length > 0 && (
       <>
@@ -546,7 +553,7 @@ export const BoxPlotCellRenderer: FC<BoxPlotCellRendererProps> = ({
 
   if (showGrid) {
     return (
-      <NumericChartFrame xMin={effXMin} xMax={effXMax} width={W} showTicks={showTicks} clippedLeft={clippedLeft} clippedRight={clippedRight}>
+      <NumericChartFrame xMin={effXMin} xMax={effXMax} width={W} showTicks={showTicks} clippedLeft={clippedLeft} clippedRight={clippedRight} insetX={fillWidth ? FILL_WIDTH_EDGE_PAD : 0}>
         {content}
       </NumericChartFrame>
     );

@@ -1,6 +1,7 @@
 import { FC, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type CohortClassified } from '../../types';
 import { useBarHoverStore } from './useBarHoverStore';
+import { CohortNameTooltip } from './CohortNameTooltip';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import styles from './CategoricalBarChartCellRenderer.module.css';
 
@@ -30,6 +31,7 @@ export const CategoricalBarChartCellRenderer: FC<CategoricalBarChartCellRenderer
 }) => {
 
   const { activeIndex } = useBarHoverStore();
+  const [tooltipHover, setTooltipHover] = useState<{ index: number; x: number; top: number } | null>(null);
   const categories = useMemo<CategoryData[]>(() => {
     const catSet = new Set<string>();
     const catOrder: string[] = [];
@@ -64,9 +66,19 @@ export const CategoricalBarChartCellRenderer: FC<CategoricalBarChartCellRenderer
   if (categories.length === 0) return null;
 
   if (orientation === 'vertical') {
-    return <VerticalChart categories={categories} activeIndex={activeIndex} fillWidth={fillWidth} />;
+    return (
+      <>
+        <VerticalChart categories={categories} activeIndex={activeIndex} fillWidth={fillWidth} onBarHover={setTooltipHover} />
+        {tooltipHover && <CohortNameTooltip cohortData={cohortData} index={tooltipHover.index} x={tooltipHover.x} top={tooltipHover.top} />}
+      </>
+    );
   }
-  return <HorizontalChart categories={categories} activeIndex={activeIndex} />;
+  return (
+    <>
+      <HorizontalChart categories={categories} activeIndex={activeIndex} onBarHover={setTooltipHover} />
+      {tooltipHover && <CohortNameTooltip cohortData={cohortData} index={tooltipHover.index} x={tooltipHover.x} top={tooltipHover.top} />}
+    </>
+  );
 };
 
 /* ── Horizontal (current style, grouped by category) ────────────────── */
@@ -74,7 +86,8 @@ export const CategoricalBarChartCellRenderer: FC<CategoricalBarChartCellRenderer
 const HorizontalChart: FC<{
   categories: CategoryData[];
   activeIndex: number | null;
-}> = ({ categories, activeIndex }) => (
+  onBarHover: (info: { index: number; x: number; top: number } | null) => void;
+}> = ({ categories, activeIndex, onBarHover }) => (
   <div className={styles.horizontal}>
     {categories.map(({ category, values }) => (
       <div key={category} className={styles.hGroup}>
@@ -86,7 +99,13 @@ const HorizontalChart: FC<{
               <div key={cohortIndex} className={styles.hBarRow} style={{ opacity: dimmed ? 0.25 : 1 }}>
                 <div className={styles.hPct}>{Math.round(pct)}</div>
                 <div className={styles.hTrack}>
-                  <div className={styles.hFill} style={{ width: `${Math.max(0, pct)}%`, backgroundColor: color }} />
+                  <div
+                    className={styles.hFill}
+                    style={{ width: `${Math.max(0, pct)}%`, backgroundColor: color }}
+                    onMouseEnter={(e) => onBarHover({ index: cohortIndex, x: e.clientX, top: e.currentTarget.getBoundingClientRect().top })}
+                    onMouseMove={(e) => onBarHover({ index: cohortIndex, x: e.clientX, top: e.currentTarget.getBoundingClientRect().top })}
+                    onMouseLeave={() => onBarHover(null)}
+                  />
                 </div>
                 <div className={styles.hN}>{n.toLocaleString()}</div>
               </div>
@@ -113,7 +132,8 @@ const VerticalChart: FC<{
   categories: CategoryData[];
   activeIndex: number | null;
   fillWidth?: boolean;
-}> = ({ categories, activeIndex, fillWidth = false }) => {
+  onBarHover: (info: { index: number; x: number; top: number } | null) => void;
+}> = ({ categories, activeIndex, fillWidth = false, onBarHover }) => {
   const ceiling = 100;
   const ticks = [0, 20, 40, 60, 80, 100];
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -195,6 +215,9 @@ const VerticalChart: FC<{
                             backgroundColor: color,
                             opacity: dimmed ? 0.25 : 1,
                           }}
+                          onMouseEnter={(e) => onBarHover({ index: cohortIndex, x: e.clientX, top: e.currentTarget.getBoundingClientRect().top })}
+                          onMouseMove={(e) => onBarHover({ index: cohortIndex, x: e.clientX, top: e.currentTarget.getBoundingClientRect().top })}
+                          onMouseLeave={() => onBarHover(null)}
                         />
                       );
                     })}
