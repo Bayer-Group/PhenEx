@@ -17,6 +17,7 @@ type Execution = { execution_id: string; started_at: string | null; status: stri
 
 export const StudyExecutePanel: React.FC = () => {
   const [isExecuting, setIsExecuting] = useState(false);
+  const [executionState, setExecutionState] = useState<'idle' | 'running' | 'success' | 'failed'>('idle');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logFilter, setLogFilter] = useState<string>('all');
   const [executions, setExecutions] = useState<Execution[]>([]);
@@ -81,6 +82,7 @@ export const StudyExecutePanel: React.FC = () => {
     if (!studyId || isExecuting) return;
 
     setIsExecuting(true);
+    setExecutionState('running');
     setLogs([]);
     setLogFileContent(null);
     setViewMode('logs');
@@ -99,8 +101,10 @@ export const StudyExecutePanel: React.FC = () => {
         },
       );
       if (execId) setSelectedExecId(execId);
+      setExecutionState('success');
     } catch (err: any) {
       setLogs(prev => [...prev, { message: `Error: ${err?.message ?? 'Execution failed'}`, type: 'error', timestamp: new Date() }]);
+      setExecutionState('failed');
     } finally {
       setIsExecuting(false);
       await fetchExecutions();
@@ -195,6 +199,11 @@ export const StudyExecutePanel: React.FC = () => {
   const renderControls = () => {
     const executingLabel = isExecuting ? 'Executing...' : 'Execute Study';
     const tabs = [executingLabel, 'Copy Logs', 'Filter'];
+    const executeTabClass =
+      executionState === 'running' ? styles.executeRunning
+      : executionState === 'success' ? styles.executeSuccess
+      : executionState === 'failed' ? styles.executeFailed
+      : '';
     const handleTabChange = (index: number) => {
       if (tabs[index] === executingLabel) handleExecute();
       else if (tabs[index] === 'Copy Logs') {
@@ -212,6 +221,7 @@ export const StudyExecutePanel: React.FC = () => {
           dropdown_items={{ 2: renderFilterDropdown() }}
           active_tab_index={-1}
           outline_tab_index={0}
+          tabClassNames={[executeTabClass]}
         />
       </div>
     );

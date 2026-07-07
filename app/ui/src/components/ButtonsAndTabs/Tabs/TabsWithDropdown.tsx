@@ -13,6 +13,7 @@ interface TabsWithDropdownProps {
   onTabChange?: (index: number) => void;
   customizableDropdownButtonRef?: React.RefObject<{ closeDropdown: () => void }>;
   accentColor?: string;
+  tabClassNames?: string[];
 }
 
 export const TabsWithDropdown: FC<TabsWithDropdownProps> = ({
@@ -25,6 +26,7 @@ export const TabsWithDropdown: FC<TabsWithDropdownProps> = ({
   onTabChange,
   customizableDropdownButtonRef,
   accentColor,
+  tabClassNames = [],
 }) => {
   const [activeTab, setActiveTab] = useState(active_tab_index);
 
@@ -79,7 +81,7 @@ export const TabsWithDropdown: FC<TabsWithDropdownProps> = ({
           return (
             <button
               key={index}
-              className={`${styles.tab} ${index === activeTab ? styles.active : ''} ${index === outline_tab_index ? styles.outline : ''}`}
+              className={`${styles.tab} ${index === activeTab ? styles.active : ''} ${index === outline_tab_index ? styles.outline : ''} ${tabClassNames[index] || ''}`}
               onClick={() => handleTabClick(index)}
             >
               {tab}
