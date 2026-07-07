@@ -93,6 +93,8 @@
   height: 100%;
   flex-direction: column;
   box-sizing: border-box;
+  /* Headroom so the top y-axis tick ("100") and full-height bars aren't clipped. */
+  padding-top: 8px;
 }
 
 /* Label row height is reserved in both columns so the plot regions line up */
@@ -110,7 +112,7 @@
 /* Fixed Y-axis, outside the scroll region.
    Reserve the label-row height at the bottom so its plot region matches the chart. */
 .vYAxis {
-  width: 30px;
+  width: 38px;
   flex-shrink: 0;
   padding-bottom: var(--label-row-height);
   box-sizing: border-box;
@@ -219,10 +221,12 @@
   transition: height 0.2s ease, opacity 0.15s ease;
 }
 
-/* Label row — fixed height below the plot, scrolls horizontally with the bars */
+/* Label row — grows to fit full (wrapping) labels; the measured height is fed
+   back as --label-row-height so the plot area shrinks and the Y-axis stays
+   aligned. Scrolls horizontally with the bars. */
 .vLabelRow {
   flex-shrink: 0;
-  height: var(--label-row-height);
+  min-height: var(--label-row-height);
   display: flex;
   padding: 4px 4px 0;
   box-sizing: border-box;

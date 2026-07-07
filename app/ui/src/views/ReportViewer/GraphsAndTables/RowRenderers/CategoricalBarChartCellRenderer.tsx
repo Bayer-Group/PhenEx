@@ -12,6 +12,8 @@ interface CategoricalBarChartCellRendererProps {
   finalCohortSizes?: Record<string, number | null>;
   orientation?: Orientation;
   breadcrumbs?: string[];
+  /** Expand to fill the available width (grid / fill-height context). */
+  fillWidth?: boolean;
 }
 
 interface CategoryData {
@@ -24,6 +26,7 @@ export const CategoricalBarChartCellRenderer: FC<CategoricalBarChartCellRenderer
   cohortData,
   finalCohortSizes = {},
   orientation = 'horizontal',
+  fillWidth = false,
 }) => {
 
   const { activeIndex } = useBarHoverStore();
@@ -61,7 +64,7 @@ export const CategoricalBarChartCellRenderer: FC<CategoricalBarChartCellRenderer
   if (categories.length === 0) return null;
 
   if (orientation === 'vertical') {
-    return <VerticalChart categories={categories} activeIndex={activeIndex} />;
+    return <VerticalChart categories={categories} activeIndex={activeIndex} fillWidth={fillWidth} />;
   }
   return <HorizontalChart categories={categories} activeIndex={activeIndex} />;
 };
@@ -103,20 +106,37 @@ const MIN_BAR_WIDTH_PX = 8;
 const MAX_BAR_WIDTH_PX = 16;
 const GROUP_PADDING_PX = 16; // 8px left + 8px right
 const BAR_GAP_PX = 1;
+// Minimum reserved height for the x-axis label row (matches `--label-row-height` default in the CSS module).
+const MIN_LABEL_ROW_HEIGHT_PX = 36;
 
 const VerticalChart: FC<{
   categories: CategoryData[];
   activeIndex: number | null;
-}> = ({ categories, activeIndex }) => {
+  fillWidth?: boolean;
+}> = ({ categories, activeIndex, fillWidth = false }) => {
   const ceiling = 100;
   const ticks = [0, 20, 40, 60, 80, 100];
   const scrollRef = useRef<HTMLDivElement>(null);
+  const labelRowRef = useRef<HTMLDivElement>(null);
   const [availableWidth, setAvailableWidth] = useState(0);
+  // Measured label-row height so long, wrapping x-axis labels push the plot
+  // area up (rather than being clipped) while the Y-axis ticks stay aligned.
+  const [labelRowHeight, setLabelRowHeight] = useState(MIN_LABEL_ROW_HEIGHT_PX);
 
   useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => setAvailableWidth(entry.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useLayoutEffect(() => {
+    const el = labelRowRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) =>
+      setLabelRowHeight(Math.max(MIN_LABEL_ROW_HEIGHT_PX, Math.ceil(entry.contentRect.height))),
+    );
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -128,18 +148,25 @@ const VerticalChart: FC<{
   const groupMaxWidth = cohortCount * MAX_BAR_WIDTH_PX + (cohortCount - 1) * BAR_GAP_PX + GROUP_PADDING_PX;
   const maxChartWidth = categories.length * groupMaxWidth;
   // Fill the available width (growing bars up to their max); scroll once even the min width overflows.
-  const innerWidth = Math.min(maxChartWidth, Math.max(minChartWidth, availableWidth));
+  // In fill-width (grid) mode the groups expand to occupy the full parent width
+  // instead of capping at the max chart width, matching the box-plot behaviour.
+  const innerWidth = fillWidth
+    ? Math.max(minChartWidth, availableWidth)
+    : Math.min(maxChartWidth, Math.max(minChartWidth, availableWidth));
 
   return (
     <div className={styles.vSizer}>
-    <div className={styles.vertical}>
+    <div
+      className={styles.vertical}
+      style={{ ['--label-row-height' as string]: `${labelRowHeight}px` }}
+    >
       <div className={styles.vChartRow}>
         {/* Fixed Y-axis, outside the scroll region. Plot height only (label row excluded). */}
         <div className={styles.vYAxis}>
           <div className={styles.vYAxisInner}>
             {ticks.map((t) => (
               <div key={t} className={styles.vYTick} style={{ bottom: `${(t / ceiling) * 100}%` }}>
-                {t}
+                {t}%
               </div>
             ))}
           </div>
@@ -176,9 +203,9 @@ const VerticalChart: FC<{
               </div>
             </div>
             {/* Labels below the plot, scroll horizontally with the bars and stay aligned with groups */}
-            <div className={styles.vLabelRow}>
+            <div ref={labelRowRef} className={styles.vLabelRow}>
               {categories.map(({ category }) => (
-                <div key={category} className={styles.vLabel}>{category}</div>
+                <div key={category} className={styles.vLabel} title={category}>{category}</div>
               ))}
             </div>
           </div>

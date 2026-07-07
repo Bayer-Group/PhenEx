@@ -63,7 +63,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
           spacers={spacers}
           tteCohorts={tteCohorts}
           table2Cohorts={table2Cohorts}
-          fillHeight={row.rowType === 'boolean' || row.rowType === 'numeric'}
+          fillHeight={row.rowType === 'boolean' || row.rowType === 'numeric' || row.rowType === 'categorical'}
         />
       ),
     })),

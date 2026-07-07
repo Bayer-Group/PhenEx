@@ -58,6 +58,7 @@ export const SectionRowRenderer = memo<SectionRowRendererProps>(({
           cohortData={cohortData}
           finalCohortSizes={finalCohortSizes}
           orientation="vertical"
+          fillWidth={fillHeight}
         />
       );
     case 'numeric': {
