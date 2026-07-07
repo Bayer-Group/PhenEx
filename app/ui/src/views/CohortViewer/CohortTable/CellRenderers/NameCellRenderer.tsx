@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './NameCellRenderer.module.css';
 import { PhenexCellRendererProps, PhenexCellRenderer } from './PhenexCellRenderer';
 import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
 import ArrowIcon from '../../../../assets/icons/arrow-up-right.svg';
+import { CohortDataService } from "../../CohortDataService/CohortDataService";
+import { DeleteConfirmModal } from '../../../../components/DeleteConfirmModal/DeleteConfirmModal';
 
 import typeStyles from '../../../../styles/study_types.module.css'
 import ReactMarkdown from 'react-markdown';
@@ -26,11 +28,22 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     colorBackground = true,
     colorBorder = true,
   } = props;
-  
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   
   // Use shared handlers to avoid lazy loading delay
   const handleEdit = createEditHandler(props);
   const handleDelete = createDeleteHandler(props);
+
+  const handleDirectDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!props.data?.id) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setShowDeleteModal(false);
+    CohortDataService.getInstance().deletePhenotype(props.data.id);
+  };
 
   const renderName = () => {
     const isComponentPhenotype = props.data?.parentIds && props.data.parentIds.length > 0;
@@ -97,6 +110,19 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
               </ReactMarkdown>
           </span>
         </div>
+        <button
+          className={styles.deleteButton}
+          onClick={handleDirectDelete}
+          title="Delete phenotype"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4h6v2" />
+          </svg>
+        </button>
         {renderExpandArrow((e) => {
           e.stopPropagation();
           handleEdit();
@@ -117,16 +143,25 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const fontColor = typeStyles[`${props.data.effective_type}_text_color`] || ''
 
   return (
-    <PhenexCellRenderer
-      {...props}
-      colorBackground={shouldColorBackground}
-      colorBorder={shouldColorBorder}
-      showButtons={false}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-    >
-      {renderNameAndDescription()}
-    </PhenexCellRenderer>
+    <>
+      <PhenexCellRenderer
+        {...props}
+        colorBackground={shouldColorBackground}
+        colorBorder={shouldColorBorder}
+        showButtons={false}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      >
+        {renderNameAndDescription()}
+      </PhenexCellRenderer>
+      {showDeleteModal && (
+        <DeleteConfirmModal
+          name={props.data?.name || ''}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteModal(false)}
+        />
+      )}
+    </>
   );
 };
 

@@ -10,6 +10,7 @@ import { SmartBreadcrumbs } from '../../../components/SmartBreadcrumbs';
 import { SmartTextField } from '../../../components/SmartTextField';
 import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { CohortViewType } from '../../CohortViewer/CohortViewer';
+import { DeleteConfirmModal } from '../../../components/DeleteConfirmModal/DeleteConfirmModal';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -25,6 +26,7 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const [phenotypeName, setPhenotypeName] = useState('');
   const [hierarchicalIndex, setHierarchicalIndex] = useState('');
   const [description, setDescription] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [currentView, setCurrentView] = useState<PhenotypePanelViewType>(
     PhenotypePanelViewType.Parameters
@@ -192,6 +194,17 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
     );
   };
 
+  const handleDeletePhenotype = () => {
+    if (!data?.id) return;
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setShowDeleteModal(false);
+    dataService.cohortDataService.deletePhenotype(data!.id!);
+    TwoPanelCohortViewerService.getInstance().hidePopover();
+  };
+
   return (
     <SlideoverPanel
       title=""
@@ -203,7 +216,22 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
   
         <div className={`${styles.wrapper}`}>
         <div className={`${styles.header}`}>
-          {renderBreadcrumbs()}
+          <div className={styles.headerTopRow}>
+            {renderBreadcrumbs()}
+            <button
+              className={styles.deleteButton}
+              onClick={handleDeletePhenotype}
+              title="Delete this phenotype"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4h6v2" />
+              </svg>
+            </button>
+          </div>
           {renderDescription()}
           <div className={styles.viewerSection}>
             <PhenotypeViewer data={data} />
@@ -214,6 +242,13 @@ export const PhenotypePanel: React.FC<PhenotypeViewerProps> = ({ data }) => {
             <PhenotypeComponents data={data} />
           </div>
       </div>
+      {showDeleteModal && (
+        <DeleteConfirmModal
+          name={data?.name || ''}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteModal(false)}
+        />
+      )}
     </SlideoverPanel>
   );
 };

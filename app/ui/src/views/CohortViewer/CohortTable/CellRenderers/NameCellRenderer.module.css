@@ -1,5 +1,4 @@
-.editButton,
-.deleteButton {
+.editButton {
   background-color: var(--color_translucent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -20,8 +19,15 @@
 }
 
 .deleteButton {
-  right: 3px;
+  flex-shrink: 0;
   opacity: 0;
+  color: currentColor;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
 .editButton:hover,

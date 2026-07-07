@@ -137,3 +137,28 @@
   font-family: "IBMPlexSans-regular";
   font-size: 16px;
 }
+
+.headerTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.deleteButton {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--color-danger, #e53e3e);
+  border-radius: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  margin-top: 5px;
+  margin-right: 4px;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+}
+
+.deleteButton:hover {
+  opacity: 1;
+}

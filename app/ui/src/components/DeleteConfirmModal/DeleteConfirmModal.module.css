@@ -1,0 +1,125 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 300px; /* Offset for left panel */
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(2px);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.alertModal {
+  background: var(--card-background, #ffffff);
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: scaleIn 0.2s ease;
+  text-align: center;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.alertIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.alertIcon svg {
+  width: 40px;
+  height: 40px;
+  stroke-width: 2.5;
+}
+
+.alertTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 0 0 16px 0;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+}
+
+.alertMessage {
+  font-size: 16px;
+  color: var(--text-color);
+  line-height: 1.5;
+  margin: 0 0 8px 0;
+}
+
+.alertMessage strong {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.alertWarning {
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  line-height: 1.5;
+  margin: 0 0 32px 0;
+}
+
+.alertActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.alertCancelButton,
+.alertDeleteButton {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  min-width: 120px;
+}
+
+.alertCancelButton {
+  background: var(--background-color, #f5f5f5);
+  color: var(--text-color);
+  border: 1px solid var(--border-color, #e0e0e0);
+}
+
+.alertCancelButton:hover {
+  background: var(--border-color, #e0e0e0);
+}
+
+.alertDeleteButton {
+  background: #d32f2f;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+}
+
+.alertDeleteButton:hover {
+  background: #b71c1c;
+  box-shadow: 0 4px 12px rgba(211, 47, 47, 0.4);
+  transform: translateY(-1px);
+}
+
+.alertDeleteButton:active {
+  transform: translateY(0);
+}
