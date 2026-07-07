@@ -21,17 +21,22 @@ def to_dict(obj) -> dict:
             value = getattr(obj, param, None)
             if isinstance(value, list):
                 items = [
-                    item.to_dict()
-                    if hasattr(item, "to_dict") and callable(item.to_dict)
-                    else item
+                    (
+                        item.to_dict()
+                        if hasattr(item, "to_dict") and callable(item.to_dict)
+                        else item
+                    )
                     for item in value
                 ]
-                # Sort for deterministic ordering — fixes hash instability when underlying
-                # collection iteration order varies between Python process restarts.
+                # Sort for deterministic ordering, hash stability
                 try:
                     items = sorted(
                         items,
-                        key=lambda x: json.dumps(x, sort_keys=True) if isinstance(x, dict) else str(x),
+                        key=lambda x: (
+                            json.dumps(x, sort_keys=True)
+                            if isinstance(x, dict)
+                            else str(x)
+                        ),
                     )
                 except (TypeError, ValueError):
                     pass

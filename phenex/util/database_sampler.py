@@ -91,8 +91,6 @@ class DatabaseSampler:
         self.person_id_count = None
 
         if self.fraction == 1.0:
-            # No-op: keep every patient â€” identical to having no sampler.
-            # Skip the JOIN so orphan records in domain tables are preserved.
             return dict(mapped_tables)
 
         result: dict[str, Any] = {}
@@ -114,6 +112,10 @@ class DatabaseSampler:
             )
 
         return result
+
+    def __repr__(self) -> str:
+        """Concise representation showing the config that defines the sample."""
+        return f"{self.__class__.__name__}(fraction={self.fraction}, seed={self.seed})"
 
     def to_dict(self) -> dict:
         """Serialize to a JSON-safe dict for cohort snapshot storage."""
@@ -158,6 +160,11 @@ class DatabaseSampler:
             denom_filter = [
                 "  denom      : 0  (fraction=0.0, no patients selected)",
                 "  filter     : fraction=0.0 -> always empty",
+            ]
+        elif self.fraction == 1.0:
+            denom_filter = [
+                "  denom      : 1  (fraction=1.0, all patients selected)",
+                "  filter     : fraction=1.0 -> keep all (hash skipped)",
             ]
         else:
             denom_filter = [
