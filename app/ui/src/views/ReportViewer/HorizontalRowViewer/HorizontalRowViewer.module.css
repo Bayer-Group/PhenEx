@@ -178,7 +178,8 @@
   cursor: pointer;
   color: var(--color_inactive, #999);
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 20px;
+  background-color: red;
   transition: color 0.15s, background-color 0.15s;
 }
 

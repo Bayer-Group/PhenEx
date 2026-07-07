@@ -1,5 +1,6 @@
 import { ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP } from './sectionLayoutStore';
+import { cleanupGridLayout } from './CleanupGridLayout';
 import { GridItemContext } from './GridItemContext';
 import styles from './SectionGrid.module.css';
 
@@ -161,7 +162,7 @@ export function SectionGrid({
       if (!it || e.pointerId !== it.pointerId) return;
       interactionRef.current = null;
       setDraft((current) => {
-        if (current) commit(current);
+        if (current) commit(cleanupGridLayout(current, columns));
         return null;
       });
       // A pure click (no drag) navigates to the row.
