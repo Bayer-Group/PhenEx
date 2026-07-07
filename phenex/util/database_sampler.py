@@ -90,6 +90,11 @@ class DatabaseSampler:
         self.person_ids = None
         self.person_id_count = None
 
+        if self.fraction == 1.0:
+            # No-op: keep every patient â€” identical to having no sampler.
+            # Skip the JOIN so orphan records in domain tables are preserved.
+            return dict(mapped_tables)
+
         result: dict[str, Any] = {}
         for domain_name, domain in mapped_tables.items():
             if domain is None:
@@ -109,6 +114,14 @@ class DatabaseSampler:
             )
 
         return result
+
+    def to_dict(self) -> dict:
+        """Serialize to a JSON-safe dict for cohort snapshot storage."""
+        return {
+            "class_name": self.__class__.__name__,
+            "fraction": self.fraction,
+            "seed": self.seed,
+        }
 
     def fetch_person_ids(self) -> list[Any]:
         """Fetch sampled PERSON_IDs from the database into a sorted Python list.
@@ -184,6 +197,9 @@ class DatabaseSampler:
         """
         if self.fraction == 0.0:
             return person_table.limit(0).select("PERSON_ID").distinct()
+
+        if self.fraction == 1.0:
+            return person_table.select("PERSON_ID").distinct()
 
         return (
             person_table.filter(

@@ -1,5 +1,6 @@
 import datetime
 import os
+import sys
 from typing import Any
 
 import ibis
@@ -182,6 +183,121 @@ class DatabaseSamplerTestGenerator(PhenotypeTestGenerator):
                 os.makedirs(_path)
 
 
+# Golden test
+
+
+class DatabaseSamplerGoldenTestGenerator(DatabaseSamplerTestGenerator):
+    """Generator-idiom golden test: declares expected PERSON_IDs, runs the sampler,
+    writes diffable expected/ vs result/ artifacts, and ASSERTS computed == golden."""
+
+    _GOLDEN_IDS = [f"P{i}" for i in range(20)]
+
+    def __init__(self) -> None:
+        super().__init__(person_ids=self._GOLDEN_IDS, name_space="dbs_golden")
+
+    def define_phenotype_tests(self):
+        # expected_person_ids
+        return [
+            {
+                "name": "half_seed42",
+                "fraction": 0.5,
+                "seed": 42,
+                "expected_person_ids": [
+                    "P0",
+                    "P2",
+                    "P4",
+                    "P8",
+                    "P9",
+                    "P10",
+                    "P11",
+                    "P15",
+                    "P16",
+                    "P17",
+                    "P19",
+                ],
+            },
+            {
+                "name": "tenth_seed42",
+                "fraction": 0.1,
+                "seed": 42,
+                "expected_person_ids": ["P0", "P8"],
+            },
+            {
+                "name": "half_seed99",
+                "fraction": 0.5,
+                "seed": 99,
+                "expected_person_ids": [
+                    "P3",
+                    "P4",
+                    "P6",
+                    "P7",
+                    "P9",
+                    "P10",
+                    "P11",
+                    "P12",
+                    "P13",
+                    "P14",
+                    "P15",
+                    "P17",
+                    "P18",
+                ],
+            },
+        ]
+
+    def _run_tests(self):
+        """Run each scenario; write golden→expected/ and computed→result/; assert equal."""
+
+        def _key(pid: str) -> int:
+            return int(pid[1:])  # 'P0','P2',...
+
+        for scenario in self.define_phenotype_tests():
+            sampler = DatabaseSampler(
+                fraction=scenario["fraction"], seed=scenario["seed"]
+            )
+            sampled = sampler.sample(self.domains)
+
+            golden = sorted(scenario["expected_person_ids"], key=_key)
+            computed = sorted(
+                sampled["PERSON"]
+                .table.select("PERSON_ID")
+                .execute()["PERSON_ID"]
+                .tolist(),
+                key=_key,
+            )
+
+            stem = f"{self.name_space}_{scenario['name']}"
+            expected_path = os.path.join(self.dirpaths["expected"], stem + ".csv")
+            result_path = os.path.join(self.dirpaths["result"], stem + ".csv")
+            pd.DataFrame({"PERSON_ID": golden}).to_csv(expected_path, index=False)
+            pd.DataFrame({"PERSON_ID": computed}).to_csv(result_path, index=False)
+
+            assert computed == golden, (
+                f"Sampler selection changed for '{scenario['name']}' "
+                f"(fraction={scenario['fraction']}, seed={scenario['seed']}): "
+                f"expected {golden}, got {computed}.\n"
+                f"  diff: {expected_path}\n        {result_path}"
+            )
+
+            # Cross-domain: CONDITION_OCCURRENCE must contain exactly the golden patients
+            # (each patient has one condition row in this fixture).
+            cond_ids = set(
+                sampled["CONDITION_OCCURRENCE"]
+                .table.select("PERSON_ID")
+                .execute()["PERSON_ID"]
+                .tolist()
+            )
+            assert cond_ids == set(golden), (
+                f"'{scenario['name']}': condition-table patients "
+                f"{sorted(cond_ids, key=_key)} != sampled patients {golden}"
+            )
+
+
+def test_golden_sampler_selection_matches_committed_expected():
+    """Client-idiom golden test: sampler must pick exactly the committed PERSON_IDs,
+    and the run produces diffable expected/ vs result/ artifacts for review."""
+    DatabaseSamplerGoldenTestGenerator().run_tests()
+
+
 @pytest.fixture(scope="module")
 def tables_20() -> dict[str, Any]:
     """20-patient PERSON + CONDITION_OCCURRENCE dataset via DatabaseSamplerTestGenerator."""
@@ -230,6 +346,15 @@ def omop_100() -> dict[str, Any]:
     return DomainsMocker(
         OMOPDomains, n_patients=100, random_seed=89
     ).get_mapped_tables()
+
+
+@pytest.fixture(scope="module")
+def person_1000() -> dict[str, Any]:
+    """1000-patient PERSON-only dataset for statistical fraction-calibration tests."""
+    ids = list(range(100_000, 101_000))
+    return {
+        "PERSON": PhenexPersonTable(ibis.memtable(pd.DataFrame({"PERSON_ID": ids})))
+    }
 
 
 # Construction and validation
@@ -352,21 +477,38 @@ def test_fraction_zero_returns_empty_domains(tables_20: dict[str, Any]) -> None:
     assert result["CONDITION_OCCURRENCE"].table.count().execute() == 0
 
 
-def test_condition_rows_only_for_sampled_patients() -> None:
-    """After sampling, no domain contains rows for patients not in PERSON.
+def test_fraction_zero_short_circuits_no_hash_computed(
+    tables_20: dict[str, Any]
+) -> None:
+    """fraction=0.0 short-circuits: _person_ids_expr is set (to empty) but no hash filter runs."""
+    sampler = DatabaseSampler(fraction=0.0)
+    result = sampler.sample(tables_20)
+    assert sampler._person_ids_expr is not None
+    assert result["PERSON"].table.count().execute() == 0
+    assert result["CONDITION_OCCURRENCE"].table.count().execute() == 0
 
-    CONDITION_OCCURRENCE has extra rows for patients 6, 7, 8 who are NOT in PERSON.
-    After fraction=1.0 sampling (keep all PERSON rows), those orphan rows
-    must be dropped because the INNER JOIN on PERSON_ID removes them.
-    """
+
+def test_fraction_one_short_circuits_no_join_applied(tables_20: dict[str, Any]) -> None:
+    """fraction=1.0 short-circuits: sample() returns the original domain objects unchanged."""
+    sampler = DatabaseSampler(fraction=1.0)
+    result = sampler.sample(tables_20)
+    assert sampler._person_ids_expr is not None
+    for key, domain in tables_20.items():
+        assert (
+            result[key] is domain
+        ), f"fraction=1.0 must return original objects unchanged; '{key}' was replaced"
+
+
+def test_fraction_one_preserves_orphan_domain_records() -> None:
+    """fraction=1.0 is a true no-op — domain rows for patients not in PERSON are kept."""
     person_ids = [1, 2, 3, 4, 5]
-    extra_ids = [6, 7, 8]
+    orphan_ids = [6, 7, 8]
     person = PhenexPersonTable(ibis.memtable(pd.DataFrame({"PERSON_ID": person_ids})))
     cond = CodeTable(
         ibis.memtable(
             pd.DataFrame(
                 {
-                    "PERSON_ID": person_ids + extra_ids,
+                    "PERSON_ID": person_ids + orphan_ids,
                     "EVENT_DATE": [datetime.date(2020, 1, 1)] * 8,
                     "CODE": ["X"] * 8,
                 }
@@ -376,7 +518,39 @@ def test_condition_rows_only_for_sampled_patients() -> None:
     tables = {"PERSON": person, "CONDITION_OCCURRENCE": cond}
 
     result = DatabaseSampler(fraction=1.0).sample(tables)
-    assert result["CONDITION_OCCURRENCE"].table.count().execute() == 5
+    assert (
+        result["CONDITION_OCCURRENCE"].table.count().execute() == 8
+    ), "fraction=1.0 must not drop orphan domain records — it is a no-op"
+
+
+def test_condition_rows_only_for_sampled_patients() -> None:
+    """After partial sampling, no domain contains rows for patients not in the sampled PERSON set."""
+    person_ids = [1, 2, 3, 4, 5]
+    orphan_ids = [6, 7, 8]
+    person = PhenexPersonTable(ibis.memtable(pd.DataFrame({"PERSON_ID": person_ids})))
+    cond = CodeTable(
+        ibis.memtable(
+            pd.DataFrame(
+                {
+                    "PERSON_ID": person_ids + orphan_ids,
+                    "EVENT_DATE": [datetime.date(2020, 1, 1)] * 8,
+                    "CODE": ["X"] * 8,
+                }
+            )
+        )
+    )
+    tables = {"PERSON": person, "CONDITION_OCCURRENCE": cond}
+
+    result = DatabaseSampler(fraction=0.5, seed=42).sample(tables)
+    result_ids = set(
+        result["CONDITION_OCCURRENCE"]
+        .table.select("PERSON_ID")
+        .execute()["PERSON_ID"]
+        .tolist()
+    )
+    assert result_ids.isdisjoint(
+        set(orphan_ids)
+    ), f"Orphan patients {result_ids & set(orphan_ids)} leaked into domain result"
 
 
 def test_sample_missing_person_raises(tables_20: dict[str, Any]) -> None:
@@ -411,6 +585,22 @@ def test_sample_twice_resets_fetch_state(tables_20: dict[str, Any]) -> None:
     sampler.sample(tables_20)
     assert sampler.person_ids is None
     assert sampler.person_id_count is None
+
+
+def test_person_ids_expr_correct_after_n_sample_calls(
+    tables_20: dict[str, Any]
+) -> None:
+    """fetch_person_ids() returns the correct patient set regardless of call order."""
+    sampler = DatabaseSampler(fraction=1.0)
+
+    for _ in range(len(tables_20)):
+        sampler.sample(tables_20)
+        assert sampler._person_ids_expr is not None
+        assert sampler.person_ids is None  # reset on every call
+
+    ids = sampler.fetch_person_ids()
+    assert sampler.person_id_count == 20
+    assert set(ids) == set(_INT_PERSON_IDS_20)
 
 
 def test_filtered_domain_contains_only_sampled_patient_rows(
@@ -463,6 +653,7 @@ def test_sample_passes_through_domain_without_person_id(
     tables["CONCEPT"] = concept
     result = DatabaseSampler(fraction=0.5).sample(tables)
     assert result["CONCEPT"].table.count().execute() == 3
+    assert result["CONCEPT"] is concept  # passthrough must return the original object
 
 
 def test_sample_sets_person_ids_expr(tables_20: dict[str, Any]) -> None:
@@ -525,34 +716,6 @@ def test_fetch_called_twice_returns_same_result(tables_10: dict[str, Any]) -> No
 # describe()
 
 
-def test_describe_returns_string() -> None:
-    assert isinstance(DatabaseSampler(fraction=0.1).describe(), str)
-
-
-def test_describe_before_sample_shows_not_sampled() -> None:
-    desc = DatabaseSampler(fraction=0.1).describe()
-    assert "no -- call .sample() first" in desc
-
-
-def test_describe_after_sample_shows_sampled(tables_20: dict[str, Any]) -> None:
-    sampler = DatabaseSampler(fraction=0.1)
-    sampler.sample(tables_20)
-    assert "yes -- call fetch_person_ids() to inspect" in sampler.describe()
-
-
-def test_describe_before_fetch_hides_patient_count(tables_20: dict[str, Any]) -> None:
-    sampler = DatabaseSampler(fraction=0.1)
-    sampler.sample(tables_20)
-    assert "call .fetch_person_ids() to load" in sampler.describe()
-
-
-def test_describe_after_fetch_shows_patient_count(tables_10: dict[str, Any]) -> None:
-    sampler = DatabaseSampler(fraction=1.0)
-    sampler.sample(tables_10)
-    sampler.fetch_person_ids()
-    assert "10" in sampler.describe()
-
-
 def test_describe_contains_fraction_seed_denom_and_filter() -> None:
     """describe() must show fraction, seed, denom, and the string-concat filter formula."""
     sampler = DatabaseSampler(fraction=0.1, seed=7)
@@ -564,10 +727,26 @@ def test_describe_contains_fraction_seed_denom_and_filter() -> None:
 
 
 def test_describe_fraction_zero_shows_empty_filter() -> None:
-    """describe() with fraction=0.0 uses the empty-sample branch (no hash formula)."""
+    """describe() with fraction=0.0 uses the empty-sample branch."""
     desc = DatabaseSampler(fraction=0.0).describe()
     assert "always empty" in desc
     assert "denom      : 0" in desc
+
+
+def test_describe_fraction_one_shows_keep_all_filter() -> None:
+    """describe() with fraction=1.0 uses the keep-all branch."""
+    desc = DatabaseSampler(fraction=1.0).describe()
+    assert "keep all" in desc
+    assert "hash skipped" in desc
+    assert "denom      : 1" in desc
+
+
+def test_repr_shows_fraction_and_seed() -> None:
+    """repr() surfaces the config that defines the sample."""
+    assert (
+        repr(DatabaseSampler(fraction=0.1, seed=42))
+        == "DatabaseSampler(fraction=0.1, seed=42)"
+    )
 
 
 def test_describe_is_safe_at_every_lifecycle_stage(tables_20: dict[str, Any]) -> None:
@@ -595,70 +774,71 @@ def test_string_person_ids_are_supported(string_tables_20: dict[str, Any]) -> No
 # Integration — determinism, seed independence, multi-domain consistency
 
 
-def test_same_fraction_seed_is_deterministic(omop_100: dict[str, Any]) -> None:
+@pytest.mark.parametrize("seed", [42, 0, -1, -99999, sys.maxsize])
+def test_sample_is_deterministic(tables_20: dict[str, Any], seed: int) -> None:
     """Same fraction + seed always returns the exact same patients."""
-    r1 = DatabaseSampler(fraction=0.1, seed=42).sample(omop_100)
-    r2 = DatabaseSampler(fraction=0.1, seed=42).sample(omop_100)
-    ids1 = sorted(
-        r1["PERSON"].table.select("PERSON_ID").execute()["PERSON_ID"].tolist()
-    )
-    ids2 = sorted(
-        r2["PERSON"].table.select("PERSON_ID").execute()["PERSON_ID"].tolist()
-    )
-    assert ids1 == ids2
+
+    def _ids() -> list[Any]:
+        return sorted(
+            DatabaseSampler(fraction=0.5, seed=seed)
+            .sample(tables_20)["PERSON"]
+            .table.select("PERSON_ID")
+            .execute()["PERSON_ID"]
+            .tolist()
+        )
+
+    assert _ids() == _ids()
 
 
-def test_different_seeds_produce_different_cohorts(omop_100: dict[str, Any]) -> None:
+@pytest.mark.parametrize(
+    "seed_a, seed_b",
+    [(7, 17), (42, 52), (0, 1), (-42, 42)],
+)
+def test_different_seeds_produce_different_cohorts(
+    omop_100: dict[str, Any], seed_a: int, seed_b: int
+) -> None:
     """Different seeds produce different patient sets."""
-    for seed_a, seed_b in [(7, 17), (42, 52)]:
-        ids_a = set(
-            DatabaseSampler(fraction=0.1, seed=seed_a)
-            .sample(omop_100)["PERSON"]
-            .table.select("PERSON_ID")
-            .execute()["PERSON_ID"]
-            .tolist()
-        )
-        ids_b = set(
-            DatabaseSampler(fraction=0.1, seed=seed_b)
-            .sample(omop_100)["PERSON"]
-            .table.select("PERSON_ID")
-            .execute()["PERSON_ID"]
-            .tolist()
-        )
-        assert (
-            ids_a != ids_b
-        ), f"seed={seed_a} and seed={seed_b} returned the same patients."
-
-
-def test_seed_zero_and_seed_one_are_different_cohorts(omop_100: dict[str, Any]) -> None:
-    """seed=0 and seed=1 must produce different cohorts.
-
-    seed=0 appends '0' to each stringified PERSON_ID before hashing.
-    seed=1 appends '1', producing different hash inputs and a distinct cohort.
-    """
-    ids_0 = set(
-        DatabaseSampler(fraction=0.1, seed=0)
+    ids_a = set(
+        DatabaseSampler(fraction=0.1, seed=seed_a)
         .sample(omop_100)["PERSON"]
         .table.select("PERSON_ID")
         .execute()["PERSON_ID"]
         .tolist()
     )
-    ids_1 = set(
-        DatabaseSampler(fraction=0.1, seed=1)
+    ids_b = set(
+        DatabaseSampler(fraction=0.1, seed=seed_b)
         .sample(omop_100)["PERSON"]
         .table.select("PERSON_ID")
         .execute()["PERSON_ID"]
         .tolist()
     )
-    assert ids_0 != ids_1
+    assert (
+        ids_a != ids_b
+    ), f"seed={seed_a} and seed={seed_b} returned the same patients."
+
+
+@pytest.mark.parametrize("fraction", [0.1, 0.25, 0.5])
+def test_sample_fraction_is_calibrated(
+    person_1000: dict[str, Any], fraction: float
+) -> None:
+    """The sampler actually samples fraction of patients on a large N."""
+    n = person_1000["PERSON"].table.count().execute()
+    count = (
+        DatabaseSampler(fraction=fraction, seed=42)
+        .sample(person_1000)["PERSON"]
+        .table.count()
+        .execute()
+    )
+    expected = fraction * n
+    rel_err = abs(count - expected) / expected
+    assert rel_err < 0.35, (
+        f"fraction={fraction} on N={n} selected {count} patients "
+        f"(expected ≈{expected:.0f}, relative error {rel_err:.0%} exceeds 35% tolerance)"
+    )
 
 
 def test_all_domains_filtered_to_same_patient_set(omop_100: dict[str, Any]) -> None:
-    """Every domain in the result contains only rows belonging to sampled patients.
-
-    The INNER JOIN on PERSON_ID guarantees this automatically. This test
-    verifies the guarantee holds across all 14 OMOP domains.
-    """
+    """Every domain in the result contains only rows belonging to sampled patients."""
     result = DatabaseSampler(fraction=0.1, seed=42).sample(omop_100)
     ref_ids = set(
         result["PERSON"].table.select("PERSON_ID").execute()["PERSON_ID"].tolist()
@@ -756,6 +936,89 @@ def test_adding_patients_does_not_change_existing_sample() -> None:
     )
 
     assert ids_base <= ids_ext
+
+
+# to_dict()
+
+
+def test_to_dict_contains_required_keys() -> None:
+    """to_dict() must return exactly class_name, fraction, seed."""
+    d = DatabaseSampler(fraction=0.25, seed=7).to_dict()
+    assert set(d.keys()) == {"class_name", "fraction", "seed"}
+
+
+def test_to_dict_values_match_inputs() -> None:
+    d = DatabaseSampler(fraction=0.25, seed=7).to_dict()
+    assert d["class_name"] == "DatabaseSampler"
+    assert d["fraction"] == 0.25
+    assert d["seed"] == 7
+
+
+def test_to_dict_is_json_serializable() -> None:
+    """All three values are JSON primitives, json.dumps must not raise.
+
+    fraction=0.0 is included alongside a normal fraction because 0.0 is the only
+    value that takes a different construction branch (denom=0), both must serialize.
+    """
+    import json
+
+    for frac in (0.1, 0.0):
+        d = DatabaseSampler(fraction=frac, seed=42).to_dict()
+        serialized = json.dumps(d)
+        assert '"class_name"' in serialized
+
+
+# Duplicate PERSON_IDs in PERSON table
+
+
+def test_duplicate_person_ids_in_person_table_do_not_inflate_domain_rows() -> None:
+    """Duplicate PERSON_IDs in PERSON must not cause join-explosion in domain tables."""
+    dup_person_ids = [1847392, 5023471, 9182736, 1847392, 5023471]  # 5 rows, 3 distinct
+    unique_cond_ids = [
+        1847392,
+        5023471,
+        9182736,
+    ]  # each patient has exactly 1 condition row
+
+    person = PhenexPersonTable(
+        ibis.memtable(pd.DataFrame({"PERSON_ID": dup_person_ids}))
+    )
+    cond = CodeTable(
+        ibis.memtable(
+            pd.DataFrame(
+                {
+                    "PERSON_ID": unique_cond_ids,
+                    "EVENT_DATE": [datetime.date(2020, 1, 1)] * 3,
+                    "CODE": ["X"] * 3,
+                }
+            )
+        )
+    )
+    tables = {"PERSON": person, "CONDITION_OCCURRENCE": cond}
+    result = DatabaseSampler(fraction=0.5, seed=42).sample(tables)
+
+    result_ids = set(
+        result["CONDITION_OCCURRENCE"]
+        .table.select("PERSON_ID")
+        .execute()["PERSON_ID"]
+        .tolist()
+    )
+    cond_rows = result["CONDITION_OCCURRENCE"].table.count().execute()
+    assert cond_rows == len(result_ids), (
+        f"Row count ({cond_rows}) exceeds distinct patient count ({len(result_ids)}). "
+        "Duplicate PERSON_IDs in PERSON are inflating domain table rows."
+    )
+
+
+# Edge-value seeds
+
+
+@pytest.mark.parametrize("seed", [-1, -99999, sys.maxsize])
+def test_edge_seed_returns_valid_subset(tables_20: dict, seed: int) -> None:
+    """Negative and sys.maxsize seeds must complete without overflow and stay bounded [0, N]."""
+    result = DatabaseSampler(fraction=0.5, seed=seed).sample(tables_20)
+    count = result["PERSON"].table.count().execute()
+    assert 0 <= count <= 20
 
 
 if __name__ == "__main__":

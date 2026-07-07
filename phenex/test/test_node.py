@@ -690,6 +690,39 @@ class TestPhenexNodeGroup:
         assert child.executed
         assert parent.executed
 
+    def test_hash_changes_when_child_nodes_change(self):
+        """NodeGroup hash must reflect its children — regression for missing self.nodes = nodes."""
+        node_a = ConcreteNode("sampler_frac10")
+        node_b = ConcreteNode("sampler_frac20")
+
+        grp1 = NodeGroup("sampler_stage", [node_a])
+        grp2 = NodeGroup("sampler_stage", [node_b])
+
+        assert hash(grp1) != hash(grp2)
+
+    def test_hash_changes_when_sampler_fraction_changes(self):
+        """NodeGroup hash must change when DatabaseSamplerNode children have different fraction — direct regression test."""
+        from phenex.core.database_sampler_node import DatabaseSamplerNode
+        from phenex.util.database_sampler import DatabaseSampler
+
+        node_10 = DatabaseSamplerNode(
+            name="stage__sampler_person",
+            domain="person",
+            sampler=DatabaseSampler(fraction=0.1, seed=42),
+        )
+        node_20 = DatabaseSamplerNode(
+            name="stage__sampler_person_b",
+            domain="person",
+            sampler=DatabaseSampler(fraction=0.2, seed=42),
+        )
+
+        grp1 = NodeGroup("sampler_stage", [node_10])
+        grp2 = NodeGroup("sampler_stage", [node_20])
+
+        assert hash(grp1) != hash(
+            grp2
+        ), "NodeGroup hash must change when child fraction changes"
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

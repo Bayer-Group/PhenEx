@@ -1,6 +1,7 @@
 from typing import Optional, TYPE_CHECKING
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
+from phenex.util.database_sampler import DatabaseSampler
 
 if TYPE_CHECKING:
     from phenex.ibis_connect import (
@@ -32,12 +33,16 @@ class Database:
         data_period: Optional DateFilter to restrict all input data to a specific date range.
                     The input data will be modified to look as if data outside the data_period
                     was never recorded before any phenotypes are computed.
+        sampler: Optional DatabaseSampler to restrict all input data to a reproducible subset
+                 of patients before any phenotypes are computed. Useful for fast iteration
+                 during development against large production databases.
         name: Optional descriptive name for this database configuration.
 
     Attributes:
         connector: The database connector instance.
         mapper: The domains dictionary for table mapping.
         data_period: The date filter for restricting data, if any.
+        sampler: The database sampler for patient sub-sampling, if any.
         name: The descriptive name of this database configuration.
 
     Example:
@@ -71,6 +76,7 @@ class Database:
         ] = None,
         mapper: Optional["DomainsDictionary"] = None,
         data_period: Optional["DateFilter"] = None,
+        sampler: Optional[DatabaseSampler] = None,
         name: Optional[str] = None,
     ):
         """
@@ -80,11 +86,13 @@ class Database:
             connector: Database connector for reading/writing data.
             mapper: DomainsDictionary for mapping tables to PhenEx domains.
             data_period: Optional date filter to restrict input data.
+            sampler: Optional DatabaseSampler to restrict input data to a patient subset.
             name: Optional descriptive name for this database.
         """
         self.connector = connector
         self.mapper = mapper
         self.data_period = data_period
+        self.sampler = sampler
         self.name = name or "unnamed_database"
 
         logger.info(f"Database '{self.name}' initialized")
@@ -188,12 +196,14 @@ class Database:
         connector_type = type(self.connector).__name__ if self.connector else "None"
         mapper_type = type(self.mapper).__name__ if self.mapper else "None"
         data_period_str = str(self.data_period) if self.data_period else "None"
+        sampler_str = repr(self.sampler) if self.sampler else "None"
 
         return (
             f"Database(name='{self.name}', "
             f"connector={connector_type}, "
             f"mapper={mapper_type}, "
-            f"data_period={data_period_str})"
+            f"data_period={data_period_str}, "
+            f"sampler={sampler_str})"
         )
 
     def validate(self) -> None:
