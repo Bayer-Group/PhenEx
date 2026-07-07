@@ -21,6 +21,13 @@ export class StudyViewerCohortDefinitionsDataService {
   }
 
   public setStudyData(studyData: Record<string, any>): void {
+    // Clean up models for cohorts that no longer exist
+    const newCohortIds = new Set((studyData.cohorts || []).map((c: any) => c.id));
+    for (const id of this._cohortModels.keys()) {
+      if (!newCohortIds.has(id)) {
+        this._cohortModels.delete(id);
+      }
+    }
     this._study_data = studyData;
   }
 

@@ -185,9 +185,10 @@ export class StudyDataService {
       // Fetch fresh study data from API
       const studyData = await getStudy(studyId);
       
-      // Fetch cohorts for this study
+      // Fetch cohorts for this study (clear cache first to ensure fresh data)
       const { CohortsDataService } = await import('../LeftPanel/CohortsDataService');
       const cohortsDataService = CohortsDataService.getInstance();
+      cohortsDataService.clearStudyCohortsCache(studyId);
       const cohorts = await cohortsDataService.getCohortsForStudy(studyId);
       
       // Add cohorts to study data
