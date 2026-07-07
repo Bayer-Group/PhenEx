@@ -1,6 +1,8 @@
 import { ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP } from './sectionLayoutStore';
 import { cleanupGridLayout } from './CleanupGridLayout';
+import { useGridSelection, type GridSelection } from './GridSelection';
+import { dropSelectionIntoGrid } from './DropSelectionLayout';
 import { GridItemContext } from './GridItemContext';
 import styles from './SectionGrid.module.css';
 
@@ -26,7 +28,24 @@ export interface SectionGridProps {
 }
 
 type Interaction =
-  | { type: 'move'; key: string; origin: GridItem; startX: number; startY: number; startScrollTop: number; moved: boolean; pointerId: number }
+  | {
+      type: 'move';
+      key: string;
+      origin: GridItem;
+      startX: number;
+      startY: number;
+      startScrollTop: number;
+      moved: boolean;
+      pointerId: number;
+      /** Present when the grabbed cell is part of the selection (multi-drag). */
+      multi: {
+        keys: string[];
+        originLeft: number;
+        originTop: number;
+        curLeft: number;
+        curTop: number;
+      } | null;
+    }
   | { type: 'resize'; edge: 'right' | 'bottom' | 'corner'; key: string; origin: GridItem; startX: number; startY: number; startScrollTop: number; pointerId: number };
 
 const DRAG_THRESHOLD = 4;
@@ -34,6 +53,17 @@ const DRAG_THRESHOLD = 4;
 const EDGE_SCROLL_ZONE = 64;
 /** Maximum auto-scroll speed in px per frame. */
 const EDGE_SCROLL_SPEED = 22;
+/** Per-card offset (px) of the animated drag stack. */
+const STACK_OFFSET = 7;
+
+/** Live position of the animated multi-card drag stack. */
+interface MultiStack {
+  primaryKey: string;
+  /** Selected keys other than the primary, in stack order (bottom→top). */
+  trailing: string[];
+  left: number;
+  top: number;
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -84,6 +114,17 @@ export function SectionGrid({
   const gridHeightRef = useRef(0);
   // Keys ordered bottom→top; last entry has highest z-index.
   const [zOrder, setZOrder] = useState<string[]>(() => items.map((i) => i.key));
+
+  // Multi-cell selection lives in its own module; the grid just reflects it.
+  const itemKeys = useMemo(() => items.map((i) => i.key), [items]);
+  const selection = useGridSelection(itemKeys, editable);
+  const selectionRef = useRef<GridSelection>(selection);
+  selectionRef.current = selection;
+
+  // Animated drag stack for a multi-cell selection (null when not multi-dragging).
+  const [multiStack, setMultiStack] = useState<MultiStack | null>(null);
+  const multiStackRef = useRef<MultiStack | null>(null);
+  multiStackRef.current = multiStack;
 
   const bringToFront = useCallback((key: string) => {
     setZOrder((prev) => [...prev.filter((k) => k !== key), key]);
@@ -155,6 +196,23 @@ export function SectionGrid({
       if (!it) return;
       const scrollTop = scrollParentRef.current?.scrollTop ?? 0;
       const scrollDelta = scrollTop - it.startScrollTop;
+
+      // Multi-cell drag: cards collapse into an animated stack that follows the
+      // pointer. No grid draft is produced until drop.
+      if (it.type === 'move' && it.multi) {
+        const left = it.multi.originLeft + (clientX - it.startX);
+        const top = it.multi.originTop + (clientY - it.startY + scrollDelta);
+        it.multi.curLeft = left;
+        it.multi.curTop = top;
+        setMultiStack({
+          primaryKey: it.key,
+          trailing: it.multi.keys.filter((k) => k !== it.key),
+          left,
+          top,
+        });
+        return;
+      }
+
       const dCol = Math.round((clientX - it.startX) / colSpan);
       const dRow = Math.round((clientY - it.startY + scrollDelta) / rowSpan);
 
@@ -230,12 +288,37 @@ export function SectionGrid({
       interactionRef.current = null;
       stopAutoScroll();
       setInteracting(false);
+
+      // Multi-cell drop: land the primary at the pointer cell, flow the rest.
+      if (it.type === 'move' && it.multi) {
+        setMultiStack(null);
+        if (it.moved) {
+          const target = {
+            x: Math.round(it.multi.curLeft / colSpan),
+            y: Math.round(it.multi.curTop / rowSpan),
+          };
+          const next = dropSelectionIntoGrid({
+            layout: effectiveLayout,
+            columns,
+            draggedKeys: it.multi.keys,
+            primaryKey: it.key,
+            target,
+          });
+          commit(next);
+          selectionRef.current.clear();
+        } else {
+          // A pure click toggles this cell's selection.
+          selectionRef.current.toggle(it.key);
+        }
+        return;
+      }
+
       setDraft((current) => {
         if (current) commit(cleanupGridLayout(current, columns));
         return null;
       });
-      // A pure click (no drag) navigates to the row.
-      if (it.type === 'move' && !it.moved) onItemClick?.(it.key);
+      // A pure click (no drag) toggles selection.
+      if (it.type === 'move' && !it.moved) selectionRef.current.toggle(it.key);
     };
 
     window.addEventListener('pointermove', handleMove);
@@ -245,7 +328,7 @@ export function SectionGrid({
       window.removeEventListener('pointerup', handleUp);
       stopAutoScroll();
     };
-  }, [editable, effectiveLayout, colSpan, rowSpan, columns, commit, onItemClick]);
+  }, [editable, effectiveLayout, colSpan, rowSpan, columns, commit]);
 
   const startMove = useCallback((e: React.PointerEvent, key: string) => {
     if (!editable) { onItemClick?.(key); return; }
@@ -257,8 +340,31 @@ export function SectionGrid({
     frozenHeightRef.current = gridHeightRef.current;
     pointerRef.current = { x: e.clientX, y: e.clientY };
     setInteracting(true);
-    interactionRef.current = { type: 'move', key, origin, startX: e.clientX, startY: e.clientY, startScrollTop: scrollParentRef.current?.scrollTop ?? 0, moved: false, pointerId: e.pointerId };
-  }, [editable, layoutMap, onItemClick, bringToFront]);
+
+    // Grabbing a selected cell drags the whole selection as an animated stack.
+    const sel = selectionRef.current;
+    const multi = sel.isSelected(key)
+      ? {
+          keys: [...sel.selected],
+          originLeft: origin.x * colSpan,
+          originTop: origin.y * rowSpan,
+          curLeft: origin.x * colSpan,
+          curTop: origin.y * rowSpan,
+        }
+      : null;
+
+    interactionRef.current = {
+      type: 'move',
+      key,
+      origin,
+      startX: e.clientX,
+      startY: e.clientY,
+      startScrollTop: scrollParentRef.current?.scrollTop ?? 0,
+      moved: false,
+      pointerId: e.pointerId,
+      multi,
+    };
+  }, [editable, layoutMap, onItemClick, bringToFront, colSpan, rowSpan]);
 
   const startResize = useCallback((e: React.PointerEvent, key: string, edge: 'right' | 'bottom' | 'corner') => {
     if (!editable) return;
@@ -281,16 +387,47 @@ export function SectionGrid({
       {containerWidth > 0 && items.map((item) => {
         const pos = layoutMap.get(item.key);
         if (!pos) return null;
-        const left = pos.x * colSpan;
-        const top = pos.y * rowSpan;
         const width = pos.w * cellWidth + (pos.w - 1) * gap;
         const height = pos.h * rowHeight + (pos.h - 1) * gap;
         const isDragging = draggingKey === item.key;
-        const zIndex = zOrder.indexOf(item.key) + 1;
+        const isSelected = selection.isSelected(item.key);
+
+        // Layout position; overridden below when this cell is part of an
+        // animated multi-drag stack.
+        let left = pos.x * colSpan;
+        let top = pos.y * rowSpan;
+        let zIndex = zOrder.indexOf(item.key) + 1;
+        let stacked = false;
+        if (multiStack) {
+          if (item.key === multiStack.primaryKey) {
+            left = multiStack.left;
+            top = multiStack.top;
+            zIndex = 1000; // primary rides on top of the stack
+          } else {
+            const i = multiStack.trailing.indexOf(item.key);
+            if (i !== -1) {
+              const depth = multiStack.trailing.length - i; // deeper = further back
+              left = multiStack.left + depth * STACK_OFFSET;
+              top = multiStack.top + depth * STACK_OFFSET;
+              zIndex = 900 - depth;
+              stacked = true;
+            }
+          }
+        }
+
+        const className = [
+          styles.item,
+          isSelected ? styles.itemSelected : '',
+          isDragging ? styles.itemDragging : '',
+          stacked ? styles.itemStacked : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+
         return (
           <div
             key={item.key}
-            className={`${styles.item} ${isDragging ? styles.itemDragging : ''}`}
+            className={className}
             style={{ left, top, width, height, zIndex }}
           >
             <div

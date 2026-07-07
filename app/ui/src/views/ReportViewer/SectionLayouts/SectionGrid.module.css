@@ -30,6 +30,21 @@
   transition: none;
 }
 
+/* Multi-selected cell: thick highlight border. */
+.itemSelected {
+  outline: 3px solid var(--accent_color, #4a7fff);
+  outline-offset: -1px;
+  box-shadow: 0 0 0 1px var(--accent_color, #4a7fff), 0 2px 12px rgba(74, 127, 255, 0.28);
+}
+
+/* Trailing card in an animated multi-drag stack. */
+.itemStacked {
+  transition: left 0.18s cubic-bezier(0.22, 1, 0.36, 1), top 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+  opacity: 0.96;
+  pointer-events: none;
+}
+
 .itemHeader {
   flex-shrink: 0;
   font-family: "IBMPlexSans-bold", sans-serif;

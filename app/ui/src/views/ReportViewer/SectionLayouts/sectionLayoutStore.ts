@@ -47,7 +47,7 @@ type PersistedState = Record<string, SectionState>;
 // ── Grid constants ───────────────────────────────────────────────────────
 
 export const GRID_COLUMNS = 10;
-export const GRID_ROW_HEIGHT = 130;
+export const GRID_ROW_HEIGHT = 50;
 export const GRID_GAP = 14;
 
 // ── Persistence ──────────────────────────────────────────────────────────
