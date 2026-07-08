@@ -58,7 +58,6 @@ async def get_all_studies_for_user(request: Request):
         - display_order (int): Display order for UI sorting
         - baseline_characteristics (dict): Baseline characteristics configuration
         - outcomes (dict): Outcomes configuration
-        - analysis (dict): Analysis configuration
         - visible_by (list[str]): List of user IDs with access
         - created_at (str): ISO timestamp when created
         - updated_at (str): ISO timestamp of last update
@@ -74,7 +73,6 @@ async def get_all_studies_for_user(request: Request):
             "display_order": 0,
             "baseline_characteristics": {},
             "outcomes": {},
-            "analysis": {},
             "visible_by": [],
             "created_at": "2025-12-09T10:00:00Z",
             "updated_at": "2025-12-09T10:00:00Z"
@@ -111,7 +109,6 @@ async def get_all_public_studies():
         - display_order (int): Display order for UI sorting
         - baseline_characteristics (dict): Baseline characteristics configuration
         - outcomes (dict): Outcomes configuration
-        - analysis (dict): Analysis configuration
         - visible_by (list[str]): List of user IDs with access
         - created_at (str): ISO timestamp when created
         - updated_at (str): ISO timestamp of last update
@@ -127,7 +124,6 @@ async def get_all_public_studies():
             "display_order": 0,
             "baseline_characteristics": {},
             "outcomes": {},
-            "analysis": {},
             "visible_by": [],
             "created_at": "2025-12-09T10:00:00Z",
             "updated_at": "2025-12-09T10:00:00Z"
@@ -171,7 +167,6 @@ async def get_study_for_user(request: Request, study_id: str):
         - display_order (int): Display order for UI sorting
         - baseline_characteristics (dict): Baseline characteristics configuration
         - outcomes (dict): Outcomes configuration
-        - analysis (dict): Analysis configuration
         - visible_by (list[str]): List of user IDs with access
         - created_at (str): ISO timestamp when created
         - updated_at (str): ISO timestamp of last update
@@ -190,9 +185,6 @@ async def get_study_for_user(request: Request, study_id: str):
         },
         "outcomes": {
             "mortality": {"type": "time_to_event"}
-        },
-        "analysis": {
-            "method": "cox_regression"
         },
         "visible_by": [],
         "created_at": "2025-12-09T10:00:00Z",
@@ -244,7 +236,6 @@ async def get_public_study(study_id: str):
         - display_order (int): Display order for UI sorting
         - baseline_characteristics (dict): Baseline characteristics configuration
         - outcomes (dict): Outcomes configuration
-        - analysis (dict): Analysis configuration
         - visible_by (list[str]): List of user IDs with access
         - created_at (str): ISO timestamp when created
         - updated_at (str): ISO timestamp of last update
@@ -259,7 +250,6 @@ async def get_public_study(study_id: str):
         "display_order": 0,
         "baseline_characteristics": {},
         "outcomes": {},
-        "analysis": {},
         "visible_by": [],
         "created_at": "2025-12-09T10:00:00Z",
         "updated_at": "2025-12-09T10:00:00Z"
@@ -311,7 +301,6 @@ async def create_or_update_study(
         - display_order (int, optional): Display order for UI sorting (default: 0)
         - baseline_characteristics (dict, optional): Configuration for baseline characteristics
         - outcomes (dict, optional): Configuration for outcomes
-        - analysis (dict, optional): Configuration for analysis methods
         - visible_by (list[str], optional): List of user IDs with access
 
     Example Request Body (Create):
@@ -326,9 +315,6 @@ async def create_or_update_study(
         },
         "outcomes": {
             "mortality": {"type": "time_to_event"}
-        },
-        "analysis": {
-            "method": "cox_regression"
         }
     }
     ```
@@ -602,170 +588,3 @@ async def get_cohorts_for_study(request: Request, study_id: str):
         raise HTTPException(
             status_code=500, detail=f"Failed to retrieve cohorts for study {study_id}"
         )
-
-
-# -- STUDY INTAKE PARSING --
-
-
-class CohortIntake(BaseModel):
-    name: str
-    description: str = ""
-    entry_criterion: str = ""
-    inclusions: List[str] = []
-    exclusions: List[str] = []
-
-
-class StudyConceptParseRequest(BaseModel):
-    text: str
-
-
-class StudyConceptParseResponse(BaseModel):
-    study_name: str = ""
-    study_type: str = "cohort"
-    cohorts: List[CohortIntake] = []
-    raw_description: str = ""
-    codelist_notes: str = ""
-
-
-# Other operations
-@router.post("/study/parse_concept", tags=["study"])
-async def parse_study_concept(
-    request: Request,
-    body: StudyConceptParseRequest,
-):
-    """
-    Parse a free-text study concept document into structured intake data using AI.
-
-    Request Body:
-    - text (str): The raw text content of the study concept document
-
-    Returns:
-    - StudyConceptParseResponse: Structured intake data extracted from the document
-    """
-    get_authenticated_user_id(request)
-
-    # Build OpenAI client from env vars
-    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-    azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
-    api_version = os.getenv("OPENAI_API_VERSION", "2025-01-01-preview")
-    deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
-
-    if not azure_endpoint or not azure_api_key:
-        raise HTTPException(status_code=500, detail="Azure OpenAI not configured")
-
-    try:
-        import httpx
-        from openai import AsyncAzureOpenAI
-
-        http_client = httpx.AsyncClient(verify=False)
-        client = AsyncAzureOpenAI(
-            azure_endpoint=azure_endpoint,
-            api_key=azure_api_key,
-            api_version=api_version,
-            http_client=http_client,
-        )
-
-        system_prompt = """You are a medical research study analyst. Extract structured information from the study concept document provided.
-
-Return a JSON object with this exact structure:
-{
-  "study_name": "string - a concise name for the study",
-  "study_type": "one of: cohort, case_control, cross_sectional, case_series, registry, ecological, other",
-  "raw_description": "string - a 2-3 sentence summary of the study",
-  "codelist_notes": "string - bullet list of medical codes/codelists needed (diagnoses, drugs, procedures, labs), one per line starting with '-'",
-  "cohorts": [
-    {
-      "name": "string - cohort name (e.g. 'Treatment Arm', 'Control Group')",
-      "description": "string - brief cohort description",
-      "entry_criterion": "string - the clinical event defining the index date (e.g. 'First prescription of empagliflozin')",
-      "inclusions": ["string - inclusion criterion 1", "string - inclusion criterion 2"],
-      "exclusions": ["string - exclusion criterion 1", "string - exclusion criterion 2"]
-    }
-  ]
-}
-
-Rules:
-- Extract all distinct patient groups as separate cohorts
-- entry_criterion is required for each cohort — it defines WHEN a patient enters the study (index date)
-- Each inclusion/exclusion criterion should be a single concise statement
-- codelist_notes should enumerate every diagnosis, drug, procedure or lab code domain mentioned
-- Each inclusion/exclusion criterion should be a single concise statement (max 15 words)
-- entry_criterion should be one short phrase (max 10 words)
-- raw_description max 2 sentences
-- codelist_notes: one bullet per code domain, no explanations
-- Return ONLY valid JSON, no markdown fences"""
-
-        response = await client.chat.completions.create(
-            model=deployment,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": body.text},
-            ],
-            temperature=0.2,
-        )
-        await http_client.aclose()
-
-        raw = (response.choices[0].message.content or "{}").strip()
-        logger.info(f"parse_concept raw response (first 600 chars): {raw[:600]}")
-
-        # Strategy 1: strip markdown fences
-        if "```" in raw:
-            # grab content between first ``` and last ```
-            start = raw.find("```")
-            end = raw.rfind("```")
-            if start != end:
-                raw = raw[start:end]
-            raw = raw.strip()
-            # remove language tag on first line (e.g. ```json)
-            lines = raw.split("\n")
-            if lines and lines[0].strip().startswith("`"):
-                lines = lines[1:]
-            raw = "\n".join(lines).strip()
-
-        # Strategy 2: if it still doesn't start with {, find the first { ... }
-        if not raw.startswith("{"):
-            brace_start = raw.find("{")
-            brace_end = raw.rfind("}")
-            if brace_start != -1 and brace_end != -1 and brace_end > brace_start:
-                raw = raw[brace_start:brace_end + 1]
-            else:
-                logger.error(f"No JSON object found in response. Full response: {raw}")
-                raise HTTPException(status_code=500, detail="AI returned malformed response")
-
-        try:
-            parsed = json.loads(raw)
-        except json.JSONDecodeError:
-            # Strategy 3: try to fix common issues — trailing commas, single quotes
-            import re
-            fixed = re.sub(r',\s*([}\]])', r'\1', raw)   # trailing commas
-            fixed = re.sub(r"(?<![\\])'", '"', fixed)     # single → double quotes
-            try:
-                parsed = json.loads(fixed)
-            except json.JSONDecodeError as e2:
-                logger.error(f"JSON parse failed after cleanup. Error: {e2}. Raw: {raw[:400]}")
-                raise HTTPException(status_code=500, detail="AI returned malformed response")
-
-        cohorts = [
-            CohortIntake(
-                name=c.get("name", "Cohort"),
-                description=c.get("description", ""),
-                entry_criterion=c.get("entry_criterion", ""),
-                inclusions=c.get("inclusions", []),
-                exclusions=c.get("exclusions", []),
-            )
-            for c in parsed.get("cohorts", [])
-        ]
-
-        return StudyConceptParseResponse(
-            study_name=parsed.get("study_name", ""),
-            study_type=parsed.get("study_type", "cohort"),
-            raw_description=parsed.get("raw_description", ""),
-            codelist_notes=parsed.get("codelist_notes", ""),
-            cohorts=cohorts,
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to parse study concept: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to parse study concept: {str(e)}")

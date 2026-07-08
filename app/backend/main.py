@@ -189,11 +189,6 @@ from .routes.cohort import router as cohort_router
 
 app.include_router(cohort_router)
 
-# Include the AI router under /copilot prefix
-from .routes.ai import router as ai_router
-
-app.include_router(ai_router, prefix="/copilot")
-
 # Include the study router
 from .routes.study import router as study_router
 
@@ -203,6 +198,11 @@ app.include_router(study_router)
 from .routes.study_execute import router as study_execute_router
 
 app.include_router(study_execute_router)
+
+# Include the AI router under /copilot prefix
+from .routes.ai import router as ai_router
+
+app.include_router(ai_router, prefix="/copilot")
 
 # Include the chat history router
 from .routes.chat_history import router as chat_history_router

@@ -312,7 +312,7 @@ export interface StudyConceptParseResponse {
 
 export const parseStudyConcept = async (text: string): Promise<StudyConceptParseResponse> => {
   try {
-    const response = await api.post('/study/parse_concept', { text });
+    const response = await api.post('/copilot/parse_concept', { text });
     return response.data;
   } catch (error) {
     console.error('Error in parseStudyConcept:', error);
