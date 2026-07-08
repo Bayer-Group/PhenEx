@@ -8,6 +8,7 @@ import { TwoPanelCohortViewer } from '../CohortViewer/TwoPanelCohortViewer/TwoPa
 import { chatPanelDataService } from '../ChatPanel/ChatPanelDataService';
 import { useThreePanelCollapse } from '@/contexts/ThreePanelCollapseContext';
 import { PrefillProgressPanel, CohortPrefillItem } from './PrefillProgressPanel/PrefillProgressPanel';
+import { Modal } from '@/components/Modal/Modal';
 import type { StudyIntake } from './NewStudyWizard/StudyIntakeWizard';
 
 interface StudyViewerWrapperProps {
@@ -182,12 +183,17 @@ export const StudyViewerWrapper: FC<StudyViewerWrapperProps> = ({ data }) => {
 
   return (
     <div style={{ position: 'relative', height: '100%' }}>
-      {prefillCohorts.length > 0 && (
+      <Modal
+        isVisible={prefillCohorts.length > 0}
+        onClose={() => setPrefillCohorts([])}
+        closeOnBackgroundClick={false}
+        maxWidth="480px"
+      >
         <PrefillProgressPanel
           cohorts={prefillCohorts}
           onDismiss={() => setPrefillCohorts([])}
         />
-      )}
+      </Modal>
       <TwoPanelCohortViewer data={data} contentMode="study" />
     </div>
   );

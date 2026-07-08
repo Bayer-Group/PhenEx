@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './StudyExecutePanel.module.css';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-import { TabsWithDropdown } from '../../../components/ButtonsAndTabs/Tabs/TabsWithDropdown';
 import { StudyDataService } from '../../StudyViewer/StudyDataService';
-import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import {
   executeStudy,
   getStudyExecutions,
@@ -180,49 +178,41 @@ export const StudyExecutePanel: React.FC = () => {
     return `${date} — ${exec.status}`;
   };
 
-  const renderFilterDropdown = () => (
-    <div style={{ padding: '8px' }}>
-      <select
-        value={logFilter}
-        onChange={e => setLogFilter(e.target.value)}
-        style={{ width: '100%' }}
-      >
-        <option value="all">All Logs</option>
-        <option value="info">Info</option>
-        <option value="warning">Warnings</option>
-        <option value="error">Errors</option>
-        <option value="debug">Debug</option>
-      </select>
-    </div>
-  );
+
 
   const renderControls = () => {
-    const executingLabel = isExecuting ? 'Executing...' : 'Execute Study';
-    const tabs = [executingLabel, 'Copy Logs', 'Filter'];
-    const executeTabClass =
+    const executeStateClass =
       executionState === 'running' ? styles.executeRunning
       : executionState === 'success' ? styles.executeSuccess
       : executionState === 'failed' ? styles.executeFailed
       : '';
-    const handleTabChange = (index: number) => {
-      if (tabs[index] === executingLabel) handleExecute();
-      else if (tabs[index] === 'Copy Logs') {
-        const text = logs.map(l => l.message).join('\n');
-        navigator.clipboard.writeText(text).catch(() => {});
-      }
-    };
     return (
       <div className={styles.controls}>
-        <TabsWithDropdown
-          width={400}
-          height={25}
-          tabs={tabs}
-          onTabChange={handleTabChange}
-          dropdown_items={{ 2: renderFilterDropdown() }}
-          active_tab_index={-1}
-          outline_tab_index={0}
-          tabClassNames={[executeTabClass]}
-        />
+        <div className={styles.logToolbar}>
+          <select
+            className={styles.filterSelect}
+            value={logFilter}
+            onChange={e => setLogFilter(e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="info">Info</option>
+            <option value="warning">Warnings</option>
+            <option value="error">Errors</option>
+            <option value="debug">Debug</option>
+          </select>
+          <button
+            className={styles.copyBtn}
+            onClick={() => navigator.clipboard.writeText(logs.map(l => l.message).join('\n')).catch(() => {})}
+            title="Copy logs"
+          >Copy</button>
+        </div>
+        <button
+          className={`${styles.executeBtn} ${executeStateClass}`}
+          onClick={handleExecute}
+          disabled={isExecuting}
+        >
+          {isExecuting ? 'Running…' : 'Execute Study'}
+        </button>
       </div>
     );
   };

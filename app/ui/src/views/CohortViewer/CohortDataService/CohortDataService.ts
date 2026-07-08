@@ -109,6 +109,9 @@ export class CohortDataService {
   public removeNameChangeListener(listener: () => void) { return this._activeCohort.removeNameChangeListener(listener); }
   
   public updateCohortFromChat(response: any) { return this._activeCohort.updateCohortFromChat(response); }
+  public loadDiff(): Promise<void> { return this._activeCohort.loadDiff(); }
+  public computeDiff(basePhenotypes: any[]): void { return this._activeCohort.computeDiff(basePhenotypes); }
+  public clearDiff(): void { return this._activeCohort.clearDiff(); }
   public executeCohort(): Promise<void> { return this._activeCohort.executeCohort(); }
   public deleteCohort() { return this._activeCohort.deleteCohort(); }
   public filterType(type: string | string[]): void { return this._activeCohort.filterType(type); }

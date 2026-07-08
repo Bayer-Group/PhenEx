@@ -156,10 +156,8 @@ class DomainsMocker:
             # Fill NaT values with default max date, then take minimum (fully vectorized)
             death_dates = merged["DEATH_DATE"].fillna(default_max_date)
 
-            # Vectorized minimum operation
-            record_max_dates = pd.Series(death_dates).combine(
-                pd.Series([default_max_date] * count), min
-            )
+            # Element-wise minimum: cap each record's max date at death date
+            record_max_dates = death_dates.clip(upper=default_max_date)
 
         # Ensure valid date ranges (vectorized)
         invalid_mask = record_min_dates >= record_max_dates

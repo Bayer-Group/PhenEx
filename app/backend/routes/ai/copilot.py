@@ -2895,6 +2895,12 @@ async def update_context_only(
         # Update the context's phenotypes list directly
         if "phenotypes" in context.current_cohort:
             context.current_cohort["phenotypes"] = updated_phenotypes
+            # CRITICAL: also keep context.cohorts[cohort_id] in sync.
+            # Pydantic copies dicts on model construction so current_cohort is NOT
+            # the same object as cohorts[cohort_id]. The final diff loop reads from
+            # context.cohorts, so we must update it here or changes are lost.
+            if context.cohort_id in context.cohorts:
+                context.cohorts[context.cohort_id]["phenotypes"] = updated_phenotypes
             print(
                 f"🔄 UPDATE_CONTEXT: ✅ Updated context phenotypes to phenotype IDs: {[p.get('id') for p in updated_phenotypes]}"
             )

@@ -45,7 +45,7 @@ class ValueFilter(Filter):
             ), f"min_value must be less than or equal to max_value"
         self.min_value = min_value
         self.max_value = max_value
-        self.column_name = column_name
+        self.column_name = column_name if column_name is not None else "VALUE"
         super(ValueFilter, self).__init__()
 
     def to_short_string(self) -> str:

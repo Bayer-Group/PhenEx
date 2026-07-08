@@ -22,6 +22,7 @@ import { CallToActionNavBar } from '../../../components/PhenExNavBar/CallToActio
 import { NavBarMenuProvider } from '../../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { CohortRightPanel } from '../CohortRightPanel/CohortRightPanel';
+import { chatPanelDataService } from '../../ChatPanel/ChatPanelDataService';
 import { useReportMode } from '../../../contexts/ReportModeContext';
 import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 import styles from './TwoPanelCohortViewer.module.css';
@@ -184,6 +185,22 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   React.useEffect(() => {
     service.setPanelRef(panelRef);
   }, [service]);
+
+  // Keep chatPanelDataService in study mode whenever a cohort is open.
+  // study_id is always defined for cohorts in this app; cohort_id is passed as a hint.
+  useEffect(() => {
+    const cohortService = CohortDataService.getInstance();
+    const syncChatMode = () => {
+      const studyId = cohortService.cohort_data?.study_id as string | undefined;
+      const cohortId = cohortService.cohort_data?.id as string | undefined;
+      if (studyId) {
+        chatPanelDataService.setStudyMode(studyId, cohortId);
+      }
+    };
+    syncChatMode();
+    cohortService.addListener(syncChatMode);
+    return () => cohortService.removeListener(syncChatMode);
+  }, []);
 
   // Handle right panel collapse events from TwoPanelView collapse button
   const handleRightPanelCollapse = (isCollapsed: boolean) => {
@@ -403,7 +420,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   renderPopoverContentRef.current = renderPopoverContent;
   
   const renderSlideoverPanel = () => {
-    return <CohortRightPanel contentMode={contentMode} />;
+    return null;
   };
 
   return (

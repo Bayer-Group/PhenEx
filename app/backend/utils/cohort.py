@@ -31,7 +31,7 @@ def transform_value_filter_for_ui(value_filter: Dict) -> Dict:
 
     result = {
         "class_name": "ValueFilter",
-        "column_name": value_filter.get("column_name", ""),
+        "column_name": value_filter.get("column_name") or "VALUE",
     }
 
     # Transform min_value

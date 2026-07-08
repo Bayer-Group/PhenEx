@@ -4,6 +4,8 @@ import {
   updateCohort,
   deleteCohort,
   updateCohortDatabaseConfig,
+  getUserCohort,
+  getPublicCohort,
 } from '../../../api/text_to_cohort/route';
 import { defaultColumns, componentPhenotypeColumns } from './CohortColumnDefinitions';
 import { createID } from '../../../types/createID';
@@ -109,6 +111,54 @@ export class CohortModel {
 
   private _currentFilter: string[] = ['entry', 'inclusion', 'exclusion'];
   private _showComponents: boolean = true;
+  private _diff_map: Map<string, 'added' | 'modified' | 'deleted'> = new Map();
+  private _deleted_phenotypes: any[] = [];
+
+  public computeDiff(basePhenotypes: any[]): void {
+    this._diff_map.clear();
+    this._deleted_phenotypes = [];
+    const baseMap = new Map(basePhenotypes.map((p: any) => [p.id, p]));
+    const provisionalIds = new Set((this._cohort_data.phenotypes || []).map((p: any) => p.id));
+    for (const p of (this._cohort_data.phenotypes || [])) {
+      if (!baseMap.has(p.id)) {
+        this._diff_map.set(p.id, 'added');
+      } else {
+        const base = baseMap.get(p.id)!;
+        if (base.name !== p.name || base.type !== p.type || base.class_name !== p.class_name) {
+          this._diff_map.set(p.id, 'modified');
+        }
+      }
+    }
+    for (const [id, basePhenotype] of baseMap) {
+      if (!provisionalIds.has(id)) {
+        this._deleted_phenotypes.push({ ...basePhenotype, colorCellBackground: true, _ai_diff: 'deleted' });
+      }
+    }
+    this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners();
+  }
+
+  public clearDiff(): void {
+    this._diff_map.clear();
+    this._deleted_phenotypes = [];
+  }
+
+  public async loadDiff(): Promise<void> {
+    const cohortId = this._cohort_data?.id;
+    if (!cohortId || this._cohort_data.is_provisional !== true) return;
+    try {
+      let baseResponse: any;
+      try {
+        baseResponse = await getUserCohort(cohortId, false);
+      } catch {
+        baseResponse = await getPublicCohort(cohortId, false);
+      }
+      const basePhenotypes = baseResponse?.cohort_data?.phenotypes ?? [];
+      this.computeDiff(basePhenotypes);
+    } catch (e) {
+      console.warn('[CohortModel] Could not load base version for diff:', e);
+    }
+  }
 
   public tableDataFromCohortData(): TableData {
     let filteredPhenotypes = this._cohort_data.phenotypes || [];
@@ -138,10 +188,16 @@ export class CohortModel {
     const phenotypesWithColorSettings = filteredPhenotypes.map((phenotype: any) => ({
       ...phenotype,
       colorCellBackground: true,
+      _ai_diff: this._diff_map.get(phenotype.id) ?? undefined,
     }));
 
+    // Append deleted phenotypes so they appear as struck-through rows
+    const filteredDeleted = this._deleted_phenotypes.filter((p: any) =>
+      this._currentFilter.length === 0 || this._currentFilter.includes(p.type)
+    );
+
     return {
-      rows: phenotypesWithColorSettings,
+      rows: [...phenotypesWithColorSettings, ...filteredDeleted],
       columns: this.columns,
     };
   }

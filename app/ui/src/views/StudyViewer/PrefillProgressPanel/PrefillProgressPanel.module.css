@@ -1,45 +1,32 @@
 .panel {
-  position: absolute;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 200;
-  background: var(--background-color, #f8f9fa);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  padding: 16px 20px;
-  min-width: 280px;
-  max-width: 400px;
+  padding: 8px 4px;
+  min-width: 340px;
   font-family: IBMPlexSans, sans-serif;
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
 }
 
 .title {
   font-family: 'IBMPlexSans-semibold', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--color-accent-bright);
+  margin: 0 0 16px;
 }
 
 .dismissBtn {
-  background: none;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  color: var(--text-color-secondary);
-  font-size: 12px;
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 10px;
+  background: var(--color-accent-bright);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
   cursor: pointer;
-  padding: 3px 10px;
 }
 
 .dismissBtn:hover {
-  border-color: var(--color-accent-bright);
-  color: var(--text-color-primary);
+  opacity: 0.85;
 }
 
 .cohortList {
@@ -120,12 +107,4 @@
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
-}
-
-.hint {
-  font-size: 11px;
-  color: var(--text-color-secondary);
-  margin: 12px 0 0;
-  opacity: 0.7;
-  text-align: center;
 }

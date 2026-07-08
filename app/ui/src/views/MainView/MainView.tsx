@@ -15,6 +15,8 @@ import styles from './MainView.module.css';
 import { StudyViewerWrapper } from '../StudyViewer/StudyViewerWrapper';
 import { ReportModeProvider } from '../../contexts/ReportModeContext';
 import { ThreePanelCollapseProvider } from '../../contexts/ThreePanelCollapseContext';
+import { UnifiedRightPanel } from './UnifiedRightPanel/UnifiedRightPanel';
+import { CohortRightPanel } from '../CohortViewer/CohortRightPanel/CohortRightPanel';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -212,15 +214,28 @@ export const MainView = () => {
             <ReportModeProvider value={inReportView} onValueChange={setInReportView}>
               {renderView()}
             </ReportModeProvider>
-          <div style={{ position: 'absolute', bottom: '10px', right: '25px', zIndex: 100, display: 'flex', flexDirection: 'row', gap: '20px' }}>
-            <ActionNavBar height={44} showReport={inReportView} onShowReportChange={setInReportView} onExecute={() => { /* Add your execute logic here */ }} />
-          </div>
-        </RightPanel>
-        <ChatPanel
-          onTextEnter={text => {
-            // Handle the text input here
-          }}
-        ></ChatPanel>
+          </RightPanel>
+        <UnifiedRightPanel
+          chatContent={
+            <ChatPanel
+              onTextEnter={text => {
+                // Handle the text input here
+              }}
+            />
+          }
+          studyContent={
+            currentView.viewType === ViewType.StudyViewer ||
+            currentView.viewType === ViewType.CohortDefinition ||
+            currentView.viewType === ViewType.PublicCohortDefinition ||
+            currentView.viewType === ViewType.NewCohort
+              ? <CohortRightPanel contentMode={
+                  currentView.viewType === ViewType.StudyViewer ||
+                  currentView.viewType === ViewType.NewStudy
+                    ? 'study' : 'cohort'
+                } />
+              : undefined
+          }
+        />
         </ThreePanelView>
       </ThreePanelCollapseProvider>
     </div>

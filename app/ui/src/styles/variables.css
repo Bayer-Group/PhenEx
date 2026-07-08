@@ -228,3 +228,19 @@ ol li {
 ul {
   padding-left: 20px;
 }
+
+/* AI diff row highlighting */
+.ai-diff-added .ag-cell {
+  background-color: rgba(76, 175, 110, 0.15) !important;
+  border-left: 2px solid #4caf6e !important;
+}
+.ai-diff-modified .ag-cell {
+  background-color: rgba(255, 193, 7, 0.12) !important;
+  border-left: 2px solid #ffc107 !important;
+}
+.ai-diff-deleted .ag-cell {
+  background-color: rgba(224, 108, 108, 0.12) !important;
+  border-left: 2px solid #e06c6c !important;
+  opacity: 0.7;
+  text-decoration: line-through;
+}

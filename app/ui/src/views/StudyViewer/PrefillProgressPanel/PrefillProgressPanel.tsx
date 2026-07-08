@@ -24,14 +24,9 @@ export const PrefillProgressPanel: FC<PrefillProgressPanelProps> = ({ cohorts, o
 
   return (
     <div className={styles.panel}>
-      <div className={styles.header}>
-        <span className={styles.title}>
-          {allDone ? '✓ Prefill complete' : '✦ AI prefilling study…'}
-        </span>
-        {allDone && (
-          <button className={styles.dismissBtn} onClick={onDismiss}>Dismiss</button>
-        )}
-      </div>
+      <p className={styles.title}>
+        {allDone ? '✓ Prefill complete' : '✦ AI prefilling study…'}
+      </p>
 
       <ul className={styles.cohortList}>
         {cohorts.map((c, i) => (
@@ -44,7 +39,9 @@ export const PrefillProgressPanel: FC<PrefillProgressPanelProps> = ({ cohorts, o
         ))}
       </ul>
 
-      <p className={styles.hint}>See chat panel for details</p>
+      {allDone && (
+        <button className={styles.dismissBtn} onClick={onDismiss}>Done</button>
+      )}
     </div>
   );
 };

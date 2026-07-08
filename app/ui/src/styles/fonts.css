@@ -55,8 +55,16 @@
 }
 
 @font-face {
+  font-family: 'IBMPlexSans-semibold';
+  src: url('../assets/fonts/IBMPlexSans-VariableFont_wdth,wght.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
   font-family: 'NotoSansMono';
-  src: url('../assets/fonts/NotoSansMono-Regular.ttf') format('truetype');
+  src: url('../assets/fonts/NotoSansMono-VariableFont_wdth,wght.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
+

@@ -209,7 +209,7 @@ export const TwoPanelView = React.forwardRef<
     >
       <div
         className={`${styles.rightPanel} ${isSlideoverCollapsed ? styles.leftCollapsed : ''}`}
-        style={{ width: isSlideoverCollapsed ? '100%' : leftWidth }}
+        style={{ width: (!slideoverContent || isSlideoverCollapsed) ? '100%' : leftWidth }}
       >
         {leftContent}
       </div>

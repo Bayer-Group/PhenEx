@@ -1,21 +1,6 @@
 @keyframes blinkYellow {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(234, 179, 8, 0); border-color: rgba(234, 179, 8, 0.5) !important; }
-  50% { box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.7); border-color: rgba(234, 179, 8, 1) !important; }
-}
-
-.executeRunning {
-  border: 1.5px solid rgba(234, 179, 8, 1) !important;
-  animation: blinkYellow 1s ease-in-out infinite !important;
-}
-
-.executeSuccess {
-  border: 1.5px solid rgb(34, 197, 94) !important;
-  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.4) !important;
-}
-
-.executeFailed {
-  border: 1.5px solid rgb(239, 68, 68) !important;
-  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.4) !important;
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .container {
@@ -26,10 +11,76 @@
   min-height: 0;
 }
 
+/* ── Controls area (toolbar + execute button) ── */
 .controls {
-  margin-left: 12px;
-  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 16px 12px;
   flex-shrink: 0;
+}
+
+.logToolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filterSelect {
+  flex: 1;
+  font-size: 11px;
+  font-family: 'IBMPlexSans-regular';
+  padding: 3px 6px;
+  border: 1px solid var(--line-color);
+  border-radius: 4px;
+  background: var(--background-color);
+  color: var(--color-accent-bright);
+  cursor: pointer;
+}
+
+.copyBtn {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-family: 'IBMPlexSans-regular';
+  padding: 3px 10px;
+  border: 1px solid var(--line-color);
+  border-radius: 4px;
+  background: none;
+  color: var(--color-accent-bright);
+  cursor: pointer;
+}
+.copyBtn:hover { background: var(--color-accent-hover); }
+
+.executeBtn {
+  width: 100%;
+  padding: 9px 0;
+  background: var(--color-accent-bright);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'IBMPlexSans-semibold';
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.executeBtn:hover:not(:disabled) { opacity: 0.85; }
+.executeBtn:disabled { opacity: 0.5; cursor: default; }
+
+.executeRunning {
+  background: transparent;
+  border: 1.5px solid rgba(234, 179, 8, 1);
+  color: rgba(234, 179, 8, 1);
+  animation: blinkYellow 1s ease-in-out infinite;
+}
+.executeSuccess {
+  background: transparent;
+  border: 1.5px solid rgb(34, 197, 94);
+  color: rgb(34, 197, 94);
+}
+.executeFailed {
+  background: transparent;
+  border: 1.5px solid rgb(239, 68, 68);
+  color: rgb(239, 68, 68);
 }
 
 .content {
@@ -45,32 +96,29 @@
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 10px;
-  font-family: 'IBMPlexSans-Regular';
-  font-size: 12px;
-  color: black;
+  padding: 8px 16px;
+  font-family: 'IBMPlexMono', monospace;
+  font-size: 11px;
+  color: var(--color-accent-bright);
   box-sizing: border-box;
 }
 
 .emptyState {
-  color: #888;
-  text-align: left;
-  font-size: 18px;
-  font-family: 'IBMPlexSans-bold';
+  opacity: 0.3;
 }
 
 .logEntry {
   display: flex;
   gap: 6px;
   margin-bottom: 2px;
-  line-height: 1.4;
+  line-height: 1.5;
   word-break: break-word;
 }
 
 .timestamp {
-  color: #999;
+  opacity: 0.4;
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .logMessage {
@@ -78,33 +126,18 @@
   white-space: pre-wrap;
 }
 
-.normalLog { color: #333; }
-.infoLog   { color: #1a7ad4; }
+.normalLog  { color: var(--color-accent-bright); }
+.infoLog    { color: #1a7ad4; }
 .warningLog { color: #c47700; }
-.errorLog  { color: #c0392b; }
-.completeLog { color: #27ae60; font-weight: 600; }
-
-.reportLink {
-  padding: 8px 12px;
-  border-bottom: 1px solid #e0e0e0;
-  flex-shrink: 0;
-}
-
-.reportLink a {
-  color: var(--primary-color, #2563eb);
-  font-size: 13px;
-  text-decoration: none;
-}
-
-.reportLink a:hover {
-  text-decoration: underline;
-}
+.errorLog   { color: #c0392b; }
+.completeLog { color: #27ae60; font-family: 'IBMPlexSans-semibold'; }
 
 /* ── Past Runs bar ── */
 .runsBar {
   position: relative;
-  padding: 6px 12px;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 6px 16px;
+  border-top: 1px solid var(--line-color);
+  border-bottom: 1px solid var(--line-color);
   flex-shrink: 0;
 }
 
@@ -115,22 +148,21 @@
 }
 
 .runsDropdownTrigger {
-  font-size: 12px;
+  font-size: 11px;
   font-family: 'IBMPlexSans-Regular';
   background: none;
-  border: 1px solid #ccc;
+  border: 1px solid var(--line-color);
   border-radius: 4px;
   padding: 3px 8px;
   cursor: pointer;
-  color: #333;
+  color: var(--color-accent-bright);
   flex: 1;
   text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.runsDropdownTrigger:hover { background: #f5f5f5; }
+.runsDropdownTrigger:hover { background: var(--color-accent-hover); }
 
 .runsActions {
   display: flex;
@@ -140,17 +172,16 @@
 
 .runsActions button, .deleteBtn {
   font-size: 11px;
-  font-family: 'IBMPlexSans-Regular';
+  font-family: 'IBMPlexSans-regular';
   background: none;
-  border: 1px solid #ccc;
+  border: 1px solid var(--line-color);
   border-radius: 4px;
   padding: 2px 6px;
   cursor: pointer;
-  color: #333;
+  color: var(--color-accent-bright);
   white-space: nowrap;
 }
-
-.runsActions button:hover { background: #f0f0f0; }
+.runsActions button:hover { background: var(--color-accent-hover); }
 
 .deleteBtn { color: #c0392b; border-color: #e0b0b0; }
 .deleteBtn:hover { background: #fdecea; }
@@ -158,12 +189,12 @@
 .runsDropdownList {
   position: absolute;
   top: 100%;
-  left: 12px;
-  right: 12px;
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  left: 16px;
+  right: 16px;
+  background: var(--background-color);
+  border: 1px solid var(--line-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   z-index: 100;
   max-height: 220px;
   overflow-y: auto;
@@ -175,14 +206,13 @@
   justify-content: space-between;
   padding: 6px 10px;
   cursor: pointer;
-  font-size: 12px;
-  font-family: 'IBMPlexSans-Regular';
-  border-bottom: 1px solid #f0f0f0;
+  font-size: 11px;
+  font-family: 'IBMPlexSans-regular';
+  border-bottom: 1px solid var(--line-color);
 }
-
 .runsDropdownItem:last-child { border-bottom: none; }
-.runsDropdownItem:hover { background: #f5f5f5; }
-.runsDropdownItemActive { background: #eef4ff; }
+.runsDropdownItem:hover { background: var(--color-accent-hover); }
+.runsDropdownItemActive { background: color-mix(in srgb, var(--color-accent-bright) 6%, transparent); }
 
 .runsDropdownLabel {
   flex: 1;
@@ -192,9 +222,9 @@
 }
 
 .logFileContent {
-  font-family: 'IBMPlexMono', monospace;
+  font-family: 'NotoSansMono', monospace;
   font-size: 11px;
-  color: #333;
+  color: var(--color-accent-bright);
   white-space: pre-wrap;
   word-break: break-word;
   margin: 0;
