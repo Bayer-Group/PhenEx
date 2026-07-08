@@ -1,6 +1,6 @@
 import { ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP, GRID_ROW_GAP } from './sectionLayoutStore';
-import { cleanupGridLayout } from './CleanupGridLayout';
+import { cleanupGridLayout, resolveWithAnchor } from './CleanupGridLayout';
 import { useGridSelection, type GridSelection } from './GridSelection';
 import { dropSelectionIntoGrid } from './DropSelectionLayout';
 import { GridItemContext } from './GridItemContext';
@@ -316,7 +316,17 @@ export function SectionGrid({
       }
 
       setDraft((current) => {
-        if (current) commit(cleanupGridLayout(current, columns));
+        if (current) {
+          if (it.type === 'move' && it.moved) {
+            // Keep the dropped item at the mouse cell and push the tiles it
+            // lands on downward to make room — so it reaches the pointer
+            // instead of sliding away from the drop position.
+            commit(resolveWithAnchor(current, it.key, columns));
+          } else {
+            // Resize: just resolve any overlap the grown item introduced.
+            commit(cleanupGridLayout(current, columns));
+          }
+        }
         return null;
       });
       // A pure click (no drag) toggles selection.

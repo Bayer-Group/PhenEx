@@ -75,6 +75,41 @@ export function cleanupGridLayout(layout: GridItem[], columns: number): GridItem
 }
 
 /**
+ * Resolve overlaps while pinning one item in place.
+ *
+ * The `anchorKey` item stays exactly where it was dropped (the mouse cell).
+ * Another tile is only pushed **down** by the anchor when the anchor reaches
+ * *above that tile's vertical midline* — i.e. you have dragged past its middle.
+ * A tile the anchor merely clips from below (its own top half still clear) is
+ * left in place, so items aren't shoved down on the slightest touch. Overlaps
+ * between the other (non-anchor) tiles are always resolved downward.
+ *
+ * Columns are clamped; x is otherwise untouched. The original array order is
+ * preserved so React reconciliation stays stable.
+ */
+export function resolveWithAnchor(layout: GridItem[], anchorKey: string, columns: number): GridItem[] {
+  const anchorSrc = layout.find((it) => it.key === anchorKey);
+  if (!anchorSrc) return cleanupGridLayout(layout, columns);
+
+  const anchor: GridItem = { ...anchorSrc, w: Math.min(anchorSrc.w, columns) };
+  const placed: GridItem[] = [anchor];
+
+  for (const source of readingOrder(layout.filter((it) => it.key !== anchorKey))) {
+    const item: GridItem = { ...source, w: Math.min(source.w, columns) };
+    // The anchor displaces this tile only if it crosses the tile's midline.
+    const anchorDisplaces = anchor.y < source.y + source.h / 2;
+    const blocks = (p: GridItem) => overlaps(item, p) && (p.key !== anchorKey || anchorDisplaces);
+    for (let hit = placed.find(blocks); hit; hit = placed.find(blocks)) {
+      item.y = hit.y + hit.h;
+    }
+    placed.push(item);
+  }
+
+  const byKey = new Map(placed.map((it) => [it.key, it]));
+  return layout.map((it) => byKey.get(it.key) ?? it);
+}
+
+/**
  * Apply a cohort-count change to a layout by the row **delta** it produces,
  * preserving each cell's own vertical scale: every tile keeps its current
  * height and is grown/shrunk by `deltaRows`, and shifted in `y` by the delta
