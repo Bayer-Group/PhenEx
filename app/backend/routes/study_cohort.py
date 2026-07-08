@@ -1,7 +1,6 @@
 from typing import Dict
 from fastapi import APIRouter, Body, HTTPException, Request
 import logging
-import os
 
 router = APIRouter()
 
@@ -187,57 +186,3 @@ async def delete_cohort(request: Request, study_id: str, cohort_id: str):
         )
 
 
-# -- PUBLIC COHORT ENDPOINTS --
-# Public cohorts are a special case: callers do not need to know the study_id
-# (demo/example content accessed without authentication).
-
-@router.get("/cohorts/public", tags=["cohort"])
-async def get_all_public_cohorts():
-    """
-    Retrieve all public cohorts available to anonymous users.
-
-    Raises:
-    - 500: If PUBLIC_USER_ID environment variable is not set or database error occurs
-    """
-    try:
-        public_user_id = os.getenv("PUBLIC_USER_ID")
-        if not public_user_id:
-            raise HTTPException(
-                status_code=500, detail="PUBLIC_USER_ID environment variable not set."
-            )
-        cohorts = await db_manager.get_all_cohorts_for_user(public_user_id)
-        return cohorts
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to retrieve public cohorts: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve public cohorts.")
-
-
-@router.get("/cohort/public", tags=["cohort"])
-async def get_public_cohort(cohort_id: str):
-    """
-    Retrieve a public cohort by its ID.
-
-    Query Parameters:
-    - cohort_id (str): The unique identifier of the cohort to retrieve
-
-    Raises:
-    - 404: If cohort is not found in public user account
-    - 500: If PUBLIC_USER_ID environment variable is not set or database error occurs
-    """
-    try:
-        public_user_id = os.getenv("PUBLIC_USER_ID")
-        if not public_user_id:
-            raise HTTPException(
-                status_code=500, detail="PUBLIC_USER_ID environment variable not set."
-            )
-        cohort = await db_manager.get_cohort_for_user(public_user_id, cohort_id)
-        if not cohort:
-            raise HTTPException(status_code=404, detail="Cohort not found for public user")
-        return cohort
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error retrieving cohort for public user: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve cohort for public user")

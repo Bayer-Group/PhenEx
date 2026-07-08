@@ -2,7 +2,7 @@ import { FC, useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './CohortViewer.module.css';
 import { CohortDataService } from './CohortDataService/CohortDataService';
-import { getUserCohort, getPublicCohort, getStudy } from '../../api/text_to_cohort/route';
+import { getUserCohort, getStudy } from '../../api/text_to_cohort/route';
 import { PopoverHeader } from '../../components/PopoverHeader/PopoverHeader';
 import { CohortTable } from './CohortTable/CohortTable';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
@@ -69,15 +69,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
         if (typeof data === 'string') {
           try {
             let cohortData;
-            try {
-              if (urlStudyId) {
-                cohortData = await getUserCohort(urlStudyId, data);
-              } else {
-                cohortData = await getPublicCohort(data);
-              }
-            } catch (error) {
-              cohortData = await getPublicCohort(data);
-            }
+            cohortData = await getUserCohort(urlStudyId!, data);
             
             // Fetch the study data if study_id exists
             if (cohortData.study_id) {

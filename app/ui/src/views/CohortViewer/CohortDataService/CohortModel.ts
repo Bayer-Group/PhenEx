@@ -5,7 +5,6 @@ import {
   deleteCohort,
   updateCohortDatabaseConfig,
   getUserCohort,
-  getPublicCohort,
 } from '../../../api/text_to_cohort/route';
 
 import { defaultColumns, componentPhenotypeColumns } from './CohortColumnDefinitions';
@@ -147,18 +146,9 @@ export class CohortModel {
   public async loadDiff(): Promise<void> {
     const cohortId = this._cohort_data?.id;
     const studyId = this._cohort_data?.study_id;
-    if (!cohortId || this._cohort_data.is_provisional !== true) return;
+    if (!cohortId || !studyId || this._cohort_data.is_provisional !== true) return;
     try {
-      let baseResponse: any;
-      try {
-        if (studyId) {
-          baseResponse = await getUserCohort(studyId, cohortId, false);
-        } else {
-          baseResponse = await getPublicCohort(cohortId, false);
-        }
-      } catch {
-        baseResponse = await getPublicCohort(cohortId, false);
-      }
+      const baseResponse = await getUserCohort(studyId, cohortId, false);
       const basePhenotypes = baseResponse?.cohort_data?.phenotypes ?? [];
       this.computeDiff(basePhenotypes);
     } catch (e) {

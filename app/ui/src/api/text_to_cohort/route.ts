@@ -1,34 +1,5 @@
 import { api, authFetch, BACKEND_URL } from '../httpClient';
 
-export const getPublicCohorts = async () => {
-  try {
-    const response = await api.get('/cohorts/public');
-    return response.data;
-  } catch (error) {
-    console.error('Error in getPublicCohorts:', error);
-    throw error;
-  }
-};
-
-export const getPublicCohort = async (cohort_id: string, provisional: boolean = false) => {
-  try {
-    const response = await api.get('/cohort/public', {
-      params: { cohort_id, provisional },
-    });
-
-    // Parse the cohort_data field if it exists and is a string
-    if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
-      response.data.cohort_data = JSON.parse(response.data.cohort_data);
-    }
-
-    // Return the full response data (same shape as getUserCohort) so that
-    // fields like study_id are available to the caller.
-    return response.data;
-  } catch (error) {
-    console.error('Error in getPublicCohort:', error);
-    throw error;
-  }
-};
 
 export const getUserCohort = async (study_id: string, cohort_id: string, provisional: boolean = false) => {
   try {

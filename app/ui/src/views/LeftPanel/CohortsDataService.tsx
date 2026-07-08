@@ -1,6 +1,5 @@
 import { createID } from '../../types/createID';
 import { 
-  getPublicCohorts, 
   createCohort,
   updateCohort,
   getUserStudies,
@@ -47,7 +46,9 @@ export class CohortsDataService {
   public async publicCohortNamesAndIds() {
     if (this._publicCohortNamesAndIds === null) {
       try {
-        this._publicCohortNamesAndIds = await getPublicCohorts();
+        const studies = await this.getPublicStudies();
+        const cohortArrays = await Promise.all(studies.map(s => getCohortsForStudy(s.id)));
+        this._publicCohortNamesAndIds = cohortArrays.flat();
       } catch (error) {
         console.warn('🚨 Failed to fetch public cohorts, likely auth not ready:', error);
         this._publicCohortNamesAndIds = [];

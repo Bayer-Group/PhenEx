@@ -3,7 +3,6 @@ import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataS
 import {
   suggestChangesForStudy,
   getUserCohort,
-  getPublicCohort,
   acceptChanges,
   rejectChanges,
 } from '../../api/text_to_cohort/route';
@@ -448,23 +447,9 @@ class ChatPanelDataService {
       } else if (this.cohortDataService.cohort_data?.id) {
         try {
           console.log('Fetching updated cohort after AI changes...');
-          let response: any;
-          try {
-            const studyId = this.cohortDataService.cohort_data.study_id;
-            const cohortId = this.cohortDataService.cohort_data.id;
-            if (studyId) {
-              response = await getUserCohort(studyId, cohortId, true);
-            } else {
-              response = await getPublicCohort(cohortId, true);
-            }
-          } catch (userCohortError: any) {
-            const status = userCohortError?.response?.status ?? userCohortError?.status;
-            if (status === 404) {
-              response = await getPublicCohort(this.cohortDataService.cohort_data.id, true);
-            } else {
-              throw userCohortError;
-            }
-          }
+          const studyId = this.cohortDataService.cohort_data.study_id;
+          const cohortId = this.cohortDataService.cohort_data.id;
+          const response = await getUserCohort(studyId, cohortId, true);
           this.cohortDataService.updateCohortFromChat(response);
         } catch (error) {
           console.error('Failed to fetch updated cohort after AI changes:', error);
