@@ -339,11 +339,14 @@ export class CohortsDataService {
     };
 
     // Optimistically add to cache for immediate UI update
-    const cachedCohorts = this._studyCohortsCache.get(studyId);
-    if (cachedCohorts) {
-      cachedCohorts.push(newCohortData);
-      this.notifyListeners(); // UI updates immediately
+    let cachedCohorts = this._studyCohortsCache.get(studyId);
+    if (!cachedCohorts) {
+      // Initialize cache if it doesn't exist (e.g., first cohort in a new study)
+      cachedCohorts = [];
+      this._studyCohortsCache.set(studyId, cachedCohorts);
     }
+    cachedCohorts.push(newCohortData);
+    this.notifyListeners(); // UI updates immediately - always notify, even for first cohort
 
     // Prepare backend payload
     const backendPayload = {

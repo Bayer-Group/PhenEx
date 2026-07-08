@@ -471,12 +471,24 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
         return;
       }
 
-      const { createAndNavigateToNewCohort } = await import('@/views/LeftPanel/studyNavigationHelpers');
-      await createAndNavigateToNewCohort(studyId, navigate);
+      // Use the createCohort helper instead of createAndNavigateToNewCohort
+      // since we're already on the study page and don't want to navigate away
+      const { createCohort } = await import('@/views/LeftPanel/studyNavigationHelpers');
+      const newCohortData = await createCohort(studyId);
 
-      // Explicitly refresh cohort definitions in this view
-      const definitions = studyDataService.cohort_definitions_service.getCohortDefinitions();
-      setCohortDefinitions(definitions);
+      if (newCohortData) {
+        console.log('✅ Cohort created:', newCohortData.id);
+        
+        // Force refresh the study data service to pick up the new cohort
+        await studyDataService.refreshStudyData();
+        
+        // Explicitly refresh cohort definitions in this view
+        const definitions = studyDataService.cohort_definitions_service.getCohortDefinitions();
+        setCohortDefinitions(definitions);
+        
+        // Stay in study view - don't navigate away
+        // The user can click on the cohort card if they want to edit it
+      }
     } catch (error) {
       console.error('Failed to create cohort:', error);
     }
