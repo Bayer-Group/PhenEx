@@ -304,6 +304,32 @@ export const updateStudyDisplayOrder = async (study_id: string, display_order: n
   }
 };
 
+export interface CohortIntake {
+  name: string;
+  description: string;
+  entry_criterion: string;
+  inclusions: string[];
+  exclusions: string[];
+}
+
+export interface StudyConceptParseResponse {
+  study_name: string;
+  study_type: string;
+  raw_description: string;
+  codelist_notes: string;
+  cohorts: CohortIntake[];
+}
+
+export const parseStudyConcept = async (text: string): Promise<StudyConceptParseResponse> => {
+  try {
+    const response = await api.post('/study/parse_concept', { text });
+    return response.data;
+  } catch (error) {
+    console.error('Error in parseStudyConcept:', error);
+    throw error;
+  }
+};
+
 export const executeStudy = async (
   studyId: string,
   onEvent?: (event: { type: 'log' | 'error' | 'complete'; message?: string; execution_id?: string }) => void,

@@ -32,9 +32,10 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
 
   const [leftWidth, setLeftWidth] = useState(getInitialLeftWidth);
   const [rightWidth, setRightWidth] = useState(initalSizeRight);
-  const { isLeftPanelShown, setLeftPanelShown, toggleLeftPanel } = useThreePanelCollapse();
+  const { isLeftPanelShown, setLeftPanelShown, toggleLeftPanel, isRightPanelShown, setRightPanelShown } = useThreePanelCollapse();
   const isLeftCollapsed = !isLeftPanelShown;
-  const [isRightCollapsed, setIsRightCollapsed] = useState(true);
+  const isRightCollapsed = !isRightPanelShown;
+  const setIsRightCollapsed = (collapsed: boolean) => setRightPanelShown(!collapsed);
 
   const activeDividerRef = useRef<'left' | 'right' | null>(null);
   const leftCollapsedRef = useRef(isLeftCollapsed);

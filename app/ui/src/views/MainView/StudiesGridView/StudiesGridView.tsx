@@ -5,6 +5,8 @@ import { CohortsDataService, StudyData } from '../../LeftPanel/CohortsDataServic
 import { AuthContext } from '@/auth/AuthProvider';
 import { deleteStudy, createDemoStudy } from '@/api/text_to_cohort/route';
 import { LoginModal } from '../../../components/Form';
+import { StudyIntakeWizard } from '../../StudyViewer/NewStudyWizard/StudyIntakeWizard';
+import type { StudyIntake } from '../../StudyViewer/NewStudyWizard/StudyIntakeWizard';
 
 export const StudiesGridView = () => {
   const [userStudies, setUserStudies] = useState<StudyData[]>([]);
@@ -13,6 +15,7 @@ export const StudiesGridView = () => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteConfirmStudy, setDeleteConfirmStudy] = useState<StudyData | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [showIntakeWizard, setShowIntakeWizard] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
@@ -75,6 +78,21 @@ export const StudiesGridView = () => {
   };
 
   const handleCreateFirstStudy = async () => {
+    setShowIntakeWizard(true);
+  };
+
+  const handleIntakeFinish = async (intake: StudyIntake, action: 'shell' | 'ai') => {
+    setShowIntakeWizard(false);
+    try {
+      const { createStudyFromIntake } = await import('@/views/LeftPanel/studyNavigationHelpers');
+      await createStudyFromIntake(intake, action, navigate);
+    } catch (error) {
+      console.error('Failed to create study from intake:', error);
+    }
+  };
+
+  const handleSkipIntake = async () => {
+    setShowIntakeWizard(false);
     try {
       const { createAndNavigateToNewStudy } = await import('@/views/LeftPanel/studyNavigationHelpers');
       await createAndNavigateToNewStudy(navigate);
@@ -301,6 +319,14 @@ export const StudiesGridView = () => {
           </div>
         </div>
       )}
+
+      {/* Study Intake Wizard */}
+      <StudyIntakeWizard
+        isVisible={showIntakeWizard}
+        onClose={() => setShowIntakeWizard(false)}
+        onFinish={handleIntakeFinish}
+        onSkip={handleSkipIntake}
+      />
 
       {/* Login Modal */}
       <LoginModal

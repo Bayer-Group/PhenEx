@@ -7,12 +7,17 @@ interface ThreePanelCollapseContextType {
   isLeftPanelShown: boolean;
   setLeftPanelShown: (shown: boolean) => void;
   toggleLeftPanel: () => void;
+  /** True = right (chat) panel shown, false = collapsed */
+  isRightPanelShown: boolean;
+  setRightPanelShown: (shown: boolean) => void;
 }
 
 const ThreePanelCollapseContext = createContext<ThreePanelCollapseContextType>({
   isLeftPanelShown: true,
   setLeftPanelShown: () => {},
   toggleLeftPanel: () => {},
+  isRightPanelShown: false,
+  setRightPanelShown: () => {},
 });
 
 export const useThreePanelCollapse = () => useContext(ThreePanelCollapseContext);
@@ -34,6 +39,7 @@ interface ThreePanelCollapseProviderProps {
 
 export const ThreePanelCollapseProvider: React.FC<ThreePanelCollapseProviderProps> = ({ children, storageKey = DEFAULT_STORAGE_KEY }) => {
   const [isLeftPanelShown, setLeftPanelShown] = useState(() => getInitialShown(storageKey));
+  const [isRightPanelShown, setRightPanelShown] = useState(false);
 
   useEffect(() => {
     try {
@@ -47,7 +53,7 @@ export const ThreePanelCollapseProvider: React.FC<ThreePanelCollapseProviderProp
 
   return (
     <ThreePanelCollapseContext.Provider
-      value={{ isLeftPanelShown, setLeftPanelShown, toggleLeftPanel }}
+      value={{ isLeftPanelShown, setLeftPanelShown, toggleLeftPanel, isRightPanelShown, setRightPanelShown }}
     >
       {children}
     </ThreePanelCollapseContext.Provider>

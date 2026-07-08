@@ -1,0 +1,131 @@
+.panel {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  background: var(--background-color, #f8f9fa);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  padding: 16px 20px;
+  min-width: 280px;
+  max-width: 400px;
+  font-family: IBMPlexSans, sans-serif;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.title {
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 14px;
+  color: var(--color-accent-bright);
+}
+
+.dismissBtn {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-color-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 3px 10px;
+}
+
+.dismissBtn:hover {
+  border-color: var(--color-accent-bright);
+  color: var(--text-color-primary);
+}
+
+.cohortList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cohortItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.status_active {
+  background: color-mix(in srgb, var(--color-accent-bright) 8%, transparent);
+  color: var(--text-color-primary);
+}
+
+.status_done {
+  color: var(--text-color-secondary);
+}
+
+.cohortName {
+  flex: 1;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+}
+
+.status_done .cohortName {
+  font-family: IBMPlexSans, sans-serif;
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.workingLabel {
+  font-size: 11px;
+  color: var(--color-accent-bright);
+  font-style: italic;
+}
+
+.waitingLabel {
+  font-size: 11px;
+  color: var(--text-color-secondary);
+  opacity: 0.6;
+}
+
+.iconDone {
+  color: #10b981;
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+}
+
+.iconActive {
+  color: var(--color-accent-bright);
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.iconWaiting {
+  color: var(--text-color-secondary);
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+  opacity: 0.4;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--text-color-secondary);
+  margin: 12px 0 0;
+  opacity: 0.7;
+  text-align: center;
+}

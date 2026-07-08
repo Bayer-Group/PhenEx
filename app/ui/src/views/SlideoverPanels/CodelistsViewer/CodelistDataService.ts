@@ -1,9 +1,9 @@
 import { themeQuartz } from 'ag-grid-community';
 import {
-  getCodelistFilenamesForCohort,
-  getCodelistFileForCohort,
-  uploadCodelistFileToCohort,
-  updateCodelistFileColumnMapping,
+  getCodelistsForStudy,
+  getCodelist,
+  saveCodelist,
+  updateCodelistColumnMapping,
 } from '../../../api/codelists/route';
 import { createID } from '../../../types/createID';
 import { CohortModel } from '../../CohortViewer/CohortDataService/CohortModel';
@@ -145,8 +145,10 @@ export class CodelistDataService {
   }
 
   public async setFilenamesForCohort() {
+    const studyId = this.cohortDataService?.cohort_data?.study_id as string | undefined;
     const cohortId = this.cohortDataService?.cohort_data?.id;
-    if (!cohortId) {
+    const lookupId = studyId || cohortId;
+    if (!lookupId) {
       this._filenames = [];
       this.filesMetadata = [];
       this.files = [];
@@ -156,12 +158,12 @@ export class CodelistDataService {
     }
 
     // If we already have filenames loaded for this cohort, skip the backend call
-    if (this.lastFetchedCohortId === cohortId && this._filenames && this._filenames.length > 0) {
+    if (this.lastFetchedCohortId === lookupId && this._filenames && this._filenames.length > 0) {
       return;
     }
 
     // Switching cohort: clear previous cohort's data so we don't mix or show stale files
-    if (this.lastFetchedCohortId !== null && this.lastFetchedCohortId !== cohortId) {
+    if (this.lastFetchedCohortId !== null && this.lastFetchedCohortId !== lookupId) {
       this.files = [];
       this.filesMetadata = [];
       this._filenames = [];
@@ -169,8 +171,10 @@ export class CodelistDataService {
     }
 
     // Fetch metadata from backend (lightweight call)
-    const filenames = await getCodelistFilenamesForCohort(cohortId);
-    this.lastFetchedCohortId = cohortId;
+    const filenames = studyId
+      ? await getCodelistsForStudy(studyId)
+      : await getCodelistsForStudy(cohortId!); // fallback
+    this.lastFetchedCohortId = lookupId;
     
     // Store the metadata (including cached codelists array) separately
     // This allows us to avoid loading full file contents when we just need codelist names
@@ -189,7 +193,7 @@ export class CodelistDataService {
     this.filesMetadata.forEach(meta => {
       if (meta.codelists && meta.codelists.length > 0 && meta.codelist_column) {
         this.updateCacheForFile(
-          cohortId,
+          lookupId,
           meta.filename,
           {
             code_column: meta.code_column,
@@ -205,19 +209,18 @@ export class CodelistDataService {
     this._filenames = this.filesMetadata.map(meta => meta.filename);
     
     // OPTIMIZATION: Only load full file contents if we don't have them in cache
-    // This is the SLOW part that we want to avoid
     const filesToLoad = filenames.filter((fileinfo: any) => {
       const filename = fileinfo.filename.startsWith('"') && fileinfo.filename.endsWith('"') 
         ? fileinfo.filename.slice(1, -1) 
         : fileinfo.filename;
       const existingFile = this.files.find(f => f.filename === filename);
-      return !existingFile; // Only load if we don't have it already
+      return !existingFile;
     });
     
     if (filesToLoad.length > 0) {
       const filePromises = await Promise.all(
         filesToLoad.map((fileinfo: any) =>
-          getCodelistFileForCohort(this.cohortDataService.cohort_data.id, fileinfo.id)
+          getCodelist(cohortId!, fileinfo.id)
         )
       );
       
@@ -277,7 +280,8 @@ export class CodelistDataService {
     if (!this._filenames) this._filenames = [];
     this._filenames.push(newFile.filename);
     this.notifyListeners();
-    uploadCodelistFileToCohort(this.cohortDataService.cohort_data.id, newFile);
+    const studyId = this.cohortDataService?.cohort_data?.study_id as string | undefined;
+    saveCodelist(this.cohortDataService.cohort_data.id, newFile, studyId);
   }
 
   private parseCSVContents(contents: string): any {
@@ -442,7 +446,8 @@ export class CodelistDataService {
   }
 
   public saveChangesToActiveFile() {
-    uploadCodelistFileToCohort(this.cohortDataService.cohort_data.id, this.activeFile);
+    const studyId = this.cohortDataService?.cohort_data?.study_id as string | undefined;
+    saveCodelist(this.cohortDataService.cohort_data.id, this.activeFile, studyId);
   }
 
   public async saveColumnMappingForActiveFile() {
@@ -459,16 +464,18 @@ export class CodelistDataService {
 
     try {
       const cohortId = this.cohortDataService?.cohort_data?.id;
-      const response = await updateCodelistFileColumnMapping(
+      const studyId = this.cohortDataService?.cohort_data?.study_id as string | undefined;
+      const response = await updateCodelistColumnMapping(
         this.activeFile.id,
         columnMapping,
         cohortId
       );
       
       // Update localStorage cache with new codelists from backend response
-      if (response && response.codelists && cohortId) {
+      const cacheId = studyId || cohortId;
+      if (response && response.codelists && cacheId) {
         this.updateCacheForFile(
-          cohortId,
+          cacheId,
           this.activeFile.filename,
           columnMapping,
           response.codelists

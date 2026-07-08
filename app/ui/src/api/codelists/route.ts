@@ -22,6 +22,18 @@ export const getCodelistsForCohort = async (cohort_id: string) => {
   }
 };
 
+export const getCodelistsForStudy = async (study_id: string) => {
+  try {
+    const response = await api.get(`/codelists`, {
+      params: { study_id },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch codelists for study:', error);
+    throw error;
+  }
+};
+
 /**
  * Get the complete contents of a specific codelist file.
  * 
@@ -62,13 +74,13 @@ export const getCodelist = async (cohort_id: string, file_id: string) => {
  * };
  * await saveCodelist('cohort_123', file);
  */
-export const saveCodelist = async (cohort_id: string, file: any) => {
+export const saveCodelist = async (cohort_id: string, file: any, study_id?: string) => {
   try {
-    console.log(`Saving codelist '${file.filename}' to cohort ${cohort_id}`);
-    const response = await api.put(
-      `/codelist?cohort_id=${encodeURIComponent(cohort_id)}`, 
-      file
-    );
+    const param = study_id
+      ? `study_id=${encodeURIComponent(study_id)}`
+      : `cohort_id=${encodeURIComponent(cohort_id)}`;
+    console.log(`Saving codelist '${file.filename}' (${param})`);
+    const response = await api.put(`/codelist?${param}`, file);
     console.log(`Codelist '${file.filename}' saved successfully`);
     return response.data;
   } catch (error) {

@@ -884,21 +884,19 @@ class DatabaseManager:
                 await conn.close()
 
     async def get_codelists_for_cohort(self, cohort_id: str) -> List[Dict]:
-        """
-        Retrieve all codelists associated with a specific cohort.
-        Includes cached codelists array and column mapping for optimization.
+        """Retrieve all codelists associated with a specific cohort (legacy, kept for compatibility)."""
+        return await self._get_codelists_by_field('cohort_id', cohort_id)
 
-        Args:
-            cohort_id (str): The ID of the cohort.
+    async def get_codelists_for_study(self, study_id: str) -> List[Dict]:
+        """Retrieve all codelists associated with a specific study."""
+        return await self._get_codelists_by_field('study_id', study_id)
 
-        Returns:
-            List[Dict]: A list of codelist objects associated with the cohort.
-        """
+    async def _get_codelists_by_field(self, field: str, value: str) -> List[Dict]:
         conn = None
         try:
             conn = await self.get_connection()
 
-            query = """
+            query = f"""
                 SELECT 
                     file_id, 
                     file_name,
@@ -908,11 +906,11 @@ class DatabaseManager:
                     created_at, 
                     updated_at 
                 FROM codelistfile 
-                WHERE cohort_id = $1
+                WHERE {field} = $1
                 ORDER BY updated_at DESC
             """
 
-            rows = await conn.fetch(query, cohort_id)
+            rows = await conn.fetch(query, value)
 
             codelists = []
             for row in rows:
@@ -950,11 +948,11 @@ class DatabaseManager:
                     }
                 )
 
-            logger.info(f"Retrieved {len(codelists)} codelists for cohort {cohort_id}")
+            logger.info(f"Retrieved {len(codelists)} codelists for {field}={value}")
             return codelists
 
         except Exception as e:
-            logger.error(f"Failed to retrieve codelists for cohort {cohort_id}: {e}")
+            logger.error(f"Failed to retrieve codelists for {field}={value}: {e}")
             raise
         finally:
             if conn:
@@ -1068,6 +1066,7 @@ class DatabaseManager:
         codelists: List[str],
         cohort_id: Optional[str] = None,
         file_name: Optional[str] = None,
+        study_id: Optional[str] = None,
     ) -> bool:
         """
         Save a codelist to the database. Creates a new version if it already exists.
@@ -1111,7 +1110,18 @@ class DatabaseManager:
             target_version = current_max_version + 1
 
             # Insert the new version
-            if cohort_id:
+            if study_id:
+                insert_query = """
+                    INSERT INTO codelistfile (file_id, file_name, user_id, study_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+                """
+                await conn.execute(
+                    insert_query,
+                    codelist_id, file_name, user_id, study_id,
+                    target_version,
+                    json.dumps(codelist_data), json.dumps(column_mapping), codelists,
+                )
+            elif cohort_id:
                 insert_query = """
                     INSERT INTO codelistfile (file_id, file_name, user_id, cohort_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())

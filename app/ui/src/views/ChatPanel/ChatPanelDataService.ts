@@ -437,8 +437,15 @@ class ChatPanelDataService {
         this.persistMessage('assistant', assistantMessage.text.trim());
       }
 
-      // In legacy cohort mode, refresh the active cohort
-      if (!this._studyMode && this.cohortDataService.cohort_data?.id) {
+      // Refresh data after AI changes
+      if (this._studyMode) {
+        try {
+          const { StudyDataService } = await import('../StudyViewer/StudyDataService');
+          await StudyDataService.getInstance().refreshStudyData();
+        } catch (error) {
+          console.error('Failed to refresh study data after AI changes:', error);
+        }
+      } else if (this.cohortDataService.cohort_data?.id) {
         try {
           console.log('Fetching updated cohort after AI changes...');
           let response: any;
@@ -488,6 +495,10 @@ class ChatPanelDataService {
       this.messages.forEach(m => {
         if (m.pendingChanges) m.pendingChanges = m.pendingChanges.filter(c => c.cohortId !== cohortId);
       });
+      if (this._studyMode) {
+        const { StudyDataService } = await import('../StudyViewer/StudyDataService');
+        await StudyDataService.getInstance().refreshStudyData();
+      }
       this.notifyListeners();
     } catch (error) {
       console.error(`Failed to accept changes for cohort ${cohortId}:`, error);
@@ -509,6 +520,10 @@ class ChatPanelDataService {
       this.messages.forEach(m => {
         if (m.pendingChanges) m.pendingChanges = m.pendingChanges.filter(c => c.cohortId !== cohortId);
       });
+      if (this._studyMode) {
+        const { StudyDataService } = await import('../StudyViewer/StudyDataService');
+        await StudyDataService.getInstance().refreshStudyData();
+      }
       this.notifyListeners();
     } catch (error) {
       console.error(`Failed to reject changes for cohort ${cohortId}:`, error);

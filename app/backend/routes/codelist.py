@@ -41,40 +41,19 @@ logger = logging.getLogger(__name__)
 
 
 @list_router.get("/codelists", tags=["codelist"], response_model=list[CodelistMetadata])
-async def get_codelists_for_cohort(cohort_id: str):
+async def get_codelists_for_cohort(study_id: str = None, cohort_id: str = None):
     """
-    Get a list of all codelists associated with a cohort.
+    Get a list of all codelists associated with a study (or cohort for legacy).
 
     Query Parameters:
-    - cohort_id (str): The ID of the cohort to retrieve codelists for.
-
-    Returns:
-    - list[CodelistMetadata]: A list of codelist metadata objects, each containing:
-        - id (str): Unique identifier for the codelist file
-        - filename (str): Original filename of the codelist
-        - codelists (list[str]): Array of unique codelist names extracted from the file
-        - code_column (str|null): Name of the column containing codes
-        - code_type_column (str|null): Name of the column containing code types
-        - codelist_column (str|null): Name of the column containing codelist names
-
-    Example Response:
-    ```json
-    [
-        {
-            "id": "codelist_123",
-            "filename": "icd10_codes.csv",
-            "codelists": ["diabetes", "hypertension"],
-            "code_column": "code",
-            "code_type_column": "type",
-            "codelist_column": "category"
-        }
-    ]
-    ```
-
-    Raises:
-    - 500: If there's an error retrieving codelists from the database
+    - study_id (str): The ID of the study to retrieve codelists for.
+    - cohort_id (str): Legacy parameter, still accepted for backward compatibility.
     """
-    return await get_codelist_filenames_for_cohort(db_manager, cohort_id)
+    if study_id:
+        return await get_codelist_filenames_for_study(db_manager, study_id)
+    if cohort_id:
+        return await get_codelist_filenames_for_cohort(db_manager, cohort_id)
+    return []
 
 
 @router.get("", tags=["codelist"], response_model=CodelistFile)
@@ -243,15 +222,23 @@ async def create_or_update_codelist(
     """
     user_id = get_authenticated_user_id(request)
 
-    # Get cohort_id from query parameters if not provided as function parameter
+    # Accept study_id or cohort_id (study_id preferred)
+    study_id = request.query_params.get("study_id")
+    if study_id is None:
+        study_id = None  # will fall through to cohort_id
     if cohort_id is None:
         cohort_id = request.query_params.get("cohort_id")
 
-    if not cohort_id:
-        raise HTTPException(status_code=400, detail="cohort_id is required")
+    if not study_id and not cohort_id:
+        raise HTTPException(status_code=400, detail="study_id or cohort_id is required")
 
     success = await save_codelist_file_for_cohort(
-        db_manager, cohort_id, file["id"], file, user_id
+        db_manager,
+        cohort_id or study_id,  # pass as positional cohort_id for the helper signature
+        file["id"],
+        file,
+        user_id,
+        study_id=study_id,
     )
     if not success:
         raise HTTPException(
@@ -462,6 +449,25 @@ async def get_codelist_filenames_for_cohort(db_manager, cohort_id: str) -> list:
         return []
 
 
+async def get_codelist_filenames_for_study(db_manager, study_id: str) -> list:
+    try:
+        codelists = await db_manager.get_codelists_for_study(study_id)
+        return [
+            {
+                "id": cl["id"],
+                "filename": cl["filename"],
+                "codelists": cl.get("codelists", []),
+                "code_column": cl.get("code_column"),
+                "code_type_column": cl.get("code_type_column"),
+                "codelist_column": cl.get("codelist_column"),
+            }
+            for cl in codelists
+        ]
+    except Exception as e:
+        logger.error(f"Failed to retrieve codelist filenames for study {study_id}: {e}")
+        return []
+
+
 async def get_codelist_file_for_cohort(
     db_manager, cohort_id: str, file_id: str, user_id: str
 ) -> Optional[dict]:
@@ -528,7 +534,8 @@ async def get_codelist_file_for_cohort(
 
 
 async def save_codelist_file_for_cohort(
-    db_manager, cohort_id: str, file_id: str, codelist_file: dict, user_id: str
+    db_manager, cohort_id: str, file_id: str, codelist_file: dict, user_id: str,
+    study_id: str = None,
 ) -> bool:
     """
     Save a codelist file for a given cohort ID and file ID to database.
@@ -590,8 +597,9 @@ async def save_codelist_file_for_cohort(
             codelist_data,
             column_mapping,
             codelists_array,
-            cohort_id,
+            cohort_id if not study_id else None,
             file_name,
+            study_id=study_id,
         )
     except Exception as e:
         logger.error(
