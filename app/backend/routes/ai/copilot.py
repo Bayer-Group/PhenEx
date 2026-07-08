@@ -3023,8 +3023,13 @@ class CohortIntake(BaseModel):
     inclusions: List[str] = []
     exclusions: List[str] = []
 
+class AvailableDatabase(BaseModel):
+    database: str
+    schemas: List[str] = []
+
 class StudyConceptParseRequest(BaseModel):
     text: str
+    available_databases: List[AvailableDatabase] = []
 
 class StudyConceptParseResponse(BaseModel):
     study_name: str = ""
@@ -3032,6 +3037,8 @@ class StudyConceptParseResponse(BaseModel):
     cohorts: List[CohortIntake] = []
     raw_description: str = ""
     codelist_notes: str = ""
+    database: str = ""
+    schema: str = ""
 
 @router.post("/parse_concept", tags=["AI"])
 async def parse_study_concept(
@@ -3070,25 +3077,35 @@ async def parse_study_concept(
             http_client=http_client,
         )
 
-        system_prompt = """You are a medical research study analyst. Extract structured information from the study concept document provided.
+        # Build database options section for the prompt
+        db_options_section = ""
+        if body.available_databases:
+            db_lines = []
+            for db in body.available_databases:
+                schema_str = f" (schemas: {', '.join(db.schemas)})" if db.schemas else ""
+                db_lines.append(f"  - {db.database}{schema_str}")
+            db_options_section = "\n\nAVAILABLE DATABASES (use EXACT names from this list):\n" + "\n".join(db_lines) + "\n"
+
+        system_prompt = f"""You are a medical research study analyst. Extract structured information from the study concept document provided.
 
 Return a JSON object with this exact structure:
-{
+{{
   "study_name": "string - a concise name for the study",
   "study_type": "one of: cohort, case_control, cross_sectional, case_series, registry, ecological, other",
   "raw_description": "string - a 2-3 sentence summary of the study",
   "codelist_notes": "string - bullet list of medical codes/codelists needed (diagnoses, drugs, procedures, labs), one per line starting with '-'",
+  "database": "string - the best matching database from the AVAILABLE DATABASES list. Pick the closest match based on any data source mentioned in the document. If the document mentions Optum EHR, pick the most appropriate Optum EHR entry. Leave empty string only if no reasonable match exists.",
+  "schema": "string - the best matching schema for the selected database. Pick the most recent schema unless the document specifies a particular time period. Leave empty string if database is empty.",
   "cohorts": [
-    {
+    {{
       "name": "string - cohort name (e.g. 'Treatment Arm', 'Control Group')",
       "description": "string - brief cohort description",
       "entry_criterion": "string - the clinical event defining the index date (e.g. 'First prescription of empagliflozin')",
       "inclusions": ["string - inclusion criterion 1", "string - inclusion criterion 2"],
       "exclusions": ["string - exclusion criterion 1", "string - exclusion criterion 2"]
-    }
+    }}
   ]
-}
-
+}}{db_options_section}
 Rules:
 - Extract all distinct patient groups as separate cohorts
 - entry_criterion is required for each cohort — it defines WHEN a patient enters the study (index date)
@@ -3098,6 +3115,8 @@ Rules:
 - entry_criterion should be one short phrase (max 10 words)
 - raw_description max 2 sentences
 - codelist_notes: one bullet per code domain, no explanations
+- database: MUST be an exact string from the AVAILABLE DATABASES list above, or empty string.
+- schema: MUST be an exact schema string from the selected database's schema list above, or empty string.
 - Return ONLY valid JSON, no markdown fences"""
 
         response = await client.chat.completions.create(
@@ -3166,6 +3185,8 @@ Rules:
             study_type=parsed.get("study_type", "cohort"),
             raw_description=parsed.get("raw_description", ""),
             codelist_notes=parsed.get("codelist_notes", ""),
+            database=parsed.get("database", ""),
+            schema=parsed.get("schema", ""),
             cohorts=cohorts,
         )
 

@@ -4,6 +4,10 @@ import { StepMarker } from '../../../components/StepMarker/StepMarker';
 import { parseStudyConcept, CohortIntake } from '@/api/text_to_cohort/route';
 import styles from './StudyIntakeWizard.module.css';
 
+// Load databases data
+import databasesDataRaw from '/assets/databases.json?raw';
+const databasesData = JSON.parse(databasesDataRaw);
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface CodelistFileEntry {
@@ -20,6 +24,14 @@ export interface StudyIntake {
   codelistFiles: CodelistFileEntry[];
   /** 'upload' | 'manual' */
   conceptMode: 'upload' | 'manual';
+  /** Selected database name (study-wide default) */
+  database: string;
+  /** Selected schema (study-wide default) */
+  schema: string;
+  /** Whether to use per-cohort database (false = study-wide) */
+  perCohortDatabase: boolean;
+  /** Per-cohort database configurations */
+  cohortDatabases: Record<string, { database: string; schema: string }>;
 }
 
 interface StudyIntakeWizardProps {
@@ -33,7 +45,7 @@ interface StudyIntakeWizardProps {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const STEP_TITLES = ['Getting started', 'Study name', 'Cohorts', 'Codelists', 'Summary'];
+const STEP_TITLES = ['Getting started', 'Study name', 'Cohorts', 'Codelists', 'Database', 'Summary'];
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -65,6 +77,13 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
   const [codelistNotes, setCodelistNotes] = useState('');
   const [codelistFiles, setCodelistFiles] = useState<CodelistFileEntry[]>([]);
   const codelistInputRef = useRef<HTMLInputElement>(null);
+  
+  // Step 4 – database
+  const [selectedDatabase, setSelectedDatabase] = useState('');
+  const [selectedSchema, setSelectedSchema] = useState('');
+  const [perCohortDatabase, setPerCohortDatabase] = useState(false);
+  const [cohortDatabases, setCohortDatabases] = useState<Record<string, { database: string; schema: string }>>({});
+  
   // Final action
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -78,6 +97,10 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
     codelistNotes,
     codelistFiles,
     conceptMode,
+    database: selectedDatabase,
+    schema: selectedSchema,
+    perCohortDatabase,
+    cohortDatabases,
   };
 
   const handleFileUpload = useCallback(
@@ -112,7 +135,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
     setIsParsing(true);
     setParseError('');
     try {
-      const result = await parseStudyConcept(uploadedText);
+      const result = await parseStudyConcept(uploadedText, databasesData);
       if (result.study_name && !studyName) setStudyName(result.study_name);
       if (result.study_type) setStudyType(result.study_type);
       if (result.raw_description) setRawDescription(result.raw_description);
@@ -195,7 +218,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
       setIsParsing(true);
       setParseError('');
       try {
-        const result = await parseStudyConcept(uploadedText);
+        const result = await parseStudyConcept(uploadedText, databasesData);
         if (result.study_name) setStudyName(result.study_name);
         if (result.raw_description) setRawDescription(result.raw_description);
         if (result.cohorts.length > 0) {
@@ -209,6 +232,8 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
           );
         }
         if (result.codelist_notes) setCodelistNotes(result.codelist_notes);
+        if (result.database) setSelectedDatabase(result.database);
+        if (result.schema) setSelectedSchema(result.schema);
       } catch {
         setParseError('Failed to parse document. Please try again or switch to manual.');
         setIsParsing(false);
@@ -495,8 +520,155 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
     </div>
   );
 
-  // Step 4: summary
+  // Step 4: database configuration
   const renderStep4 = () => {
+    // Get available schemas for selected database
+    const getAvailableSchemas = (db: string): string[] => {
+      const dbConfig = databasesData.find((d: any) => d.database === db);
+      return dbConfig?.schemas || [];
+    };
+
+    const availableSchemas = getAvailableSchemas(selectedDatabase);
+    const validCohorts = cohorts.filter(c => c.name.trim());
+
+    // Helper to get cohort database/schema or fallback to study-wide
+    const getCohortDatabase = (cohortName: string) => {
+      return cohortDatabases[cohortName]?.database || selectedDatabase;
+    };
+
+    const getCohortSchema = (cohortName: string) => {
+      return cohortDatabases[cohortName]?.schema || selectedSchema;
+    };
+
+    // Helper to update cohort database config
+    const updateCohortDatabase = (cohortName: string, database: string, schema: string) => {
+      setCohortDatabases(prev => ({
+        ...prev,
+        [cohortName]: { database, schema }
+      }));
+    };
+
+    return (
+      <div className={styles.stepBody}>
+        <h3 className={styles.stepTitle}>Database Configuration</h3>
+        <p className={styles.hint}>
+          Select the database and schema you'll use for this study. You can configure per-cohort databases or use a single study-wide configuration.
+        </p>
+
+        <div className={styles.databaseSection}>
+          <label className={styles.inputLabel}>Database (study-wide default)</label>
+          <select
+            className={styles.selectInput}
+            value={selectedDatabase}
+            onChange={e => {
+              setSelectedDatabase(e.target.value);
+              setSelectedSchema(''); // Reset schema when database changes
+            }}
+          >
+            <option value="">Select a database...</option>
+            {databasesData.map((db: any) => (
+              <option key={db.database} value={db.database}>
+                {db.database}
+                {db.n_patients ? ` (${db.n_patients.toLocaleString()} patients)` : ''}
+              </option>
+            ))}
+          </select>
+
+          {selectedDatabase && availableSchemas.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <label className={styles.inputLabel}>Schema (study-wide default)</label>
+              <select
+                className={styles.selectInput}
+                value={selectedSchema}
+                onChange={e => setSelectedSchema(e.target.value)}
+              >
+                <option value="">Select a schema...</option>
+                {availableSchemas.map((schema: string) => (
+                  <option key={schema} value={schema}>{schema}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.databaseOption}>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={perCohortDatabase}
+              onChange={e => setPerCohortDatabase(e.target.checked)}
+            />
+            <span>Allow per-cohort database configuration</span>
+          </label>
+          <p className={styles.optionHint}>
+            {perCohortDatabase 
+              ? 'Configure database and schema for each cohort below. Defaults to study-wide configuration.'
+              : 'All cohorts will use the same study-wide database and schema.'}
+          </p>
+        </div>
+
+        {perCohortDatabase && validCohorts.length > 0 && (
+          <div className={styles.cohortDatabaseList}>
+            <h4 className={styles.cohortDatabaseTitle}>Per-Cohort Configuration</h4>
+            {validCohorts.map((cohort, idx) => {
+              const cohortDb = getCohortDatabase(cohort.name);
+              const cohortSchema = getCohortSchema(cohort.name);
+              const cohortSchemas = getAvailableSchemas(cohortDb);
+
+              return (
+                <div key={idx} className={styles.cohortDatabaseCard}>
+                  <div className={styles.cohortDatabaseHeader}>
+                    <strong>{cohort.name}</strong>
+                  </div>
+
+                  <div className={styles.cohortDatabaseFields}>
+                    <div>
+                      <label className={styles.inputLabel}>Database</label>
+                      <select
+                        className={styles.selectInput}
+                        value={cohortDb}
+                        onChange={e => {
+                          updateCohortDatabase(cohort.name, e.target.value, '');
+                        }}
+                      >
+                        <option value="">Use study-wide default</option>
+                        {databasesData.map((db: any) => (
+                          <option key={db.database} value={db.database}>
+                            {db.database}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {cohortDb && cohortSchemas.length > 0 && (
+                      <div>
+                        <label className={styles.inputLabel}>Schema</label>
+                        <select
+                          className={styles.selectInput}
+                          value={cohortSchema}
+                          onChange={e => {
+                            updateCohortDatabase(cohort.name, cohortDb, e.target.value);
+                          }}
+                        >
+                          <option value="">Use study-wide default</option>
+                          {cohortSchemas.map((schema: string) => (
+                            <option key={schema} value={schema}>{schema}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Step 5: summary
+  const renderStep5 = () => {
     const validCohorts = cohorts.filter(c => c.name.trim());
     return (
       <div className={styles.stepBody}>
@@ -523,6 +695,34 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
                 )}
                 {codelistNotes && (
                   <div style={{ whiteSpace: 'pre-wrap', marginTop: codelistFiles.length ? 6 : 0 }}>{codelistNotes}</div>
+                )}
+              </span>
+            </div>
+          )}
+          {(selectedDatabase || selectedSchema) && (
+            <div className={styles.summaryRow}>
+              <span className={styles.summaryKey}>Database</span>
+              <span className={styles.summaryVal}>
+                <div>
+                  {selectedDatabase && <div><strong>Database:</strong> {selectedDatabase}</div>}
+                  {selectedSchema && <div><strong>Schema:</strong> {selectedSchema}</div>}
+                </div>
+                {perCohortDatabase && (
+                  <div style={{ marginTop: 8, fontSize: '0.9em', color: '#666' }}>
+                    <strong>Per-cohort configuration enabled</strong>
+                    {validCohorts.map(c => {
+                      const cohortDb = cohortDatabases[c.name]?.database || selectedDatabase;
+                      const cohortSchema = cohortDatabases[c.name]?.schema || selectedSchema;
+                      if (cohortDb || cohortSchema) {
+                        return (
+                          <div key={c.name} style={{ marginTop: 4 }}>
+                            • {c.name}: {cohortDb}{cohortSchema ? ` / ${cohortSchema}` : ''}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
                 )}
               </span>
             </div>
@@ -620,6 +820,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
         {step === 4 && renderStep4()}
+        {step === 5 && renderStep5()}
       </div>
 
       {!isFinalStep && (

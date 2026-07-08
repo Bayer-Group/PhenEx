@@ -307,12 +307,14 @@ export interface StudyConceptParseResponse {
   study_type: string;
   raw_description: string;
   codelist_notes: string;
+  database: string;
+  schema: string;
   cohorts: CohortIntake[];
 }
 
-export const parseStudyConcept = async (text: string): Promise<StudyConceptParseResponse> => {
+export const parseStudyConcept = async (text: string, availableDatabases?: Array<{ database: string; schemas: string[] }>): Promise<StudyConceptParseResponse> => {
   try {
-    const response = await api.post('/copilot/parse_concept', { text });
+    const response = await api.post('/copilot/parse_concept', { text, available_databases: availableDatabases ?? [] });
     return response.data;
   } catch (error) {
     console.error('Error in parseStudyConcept:', error);
