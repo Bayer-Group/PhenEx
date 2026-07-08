@@ -62,7 +62,7 @@ const AddMenu: React.FC<{
       menuRef={menuRef}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      verticalPosition={'alignTop'}
+      verticalPosition={'above'}
       horizontalAlignment={'right'}
       gap={0}
     >
@@ -115,7 +115,7 @@ const OptionsMenu: React.FC<{
       menuRef={menuRef}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      verticalPosition='below'
+      verticalPosition='above'
     >
       <div style={{ padding: '8px 4px', minWidth: '180px' }}>
         <div className={styles.itemList}>
@@ -228,7 +228,7 @@ export const CallToActionNavBar: React.FC<CallToActionNavBarProps> = ({
           menuRef={sectionMenuRef}
           onMouseEnter={openSectionMenu}
           onMouseLeave={closeSectionMenu}
-          verticalPosition='alignTop'
+          verticalPosition='above'
           gap={0}
         >
           <div style={{ padding: '8px 4px', minWidth: '180px' }}>
@@ -254,21 +254,6 @@ export const CallToActionNavBar: React.FC<CallToActionNavBarProps> = ({
           onMouseEnter={openOptionsMenu}
           onMouseLeave={closeOptionsMenu}
           menuItems={menuItems}
-        />
-      </div>
-
-      {/* Center: Switch Button */}
-      <div style={{ display: 'flex', alignItems: 'center', marginRight: '28px'}}>
-        <SwitchButton
-          tooltip="Show report"
-          value={showReport}
-          onValueChange={onShowReportChange}
-          classNameSwitchContainer={styles.switchContainer}
-          classNameSwitchBackground={styles.switchBackground}
-          classNameSwitchBackgroundSelected={styles.switchBackgroundSelected}
-          classNameSwitch={styles.switch}
-          classNameSwitchSelected={styles.switchSelected}
-          verticalPosition='below'
         />
       </div>
 
@@ -315,6 +300,7 @@ export const CallToActionNavBar: React.FC<CallToActionNavBarProps> = ({
             menuRef={addMenuRef}
             onMouseEnter={openAddMenu}
             onMouseLeave={closeAddMenu}
+
           />
         )}
         

@@ -98,16 +98,22 @@ const COHORT_STUDY_VIEWS = new Set<ViewType>([
   ViewType.NewCohort,
 ]);
 
-function createLayoutModel(): Model {
+const GLOBAL_LAYOUT_OPTIONS = {
+  tabEnableClose: false,
+  tabEnableRename: false,
+  tabEnableDrag: false,
+  tabSetEnableMaximize: false,
+  tabSetEnableDrop: false,
+  borderEnableDrop: false,
+} as const;
+
+/**
+ * Outer layout: left panel (collapsible border) alongside the main region.
+ * The main region hosts the title bar and the inner layout.
+ */
+function createOuterLayoutModel(): Model {
   const json: IJsonModel = {
-    global: {
-      tabEnableClose: false,
-      tabEnableRename: false,
-      tabEnableDrag: false,
-      tabSetEnableMaximize: false,
-      tabSetEnableDrop: false,
-      borderEnableDrop: false,
-    },
+    global: GLOBAL_LAYOUT_OPTIONS,
     borders: [
       {
         type: 'border',
@@ -119,6 +125,32 @@ function createLayoutModel(): Model {
           { type: 'tab', name: '◧', component: 'leftPanel', enableClose: false, enableDrag: false },
         ],
       },
+    ],
+    layout: {
+      type: 'row',
+      children: [
+        {
+          type: 'tabset',
+          enableTabStrip: false,
+          enableDrop: false,
+          children: [
+            { type: 'tab', name: 'Main', component: 'mainRegion', enableClose: false, enableDrag: false },
+          ],
+        },
+      ],
+    },
+  };
+  return Model.fromJson(json);
+}
+
+/**
+ * Inner layout: center content alongside the right panel (collapsible border).
+ * Lives inside the main region, below the title bar.
+ */
+function createInnerLayoutModel(): Model {
+  const json: IJsonModel = {
+    global: GLOBAL_LAYOUT_OPTIONS,
+    borders: [
       {
         type: 'border',
         location: 'right',
@@ -141,7 +173,7 @@ function createLayoutModel(): Model {
           enableTabStrip: false,
           enableDrop: false,
           children: [
-            { type: 'tab', name: 'Main', component: 'center', enableClose: false, enableDrag: false },
+            { type: 'tab', name: 'Center', component: 'center', enableClose: false, enableDrag: false },
           ],
         },
       ],
@@ -221,7 +253,9 @@ const MainViewInner = () => {
   };
 
   // ── FlexLayout + border collapse ─────────────────────────────────────
-  const layoutModelRef = useRef<Model>(createLayoutModel());
+  // Outer layout owns the left border; inner layout owns the right border.
+  const outerModelRef = useRef<Model>(createOuterLayoutModel());
+  const innerModelRef = useRef<Model>(createInnerLayoutModel());
   const {
     isLeftPanelShown,
     setLeftPanelShown,
@@ -234,8 +268,7 @@ const MainViewInner = () => {
 
   // Collapsing a border only toggles its `selected` attribute; the border
   // keeps its last dragged size, so re-opening restores it automatically.
-  const setBorderOpen = useCallback((location: DockLocation, open: boolean) => {
-    const model = layoutModelRef.current;
+  const setBorderOpen = useCallback((model: Model, location: DockLocation, open: boolean) => {
     const border = model.getBorderSet().getBorderMap().get(location);
     if (!border) return;
     if ((border.getSelected() !== -1) === open) return;
@@ -246,27 +279,28 @@ const MainViewInner = () => {
 
   // Sync collapse context → borders
   useEffect(() => {
-    setBorderOpen(DockLocation.LEFT, isLeftPanelShown);
+    setBorderOpen(outerModelRef.current, DockLocation.LEFT, isLeftPanelShown);
   }, [isLeftPanelShown, setBorderOpen]);
 
   useEffect(() => {
-    setBorderOpen(DockLocation.RIGHT, isRightPanelShown);
+    setBorderOpen(innerModelRef.current, DockLocation.RIGHT, isRightPanelShown);
   }, [isRightPanelShown, setBorderOpen]);
 
-  const handleModelChange = useCallback((model: Model) => {
+  const handleOuterModelChange = useCallback((model: Model) => {
     if (syncingRef.current) return;
-    const borderMap = model.getBorderSet().getBorderMap();
-
-    const left = borderMap.get(DockLocation.LEFT);
+    const left = model.getBorderSet().getBorderMap().get(DockLocation.LEFT);
     if (left && (left.getSelected() !== -1) !== isLeftPanelShown) {
       setLeftPanelShown(left.getSelected() !== -1);
     }
+  }, [isLeftPanelShown, setLeftPanelShown]);
 
-    const right = borderMap.get(DockLocation.RIGHT);
+  const handleInnerModelChange = useCallback((model: Model) => {
+    if (syncingRef.current) return;
+    const right = model.getBorderSet().getBorderMap().get(DockLocation.RIGHT);
     if (right && (right.getSelected() !== -1) !== isRightPanelShown) {
       setRightPanelShown(right.getSelected() !== -1);
     }
-  }, [isLeftPanelShown, isRightPanelShown, setLeftPanelShown, setRightPanelShown]);
+  }, [isRightPanelShown, setRightPanelShown]);
 
   // ⌘B toggles the left panel
   useEffect(() => {
@@ -297,6 +331,28 @@ const MainViewInner = () => {
           return (
             <div className={styles.leftPanel}>
               <HierarchicalLeftPanel isVisible={true} />
+            </div>
+          );
+        case 'mainRegion':
+          return (
+            <div className={styles.mainRegion}>
+              <div className={styles.titleGroup}>
+                <button
+                  className={styles.leftBorderCollapseBtn}
+                  onClick={toggleLeftPanel}
+                  aria-label="Toggle left panel"
+                >
+                  <img src={leftPanelIcon} alt="" />
+                </button>
+                <MainBreadcrumb studyId={studyId} showCohort={isCohortView} />
+              </div>
+              <div className={`${styles.page} ${styles.innerPage}`}>
+                <Layout
+                  model={innerModelRef.current}
+                  factory={factory}
+                  onModelChange={handleInnerModelChange}
+                />
+              </div>
             </div>
           );
         case 'center':
@@ -342,26 +398,16 @@ const MainViewInner = () => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentView, inReportView, constantsContentMode],
+    [currentView, inReportView, constantsContentMode, studyId, isCohortView, toggleLeftPanel, handleInnerModelChange],
   );
 
   return (
     <div className={styles.mainView}>
-      <div className={styles.titleGroup}>
-        <button
-          className={styles.leftBorderCollapseBtn}
-          onClick={toggleLeftPanel}
-          aria-label="Toggle left panel"
-        >
-          <img src={leftPanelIcon} alt="" />
-        </button>
-        <MainBreadcrumb studyId={studyId} showCohort={isCohortView} />
-      </div>
       <div className={styles.page}>
         <Layout
-          model={layoutModelRef.current}
+          model={outerModelRef.current}
           factory={factory}
-          onModelChange={handleModelChange}
+          onModelChange={handleOuterModelChange}
         />
       </div>
     </div>

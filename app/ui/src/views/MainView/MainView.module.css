@@ -97,11 +97,24 @@
 /* ── FlexLayout page ─────────────────────────────────────────────────── */
 .page {
   position: relative;
-  margin-top: 50px;
-  height: calc(100vh - 50px);
+  height: 100%;
   width: 100%;
   overflow: hidden;
   background-color: var(--background_color_dark);
+}
+
+/* Main region: holds the title bar and the inner (center + right) layout */
+.mainRegion {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Inner layout host sits below the 50px title bar */
+.innerPage {
+  margin-top: 50px;
+  height: calc(100% - 50px);
 }
 
 /* Panel content wrappers */

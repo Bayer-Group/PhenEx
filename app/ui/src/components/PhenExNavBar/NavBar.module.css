@@ -473,7 +473,7 @@
 .CallToActionNavBar{
   /* background-color: red !important; */
   position: absolute;
-  top: 5px;
+  bottom: 50px;
   right: 50px;
   padding-right: 6px;
   padding-left: 6px;
