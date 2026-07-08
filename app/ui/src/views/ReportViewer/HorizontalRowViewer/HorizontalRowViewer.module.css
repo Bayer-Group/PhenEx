@@ -153,14 +153,13 @@
   gap: 20px;
   background-color: white;
   border: var(--border);
-  border-radius: 50px;
   box-shadow: 0 4px 16px var(--background_color_dark);
-  padding: 0 4px;
+  padding: 10px 10px;
   transition: transform 0.15s, box-shadow 0.15s;
 
   background: hsl(30, 60%, 94%, 0.8);
   border: 2px solid var(--line-color);
-  border-radius: 15px;
+  border-radius:30px;
   box-shadow: 0 8px 30px hsl(30, 18%, 80%);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -178,7 +177,7 @@
   cursor: pointer;
   color: var(--color_inactive, #999);
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 20px;
   transition: color 0.15s, background-color 0.15s;
 }
 

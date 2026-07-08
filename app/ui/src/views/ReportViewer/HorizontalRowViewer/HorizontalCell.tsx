@@ -177,6 +177,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
                 <LayoutControls
                   sectionId={getSectionLayoutId(entry)}
                   rowKeys={cellRows.map((r) => r.name)}
+                  cohortCount={cohortData.length}
                 />
               )}
               <div

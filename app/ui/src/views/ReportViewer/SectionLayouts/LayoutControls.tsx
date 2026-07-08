@@ -7,6 +7,8 @@ interface LayoutControlsProps {
   sectionId: string;
   /** Row keys used to seed a new grid layout. */
   rowKeys: string[];
+  /** Number of selected cohorts, used to size fresh grid tiles. */
+  cohortCount: number;
 }
 
 /**
@@ -14,7 +16,7 @@ interface LayoutControlsProps {
  * panel's right-click menu: switch between the List view and named grid
  * layouts, create a new grid, or delete an existing one.
  */
-export const LayoutControls = memo(({ sectionId, rowKeys }: LayoutControlsProps) => {
+export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount }: LayoutControlsProps) => {
   const { layouts, activeLayout, activeLayoutId, setActiveLayout, createLayout, renameLayout, deleteLayout } =
     useSectionLayouts(sectionId);
   const [open, setOpen] = useState(false);
@@ -38,7 +40,7 @@ export const LayoutControls = memo(({ sectionId, rowKeys }: LayoutControlsProps)
 
   const handleNewGrid = () => {
     const name = `Grid ${layouts.length + 1}`;
-    const id = createLayout(name, buildDefaultLayoutItems(rowKeys));
+    const id = createLayout(name, buildDefaultLayoutItems(rowKeys, cohortCount));
     setActiveLayout(id);
     setOpen(false);
   };

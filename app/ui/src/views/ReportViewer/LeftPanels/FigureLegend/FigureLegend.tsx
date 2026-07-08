@@ -268,8 +268,8 @@ export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDes
 
   const handleSaveNewSet = useCallback(() => {
     const existing = new Set(sets.sets.map((s) => s.name));
-    let name = 'Legend set';
-    for (let n = 2; existing.has(name); n++) name = `Legend set ${n}`;
+    let name = 'Saved set (double click to rename)';
+    for (let n = 2; existing.has(name); n++) name = `Saved set ${n} (double click to rename)`;
     sets.createSet(name, { items, colorOverrides: colorOverrides ?? {} });
   }, [sets, items, colorOverrides]);
 

@@ -70,6 +70,8 @@ interface OutlinePanelProps {
   onRenamePhenotype: (name: string, displayName: string) => void;
   /** Set a section's editable display label. */
   onRenameSection: (sectionId: string, displayName: string) => void;
+  /** Number of selected cohorts, used to size fresh grid tiles. */
+  cohortCount: number;
 }
 
 /** Which item (if any) is being renamed inline. */
@@ -131,6 +133,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
   onMovePhenotype,
   onRenamePhenotype,
   onRenameSection,
+  cohortCount,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [dragName, setDragName] = useState<string | null>(null);
@@ -200,7 +203,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
         onClick: () => {
           const keys = entry.rows.map((r) => r.name);
           const name = `Grid ${layouts.length + 1}`;
-          sectionLayoutActions.createLayout(sectionLayoutId, name, buildDefaultLayoutItems(keys));
+          sectionLayoutActions.createLayout(sectionLayoutId, name, buildDefaultLayoutItems(keys, cohortCount));
           setMenu(null);
         },
       },

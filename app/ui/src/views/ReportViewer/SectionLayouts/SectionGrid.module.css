@@ -30,6 +30,47 @@
   transition: none;
 }
 
+/* Multi-selected cell: thick highlight border. */
+.itemSelected {
+  outline: 3px solid var(--accent_color, #4a7fff);
+  outline-offset: -1px;
+  box-shadow: 0 0 0 1px var(--accent_color, #4a7fff), 0 2px 12px rgba(74, 127, 255, 0.28);
+}
+
+/* Trailing card in an animated multi-drag stack. */
+.itemStacked {
+  transition: left 0.18s cubic-bezier(0.22, 1, 0.36, 1), top 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+  opacity: 0.96;
+  pointer-events: none;
+}
+
+/* Tile targeted for a swap: blur + dim so the flip is obvious. */
+.itemSwapTarget {
+  filter: blur(2px) brightness(0.96);
+  outline: 2px dashed var(--accent_color, #4a7fff);
+  outline-offset: -2px;
+  transition: filter 0.1s;
+}
+
+/* Insertion indicator drawn between tiles while dragging. */
+.insertLine {
+  position: absolute;
+  z-index: 1500;
+  pointer-events: none;
+  background: var(--accent_color, #4a7fff);
+  border-radius: 3px;
+  box-shadow: 0 0 6px rgba(74, 127, 255, 0.6);
+}
+
+.insertLineV {
+  width: 3px;
+}
+
+.insertLineH {
+  height: 3px;
+}
+
 .itemHeader {
   flex-shrink: 0;
   font-family: "IBMPlexSans-bold", sans-serif;

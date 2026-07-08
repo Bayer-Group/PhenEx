@@ -1,9 +1,9 @@
-import { ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP } from './sectionLayoutStore';
+import { ReactNode } from 'react';
+import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP, GRID_ROW_GAP } from './sectionLayoutStore';
 import { GridItemContext } from './GridItemContext';
+import { useGridInteraction, STACK_OFFSET } from './useGridInteraction';
+import { type GridSelection } from './GridSelection';
 import styles from './SectionGrid.module.css';
-
-// ── Types ────────────────────────────────────────────────────────────────
 
 export interface SectionGridRenderItem {
   key: string;
@@ -16,27 +16,15 @@ export interface SectionGridRenderItem {
 export interface SectionGridProps {
   items: SectionGridRenderItem[];
   layout: GridItem[];
+  /** Multi-cell selection, owned by the parent so it can drive a toolbar. */
+  selection: GridSelection;
   columns?: number;
   rowHeight?: number;
   gap?: number;
+  rowGap?: number;
   editable?: boolean;
   onLayoutChange: (items: GridItem[]) => void;
   onItemClick?: (key: string) => void;
-}
-
-type Interaction =
-  | { type: 'move'; key: string; origin: GridItem; startX: number; startY: number; moved: boolean; pointerId: number }
-  | { type: 'resize'; edge: 'right' | 'bottom' | 'corner'; key: string; origin: GridItem; startX: number; startY: number; pointerId: number };
-
-const DRAG_THRESHOLD = 4;
-
-// ── Helpers ──────────────────────────────────────────────────────────────
-
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-
-/** Map layout array to a lookup by key. */
-function toMap(layout: GridItem[]): Map<string, GridItem> {
-  return new Map(layout.map((it) => [it.key, it]));
 }
 
 /**
@@ -44,174 +32,86 @@ function toMap(layout: GridItem[]): Map<string, GridItem> {
  * spans a whole number of columns/rows. Items can be moved (drag the header)
  * and resized (drag the right / bottom / corner handles); all changes snap to
  * grid units and are reported through `onLayoutChange`.
+ *
+ * All drag/drop/resize behaviour lives in {@link useGridInteraction}; this
+ * component is purely presentational.
  */
 export function SectionGrid({
   items,
   layout,
+  selection: selectionProp,
   columns = GRID_COLUMNS,
   rowHeight = GRID_ROW_HEIGHT,
   gap = GRID_GAP,
+  rowGap = GRID_ROW_GAP,
   editable = true,
   onLayoutChange,
   onItemClick,
 }: SectionGridProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [draft, setDraft] = useState<GridItem[] | null>(null);
-  const interactionRef = useRef<Interaction | null>(null);
-  // Keys ordered bottom→top; last entry has highest z-index.
-  const [zOrder, setZOrder] = useState<string[]>(() => items.map((i) => i.key));
-
-  const bringToFront = useCallback((key: string) => {
-    setZOrder((prev) => [...prev.filter((k) => k !== key), key]);
-  }, []);
-
-  // Measure available width (drives cell size).
-  useLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width;
-      if (w) setContainerWidth(w);
-    });
-    ro.observe(el);
-    setContainerWidth(el.clientWidth);
-    return () => ro.disconnect();
-  }, []);
-
-  // Ensure every item has a placement; append missing ones after the last row.
-  const effectiveLayout = useMemo(() => {
-    const source = draft ?? layout;
-    const map = toMap(source);
-    const result: GridItem[] = [];
-    let nextRow = source.reduce((max, it) => Math.max(max, it.y + it.h), 0);
-    for (const item of items) {
-      const placed = map.get(item.key);
-      if (placed) {
-        result.push(placed);
-      } else {
-        result.push({ key: item.key, x: 0, y: nextRow, w: Math.min(2, columns), h: 2 });
-        nextRow += 2;
-      }
-    }
-    return result;
-  }, [draft, layout, items, columns]);
-
-  const layoutMap = useMemo(() => toMap(effectiveLayout), [effectiveLayout]);
-
-  const cellWidth = containerWidth > 0 ? (containerWidth - gap * (columns - 1)) / columns : 0;
-  const colSpan = cellWidth + gap;
-  const rowSpan = rowHeight + gap;
-
-  const totalRows = useMemo(
-    () => effectiveLayout.reduce((max, it) => Math.max(max, it.y + it.h), 0),
-    [effectiveLayout],
-  );
-  const gridHeight = totalRows > 0 ? totalRows * rowSpan - gap : 0;
-
-  // ── Pointer interaction ─────────────────────────────────────────────────
-
-  const commit = useCallback((next: GridItem[]) => {
-    // Persist placements only for items that still exist.
-    const keys = new Set(items.map((i) => i.key));
-    onLayoutChange(next.filter((it) => keys.has(it.key)));
-  }, [items, onLayoutChange]);
-
-  useEffect(() => {
-    if (!editable) return;
-
-    const handleMove = (e: PointerEvent) => {
-      const it = interactionRef.current;
-      if (!it || e.pointerId !== it.pointerId) return;
-      const dCol = Math.round((e.clientX - it.startX) / colSpan);
-      const dRow = Math.round((e.clientY - it.startY) / rowSpan);
-
-      setDraft(() => {
-        const map = toMap(effectiveLayout);
-        const cur = map.get(it.key);
-        if (!cur) return effectiveLayout;
-        let next: GridItem;
-        if (it.type === 'move') {
-          if (Math.abs(e.clientX - it.startX) > DRAG_THRESHOLD || Math.abs(e.clientY - it.startY) > DRAG_THRESHOLD) {
-            it.moved = true;
-          }
-          next = {
-            ...cur,
-            x: clamp(it.origin.x + dCol, 0, columns - it.origin.w),
-            y: Math.max(0, it.origin.y + dRow),
-          };
-        } else if (it.edge === 'right') {
-          next = { ...cur, w: clamp(it.origin.w + dCol, 1, columns - it.origin.x) };
-        } else if (it.edge === 'bottom') {
-          next = { ...cur, h: Math.max(1, it.origin.h + dRow) };
-        } else {
-          next = {
-            ...cur,
-            w: clamp(it.origin.w + dCol, 1, columns - it.origin.x),
-            h: Math.max(1, it.origin.h + dRow),
-          };
-        }
-        map.set(it.key, next);
-        return Array.from(map.values());
-      });
-    };
-
-    const handleUp = (e: PointerEvent) => {
-      const it = interactionRef.current;
-      if (!it || e.pointerId !== it.pointerId) return;
-      interactionRef.current = null;
-      setDraft((current) => {
-        if (current) commit(current);
-        return null;
-      });
-      // A pure click (no drag) navigates to the row.
-      if (it.type === 'move' && !it.moved) onItemClick?.(it.key);
-    };
-
-    window.addEventListener('pointermove', handleMove);
-    window.addEventListener('pointerup', handleUp);
-    return () => {
-      window.removeEventListener('pointermove', handleMove);
-      window.removeEventListener('pointerup', handleUp);
-    };
-  }, [editable, effectiveLayout, colSpan, rowSpan, columns, commit, onItemClick]);
-
-  const startMove = useCallback((e: React.PointerEvent, key: string) => {
-    if (!editable) { onItemClick?.(key); return; }
-    const origin = layoutMap.get(key);
-    if (!origin) return;
-    e.preventDefault();
-    bringToFront(key);
-    interactionRef.current = { type: 'move', key, origin, startX: e.clientX, startY: e.clientY, moved: false, pointerId: e.pointerId };
-  }, [editable, layoutMap, onItemClick, bringToFront]);
-
-  const startResize = useCallback((e: React.PointerEvent, key: string, edge: 'right' | 'bottom' | 'corner') => {
-    if (!editable) return;
-    const origin = layoutMap.get(key);
-    if (!origin) return;
-    e.preventDefault();
-    e.stopPropagation();
-    bringToFront(key);
-    interactionRef.current = { type: 'resize', edge, key, origin, startX: e.clientX, startY: e.clientY, pointerId: e.pointerId };
-  }, [editable, layoutMap, bringToFront]);
-
-  const draggingKey = interactionRef.current?.key ?? null;
+  const {
+    containerRef,
+    containerWidth,
+    layoutMap,
+    cellWidth,
+    colSpan,
+    rowSpan,
+    displayHeight,
+    dropHint,
+    multiStack,
+    zOrder,
+    draggingKey,
+    selection,
+    startMove,
+    startResize,
+  } = useGridInteraction({ items, layout, columns, rowHeight, gap, rowGap, editable, selection: selectionProp, onLayoutChange, onItemClick });
 
   return (
-    <div ref={containerRef} className={styles.grid} style={{ height: gridHeight }}>
+    <div ref={containerRef} className={styles.grid} style={{ height: displayHeight }}>
       {containerWidth > 0 && items.map((item) => {
         const pos = layoutMap.get(item.key);
         if (!pos) return null;
-        const left = pos.x * colSpan;
-        const top = pos.y * rowSpan;
         const width = pos.w * cellWidth + (pos.w - 1) * gap;
-        const height = pos.h * rowHeight + (pos.h - 1) * gap;
+        const height = pos.h * rowHeight - rowGap;
         const isDragging = draggingKey === item.key;
-        const zIndex = zOrder.indexOf(item.key) + 1;
+        const isSelected = selection.isSelected(item.key);
+
+        // Layout position; overridden below when this cell is part of an
+        // animated multi-drag stack.
+        let left = pos.x * colSpan;
+        let top = pos.y * rowSpan;
+        let zIndex = zOrder.indexOf(item.key) + 1;
+        let stacked = false;
+        if (multiStack) {
+          if (item.key === multiStack.primaryKey) {
+            left = multiStack.left;
+            top = multiStack.top;
+            zIndex = 1000; // primary rides on top of the stack
+          } else {
+            const i = multiStack.trailing.indexOf(item.key);
+            if (i !== -1) {
+              const depth = multiStack.trailing.length - i; // deeper = further back
+              left = multiStack.left + depth * STACK_OFFSET;
+              top = multiStack.top + depth * STACK_OFFSET;
+              zIndex = 900 - depth;
+              stacked = true;
+            }
+          }
+        }
+
+        const className = [
+          styles.item,
+          isSelected ? styles.itemSelected : '',
+          isDragging ? styles.itemDragging : '',
+          stacked ? styles.itemStacked : '',
+          dropHint?.kind === 'swap' && dropHint.targetKey === item.key ? styles.itemSwapTarget : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+
         return (
           <div
             key={item.key}
-            className={`${styles.item} ${isDragging ? styles.itemDragging : ''}`}
+            className={className}
             style={{ left, top, width, height, zIndex }}
           >
             <div
@@ -236,6 +136,19 @@ export function SectionGrid({
           </div>
         );
       })}
+      {dropHint?.kind === 'insert' && (() => {
+        const l = dropHint.line;
+        const style =
+          l.orientation === 'vertical'
+            ? { left: l.cellX * colSpan - gap / 2, top: l.cellY * rowSpan, height: l.length * rowSpan - rowGap }
+            : { left: l.cellX * colSpan, top: l.cellY * rowSpan - rowGap / 2, width: l.length * colSpan - gap };
+        return (
+          <div
+            className={`${styles.insertLine} ${l.orientation === 'vertical' ? styles.insertLineV : styles.insertLineH}`}
+            style={style}
+          />
+        );
+      })()}
     </div>
   );
 }
