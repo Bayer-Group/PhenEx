@@ -111,10 +111,10 @@
 .page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border) {
   position: relative;
   z-index: 3;
-  background-color: var(--background_color_light) !important;
-  box-shadow: -4px 0 8px rgba(191, 182, 180, 0.08);
-  clip-path: inset(0 0 0 -15px);
-  border-left: 1px solid var(--line-color);
+  background-color: var(--background_color_dark) !important;
+  box-shadow: 4px 0 8px rgba(191, 182, 180, 0.08);
+  clip-path: inset(0 -15px 0 0);
+  border-right: 1px solid var(--line-color);
 }
 
 .page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border:hover) {
@@ -126,7 +126,7 @@
   position: relative;
   z-index: 3;
   background-color: var(--background_color_dark) !important;
-  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.08);
+  box-shadow: -4px 0 10px rgba(191, 182, 180, 0.08);
   clip-path: inset(0 0 0 -15px);
   border-left: 1px solid var(--line-color);
 }
