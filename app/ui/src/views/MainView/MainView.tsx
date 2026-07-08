@@ -18,6 +18,8 @@ import {
 } from '../../contexts/ThreePanelCollapseContext';
 import { CohortRightPanel } from '../CohortViewer/CohortRightPanel/CohortRightPanel';
 import { StudyExecutePanel } from '../SlideoverPanels/StudyExecutePanel/StudyExecutePanel';
+import { MainBreadcrumb } from './MainBreadcrumb';
+import leftPanelIcon from '../../assets/icons/left_panel.svg';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -283,6 +285,11 @@ const MainViewInner = () => {
       ? 'study'
       : 'cohort';
 
+  const isCohortView =
+    currentView.viewType === ViewType.CohortDefinition ||
+    currentView.viewType === ViewType.PublicCohortDefinition ||
+    currentView.viewType === ViewType.NewCohort;
+
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
@@ -340,6 +347,16 @@ const MainViewInner = () => {
 
   return (
     <div className={styles.mainView}>
+      <div className={styles.titleGroup}>
+        <button
+          className={styles.leftBorderCollapseBtn}
+          onClick={toggleLeftPanel}
+          aria-label="Toggle left panel"
+        >
+          <img src={leftPanelIcon} alt="" />
+        </button>
+        <MainBreadcrumb studyId={studyId} showCohort={isCohortView} />
+      </div>
       <div className={styles.page}>
         <Layout
           model={layoutModelRef.current}

@@ -34,26 +34,71 @@
   position: relative;
 }
 
-/* Add styles to ensure the collapse button appears above the tree */
-.mainView > div {
-  position: relative;
-  z-index: 1;
-}
-
-.mainView > div > div[class*='Pane'] {
-  position: relative;
-  z-index: 1;
-}
-
-.mainView > div > div[class*='Resizer'] {
-  position: relative;
+/* ── Title bar (breadcrumb navigation) ───────────────────────────────── */
+.titleGroup {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding-left: 10px;
+  pointer-events: auto;
+  background-color: rgba(249, 240, 231, 0.7);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--text_color_notfocus);
+  border-bottom: 1px solid var(--line-color);
+  font-family: "IBMPlexSans-regular", sans-serif;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
   z-index: 10;
+  width: 100%;
+  height: 50px;
+}
+
+/* Collapse toggle to the left of the breadcrumb title */
+.leftBorderCollapseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  margin-right: 8px;
+}
+
+.leftBorderCollapseBtn img {
+  width: 18px;
+  height: 18px;
+  opacity: 0.65;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.leftBorderCollapseBtn:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.leftBorderCollapseBtn:hover img {
+  opacity: 1;
+}
+
+.leftBorderCollapseBtn:focus {
+  outline: none;
+  border: none;
 }
 
 /* ── FlexLayout page ─────────────────────────────────────────────────── */
 .page {
   position: relative;
-  height: 100vh;
+  margin-top: 50px;
+  height: calc(100vh - 50px);
   width: 100%;
   overflow: hidden;
   background-color: var(--background_color_dark);
