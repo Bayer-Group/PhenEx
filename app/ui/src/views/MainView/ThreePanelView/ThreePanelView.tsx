@@ -140,6 +140,14 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         onMouseDown={handleMouseDown('left')}
       >
         <div className={styles.dividerLine} />
+        <button
+          className={styles.collapseButton}
+          onMouseDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); toggleLeftPanel(); }}
+          title={isLeftCollapsed ? 'Expand left panel' : 'Collapse left panel'}
+        >
+          {isLeftCollapsed ? '›' : '‹'}
+        </button>
       </div>
 
       <div
@@ -148,6 +156,14 @@ export const ThreePanelView: React.FC<ThreePanelViewProps> = ({
         onMouseDown={handleMouseDown('right')}
       >
         <div className={styles.dividerLine} />
+        <button
+          className={styles.collapseButton}
+          onMouseDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); setIsRightCollapsed(!isRightCollapsed); }}
+          title={isRightCollapsed ? 'Expand right panel' : 'Collapse right panel'}
+        >
+          {isRightCollapsed ? '‹' : '›'}
+        </button>
       </div>
     </div>
   );

@@ -78,9 +78,49 @@
   right: 0;
 }
 
-.divider:hover .dividerLine {
+.divider:hover .dividerLine,
+.divider:has(.collapseButton:hover) .dividerLine {
   width: 2px;
   background-color: var(--color_accent_blue);
+}
+
+.collapseButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-color, #fff);
+  border: 1px solid var(--line-color, #e0e0e0);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text-secondary, #666);
+  padding: 0;
+  z-index: 101;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.divider.left .collapseButton {
+  left: -1px;
+}
+
+.divider.right .collapseButton {
+  right: -1px;
+}
+
+.divider:hover .collapseButton {
+  opacity: 1;
+}
+
+.collapseButton:hover {
+  color: var(--color_accent_blue);
+  border-color: var(--color_accent_blue);
 }
 
 /* Disable transitions and text selection while dragging */
