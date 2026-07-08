@@ -30,29 +30,16 @@ export const getPublicCohort = async (cohort_id: string, provisional: boolean = 
   }
 };
 
-export const getUserCohorts = async () => {
+export const getUserCohort = async (study_id: string, cohort_id: string, provisional: boolean = false) => {
   try {
-    const response = await api.get('/cohorts');
-    return response.data;
-  } catch (error) {
-    console.error('Error in getUserCohorts:', error);
-    throw error;
-  }
-};
-
-export const getUserCohort = async (cohort_id: string, provisional: boolean = false) => {
-  try {
-    const response = await api.get('/cohort', {
-      params: { cohort_id, provisional },
+    const response = await api.get(`/study/${study_id}/cohort/${cohort_id}`, {
+      params: { provisional },
     });
 
-    // Parse the cohort_data field if it exists and is a string
     if (response.data.cohort_data && typeof response.data.cohort_data === 'string') {
       response.data.cohort_data = JSON.parse(response.data.cohort_data);
     }
 
-    // Return the full response data which includes is_provisional, version, etc.
-    // The cohort_data field is nested inside
     return response.data;
   } catch (error) {
     console.error('Error in getUserCohort:', error);
@@ -60,12 +47,9 @@ export const getUserCohort = async (cohort_id: string, provisional: boolean = fa
   }
 };
 
-export const createCohort = async (cohort_id: string, cohort_data: any, study_id: string) => {
+export const createCohort = async (study_id: string, cohort_id: string, cohort_data: any) => {
   try {
-    console.log('I AM CREATING THE COHORT', cohort_data);
-    const response = await api.put('/cohort', cohort_data, {
-      params: { cohort_id, study_id },
-    });
+    const response = await api.put(`/study/${study_id}/cohort/${cohort_id}`, cohort_data);
     return response.data;
   } catch (error) {
     console.error('Error in createCohort:', error);
@@ -73,12 +57,9 @@ export const createCohort = async (cohort_id: string, cohort_data: any, study_id
   }
 };
 
-export const updateCohort = async (cohort_id: string, cohort_data: any) => {
+export const updateCohort = async (study_id: string, cohort_id: string, cohort_data: any) => {
   try {
-    console.log('I AM UPDATING THE COHORT', cohort_data);
-    const response = await api.put('/cohort', cohort_data, {
-      params: { cohort_id },
-    });
+    const response = await api.put(`/study/${study_id}/cohort/${cohort_id}`, cohort_data);
     return response.data;
   } catch (error) {
     console.error('Error in updateCohort:', error);
@@ -86,11 +67,9 @@ export const updateCohort = async (cohort_id: string, cohort_data: any) => {
   }
 };
 
-export const updateCohortDatabaseConfig = async (cohort_id: string, database: Record<string, any> | null) => {
+export const updateCohortDatabaseConfig = async (study_id: string, cohort_id: string, database: Record<string, any> | null) => {
   try {
-    const response = await api.patch('/cohort/database', { database }, {
-      params: { cohort_id },
-    });
+    const response = await api.patch(`/study/${study_id}/cohort/${cohort_id}/database`, { database });
     return response.data;
   } catch (error) {
     console.error('Error in updateCohortDatabaseConfig:', error);
@@ -98,12 +77,10 @@ export const updateCohortDatabaseConfig = async (cohort_id: string, database: Re
   }
 };
 
-export const deleteCohort = async (cohort_id: string) => {
+export const deleteCohort = async (study_id: string, cohort_id: string) => {
   try {
-    const response = await api.delete('/cohort', {
-      params: { cohort_id },
-    });
-    return response.data.cohort_data;
+    const response = await api.delete(`/study/${study_id}/cohort/${cohort_id}`);
+    return response.data;
   } catch (error) {
     console.error('Error in deleteCohort:', error);
     throw error;

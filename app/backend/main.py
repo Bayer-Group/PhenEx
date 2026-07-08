@@ -74,7 +74,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 init_db()
 
-app = FastAPI()
+_tags_metadata = [
+    {"name": "study", "description": "Study management"},
+    {"name": "study execution", "description": "Study execution, reports, and logs"},
+    {"name": "cohort", "description": "Cohort management (sub-resources of studies)"},
+    {"name": "codelist", "description": "Codelist management"},
+    {"name": "AI", "description": "AI / copilot endpoints"},
+    {"name": "chat", "description": "Chat history"},
+    {"name": "default", "description": "General endpoints"},
+    {"name": "auth", "description": "Authentication"},
+]
+
+app = FastAPI(openapi_tags=_tags_metadata)
 
 origins = [
     "http://localhost",
@@ -184,8 +195,8 @@ from .utils.auth import get_authenticated_user_id
 # Include the router from rag.py
 # app.include_router(rag_router, prefix="/rag")
 
-# Include the cohort router
-from .routes.cohort import router as cohort_router
+# Include the study-cohort router (cohorts are sub-resources of studies)
+from .routes.study_cohort import router as cohort_router
 
 app.include_router(cohort_router)
 

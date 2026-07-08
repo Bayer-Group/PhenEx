@@ -450,7 +450,13 @@ class ChatPanelDataService {
           console.log('Fetching updated cohort after AI changes...');
           let response: any;
           try {
-            response = await getUserCohort(this.cohortDataService.cohort_data.id, true);
+            const studyId = this.cohortDataService.cohort_data.study_id;
+            const cohortId = this.cohortDataService.cohort_data.id;
+            if (studyId) {
+              response = await getUserCohort(studyId, cohortId, true);
+            } else {
+              response = await getPublicCohort(cohortId, true);
+            }
           } catch (userCohortError: any) {
             const status = userCohortError?.response?.status ?? userCohortError?.status;
             if (status === 404) {

@@ -1,5 +1,5 @@
 import { FC, useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import styles from './CohortViewer.module.css';
 import { CohortDataService } from './CohortDataService/CohortDataService';
 import { getUserCohort, getPublicCohort, getStudy } from '../../api/text_to_cohort/route';
@@ -43,6 +43,7 @@ export enum CohortViewType {
 
 export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, activeTabIndex }) => {
   const navigate = useNavigate();
+  const { studyId: urlStudyId } = useParams<{ studyId: string }>();
   const [cohortName, setCohortName] = useState('');
   const [studyName, setStudyName] = useState('');
   const gridRef = useRef<any>(null);
@@ -69,7 +70,11 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
           try {
             let cohortData;
             try {
-              cohortData = await getUserCohort(data);
+              if (urlStudyId) {
+                cohortData = await getUserCohort(urlStudyId, data);
+              } else {
+                cohortData = await getPublicCohort(data);
+              }
             } catch (error) {
               cohortData = await getPublicCohort(data);
             }

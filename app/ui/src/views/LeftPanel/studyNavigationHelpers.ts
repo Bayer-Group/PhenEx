@@ -188,7 +188,7 @@ export async function createStudyFromIntake(
         description: cohortIntake.description,
         phenotypes,
       };
-      await updateCohort(cohortData.id, cohortPayload);
+      await updateCohort(cohortData.study_id, cohortData.id, cohortPayload);
       createdCohortIds.push(cohortData.id);
     }
   }

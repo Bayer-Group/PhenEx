@@ -3,10 +3,6 @@ import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataS
 
 
 import {
-  getUserCohort,
-  getPublicCohort,
-  updateCohort,
-  deleteCohort,
   deleteStudy,
   getStudy,
   updateStudy,

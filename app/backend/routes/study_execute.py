@@ -34,7 +34,7 @@ def _get_mock_database(mapper, n_patients: int = 1000):
     return _db_cache[n_patients]
 
 
-@router.post("/study/execute", tags=["study"])
+@router.post("/study/execute", tags=["study execution"])
 async def execute_study(request: Request):
     """
     Execute all cohorts in a study with streaming output.
@@ -308,7 +308,7 @@ async def execute_study(request: Request):
     )
 
 
-@router.get("/study/{study_id}/executions", tags=["study"])
+@router.get("/study/{study_id}/executions", tags=["study execution"])
 async def get_study_executions(request: Request, study_id: str):
     """
     Get execution history for a study.
@@ -342,7 +342,7 @@ async def get_study_executions(request: Request, study_id: str):
         raise HTTPException(status_code=500, detail="Failed to retrieve study executions")
 
 
-@router.get("/study/{study_id}/report", tags=["study"])
+@router.get("/study/{study_id}/report", tags=["study execution"])
 async def get_study_report(request: Request, study_id: str):
     """
     Return the index.html report for the most recent execution of a study.
@@ -382,7 +382,7 @@ async def get_study_report(request: Request, study_id: str):
     return HTMLResponse(content=content)
 
 
-@router.get("/study/{study_id}/execution/{execution_id}/report", tags=["study"])
+@router.get("/study/{study_id}/execution/{execution_id}/report", tags=["study execution"])
 async def get_execution_report(request: Request, study_id: str, execution_id: str):
     """
     Return the index.html report for a specific execution.
@@ -417,7 +417,7 @@ async def get_execution_report(request: Request, study_id: str, execution_id: st
     return HTMLResponse(content=content)
 
 
-@router.get("/study/{study_id}/execution/{execution_id}/log", tags=["study"])
+@router.get("/study/{study_id}/execution/{execution_id}/log", tags=["study execution"])
 async def get_execution_log(request: Request, study_id: str, execution_id: str):
     """
     Return the analysis.log for a specific execution as plain text.
@@ -453,7 +453,7 @@ async def get_execution_log(request: Request, study_id: str, execution_id: str):
     return PlainTextResponse(content=content)
 
 
-@router.delete("/study/{study_id}/execution/{execution_id}", tags=["study"])
+@router.delete("/study/{study_id}/execution/{execution_id}", tags=["study execution"])
 async def delete_execution(request: Request, study_id: str, execution_id: str):
     """
     Delete a study execution record and its artifact directory.

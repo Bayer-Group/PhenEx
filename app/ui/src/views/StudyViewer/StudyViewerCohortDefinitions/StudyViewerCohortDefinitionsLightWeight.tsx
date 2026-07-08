@@ -625,7 +625,8 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
               </button>
               <button className={styles.alertDeleteButton} onClick={async () => {
                 if (deleteConfirmCohort) {
-                  await deleteCohort(deleteConfirmCohort.cohort.id);
+                  const studyId = deleteConfirmCohort.cohort.study_id || studyDataService.study_data?.id;
+                  await deleteCohort(studyId, deleteConfirmCohort.cohort.id);
                   setDeleteConfirmCohort(null);
                   await studyDataService.refreshStudyData();
                 }

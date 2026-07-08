@@ -1,7 +1,6 @@
 import { createID } from '../../types/createID';
 import { 
   getPublicCohorts, 
-  getUserCohorts, 
   createCohort,
   updateCohort,
   getUserStudies,
@@ -59,7 +58,9 @@ export class CohortsDataService {
 
   public async userCohortNamesAndIds() {
     try {
-      this._userCohortNamesAndIds = await getUserCohorts();
+      const studies = await this.getUserStudies();
+      const cohortArrays = await Promise.all(studies.map(s => getCohortsForStudy(s.id)));
+      this._userCohortNamesAndIds = cohortArrays.flat();
     } catch (error) {
       console.warn('🚨 Failed to fetch user cohorts, likely auth not ready:', error);
       this._userCohortNamesAndIds = [];
@@ -361,7 +362,7 @@ export class CohortsDataService {
 
     // Save to database in background - only send backend-compatible fields
     try {
-      await createCohort(cohortJson.id, backendPayload, studyId);
+      await createCohort(studyId, cohortJson.id, backendPayload);
     } catch (error) {
       console.error('Failed to create cohort in database:', error);
       // Revert optimistic update on failure
@@ -440,15 +441,10 @@ export class CohortsDataService {
       // Update backend in parallel - fetch each cohort, update display_order, then save
       await Promise.all(
         cohortOrders.map(async ({ cohort_id, display_order }) => {
-          // Fetch the full cohort data
-          const cohortResponse = await getUserCohort(cohort_id);
+          const cohortResponse = await getUserCohort(study_id, cohort_id);
           const cohortData = cohortResponse.cohort_data;
-          
-          // Update just the display_order field
           cohortData.display_order = display_order;
-          
-          // Save using the general updateCohort function
-          await updateCohort(cohort_id, cohortData);
+          await updateCohort(study_id, cohort_id, cohortData);
         })
       );
 

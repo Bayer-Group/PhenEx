@@ -531,7 +531,7 @@ async def update_study_database(
 
 
 # Study sub-resources
-@router.get("/study/{study_id}/cohorts", tags=["study"])
+@router.get("/study/{study_id}/cohorts", tags=["cohort"])
 async def get_cohorts_for_study(request: Request, study_id: str):
     """
     Get all cohorts associated with a specific study.

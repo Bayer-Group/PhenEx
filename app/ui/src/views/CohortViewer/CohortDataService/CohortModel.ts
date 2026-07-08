@@ -7,6 +7,7 @@ import {
   getUserCohort,
   getPublicCohort,
 } from '../../../api/text_to_cohort/route';
+
 import { defaultColumns, componentPhenotypeColumns } from './CohortColumnDefinitions';
 import { createID } from '../../../types/createID';
 import { CohortIssuesService } from '../CohortIssuesDisplay/CohortIssuesService';
@@ -145,11 +146,16 @@ export class CohortModel {
 
   public async loadDiff(): Promise<void> {
     const cohortId = this._cohort_data?.id;
+    const studyId = this._cohort_data?.study_id;
     if (!cohortId || this._cohort_data.is_provisional !== true) return;
     try {
       let baseResponse: any;
       try {
-        baseResponse = await getUserCohort(cohortId, false);
+        if (studyId) {
+          baseResponse = await getUserCohort(studyId, cohortId, false);
+        } else {
+          baseResponse = await getPublicCohort(cohortId, false);
+        }
       } catch {
         baseResponse = await getPublicCohort(cohortId, false);
       }
@@ -288,7 +294,7 @@ export class CohortModel {
 
   public async setCohortDatabaseConfig(config: Record<string, any> | null): Promise<void> {
     this._database = config;
-    await updateCohortDatabaseConfig(this._cohort_data.id, config);
+    await updateCohortDatabaseConfig(this._cohort_data.study_id, this._cohort_data.id, config);
   }
 
 
@@ -463,7 +469,7 @@ export class CohortModel {
     
     // Strip legacy structured keys before sending to backend
     const cohortForBackend = this.stripLegacyStructuredKeys(this._cohort_data);
-    await updateCohort(this._cohort_data.id, cohortForBackend);
+    await updateCohort(this._cohort_data.study_id, this._cohort_data.id, cohortForBackend);
 
     // Always notify data change listeners (for PhenotypeDataService sync)
     this.notifyDataChangeListeners();
@@ -833,7 +839,7 @@ export class CohortModel {
     // Update table data AFTER calculating hierarchical indices so they're reflected in the grid
     this._table_data = this.tableDataFromCohortData();
     
-    await updateCohort(this._cohort_data.id, this._cohort_data);
+    await updateCohort(this._cohort_data.study_id, this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
     
@@ -916,7 +922,7 @@ export class CohortModel {
     // Update table data AFTER calculating hierarchical indices so they're reflected in the grid
     this._table_data = this.tableDataFromCohortData();
     
-    await updateCohort(this._cohort_data.id, this._cohort_data);
+    await updateCohort(this._cohort_data.study_id, this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
     
@@ -994,7 +1000,7 @@ export class CohortModel {
     // Recalculate hierarchical indices after hierarchical reordering
     this.calculateHierarchicalIndices();
     
-    await updateCohort(this._cohort_data.id, this._cohort_data);
+    await updateCohort(this._cohort_data.study_id, this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
     this.issues_service.validateCohort();
     
@@ -1100,7 +1106,7 @@ export class CohortModel {
     // Immediately save to database if we have a study_id
     if (studyId) {
       try {
-        await createCohort(cohortId, this._cohort_data, studyId);
+        await createCohort(studyId, cohortId, this._cohort_data);
         console.log(`✅ Created new cohort ${cohortId} in database`);
       } catch (error) {
         console.error('Failed to create cohort in database:', error);
@@ -1230,7 +1236,7 @@ export class CohortModel {
 
   async deleteCohort() {
     if (this._cohort_data.id) {
-      await deleteCohort(this._cohort_data.id);
+      await deleteCohort(this._cohort_data.study_id, this._cohort_data.id);
       this._cohort_data = {};
       this._cohort_name = '';
       this._table_data = { rows: [], columns: this.columns };
