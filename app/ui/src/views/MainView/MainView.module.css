@@ -49,3 +49,134 @@
   position: relative;
   z-index: 10;
 }
+
+/* ── FlexLayout page ─────────────────────────────────────────────────── */
+.page {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--background_color_dark);
+}
+
+/* Panel content wrappers */
+.leftPanel,
+.centerPanel,
+.rightPanelTab {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Placeholder shown in tabs that are intentionally empty for now */
+.emptyPane {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  color: var(--text_color_notfocus, #999);
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 13px;
+}
+
+/* ── FlexLayout styling (mirrors ReportViewer) ───────────────────────── */
+.page :global(.flexlayout__layout) {
+  --color-background: transparent;
+  overflow: hidden;
+}
+
+/* Left gutter — vertical tab bar is hidden (single panel, toggled via ⌘B) */
+.page :global(.flexlayout__border_left) {
+  border-right: none;
+  width: 0px;
+  margin-left: 0px;
+  margin-top: 0px;
+}
+
+/* Left border panel content */
+.page :global(.flexlayout__border_tab_contents) {
+  background: transparent;
+  overflow: hidden;
+}
+
+/* Internal dividers (splitters) */
+.page :global(.flexlayout__splitter:not(.flexlayout__splitter_border)) {
+  background-color: transparent !important;
+  box-shadow: none;
+}
+
+/* Border between left panel and center panel; has drop shadow */
+.page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border) {
+  position: relative;
+  z-index: 3;
+  background-color: var(--background_color_light) !important;
+  box-shadow: -4px 0 8px rgba(191, 182, 180, 0.08);
+  clip-path: inset(0 0 0 -15px);
+  border-left: 1px solid var(--line-color);
+}
+
+.page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border:hover) {
+  background-color: var(--gray) !important;
+}
+
+/* Border between center panel and right panel; has drop shadow */
+.page :global(.flexlayout__layout_main + .flexlayout__splitter_border) {
+  position: relative;
+  z-index: 3;
+  background-color: var(--background_color_dark) !important;
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.08);
+  clip-path: inset(0 0 0 -15px);
+  border-left: 1px solid var(--line-color);
+}
+
+.page :global(.flexlayout__layout_main + .flexlayout__splitter_border:hover) {
+  background-color: lightgray !important;
+}
+
+/* Each tabset renders as a card */
+.page :global(.flexlayout__border) :global(.flexlayout__tabset) {
+  border-radius: 8px;
+  background-color: var(--background_color_light) !important;
+  overflow: hidden;
+  margin: 4px;
+}
+
+/* Tab bar gutter */
+.page :global(.flexlayout__tabset_tabbar_outer) {
+  background-color: var(--background_color_dark) !important;
+  border-top: var(--border) !important;
+  padding-bottom: 0px;
+  padding-top: 5px;
+}
+
+.page :global(.flexlayout__tabset_tabbar_outer_top) {
+  border-bottom: none;
+}
+
+/* Tab buttons */
+.page :global(.flexlayout__tab_button) {
+  font-family: "IBMPlexSans-regular" !important;
+  background-color: var(--background_color_dark) !important;
+  color: var(--text_color_notfocus, #333);
+  border-radius: 8px;
+  border-bottom: none;
+  border: 1px solid var(--line-color, #ddd);
+}
+
+.page :global(.flexlayout__tab_button--selected) {
+  background-color: var(--background_color_light) !important;
+  color: var(--text_color_focus, black);
+  font-family: "IBMPlexSans-bold", sans-serif !important;
+}
+
+.page :global(.flexlayout__tab_button--unselected) {
+  background-color: var(--background_color_dark) !important;
+  color: var(--text_color_notfocus, #333);
+}
+
+.page :global(.flexlayout__tab_button:hover) {
+  color: var(--text_color_focus, black);
+  background-color: var(--background_color_light, white);
+}
