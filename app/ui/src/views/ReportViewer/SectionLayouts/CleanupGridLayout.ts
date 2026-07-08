@@ -1,4 +1,4 @@
-import type { GridItem } from './sectionLayoutStore';
+import { TILE_HEADER_ROWS, type GridItem } from './sectionLayoutStore';
 
 /**
  * Overlap-free normalisation of a section grid.
@@ -75,32 +75,46 @@ export function cleanupGridLayout(layout: GridItem[], columns: number): GridItem
 }
 
 /**
- * Resolve overlaps while pinning one item in place.
+ * Free placement: keep the dropped tile exactly where it landed and only
+ * displace the tiles it actually overlaps.
  *
- * The `anchorKey` item stays exactly where it was dropped (the mouse cell).
- * Another tile is only pushed **down** by the anchor when the anchor reaches
- * *above that tile's vertical midline* — i.e. you have dragged past its middle.
- * A tile the anchor merely clips from below (its own top half still clear) is
- * left in place, so items aren't shoved down on the slightest touch. Overlaps
- * between the other (non-anchor) tiles are always resolved downward.
+ * The `anchorKey` tile is pinned at its dropped cell; every other tile keeps
+ * its position unless it collides. With `push: 'right'` (default) a colliding
+ * tile slides right past the blocker and wraps onto the next row only when it
+ * no longer fits within `columns`; with `push: 'down'` it is moved straight
+ * down below the blocker. Untouched tiles — and any empty cells between them —
+ * are left exactly as they were, so items can be scattered freely.
  *
- * Columns are clamped; x is otherwise untouched. The original array order is
- * preserved so React reconciliation stays stable.
+ * The original array order is preserved so React reconciliation stays stable.
  */
-export function resolveWithAnchor(layout: GridItem[], anchorKey: string, columns: number): GridItem[] {
+export function placeFreely(
+  layout: GridItem[],
+  anchorKey: string,
+  columns: number,
+  push: 'right' | 'down' = 'right',
+): GridItem[] {
   const anchorSrc = layout.find((it) => it.key === anchorKey);
   if (!anchorSrc) return cleanupGridLayout(layout, columns);
 
   const anchor: GridItem = { ...anchorSrc, w: Math.min(anchorSrc.w, columns) };
+  anchor.x = Math.max(0, Math.min(anchor.x, columns - anchor.w));
   const placed: GridItem[] = [anchor];
 
   for (const source of readingOrder(layout.filter((it) => it.key !== anchorKey))) {
     const item: GridItem = { ...source, w: Math.min(source.w, columns) };
-    // The anchor displaces this tile only if it crosses the tile's midline.
-    const anchorDisplaces = anchor.y < source.y + source.h / 2;
-    const blocks = (p: GridItem) => overlaps(item, p) && (p.key !== anchorKey || anchorDisplaces);
-    for (let hit = placed.find(blocks); hit; hit = placed.find(blocks)) {
-      item.y = hit.y + hit.h;
+    for (let hit = firstCollision(item, placed); hit; hit = firstCollision(item, placed)) {
+      if (push === 'down') {
+        // Push the colliding tile straight down below the blocker.
+        item.y = hit.y + hit.h;
+      } else {
+        const slidX = hit.x + hit.w;
+        if (slidX + item.w <= columns) {
+          item.x = slidX;
+        } else {
+          item.x = 0;
+          item.y = hit.y + hit.h;
+        }
+      }
     }
     placed.push(item);
   }
@@ -108,6 +122,7 @@ export function resolveWithAnchor(layout: GridItem[], anchorKey: string, columns
   const byKey = new Map(placed.map((it) => [it.key, it]));
   return layout.map((it) => byKey.get(it.key) ?? it);
 }
+
 
 /**
  * Apply a cohort-count change to a layout by the row **delta** it produces,
@@ -128,7 +143,9 @@ export function restackByCohortDelta(layout: GridItem[], deltaRows: number): Gri
     const tilesAbove = layout.filter((o) => o.key !== item.key && o.y < item.y && sharesColumn(o, item)).length;
     return {
       ...item,
-      h: Math.max(1, item.h + deltaRows),
+      // Floor at the fixed header block so a shrunk tile never collapses to a
+      // padding-only sliver (still shows its title + a little body).
+      h: Math.max(TILE_HEADER_ROWS, item.h + deltaRows),
       y: Math.max(0, item.y + deltaRows * tilesAbove),
     };
   });

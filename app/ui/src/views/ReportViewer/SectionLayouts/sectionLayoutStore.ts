@@ -47,19 +47,27 @@ type PersistedState = Record<string, SectionState>;
 // ── Grid constants ───────────────────────────────────────────────────────
 
 export const GRID_COLUMNS = 10;
-/** Vertical grid unit: one cohort-row. Kept small so a cohort ≈ 10px (row+gap). */
-export const GRID_ROW_HEIGHT = 8;
-/** Horizontal gap between tiles. */
+/** Vertical grid pitch: one cohort-row step (px per grid row). */
+export const GRID_ROW_HEIGHT = 12;
+/** Horizontal gutter between tiles. */
 export const GRID_GAP = 14;
-/** Vertical gap between tiles. Small so cohort steps stay fine-grained. */
-export const GRID_ROW_GAP = 2;
+/**
+ * Vertical gutter between tiles. Applied as a fixed inset (not per row-track),
+ * so it stays a constant visual gap regardless of how many rows a tile spans
+ * — kept equal to {@link GRID_GAP} so vertical and horizontal spacing match.
+ */
+export const GRID_ROW_GAP = 14;
 
 /**
- * A new grid tile gives each cohort one grid row (≈ `GRID_ROW_HEIGHT` + `GRID_ROW_GAP`
- * ≈ 10px), plus `TILE_HEADER_ROWS` for the title/chrome and a readable base size.
- * Adding one cohort therefore grows the tile by exactly one row (~10px).
+ * A fresh grid tile reserves a fixed `TILE_HEADER_ROWS` block for the title /
+ * chrome / bottom padding, plus `ROWS_PER_COHORT` grid rows for **each** cohort
+ * it must show. Adding one cohort therefore grows the tile by `ROWS_PER_COHORT`
+ * rows (≈ `ROWS_PER_COHORT` × `GRID_ROW_HEIGHT`px). Bump `ROWS_PER_COHORT` to give
+ * each cohort more vertical space; bump `TILE_HEADER_ROWS` for a taller fixed header.
  */
-export const TILE_HEADER_ROWS = 11;
+export const TILE_HEADER_ROWS = 8;
+/** Grid rows allotted per cohort in a tile's body. */
+export const ROWS_PER_COHORT = 1;
 
 // ── Persistence ──────────────────────────────────────────────────────────
 
@@ -199,11 +207,12 @@ const store = new SectionLayoutStore();
 // ── Default layout generation ────────────────────────────────────────────
 
 /**
- * Grid-row span for a fresh tile given how many cohorts it must show: one row
- * per cohort plus the header rows, so each cohort added grows the tile by one.
+ * Grid-row span for a fresh tile given how many cohorts it must show: a fixed
+ * header block plus `ROWS_PER_COHORT` rows per cohort, so each cohort added
+ * grows the tile by `ROWS_PER_COHORT` rows.
  */
 export function defaultTileRows(cohortCount: number): number {
-  return Math.max(1, cohortCount) + TILE_HEADER_ROWS;
+  return TILE_HEADER_ROWS + Math.max(1, cohortCount) * ROWS_PER_COHORT;
 }
 
 /**

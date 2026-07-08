@@ -45,6 +45,32 @@
   pointer-events: none;
 }
 
+/* Tile targeted for a swap: blur + dim so the flip is obvious. */
+.itemSwapTarget {
+  filter: blur(2px) brightness(0.96);
+  outline: 2px dashed var(--accent_color, #4a7fff);
+  outline-offset: -2px;
+  transition: filter 0.1s;
+}
+
+/* Insertion indicator drawn between tiles while dragging. */
+.insertLine {
+  position: absolute;
+  z-index: 1500;
+  pointer-events: none;
+  background: var(--accent_color, #4a7fff);
+  border-radius: 3px;
+  box-shadow: 0 0 6px rgba(74, 127, 255, 0.6);
+}
+
+.insertLineV {
+  width: 3px;
+}
+
+.insertLineH {
+  height: 3px;
+}
+
 .itemHeader {
   flex-shrink: 0;
   font-family: "IBMPlexSans-bold", sans-serif;
