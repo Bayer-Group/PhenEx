@@ -7,10 +7,11 @@
 .cohortTableContainer {
   display: flex;
   flex-direction: column;
-  margin-top:50px;
-  height: calc(100% - 50px);
+  padding-top:10px;
+  height: calc(100% - 10px);
   width: 100%;
   position: relative;
+  background-color: var(--background_color_light, #f0f0f0) !important;
 }
 
 .topSection {
@@ -36,7 +37,7 @@
   position: relative;
 }
 
-.bottomGradient {
+/* .bottomGradient {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -44,7 +45,7 @@
   height: 50px;
   background: linear-gradient(to top, var(--background-color), #ffffff00);
   pointer-events: none;
-}
+} */
 
 .visible {
   transform: translateX(0);

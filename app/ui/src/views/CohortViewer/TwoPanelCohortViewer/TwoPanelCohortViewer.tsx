@@ -426,17 +426,6 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
   return (
     <NavBarMenuProvider>
       <div className={`${styles.container} ${contentMode === 'study' ? styles.studyMode : ''}`}>
-        <div className={`${styles.topSection} ${isLeftPanelShown ? styles.leftPanelShown : ''}`}>
-          <div className={styles.breadcrumbsContainer}>
-            <SmartBreadcrumbs 
-              items={breadcrumbItems} 
-              onEditLastItem={handleEditLastItem}
-              classNameBreadcrumbItem={styles.breadcrumbItem}
-              classNameBreadcrumbLastItem={styles.breadcrumbLastItem}
-              compact={false}
-            />
-          </div>
-        </div>
         <div className={styles.contentSection}>
           <TwoPanelView 
             ref={panelRef}

@@ -69,7 +69,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
       rowBorder: false,
       spacing: 0,
       wrapperBorder: false,
-      backgroundColor: 'var(--background-color)',
+      backgroundColor: 'var(--background_color_light)',
       wrapperBorderRadius: 0,
     };
     const myTheme = themeQuartz.withParams(tableTheme ? tableTheme : default_theme);

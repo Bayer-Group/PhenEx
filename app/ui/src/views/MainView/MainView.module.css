@@ -100,7 +100,7 @@
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background-color: var(--background_color_dark);
+  background-color: var(--background_color_light);
 }
 
 /* Main region: holds the title bar and the inner (center + right) layout */
@@ -183,7 +183,7 @@
 .page :global(.flexlayout__layout_main + .flexlayout__splitter_border) {
   position: relative;
   z-index: 3;
-  background-color: var(--background_color_dark) !important;
+  background-color: var(--background_color_light) !important;
   box-shadow: -4px 0 10px rgba(191, 182, 180, 0.08);
   clip-path: inset(0 0 0 -15px);
   border-left: 1px solid var(--line-color);
@@ -203,7 +203,7 @@
 
 /* Tab bar gutter */
 .page :global(.flexlayout__tabset_tabbar_outer) {
-  background-color: var(--background_color_dark) !important;
+  background-color: var(--background_color_light) !important;
   border-top: var(--border) !important;
   padding-bottom: 0px;
   padding-top: 5px;

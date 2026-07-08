@@ -345,32 +345,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
     }
   };
 
-  const renderBreadcrumbs = () => {
-    const breadcrumbItems = [
-      {
-        displayName: 'My Studies',// TODO; cohorts need to know if they're public or not
-        onClick: navigateToMyStudies,
-      },
-      {
-        displayName: studyName || 'Study',
-        onClick: navigateToStudyViewer,
-      },
-      {
-        displayName: cohortName || 'Unnamed Cohort',
-        onClick: () => {},
-      },
-    ];
-
-    const handleEditLastItem = async (newValue: string) => {
-      dataService.cohort_name = newValue;
-      dataService.cohort_data.name = newValue; // Also update the cohort_data directly
-      await dataService.saveChangesToCohort(true, false); // Save without refreshing grid
-      setCohortName(newValue); // Update local state after save completes
-    };
-
-    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={false} />;
-  };
-
   const handleViewNavigationArrowClicked = (direction: 'left' | 'right') => {
     if (gridRef.current?.scrollByColumn) {
       gridRef.current.scrollByColumn(direction);

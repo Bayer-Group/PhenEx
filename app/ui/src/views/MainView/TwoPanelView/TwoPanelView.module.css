@@ -7,14 +7,14 @@
   width: 100%;
   height: 100%;
   position: relative;
-  background-color: var(--background-color) !important;
+  background-color: red !important;
   overflow: hidden;
 }
 
 .leftPanel {
   flex: 0 0 auto;
   min-width: 0;
-  background-color: var(--background-color) !important;
+  background-color: red!important;
   position: relative;
   height: 100%;
   z-index: 1;
@@ -28,7 +28,7 @@
   min-width: 0;
   position: relative;
   transition: none;
-  background-color: var(--background-color) !important;
+  background-color: red !important;
   opacity: 1;
   transition:
     opacity 0.1s ease;

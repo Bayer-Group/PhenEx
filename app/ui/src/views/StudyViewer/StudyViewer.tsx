@@ -6,7 +6,6 @@ import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 import { StudyDataService } from './StudyDataService';
 
 import { CohortsDataService } from '../LeftPanel/CohortsDataService';
-import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
 import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
 import { useFadeIn } from '../../hooks/useFadeIn';
@@ -183,26 +182,6 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
     window.location.href = '/studies';
   };
 
-  const renderBreadcrumbs = () => {
-    const breadcrumbItems = [
-      {
-        displayName: isPublicStudy ? 'Public Studies' : 'My Studies',
-        onClick: navigateToMyStudies,
-      },
-      {
-        displayName: studyName || 'Unnamed Study',
-        onClick: () => {},
-      },
-    ];
-
-    const handleEditLastItem = async (newValue: string) => {
-      setStudyName(newValue);
-      studyDataService._study_name = newValue;
-      await studyDataService.saveChangesToStudy();
-    };
-
-    return <SmartBreadcrumbs items={breadcrumbItems} onEditLastItem={handleEditLastItem} classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer} classNameBreadcrumbItem={styles.breadcrumbItem} classNameBreadcrumbLastItem={styles.breadcrumbLastItem} compact={false}/>;
-  };
 
 
   const renderSectionTabs = () => {
