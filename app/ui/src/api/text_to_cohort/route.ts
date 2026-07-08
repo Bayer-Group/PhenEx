@@ -201,9 +201,7 @@ export const getPublicStudies = async () => {
 
 export const getStudy = async (study_id: string) => {
   try {
-    const response = await api.get('/study', {
-      params: { study_id },
-    });
+    const response = await api.get(`/study/${study_id}`);
     return response.data;
   } catch (error) {
     console.error('Error in getStudy:', error);
@@ -213,9 +211,7 @@ export const getStudy = async (study_id: string) => {
 
 export const getPublicStudy = async (study_id: string) => {
   try {
-    const response = await api.get('/study/public', {
-      params: { study_id },
-    });
+    const response = await api.get(`/study/${study_id}/public`);
     return response.data;
   } catch (error) {
     console.error('Error in getPublicStudy:', error);
@@ -227,7 +223,7 @@ export const updateStudy = async (study_id: string, study_data: any) => {
   try {
     console.log('Updating study:', study_data);
     // Ensure study_id is in the body for updates
-    const response = await api.put('/study', { ...study_data, id: study_id });
+    const response = await api.put(`/study/${study_id}`, study_data);
     return response.data;
   } catch (error) {
     console.error('Error in updateStudy:', error);
@@ -237,9 +233,7 @@ export const updateStudy = async (study_id: string, study_data: any) => {
 
 export const deleteStudy = async (study_id: string) => {
   try {
-    const response = await api.delete('/study', {
-      params: { study_id },
-    });
+    const response = await api.delete(`/study/${study_id}`);
     return response.data;
   } catch (error) {
     console.error('Error in deleteStudy:', error);
@@ -249,9 +243,7 @@ export const deleteStudy = async (study_id: string) => {
 
 export const getCohortsForStudy = async (study_id: string) => {
   try {
-    const response = await api.get('/study/cohorts', {
-      params: { study_id },
-    });
+    const response = await api.get(`/study/${study_id}/cohorts`);
     return response.data;
   } catch (error) {
     console.error('Error in getCohortsForStudy:', error);
@@ -262,7 +254,7 @@ export const getCohortsForStudy = async (study_id: string) => {
 export const createNewStudy = async (study_data: any) => {
   try {
     console.log('Creating new study:', study_data);
-    const response = await api.put('/study', study_data);
+    const response = await api.put('/study/new', study_data);
     return response.data;
   } catch (error) {
     console.error('Error in createNewStudy:', error);
@@ -282,9 +274,7 @@ export const createDemoStudy = async (): Promise<{ study_id: string }> => {
 
 export const updateStudyDatabaseConfig = async (study_id: string, database: Record<string, any> | null) => {
   try {
-    const response = await api.patch('/study/database', { database }, {
-      params: { study_id },
-    });
+    const response = await api.patch(`/study/${study_id}/database`, { database });
     return response.data;
   } catch (error) {
     console.error('Error in updateStudyDatabaseConfig:', error);
@@ -294,8 +284,8 @@ export const updateStudyDatabaseConfig = async (study_id: string, database: Reco
 
 export const updateStudyDisplayOrder = async (study_id: string, display_order: number) => {
   try {
-    const response = await api.patch('/study/display_order', null, {
-      params: { study_id, display_order },
+    const response = await api.patch(`/study/${study_id}/display_order`, null, {
+      params: { display_order },
     });
     return response.data;
   } catch (error) {

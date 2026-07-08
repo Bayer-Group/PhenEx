@@ -313,8 +313,26 @@ async def get_study_executions(request: Request, study_id: str):
     """
     Get execution history for a study.
 
+    Path Parameters:
+    - study_id (str): The unique identifier of the study
+
+    Authentication:
+    - Requires authenticated user
+
     Returns:
-    - list[dict]: List of execution records ordered by start time desc.
+    - list[dict]: List of execution records ordered by start time desc, each containing:
+        - execution_id (str): Unique identifier for the execution
+        - study_id (str): ID of the executed study
+        - user_id (str): ID of the user who ran the execution
+        - status (str): Execution status (success, failure, running)
+        - started_at (str): ISO timestamp when execution started
+        - completed_at (str): ISO timestamp when execution completed
+        - manifest_path (str): Path to the execution manifest file
+        - error_message (str): Error message if status is failure
+
+    Raises:
+    - 401: If user is not authenticated
+    - 500: If there's an error retrieving executions from the database
     """
     user_id = get_authenticated_user_id(request)
     try:
@@ -324,11 +342,162 @@ async def get_study_executions(request: Request, study_id: str):
         raise HTTPException(status_code=500, detail="Failed to retrieve study executions")
 
 
+@router.get("/study/{study_id}/report", tags=["study"])
+async def get_study_report(request: Request, study_id: str):
+    """
+    Return the index.html report for the most recent execution of a study.
+
+    Path Parameters:
+    - study_id (str): The unique identifier of the study
+
+    Authentication:
+    - Requires authenticated user
+
+    Returns:
+    - HTMLResponse: The HTML report content
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If no artifacts or execution directories found for study
+    """
+    get_authenticated_user_id(request)
+    study_dir = os.path.join(STUDY_ARTIFACTS_DIR, study_id)
+    if not os.path.isdir(study_dir):
+        raise HTTPException(status_code=404, detail="No artifacts found for study")
+
+    # Find the most recent timestamped execution directory
+    exec_dirs = sorted(
+        [d for d in os.listdir(study_dir) if os.path.isdir(os.path.join(study_dir, d)) and d.startswith("D")],
+        reverse=True,
+    )
+    if not exec_dirs:
+        raise HTTPException(status_code=404, detail="No execution directories found")
+
+    report_path = os.path.join(study_dir, exec_dirs[0], "index.html")
+    if not os.path.isfile(report_path):
+        raise HTTPException(status_code=404, detail="index.html not found for this execution")
+
+    with open(report_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    return HTMLResponse(content=content)
+
+
+@router.get("/study/{study_id}/execution/{execution_id}/report", tags=["study"])
+async def get_execution_report(request: Request, study_id: str, execution_id: str):
+    """
+    Return the index.html report for a specific execution.
+
+    Path Parameters:
+    - study_id (str): The unique identifier of the study
+    - execution_id (str): The unique identifier of the execution
+
+    Authentication:
+    - Requires authenticated user
+
+    Returns:
+    - HTMLResponse: The HTML report content
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If execution not found or report file doesn't exist
+    """
+    user_id = get_authenticated_user_id(request)
+    executions = await db_manager.get_study_executions(study_id, user_id)
+    exec_record = next((e for e in executions if e["execution_id"] == execution_id), None)
+    if not exec_record or not exec_record.get("manifest_path"):
+        raise HTTPException(status_code=404, detail="Execution not found")
+
+    exec_dir = os.path.dirname(exec_record["manifest_path"])
+    report_path = os.path.join(exec_dir, "index.html")
+    if not os.path.isfile(report_path):
+        raise HTTPException(status_code=404, detail="Report not found for this execution")
+
+    with open(report_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    return HTMLResponse(content=content)
+
+
+@router.get("/study/{study_id}/execution/{execution_id}/log", tags=["study"])
+async def get_execution_log(request: Request, study_id: str, execution_id: str):
+    """
+    Return the analysis.log for a specific execution as plain text.
+
+    Path Parameters:
+    - study_id (str): The unique identifier of the study
+    - execution_id (str): The unique identifier of the execution
+
+    Authentication:
+    - Requires authenticated user
+
+    Returns:
+    - PlainTextResponse: The log file content
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If execution not found or log file doesn't exist
+    """
+    user_id = get_authenticated_user_id(request)
+    executions = await db_manager.get_study_executions(study_id, user_id)
+    exec_record = next((e for e in executions if e["execution_id"] == execution_id), None)
+    if not exec_record or not exec_record.get("manifest_path"):
+        raise HTTPException(status_code=404, detail="Execution not found")
+
+    exec_dir = os.path.dirname(exec_record["manifest_path"])
+    log_path = os.path.join(exec_dir, "analysis.log")
+    if not os.path.isfile(log_path):
+        raise HTTPException(status_code=404, detail="Log not found for this execution")
+
+    with open(log_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(content=content)
+
+
+@router.delete("/study/{study_id}/execution/{execution_id}", tags=["study"])
+async def delete_execution(request: Request, study_id: str, execution_id: str):
+    """
+    Delete a study execution record and its artifact directory.
+
+    Path Parameters:
+    - study_id (str): The unique identifier of the study
+    - execution_id (str): The unique identifier of the execution
+
+    Authentication:
+    - Requires authenticated user
+
+    Returns:
+    - dict: Confirmation of deletion with {"deleted": true}
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If execution not found
+    """
+    user_id = get_authenticated_user_id(request)
+    result = await db_manager.delete_study_execution(execution_id, user_id)
+    manifest_path = result.get("manifest_path")
+    if manifest_path:
+        exec_dir = os.path.dirname(manifest_path)
+        if os.path.isdir(exec_dir):
+            import shutil
+            shutil.rmtree(exec_dir)
+    return {"deleted": True}
+
+
+# Other operations
 @router.post("/study/demo", tags=["study"])
 async def create_demo_study(request: Request):
     """
     Create the demo study (Cardiovascular Disease Demo Study) for the authenticated user.
-    Returns the new study ID.
+
+    Authentication:
+    - Requires authenticated user
+
+    Returns:
+    - dict: Object containing the new study ID: {"study_id": "..."}
+
+    Raises:
+    - 401: If user is not authenticated
+    - 500: If there's an error creating the demo study
     """
     user_id = get_authenticated_user_id(request)
     from ..init.populate_sample_cohorts import SampleCohortsInitializer
@@ -361,83 +530,3 @@ async def create_demo_study(request: Request):
         )
 
     return {"study_id": study_id}
-
-
-@router.get("/study/{study_id}/report", tags=["study"])
-async def get_study_report(request: Request, study_id: str):
-    """
-    Return the index.html report for the most recent execution of a study.
-    """
-    get_authenticated_user_id(request)
-    study_dir = os.path.join(STUDY_ARTIFACTS_DIR, study_id)
-    if not os.path.isdir(study_dir):
-        raise HTTPException(status_code=404, detail="No artifacts found for study")
-
-    # Find the most recent timestamped execution directory
-    exec_dirs = sorted(
-        [d for d in os.listdir(study_dir) if os.path.isdir(os.path.join(study_dir, d)) and d.startswith("D")],
-        reverse=True,
-    )
-    if not exec_dirs:
-        raise HTTPException(status_code=404, detail="No execution directories found")
-
-    report_path = os.path.join(study_dir, exec_dirs[0], "index.html")
-    if not os.path.isfile(report_path):
-        raise HTTPException(status_code=404, detail="index.html not found for this execution")
-
-    with open(report_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    return HTMLResponse(content=content)
-
-
-@router.get("/study/{study_id}/execution/{execution_id}/report", tags=["study"])
-async def get_execution_report(request: Request, study_id: str, execution_id: str):
-    """Return the index.html report for a specific execution."""
-    user_id = get_authenticated_user_id(request)
-    executions = await db_manager.get_study_executions(study_id, user_id)
-    exec_record = next((e for e in executions if e["execution_id"] == execution_id), None)
-    if not exec_record or not exec_record.get("manifest_path"):
-        raise HTTPException(status_code=404, detail="Execution not found")
-
-    exec_dir = os.path.dirname(exec_record["manifest_path"])
-    report_path = os.path.join(exec_dir, "index.html")
-    if not os.path.isfile(report_path):
-        raise HTTPException(status_code=404, detail="Report not found for this execution")
-
-    with open(report_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    return HTMLResponse(content=content)
-
-
-@router.get("/study/{study_id}/execution/{execution_id}/log", tags=["study"])
-async def get_execution_log(request: Request, study_id: str, execution_id: str):
-    """Return the analysis.log for a specific execution as plain text."""
-    user_id = get_authenticated_user_id(request)
-    executions = await db_manager.get_study_executions(study_id, user_id)
-    exec_record = next((e for e in executions if e["execution_id"] == execution_id), None)
-    if not exec_record or not exec_record.get("manifest_path"):
-        raise HTTPException(status_code=404, detail="Execution not found")
-
-    exec_dir = os.path.dirname(exec_record["manifest_path"])
-    log_path = os.path.join(exec_dir, "analysis.log")
-    if not os.path.isfile(log_path):
-        raise HTTPException(status_code=404, detail="Log not found for this execution")
-
-    with open(log_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    from fastapi.responses import PlainTextResponse
-    return PlainTextResponse(content=content)
-
-
-@router.delete("/study/{study_id}/execution/{execution_id}", tags=["study"])
-async def delete_execution(request: Request, study_id: str, execution_id: str):
-    """Delete a study execution record and its artifact directory."""
-    user_id = get_authenticated_user_id(request)
-    result = await db_manager.delete_study_execution(execution_id, user_id)
-    manifest_path = result.get("manifest_path")
-    if manifest_path:
-        exec_dir = os.path.dirname(manifest_path)
-        if os.path.isdir(exec_dir):
-            import shutil
-            shutil.rmtree(exec_dir)
-    return {"deleted": True}

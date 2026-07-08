@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import logging
 import os
 import json
+import uuid
 
 # Create router for study endpoints
 router = APIRouter()
@@ -39,6 +40,7 @@ class StatusResponse(BaseModel):
 # -- STUDY API ENDPOINTS --
 
 
+# Study resources
 @router.get("/studies/private", tags=["study"])
 async def get_all_studies_for_user(request: Request):
     """
@@ -149,12 +151,12 @@ async def get_all_public_studies():
         )
 
 
-@router.get("/study", tags=["study"])
+@router.get("/study/{study_id}", tags=["study"])
 async def get_study_for_user(request: Request, study_id: str):
     """
     Get a specific study by ID for the authenticated user.
 
-    Query Parameters:
+    Path Parameters:
     - study_id (str): The unique identifier of the study to retrieve
 
     Authentication:
@@ -222,12 +224,12 @@ async def get_study_for_user(request: Request, study_id: str):
         )
 
 
-@router.get("/study/public", tags=["study"])
+@router.get("/study/{study_id}/public", tags=["study"])
 async def get_public_study(study_id: str):
     """
     Get a specific public study by ID.
 
-    Query Parameters:
+    Path Parameters:
     - study_id (str): The unique identifier of the public study to retrieve
 
     Authentication:
@@ -286,20 +288,23 @@ async def get_public_study(study_id: str):
         raise HTTPException(status_code=500, detail="Failed to retrieve public study")
 
 
-@router.put("/study", tags=["study"], response_model=Dict)
+@router.put("/study/{study_id}", tags=["study"], response_model=Dict)
 async def create_or_update_study(
     request: Request,
+    study_id: str,
     study: Dict = Body(...),
 ):
     """
     Create a new study or update an existing study (idempotent operation).
+
+    Path Parameters:
+    - study_id (str): The unique identifier of the study. Use "new" to create a new study.
 
     Authentication:
     - Requires authenticated user. Creates/updates studies for the authenticated user.
 
     Request Body:
     - study (dict): The complete study data containing:
-        - id (str, optional): Unique identifier. If provided, updates existing study. If omitted, creates new study.
         - name (str): Name of the study (required for new studies, defaults to "New Study")
         - description (str, optional): Description of the study
         - is_public (bool, optional): Whether the study should be publicly accessible (default: false)
@@ -331,7 +336,6 @@ async def create_or_update_study(
     Example Request Body (Update):
     ```json
     {
-        "id": "study_123",
         "name": "Updated Study Name",
         "description": "Updated description",
         "is_public": true
@@ -346,13 +350,25 @@ async def create_or_update_study(
     - 500: If there's an error creating or updating the study in the database
     """
     user_id = get_authenticated_user_id(request)
-    study_id = study.get("id")
+    
+    # If study_id is "new", use the ID from the request body or generate one
+    if study_id == "new":
+        # Check if the frontend provided an ID in the body
+        actual_study_id = study.get("id")
+        if actual_study_id:
+            logger.info(f"Creating new study with frontend-provided ID: {actual_study_id}")
+        else:
+            # Fallback: generate a UUID if no ID provided
+            actual_study_id = str(uuid.uuid4())
+            logger.info(f"Creating new study with generated UUID: {actual_study_id}")
+    else:
+        actual_study_id = study_id
 
     try:
         success = await db_manager.update_study_for_user(
             user_id=user_id,
-            study_id=study_id,
-            name=study.get("name", "New Study" if not study_id else "Untitled Study"),
+            study_id=actual_study_id,
+            name=study.get("name", "New Study"),
             description=study.get("description", ""),
             baseline_characteristics=study.get("baseline_characteristics", {}),
             outcomes=study.get("outcomes", {}),
@@ -362,7 +378,10 @@ async def create_or_update_study(
         )
 
         if success:
-            return study
+            # Return the study data with the correct ID
+            result = dict(study)
+            result["id"] = actual_study_id
+            return result
         else:
             raise HTTPException(
                 status_code=500, detail="Failed to create/update study."
@@ -374,12 +393,12 @@ async def create_or_update_study(
         raise HTTPException(status_code=500, detail="Failed to create/update study.")
 
 
-@router.delete("/study", tags=["study"], response_model=StatusResponse)
+@router.delete("/study/{study_id}", tags=["study"], response_model=StatusResponse)
 async def delete_study_for_user(request: Request, study_id: str):
     """
     Delete a study and all associated cohorts.
 
-    Query Parameters:
+    Path Parameters:
     - study_id (str): The unique identifier of the study to delete
 
     Authentication:
@@ -431,15 +450,17 @@ async def delete_study_for_user(request: Request, study_id: str):
         )
 
 
-@router.patch("/study/display_order", tags=["study"], response_model=StatusResponse)
+@router.patch("/study/{study_id}/display_order", tags=["study"], response_model=StatusResponse)
 async def update_study_display_order(
     request: Request, study_id: str, display_order: int
 ):
     """
     Update the display order of a study.
 
-    Query Parameters:
+    Path Parameters:
     - study_id (str): The unique identifier of the study to update
+    
+    Query Parameters:
     - display_order (int): The new display order value for UI sorting
 
     Authentication:
@@ -492,7 +513,7 @@ async def update_study_display_order(
         )
 
 
-@router.patch("/study/database", tags=["study"])
+@router.patch("/study/{study_id}/database", tags=["study"])
 async def update_study_database(
     request: Request,
     study_id: str,
@@ -501,7 +522,7 @@ async def update_study_database(
     """
     Update the database column for a study.
 
-    Query Parameters:
+    Path Parameters:
     - study_id (str): The unique identifier of the study.
 
     Request Body:
@@ -523,12 +544,13 @@ async def update_study_database(
         raise HTTPException(status_code=500, detail="Failed to update database.")
 
 
-@router.get("/study/cohorts", tags=["study"])
+# Study sub-resources
+@router.get("/study/{study_id}/cohorts", tags=["study"])
 async def get_cohorts_for_study(request: Request, study_id: str):
     """
     Get all cohorts associated with a specific study.
 
-    Query Parameters:
+    Path Parameters:
     - study_id (str): The unique identifier of the study
 
     Authentication:
@@ -605,6 +627,7 @@ class StudyConceptParseResponse(BaseModel):
     codelist_notes: str = ""
 
 
+# Other operations
 @router.post("/study/parse_concept", tags=["study"])
 async def parse_study_concept(
     request: Request,
