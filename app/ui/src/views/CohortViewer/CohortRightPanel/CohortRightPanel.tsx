@@ -5,9 +5,6 @@ import { CodelistsViewer } from '../../SlideoverPanels/CodelistsViewer/Codelists
 import { RelativeTimeRangePanel } from '../../SlideoverPanels/ConstantsPanels/RelativeTimeRangePanel';
 import { CategoricalFilterPanel } from '../../SlideoverPanels/ConstantsPanels/CategoricalFilterPanel';
 import { TimeRangePanel } from '../../SlideoverPanels/ConstantsPanels/TimeRangePanel';
-import { VisibilityPanel } from '../../SlideoverPanels/VisibilityPanel/VisibilityPanel';
-import { CohortReportView } from '../../SlideoverPanels/CohortReportView/CohortReportView';
-import { StudyExecutePanel } from '../../SlideoverPanels/StudyExecutePanel/StudyExecutePanel';
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar';
 import styles from './CohortRightPanel.module.css';
 
@@ -17,21 +14,19 @@ interface CohortRightPanelProps {
 
 export const CohortRightPanel: React.FC<CohortRightPanelProps> = ({ contentMode = 'cohort' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   return (
     <div className={styles.wrapper}>
-
       <div ref={containerRef} className={styles.container}>
-
         <InfoPanel contentMode={contentMode} />
         <DatabasePanel contentMode={contentMode} />
         <RelativeTimeRangePanel />
         <CategoricalFilterPanel />
         <TimeRangePanel />
         <CodelistsViewer />
-        {contentMode === 'study' && <StudyExecutePanel />}
       </div>
-      <SimpleCustomScrollbar targetRef={containerRef} 
+      <SimpleCustomScrollbar
+        targetRef={containerRef}
         marginToEnd={2}
         marginBottom={120}
         marginTop={70}
@@ -39,7 +34,6 @@ export const CohortRightPanel: React.FC<CohortRightPanelProps> = ({ contentMode 
         classNameTrack={styles.customScrollbarTrack}
       />
       <div className={styles.topGradient} />
-
     </div>
   );
 };

@@ -7,28 +7,30 @@
 
 .container {
   position: absolute;
-  top: 0px;
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   overflow-y: scroll;
   overflow-x: hidden;
   background-color: var(--background-color);
-  padding-bottom:400px;
+  padding-bottom: 400px;
   padding-top: 10px;
-  height: calc(100% - 10px - 400px + 70px); /* Adjust for top offset and bottom padding */
 }
 
-/* Hide default scrollbar */
-.container::-webkit-scrollbar {
-  display: none;
-}
+.container::-webkit-scrollbar { display: none; }
+.container { scrollbar-width: none; -ms-overflow-style: none; }
 
-.container {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-.customScrollbarThumb{
+.customScrollbarThumb {
   background-color: var(--color_scrollbar_thumb) !important;
+}
+
+.topGradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--background-color), transparent);
 }

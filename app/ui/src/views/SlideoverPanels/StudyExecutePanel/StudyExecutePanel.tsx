@@ -17,7 +17,7 @@ export const StudyExecutePanel: React.FC = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionState, setExecutionState] = useState<'idle' | 'running' | 'success' | 'failed'>('idle');
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [logFilter, setLogFilter] = useState<string>('all');
+  const [logSearch, setLogSearch] = useState<string>('');
   const [executions, setExecutions] = useState<Execution[]>([]);
   const [selectedExecId, setSelectedExecId] = useState<string | null>(null);
   const [showRunsDropdown, setShowRunsDropdown] = useState(false);
@@ -153,16 +153,18 @@ export const StudyExecutePanel: React.FC = () => {
     }
   };
 
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }).catch(() => {});
+  };
+
   const shouldShowLog = (message: string) => {
-    if (logFilter === 'all') return true;
-    const lower = message.toLowerCase();
-    switch (logFilter) {
-      case 'error': return lower.includes('[error]') || lower.includes('[stderr]');
-      case 'warning': return lower.includes('[warning]') || lower.includes('[warn]');
-      case 'info': return lower.includes('[info]') || lower.includes('[stdout]');
-      case 'debug': return lower.includes('[debug]');
-      default: return true;
-    }
+    if (!logSearch.trim()) return true;
+    return message.toLowerCase().includes(logSearch.toLowerCase());
   };
 
   const getLogClassName = (type: string, message: string) => {
@@ -188,24 +190,6 @@ export const StudyExecutePanel: React.FC = () => {
       : '';
     return (
       <div className={styles.controls}>
-        <div className={styles.logToolbar}>
-          <select
-            className={styles.filterSelect}
-            value={logFilter}
-            onChange={e => setLogFilter(e.target.value)}
-          >
-            <option value="all">All</option>
-            <option value="info">Info</option>
-            <option value="warning">Warnings</option>
-            <option value="error">Errors</option>
-            <option value="debug">Debug</option>
-          </select>
-          <button
-            className={styles.copyBtn}
-            onClick={() => navigator.clipboard.writeText(logs.map(l => l.message).join('\n')).catch(() => {})}
-            title="Copy logs"
-          >Copy</button>
-        </div>
         <button
           className={`${styles.executeBtn} ${executeStateClass}`}
           onClick={handleExecute}
@@ -259,22 +243,62 @@ export const StudyExecutePanel: React.FC = () => {
   };
 
   const renderContent = () => {
+    const hasLogs = logs.length > 0;
+    const logText = viewMode === 'log-file' && logFileContent !== null
+      ? logFileContent
+      : logs.map(l => l.message).join('\n');
+
+    const logHeader = (
+      <div className={styles.logHeader}>
+        <input
+          className={styles.logSearch}
+          type="text"
+          placeholder="Filter logs…"
+          value={logSearch}
+          onChange={e => setLogSearch(e.target.value)}
+        />
+        <button
+          className={`${styles.copyIconBtn}${copied ? ' ' + styles.copied : ''}`}
+          onClick={() => handleCopy(logText)}
+          title="Copy logs"
+          aria-label="Copy logs"
+        >
+          {copied ? (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          ) : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          )}
+        </button>
+      </div>
+    );
+
     if (viewMode === 'log-file' && logFileContent !== null) {
       return (
-        <div className={styles.logsContainer} ref={logsContainerRef}>
-          <pre className={styles.logFileContent}>{logFileContent}</pre>
+        <div className={styles.logsWrapper}>
+          {logHeader}
+          <div className={styles.logsContainer} ref={logsContainerRef}>
+            <pre className={styles.logFileContent}>{logFileContent}</pre>
+          </div>
         </div>
       );
     }
-    if (viewMode === 'logs' || logs.length > 0) {
+    if (viewMode === 'logs' || hasLogs) {
       return (
-        <div className={styles.logsContainer} ref={logsContainerRef}>
-          {logs.length === 0 ? <div className={styles.emptyState} /> : logs.filter(log => shouldShowLog(log.message)).map((log, i) => (
-            <div key={i} className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}>
-              <span className={styles.timestamp}>[{log.timestamp.toLocaleTimeString()}]</span>
-              <span className={styles.logMessage}>{log.message}</span>
-            </div>
-          ))}
+        <div className={styles.logsWrapper}>
+          {logHeader}
+          <div className={styles.logsContainer} ref={logsContainerRef}>
+            {logs.length === 0 ? <div className={styles.emptyState} /> : logs.filter(log => shouldShowLog(log.message)).map((log, i) => (
+              <div key={i} className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}>
+                <span className={styles.timestamp}>[{log.timestamp.toLocaleTimeString()}]</span>
+                <span className={styles.logMessage}>{log.message}</span>
+              </div>
+            ))}
+          </div>
         </div>
       );
     }

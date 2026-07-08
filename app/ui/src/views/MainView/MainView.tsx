@@ -17,6 +17,7 @@ import { ReportModeProvider } from '../../contexts/ReportModeContext';
 import { ThreePanelCollapseProvider } from '../../contexts/ThreePanelCollapseContext';
 import { UnifiedRightPanel } from './UnifiedRightPanel/UnifiedRightPanel';
 import { CohortRightPanel } from '../CohortViewer/CohortRightPanel/CohortRightPanel';
+import { StudyExecutePanel } from '../SlideoverPanels/StudyExecutePanel/StudyExecutePanel';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -223,7 +224,15 @@ export const MainView = () => {
               }}
             />
           }
-          studyContent={
+          executeContent={
+            currentView.viewType === ViewType.StudyViewer ||
+            currentView.viewType === ViewType.CohortDefinition ||
+            currentView.viewType === ViewType.PublicCohortDefinition ||
+            currentView.viewType === ViewType.NewCohort
+              ? <StudyExecutePanel />
+              : undefined
+          }
+          constantsContent={
             currentView.viewType === ViewType.StudyViewer ||
             currentView.viewType === ViewType.CohortDefinition ||
             currentView.viewType === ViewType.PublicCohortDefinition ||
