@@ -18,12 +18,24 @@ import type { ViewerEntry } from '../studyRegistryUtils';
 
 /** Placement of a single item on the section grid (units = grid cells). */
 export interface GridItem {
-  /** Stable key of the item (row name). */
+  /** Stable key of the item (row name, or a group id). */
   key: string;
   x: number;
   y: number;
   w: number;
   h: number;
+}
+
+/**
+ * A group cell: a single grid tile that hosts several member rows stacked
+ * inside it. The group is placed on the grid like any other item (its `id` is
+ * the {@link GridItem.key}); its members are hidden from the top-level flow and
+ * rendered within the group card instead.
+ */
+export interface CellGroup {
+  id: string;
+  /** Row keys hosted by this group, in display order. */
+  memberKeys: string[];
 }
 
 export interface SectionLayout {
@@ -32,6 +44,8 @@ export interface SectionLayout {
   items: GridItem[];
   /** Keys of items hidden in this grid layout. */
   hiddenKeys?: string[];
+  /** Group cells defined in this layout. */
+  groups?: CellGroup[];
 }
 
 /** Per-section persisted state. `activeLayoutId === null` ⇒ list view. */
@@ -40,6 +54,8 @@ interface SectionState {
   activeLayoutId: string | null;
   /** Keys of items hidden while in list view. */
   listHiddenKeys?: string[];
+  /** Per-row chart display variant (row key → variant id). */
+  displayVariants?: Record<string, string>;
 }
 
 type PersistedState = Record<string, SectionState>;
@@ -180,6 +196,57 @@ class SectionLayoutStore {
     return section.layouts.find((l) => l.id === layoutId)?.hiddenKeys ?? [];
   }
 
+  getGroups(sectionId: string, layoutId: string | null): CellGroup[] {
+    if (layoutId === null) return [];
+    return this.getSection(sectionId).layouts.find((l) => l.id === layoutId)?.groups ?? [];
+  }
+
+  /**
+   * Bundle `memberKeys` into a new full-width group tile placed below the
+   * existing content. The members' own placements are dropped (they now live
+   * inside the group). Returns the new group id.
+   */
+  createGroup(sectionId: string, layoutId: string, memberKeys: string[], height: number): string {
+    const section = this.getSection(sectionId);
+    const id = `group_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+    const memberSet = new Set(memberKeys);
+    const layouts = section.layouts.map((l) => {
+      if (l.id !== layoutId) return l;
+      const items = l.items.filter((it) => !memberSet.has(it.key));
+      const nextY = items.reduce((m, it) => Math.max(m, it.y + it.h), 0);
+      items.push({ key: id, x: 0, y: nextY, w: GRID_COLUMNS, h: Math.max(1, height) });
+      return { ...l, items, groups: [...(l.groups ?? []), { id, memberKeys }] };
+    });
+    this.update(sectionId, { ...section, layouts });
+    return id;
+  }
+
+  /** Dissolve a group; its members flow back into the grid as loose tiles. */
+  ungroup(sectionId: string, layoutId: string, groupId: string) {
+    const section = this.getSection(sectionId);
+    const layouts = section.layouts.map((l) => {
+      if (l.id !== layoutId) return l;
+      return {
+        ...l,
+        items: l.items.filter((it) => it.key !== groupId),
+        groups: (l.groups ?? []).filter((g) => g.id !== groupId),
+      };
+    });
+    this.update(sectionId, { ...section, layouts });
+  }
+
+  getDisplayVariants(sectionId: string): Record<string, string> {
+    return this.getSection(sectionId).displayVariants ?? {};
+  }
+
+  setDisplayVariant(sectionId: string, rowKey: string, variantId: string) {
+    const section = this.getSection(sectionId);
+    this.update(sectionId, {
+      ...section,
+      displayVariants: { ...(section.displayVariants ?? {}), [rowKey]: variantId },
+    });
+  }
+
   deleteLayout(sectionId: string, layoutId: string) {
     const section = this.getSection(sectionId);
     const layouts = section.layouts.filter((l) => l.id !== layoutId);
@@ -203,6 +270,9 @@ class SectionLayoutStore {
 }
 
 const store = new SectionLayoutStore();
+
+/** Stable empty reference so the hook doesn't churn when no variants are set. */
+const EMPTY_VARIANTS: Record<string, string> = {};
 
 // ── Default layout generation ────────────────────────────────────────────
 
@@ -241,12 +311,19 @@ export interface UseSectionLayouts {
   activeLayout: SectionLayout | null;
   /** Hidden item keys for the currently active layout (or list view). */
   hiddenKeys: Set<string>;
+  /** Group cells defined in the currently active layout. */
+  groups: CellGroup[];
+  /** Per-row display variant map (row key → variant id). */
+  displayVariants: Record<string, string>;
   setActiveLayout: (layoutId: string | null) => void;
   createLayout: (name: string, items: GridItem[]) => string;
   updateLayoutItems: (layoutId: string, items: GridItem[]) => void;
   renameLayout: (layoutId: string, name: string) => void;
   deleteLayout: (layoutId: string) => void;
   toggleItemVisibility: (key: string) => void;
+  createGroup: (memberKeys: string[], height: number) => string;
+  ungroup: (groupId: string) => void;
+  setDisplayVariant: (rowKey: string, variantId: string) => void;
 }
 
 export function useSectionLayouts(sectionId: string): UseSectionLayouts {
@@ -261,21 +338,31 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
   const renameLayout = useCallback((layoutId: string, name: string) => store.renameLayout(sectionId, layoutId, name), [sectionId]);
   const deleteLayout = useCallback((layoutId: string) => store.deleteLayout(sectionId, layoutId), [sectionId]);
   const toggleItemVisibility = useCallback((key: string) => store.toggleItemVisibility(sectionId, store.getSection(sectionId).activeLayoutId, key), [sectionId]);
+  const createGroup = useCallback((memberKeys: string[], height: number) => store.createGroup(sectionId, store.getSection(sectionId).activeLayoutId ?? '', memberKeys, height), [sectionId]);
+  const ungroup = useCallback((groupId: string) => store.ungroup(sectionId, store.getSection(sectionId).activeLayoutId ?? '', groupId), [sectionId]);
+  const setDisplayVariant = useCallback((rowKey: string, variantId: string) => store.setDisplayVariant(sectionId, rowKey, variantId), [sectionId]);
 
   const activeLayout = section.layouts.find((l) => l.id === section.activeLayoutId) ?? null;
   const hiddenKeys = useMemo(() => new Set(store.getHiddenKeys(sectionId, section.activeLayoutId)), [sectionId, section]);
+  const groups = useMemo(() => store.getGroups(sectionId, section.activeLayoutId), [sectionId, section]);
+  const displayVariants = section.displayVariants ?? EMPTY_VARIANTS;
 
   return {
     layouts: section.layouts,
     activeLayoutId: section.activeLayoutId,
     activeLayout,
     hiddenKeys,
+    groups,
+    displayVariants,
     setActiveLayout,
     createLayout,
     updateLayoutItems,
     renameLayout,
     deleteLayout,
     toggleItemVisibility,
+    createGroup,
+    ungroup,
+    setDisplayVariant,
   };
 }
 

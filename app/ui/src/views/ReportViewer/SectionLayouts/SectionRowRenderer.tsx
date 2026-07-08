@@ -40,6 +40,7 @@ export const SectionRowRenderer = memo<SectionRowRendererProps>(({
   table2Cohorts,
   hideBarChartHeader = false,
   fillHeight = false,
+  variant,
 }) => {
   switch (row.rowType) {
     case 'boolean':
@@ -57,11 +58,20 @@ export const SectionRowRenderer = memo<SectionRowRendererProps>(({
           baseName={row.name}
           cohortData={cohortData}
           finalCohortSizes={finalCohortSizes}
-          orientation="vertical"
+          orientation={variant === 'horizontal' ? 'horizontal' : 'vertical'}
           fillWidth={fillHeight}
         />
       );
     case 'numeric': {
+      if (variant === 'table') {
+        return (
+          <NumericTableCellRenderer
+            name={row.name}
+            cohortData={cohortData}
+            finalCohortSizes={finalCohortSizes}
+          />
+        );
+      }
       let lo = Infinity, hi = -Infinity;
       for (const cd of cohortData) {
         const r = cd.data.rows.find((r) => r.Name === row.name);

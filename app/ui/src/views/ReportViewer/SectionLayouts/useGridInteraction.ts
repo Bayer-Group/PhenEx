@@ -3,7 +3,7 @@ import type { GridItem } from './sectionLayoutStore';
 import { cleanupGridLayout } from './CleanupGridLayout';
 import { dropSelectionIntoGrid } from './DropSelectionLayout';
 import { computeDropHint, resolveSingleDrop, type DropHint } from './GridDropHint';
-import { useGridSelection, type GridSelection } from './GridSelection';
+import { type GridSelection } from './GridSelection';
 
 // ── Tunables ───────────────────────────────────────────────────────────────
 
@@ -56,6 +56,8 @@ export interface UseGridInteractionParams {
   gap: number;
   rowGap: number;
   editable: boolean;
+  /** Multi-cell selection, owned by the caller so it can drive a toolbar. */
+  selection: GridSelection;
   onLayoutChange: (items: GridItem[]) => void;
   onItemClick?: (key: string) => void;
 }
@@ -111,6 +113,7 @@ export function useGridInteraction({
   gap,
   rowGap,
   editable,
+  selection,
   onLayoutChange,
   onItemClick,
 }: UseGridInteractionParams): GridInteraction {
@@ -128,9 +131,7 @@ export function useGridInteraction({
   // Keys ordered bottom→top; last entry has highest z-index.
   const [zOrder, setZOrder] = useState<string[]>(() => items.map((i) => i.key));
 
-  // Multi-cell selection lives in its own module; the grid just reflects it.
-  const itemKeys = useMemo(() => items.map((i) => i.key), [items]);
-  const selection = useGridSelection(itemKeys, editable);
+  // Multi-cell selection is owned by the caller; the grid just reflects it.
   const selectionRef = useRef<GridSelection>(selection);
   selectionRef.current = selection;
 

@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP, GRID_ROW_GAP } from './sectionLayoutStore';
 import { GridItemContext } from './GridItemContext';
 import { useGridInteraction, STACK_OFFSET } from './useGridInteraction';
+import { type GridSelection } from './GridSelection';
 import styles from './SectionGrid.module.css';
 
 export interface SectionGridRenderItem {
@@ -15,6 +16,8 @@ export interface SectionGridRenderItem {
 export interface SectionGridProps {
   items: SectionGridRenderItem[];
   layout: GridItem[];
+  /** Multi-cell selection, owned by the parent so it can drive a toolbar. */
+  selection: GridSelection;
   columns?: number;
   rowHeight?: number;
   gap?: number;
@@ -36,6 +39,7 @@ export interface SectionGridProps {
 export function SectionGrid({
   items,
   layout,
+  selection: selectionProp,
   columns = GRID_COLUMNS,
   rowHeight = GRID_ROW_HEIGHT,
   gap = GRID_GAP,
@@ -59,7 +63,7 @@ export function SectionGrid({
     selection,
     startMove,
     startResize,
-  } = useGridInteraction({ items, layout, columns, rowHeight, gap, rowGap, editable, onLayoutChange, onItemClick });
+  } = useGridInteraction({ items, layout, columns, rowHeight, gap, rowGap, editable, selection: selectionProp, onLayoutChange, onItemClick });
 
   return (
     <div ref={containerRef} className={styles.grid} style={{ height: displayHeight }}>

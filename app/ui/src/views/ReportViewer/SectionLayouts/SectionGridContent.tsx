@@ -5,6 +5,10 @@ import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { SectionRowRenderer, SectionRowTitle, sectionRowTitle } from './SectionRowRenderer';
 import { SectionGrid, type SectionGridRenderItem } from './SectionGrid';
+import { GroupCard } from './GroupCard';
+import { MultiSelectControls } from './MultiSelectControls';
+import { useGridSelection } from './GridSelection';
+import { useMultiSelectActions } from './useMultiSelectActions';
 import { restackByCohortDelta } from './CleanupGridLayout';
 import { type SectionLayout, type GridItem, defaultTileRows, useSectionLayouts } from './sectionLayoutStore';
 
@@ -41,7 +45,15 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
   onNavigateToRow,
   onRenameRow,
 }) => {
-  const { updateLayoutItems } = useSectionLayouts(sectionId);
+  const {
+    updateLayoutItems,
+    groups,
+    displayVariants,
+    createGroup,
+    ungroup,
+    setDisplayVariant,
+    toggleItemVisibility,
+  } = useSectionLayouts(sectionId);
 
   const rowByKey = useMemo(() => {
     const map = new Map<string, SequentialRow>();
@@ -49,8 +61,12 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     return map;
   }, [rows]);
 
-  const gridItems = useMemo<SectionGridRenderItem[]>(
-    () => rows.map((row) => ({
+  // Rows bundled into a group are rendered inside the group card, never loose.
+  const groupedKeys = useMemo(() => new Set(groups.flatMap((g) => g.memberKeys)), [groups]);
+  const looseRows = useMemo(() => rows.filter((r) => !groupedKeys.has(r.name)), [rows, groupedKeys]);
+
+  const gridItems = useMemo<SectionGridRenderItem[]>(() => {
+    const rowItems: SectionGridRenderItem[] = looseRows.map((row) => ({
       key: row.name,
       title: sectionRowTitle(row),
       titleNode: (
@@ -64,12 +80,57 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
           spacers={spacers}
           tteCohorts={tteCohorts}
           table2Cohorts={table2Cohorts}
+          variant={displayVariants[row.name]}
           fillHeight={row.rowType === 'boolean' || row.rowType === 'numeric' || row.rowType === 'categorical'}
         />
       ),
-    })),
-    [rows, cohortData, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigateToRow, onRenameRow],
-  );
+    }));
+
+    const groupItems: SectionGridRenderItem[] = groups.map((group) => {
+      const members = group.memberKeys
+        .map((key) => rowByKey.get(key))
+        .filter((r): r is SequentialRow => r != null);
+      return {
+        key: group.id,
+        title: `Group (${members.length})`,
+        content: (
+          <GroupCard
+            members={members}
+            cohortData={cohortData}
+            finalCohortSizes={finalCohortSizes}
+            spacers={spacers}
+            tteCohorts={tteCohorts}
+            table2Cohorts={table2Cohorts}
+            displayVariants={displayVariants}
+          />
+        ),
+      };
+    });
+
+    return [...rowItems, ...groupItems];
+  }, [looseRows, groups, rowByKey, cohortData, finalCohortSizes, spacers, tteCohorts, table2Cohorts, displayVariants, onNavigateToRow, onRenameRow]);
+
+  const itemKeys = useMemo(() => gridItems.map((it) => it.key), [gridItems]);
+  const selection = useGridSelection(itemKeys, true);
+
+  const setLayoutItems = useCallback((items: GridItem[]) => {
+    updateLayoutItems(layout.id, items);
+  }, [updateLayoutItems, layout.id]);
+
+  const actions = useMultiSelectActions({
+    selection,
+    rowByKey,
+    groups,
+    layoutItems: layout.items,
+    displayVariants,
+    cohortCount: cohortData.length,
+    editable: true,
+    createGroup,
+    ungroup,
+    setDisplayVariant,
+    toggleItemVisibility,
+    setLayoutItems,
+  });
 
   const handleLayoutChange = useCallback((items: GridItem[]) => {
     updateLayoutItems(layout.id, items);
@@ -97,11 +158,26 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
   }, [rowByKey, onNavigateToRow]);
 
   return (
-    <SectionGrid
-      items={gridItems}
-      layout={layout.items}
-      onLayoutChange={handleLayoutChange}
-      onItemClick={handleItemClick}
-    />
+    <>
+      <SectionGrid
+        items={gridItems}
+        layout={layout.items}
+        selection={selection}
+        onLayoutChange={handleLayoutChange}
+        onItemClick={handleItemClick}
+      />
+      <MultiSelectControls
+        count={actions.count}
+        canGroup={actions.canGroup}
+        canUngroup={actions.canUngroup}
+        canChangeType={actions.canChangeType}
+        onGroup={actions.onGroup}
+        onReset={actions.onReset}
+        onChangeType={actions.onChangeType}
+        onHide={actions.onHide}
+        onSelectAll={actions.onSelectAll}
+        onDeselectAll={actions.onDeselectAll}
+      />
+    </>
   );
 });
