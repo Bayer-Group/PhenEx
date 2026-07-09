@@ -272,6 +272,19 @@ export class StudyDataService {
     this.listeners.forEach(listener => listener());
   }
 
+  /**
+   * If the currently loaded study matches `studyId`, update its name and notify
+   * listeners. No-op otherwise. Keeps the breadcrumb / study viewer in sync with
+   * renames made elsewhere (e.g. the left panel).
+   */
+  public updateNameIfCurrent(studyId: string, name: string): boolean {
+    if (this._study_data?.id !== studyId) return false;
+    this._study_name = name;
+    this._study_data.name = name;
+    this.notifyStudyDataServiceListener();
+    return true;
+  }
+
   private nameChangeListeners: Array<() => void> = [];
 
   public addNameChangeListener(listener: () => void) {

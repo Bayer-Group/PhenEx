@@ -1174,6 +1174,13 @@ export class CohortModel {
     this.nameChangeListeners.forEach(listener => listener());
   }
 
+  /** Public trigger to broadcast the current cohort state to every listener set. */
+  public notifyAllListeners() {
+    this.notifyListeners();
+    this.notifyNameChangeListeners();
+    this.notifyDataChangeListeners();
+  }
+
   public updateCohortFromChat(response: any) {
     // Response structure from backend:
     // { cohort_data: {...}, is_provisional: true/false, version: number, ... }

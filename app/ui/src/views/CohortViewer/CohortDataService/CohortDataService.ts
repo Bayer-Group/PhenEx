@@ -54,7 +54,6 @@ export class CohortDataService {
 
   public get cohort_name(): string { return this._activeCohort.cohort_name; }
   public set cohort_name(value: string) { this._activeCohort.cohort_name = value; }
-
   public get cohort_data(): Record<string, any> { return this._activeCohort.cohort_data; }
   public set cohort_data(value: Record<string, any>) { this._activeCohort.cohort_data = value; }
 
@@ -92,6 +91,19 @@ export class CohortDataService {
   
   public addListener(listener: () => void) { return this._activeCohort.addListener(listener); }
   public removeListener(listener: () => void) { return this._activeCohort.removeListener(listener); }
+  
+  /**
+   * If the currently active cohort matches `cohortId`, update its name and
+   * broadcast to all listeners. No-op otherwise. Used to keep the breadcrumb /
+   * cohort viewer in sync with renames made elsewhere (e.g. the left panel).
+   */
+  public updateNameIfCurrent(cohortId: string, name: string): boolean {
+    if (this._activeCohort.cohort_data?.id !== cohortId) return false;
+    this._activeCohort.cohort_name = name;
+    if (this._activeCohort.cohort_data) this._activeCohort.cohort_data.name = name;
+    this._activeCohort.notifyAllListeners();
+    return true;
+  }
   
   // Service-level data change listeners that work across model switches
   public addDataChangeListener(listener: () => void) {

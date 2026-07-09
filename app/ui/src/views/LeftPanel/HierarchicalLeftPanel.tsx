@@ -322,7 +322,7 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
         onDragStart={(e) => {
           if (!canDrag) return;
           e.dataTransfer.effectAllowed = 'move';
-          const btn = e.currentTarget.querySelector('button');
+          const btn = e.currentTarget.querySelector(`.${styles.item}`) as HTMLElement | null;
           if (btn) {
             btn.classList.add(styles.dragImage);
             const rect = btn.getBoundingClientRect();

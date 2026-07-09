@@ -18,6 +18,8 @@
 import { ViewInfo, ViewType } from '../MainView/MainView';
 import { CohortsDataService, StudyData, CohortData as ServiceCohortData } from './CohortsDataService';
 import { MainViewService } from '../MainView/MainView';
+import { StudyDataService } from '../StudyViewer/StudyDataService';
+import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
 import { getCurrentUser, onUserChange } from '@/auth/userProviderBridge';
 
 export interface HierarchicalTreeNode {
@@ -526,6 +528,8 @@ export class HierarchicalLeftPanelDataService {
     if (userStudy) userStudy.name = newName;
     const publicStudy = this.cachedPublicStudies.find(s => s.id === studyId);
     if (publicStudy) publicStudy.name = newName;
+    // Keep the active-study singleton in sync so the breadcrumb / viewer update.
+    StudyDataService.getInstance().updateNameIfCurrent(studyId, newName);
     this.notifyListeners();
 
     // ── Persist in the background; revert to server truth on failure ──
@@ -559,6 +563,8 @@ export class HierarchicalLeftPanelDataService {
 
     // ── Optimistic rename: update the tree and render immediately ──
     if (node) node.displayName = newName;
+    // Keep the active-cohort singleton in sync so the breadcrumb / viewer update.
+    CohortDataService.getInstance().updateNameIfCurrent(cohortId, newName);
     this.notifyListeners();
 
     // ── Persist in the background; revert to server truth on failure ──
