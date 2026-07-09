@@ -10,6 +10,7 @@ from datetime import datetime
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 from phenex.node_manager import NodeManager
+from phenex.tables import PhenexTable
 import threading
 import queue
 from deepdiff import DeepDiff
@@ -381,14 +382,25 @@ class Node:
             if degree == 0:
                 ready_queue.put(node_name)
 
+        def _restore_phenex_wrapper(materialized, original):
+            # Re-wrap: get_dest_table() strips PhenexTable metadata, restore the original subclass.
+            if isinstance(original, PhenexTable) and not isinstance(
+                materialized, PhenexTable
+            ):
+                return type(original)(
+                    materialized, name=original.NAME_TABLE, column_mapping={}
+                )
+            return materialized
+
         def _run_and_materialise(node, node_name):
             """Execute *node*, materialise the result, record timing, and update the run hash."""
             db_name = node.get_table_name(table_name_prefix)
             node.lastexecution_start_time = datetime.now()
             table = node._execute(tables)
             if table is not None:
+                original = table
                 con.create_table(table, db_name, overwrite=overwrite)
-                table = con.get_dest_table(db_name)
+                table = _restore_phenex_wrapper(con.get_dest_table(db_name), original)
             node.lastexecution_end_time = datetime.now()
             node.lastexecution_duration = (
                 node.lastexecution_end_time - node.lastexecution_start_time
@@ -424,7 +436,16 @@ class Node:
                                 "A DatabaseConnector is required for lazy execution."
                             )
 
-                        if Node._node_manager.should_rerun(node, con):
+                        # Sampler nodes write no dest table (the SAMPLER_STAGE group returns
+                        # None; a fraction=1.0 node is a no-op via _skip_cache). Skip the cache
+                        # for them — with no table to look up they would perpetually MISS.
+                        is_sampler_group = (
+                            isinstance(node, NodeGroup)
+                            and "SAMPLER_STAGE" in node.name.upper()
+                        )
+                        if is_sampler_group or getattr(node, "_skip_cache", False):
+                            table = node._execute(tables)
+                        elif Node._node_manager.should_rerun(node, con):
                             table = _run_and_materialise(node, node_name)
                         else:
                             db_name = node.get_table_name(table_name_prefix)
@@ -444,6 +465,7 @@ class Node:
                         if (
                             con and table is not None
                         ):  # Only create table if _execute returns something
+                            original = table
                             db_name = node.get_table_name(table_name_prefix)
                             logger.info(
                                 f"Thread {threading.current_thread().name}: materializing '{node_name}' to database ..."
@@ -454,7 +476,9 @@ class Node:
                                 f"Thread {threading.current_thread().name}: materialized '{node_name}' "
                                 f"in {(datetime.now() - _t_mat).total_seconds():.3f}s"
                             )
-                            table = con.get_dest_table(db_name)
+                            table = _restore_phenex_wrapper(
+                                con.get_dest_table(db_name), original
+                            )
 
                         node.lastexecution_end_time = datetime.now()
                         node.lastexecution_duration = (
@@ -650,6 +674,9 @@ class NodeGroup(Node):
 
     def __init__(self, name: str, nodes: List[Node]):
         super(NodeGroup, self).__init__(name=name)
+        # Stored (not just added as children) so to_dict()/hash see the nodes —
+        # this is what invalidates the sampler-stage hash on fraction/seed change.
+        self.nodes = nodes
         self.add_children(nodes)
 
     def _execute(self, tables: Dict[str, Table] = None) -> Table:
