@@ -20,6 +20,7 @@ import { CohortRightPanel } from '../CohortViewer/CohortRightPanel/CohortRightPa
 import { StudyExecutePanel } from '../SlideoverPanels/StudyExecutePanel/StudyExecutePanel';
 import { MainBreadcrumb } from './MainBreadcrumb';
 import leftPanelIcon from '../../assets/icons/left_panel.svg';
+import { UserLogin } from '../LeftPanel/UserLogin/UserLogin';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -345,6 +346,9 @@ const MainViewInner = () => {
                   <img src={leftPanelIcon} alt="" />
                 </button>
                 <MainBreadcrumb studyId={studyId} showCohort={isCohortView} />
+                <div className={styles.titleGroupRight}>
+                  <UserLogin />
+                </div>
               </div>
               <div className={`${styles.page} ${styles.innerPage}`}>
                 <Layout

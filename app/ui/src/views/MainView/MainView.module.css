@@ -4,6 +4,7 @@
   height: 100vh;
   position: relative;
   overflow: hidden;
+  background-color: var(--background_color_light, #f0f0f0);
 }
 
 .toggleButton {
@@ -53,6 +54,14 @@
   z-index: 10;
   width: 100%;
   height: 50px;
+}
+
+/* Pushes UserLogin to the far right of the title bar */
+.titleGroupRight {
+  margin-left: auto;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
 }
 
 /* Collapse toggle to the left of the breadcrumb title */

@@ -269,7 +269,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
       const cohortService = CohortDataService.getInstance();
       const items = [
         {
-          displayName: 'My Studies',
+          displayName: 'Prime Studies',
           onClick: () => { window.location.href = '/studies'; },
         },
         {
