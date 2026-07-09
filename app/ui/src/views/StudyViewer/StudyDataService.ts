@@ -285,6 +285,28 @@ export class StudyDataService {
     return true;
   }
 
+  /**
+   * If the currently loaded study matches `studyId`, reorder its cohorts to match
+   * `orderedCohortIds` and notify listeners. No-op otherwise. Keeps the study
+   * viewer's cohort order in sync with reorders made elsewhere (e.g. the left panel).
+   */
+  public updateCohortOrderIfCurrent(studyId: string, orderedCohortIds: string[]): boolean {
+    if (this._study_data?.id !== studyId) return false;
+    const cohorts: any[] = this._study_data.cohorts || [];
+    const byId = new Map(cohorts.map(c => [c.id, c]));
+    const reordered = orderedCohortIds
+      .map(id => byId.get(id))
+      .filter((c): c is any => c !== undefined);
+    // Preserve any cohorts not present in the ordered list.
+    for (const c of cohorts) {
+      if (!orderedCohortIds.includes(c.id)) reordered.push(c);
+    }
+    this._study_data.cohorts = reordered;
+    this._cohort_definitions_service.setStudyData(this._study_data);
+    this.notifyStudyDataServiceListener();
+    return true;
+  }
+
   private nameChangeListeners: Array<() => void> = [];
 
   public addNameChangeListener(listener: () => void) {

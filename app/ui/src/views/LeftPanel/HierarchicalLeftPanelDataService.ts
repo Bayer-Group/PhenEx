@@ -492,6 +492,8 @@ export class HierarchicalLeftPanelDataService {
       const [movedCohort] = cohorts.splice(currentIndex, 1);
       cohorts.splice(newIndex, 0, movedCohort);
     }
+    // Keep the active-study singleton's cohort order in sync so the study viewer updates.
+    StudyDataService.getInstance().updateCohortOrderIfCurrent(studyId, cohorts.map(c => c.id));
     this.notifyListeners();
 
     // Recompute display_order from the new order
