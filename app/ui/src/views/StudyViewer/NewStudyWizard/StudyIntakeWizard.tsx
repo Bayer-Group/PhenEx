@@ -84,10 +84,37 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
   const [perCohortDatabase, setPerCohortDatabase] = useState(false);
   const [cohortDatabases, setCohortDatabases] = useState<Record<string, { database: string; schema: string }>>({});
   
+  // Step 5 – final action selection
+  const [selectedAction, setSelectedAction] = useState<'shell' | 'ai' | null>('ai');
+  
   // Final action
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
+
+  const resetState = () => {
+    setStep(0);
+    setConceptMode('upload');
+    setUploadedText('');
+    setIsParsing(false);
+    setParseError('');
+    setStudyName('');
+    setRawDescription('');
+    setCohorts([{ name: '', description: '', entry_criterion: '', inclusions: [''], exclusions: [''] }]);
+    setCodelistNotes('');
+    setCodelistFiles([]);
+    setSelectedDatabase('');
+    setSelectedSchema('');
+    setPerCohortDatabase(false);
+    setCohortDatabases({});
+    setSelectedAction(null);
+    setIsSubmitting(false);
+  };
+
+  const handleClose = () => {
+    resetState();
+    onClose();
+  };
 
   const intake: StudyIntake = {
     studyType: 'cohort',
@@ -209,6 +236,8 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
     if (step === 1) return studyName.trim().length > 0;
     if (step === 2) return cohorts.some(c => c.name.trim() && c.entry_criterion.trim());
     if (step === 3) return true;
+    if (step === 4) return true;
+    if (step === 5) return selectedAction !== null;
     return true;
   };
 
@@ -241,6 +270,13 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
       }
       setIsParsing(false);
     }
+    
+    // Final step: trigger the finish action
+    if (step === 5 && selectedAction) {
+      await handleFinish(selectedAction);
+      return;
+    }
+    
     if (step < STEP_TITLES.length - 1) setStep(s => s + 1);
   };
 
@@ -266,7 +302,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
 
       <div className={styles.modeToggle}>
         <button
-          className={`${styles.modeCard} ${conceptMode === 'upload' ? styles.modeCardUpload : ''}`}
+          className={`${styles.modeCard} ${conceptMode === 'upload' ? styles.modeCardSelected : ''}`}
           onClick={() => setConceptMode('upload')}
         >
           <span className={styles.modeCardIcon}>📄</span>
@@ -276,7 +312,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
           </div>
         </button>
         <button
-          className={`${styles.modeCard} ${conceptMode === 'manual' ? styles.modeCardManual : ''}`}
+          className={`${styles.modeCard} ${conceptMode === 'manual' ? styles.modeCardSelected : ''}`}
           onClick={() => setConceptMode('manual')}
         >
           <span className={styles.modeCardIcon}>✏️</span>
@@ -290,7 +326,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
       {conceptMode === 'upload' ? (
         <div className={styles.uploadSection}>
           <p className={styles.hint}>
-            Upload your study concept (.docx, .txt, .md). AI will extract
+            Upload your study concept (.docx, .txt, .md) or paste the text directly below. AI will extract
             the study name, description, and cohort criteria — you can review and edit on
             the next steps.
           </p>
@@ -320,6 +356,18 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
               }}
             />
           </div>
+          
+          <div className={styles.orDivider}>
+            <span>OR</span>
+          </div>
+          
+          <textarea
+            className={styles.pasteTextarea}
+            value={uploadedText}
+            onChange={e => setUploadedText(e.target.value)}
+            placeholder="Paste your study concept text here..."
+            rows={10}
+          />
           {parseError && <p className={styles.errorText}>{parseError}</p>}
         </div>
       ) : (
@@ -672,121 +720,80 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
     const validCohorts = cohorts.filter(c => c.name.trim());
     return (
       <div className={styles.stepBody}>
-        <h3 className={styles.stepTitle}>Study Summary</h3>
-        <p className={styles.hint}>Review your intake before creating the study.</p>
+        <h3 className={`${styles.stepTitle} ${styles.stepTitleCentered}`}>Ready to create your study</h3>
+        <p className={`${styles.hint} ${styles.hintCentered}`}>
+          You've configured your study — now choose how to proceed.
+        </p>
 
-        <div className={styles.summaryTable}>
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Study Name</span>
-            <span className={styles.summaryVal}>{studyName || <em>Unnamed</em>}</span>
+        <div className={styles.summaryCompact}>
+          <div className={styles.summaryCompactRow}>
+            <span className={styles.summaryCompactIcon}>📋</span>
+            <div>
+              <div className={styles.summaryCompactLabel}>Study</div>
+              <div className={styles.summaryCompactValue}>{studyName || 'Unnamed Study'}</div>
+            </div>
           </div>
-          {rawDescription && (
-            <div className={styles.summaryRow}>
-              <span className={styles.summaryKey}>Description</span>
-              <span className={styles.summaryVal}>{rawDescription}</span>
+
+          <div className={styles.summaryCompactRow}>
+            <span className={styles.summaryCompactIcon}>👥</span>
+            <div>
+              <div className={styles.summaryCompactLabel}>Cohorts</div>
+              <div className={styles.summaryCompactValue}>
+                {validCohorts.length === 0 ? 'None defined' : validCohorts.map(c => c.name).join(', ')}
+              </div>
             </div>
-          )}
-          {(codelistFiles.length > 0 || codelistNotes) && (
-            <div className={styles.summaryRow}>
-              <span className={styles.summaryKey}>Codelists</span>
-              <span className={styles.summaryVal}>
-                {codelistFiles.length > 0 && (
-                  <div>{codelistFiles.map(f => f.filename).join(', ')}</div>
-                )}
-                {codelistNotes && (
-                  <div style={{ whiteSpace: 'pre-wrap', marginTop: codelistFiles.length ? 6 : 0 }}>{codelistNotes}</div>
-                )}
-              </span>
-            </div>
-          )}
-          {(selectedDatabase || selectedSchema) && (
-            <div className={styles.summaryRow}>
-              <span className={styles.summaryKey}>Database</span>
-              <span className={styles.summaryVal}>
-                <div>
-                  {selectedDatabase && <div><strong>Database:</strong> {selectedDatabase}</div>}
-                  {selectedSchema && <div><strong>Schema:</strong> {selectedSchema}</div>}
+          </div>
+
+          {codelistFiles.length > 0 && (
+            <div className={styles.summaryCompactRow}>
+              <span className={styles.summaryCompactIcon}>📄</span>
+              <div>
+                <div className={styles.summaryCompactLabel}>Codelists</div>
+                <div className={styles.summaryCompactValue}>
+                  {codelistFiles.length} file{codelistFiles.length !== 1 ? 's' : ''} uploaded
                 </div>
-                {perCohortDatabase && (
-                  <div style={{ marginTop: 8, fontSize: '0.9em', color: '#666' }}>
-                    <strong>Per-cohort configuration enabled</strong>
-                    {validCohorts.map(c => {
-                      const cohortDb = cohortDatabases[c.name]?.database || selectedDatabase;
-                      const cohortSchema = cohortDatabases[c.name]?.schema || selectedSchema;
-                      if (cohortDb || cohortSchema) {
-                        return (
-                          <div key={c.name} style={{ marginTop: 4 }}>
-                            • {c.name}: {cohortDb}{cohortSchema ? ` / ${cohortSchema}` : ''}
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-                  </div>
-                )}
-              </span>
+              </div>
             </div>
           )}
-          <div className={styles.summaryRow}>
-            <span className={styles.summaryKey}>Cohorts</span>
-            <span className={styles.summaryVal}>
-              {validCohorts.length === 0 ? (
-                <em>None defined</em>
-              ) : (
-                <ul className={styles.summaryList}>
-                  {validCohorts.map((c, i) => (
-                    <li key={i}>
-                      <strong>{c.name}</strong>
-                      {c.entry_criterion && (
-                        <span> — entry: <em>{c.entry_criterion}</em></span>
-                      )}
-                      {c.inclusions.filter(Boolean).length > 0 && (
-                        <span>
-                          {', '}{c.inclusions.filter(Boolean).length} inclusion
-                          {c.inclusions.filter(Boolean).length !== 1 ? 's' : ''}
-                        </span>
-                      )}
-                      {c.exclusions.filter(Boolean).length > 0 && (
-                        <span>
-                          , {c.exclusions.filter(Boolean).length} exclusion
-                          {c.exclusions.filter(Boolean).length !== 1 ? 's' : ''}
-                        </span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </span>
-          </div>
+
+          {selectedDatabase && (
+            <div className={styles.summaryCompactRow}>
+              <span className={styles.summaryCompactIcon}>🗄️</span>
+              <div>
+                <div className={styles.summaryCompactLabel}>Database</div>
+                <div className={styles.summaryCompactValue}>
+                  {selectedDatabase}{selectedSchema ? ` / ${selectedSchema}` : ''}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        <p className={styles.actionPrompt}>What would you like to do next?</p>
+        <p className={`${styles.actionPrompt} ${styles.actionPromptCentered}`}>What would you like to do next?</p>
 
         <div className={styles.actionButtons}>
           <button
-            className={styles.shellBtn}
-            onClick={() => handleFinish('shell')}
-            disabled={isSubmitting}
-          >
-            <span className={styles.actionIcon}>🗂</span>
-            <div>
-              <p className={styles.actionTitle}>Create Study Shell</p>
-              <p className={styles.actionDesc}>
-                Create an empty study with cohort placeholders based on your intake.
-              </p>
-            </div>
-          </button>
-
-          <button
-            className={styles.aiBtn}
-            onClick={() => handleFinish('ai')}
-            disabled={isSubmitting}
+            className={`${styles.aiBtn} ${selectedAction === 'ai' ? styles.actionBtnSelected : ''}`}
+            onClick={() => setSelectedAction('ai')}
           >
             <span className={styles.actionIcon}>✦</span>
             <div>
               <p className={styles.actionTitle}>Prefill with AI</p>
               <p className={styles.actionDesc}>
                 AI will use your intake to populate phenotypes, codelists, and criteria.
+              </p>
+            </div>
+          </button>
+
+          <button
+            className={`${styles.shellBtn} ${selectedAction === 'shell' ? styles.actionBtnSelected : ''}`}
+            onClick={() => setSelectedAction('shell')}
+          >
+            <span className={styles.actionIcon}>🗂</span>
+            <div>
+              <p className={styles.actionTitle}>Create Study Shell</p>
+              <p className={styles.actionDesc}>
+                Create an empty study with cohort placeholders based on your intake.
               </p>
             </div>
           </button>
@@ -802,7 +809,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
   return (
     <Modal
       isVisible={isVisible}
-      onClose={onClose}
+      onClose={handleClose}
       contentClassName={styles.wizardContent}
       maxWidth="900px"
     >
@@ -823,45 +830,30 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
         {step === 5 && renderStep5()}
       </div>
 
-      {!isFinalStep && (
-        <div className={styles.navButtons}>
-          <button className={styles.navBtn} onClick={onClose}>
-            Cancel
+      <div className={styles.navButtons}>
+        <button className={styles.navBtn} onClick={handleClose}>
+          Cancel
+        </button>
+        {onSkip && !isFinalStep && (
+          <button className={styles.navBtnSkip} onClick={onSkip} title="Skip intake and create a blank study">
+            Skip onboarding
           </button>
-          {onSkip && (
-            <button className={styles.navBtnSkip} onClick={onSkip} title="Skip intake and create a blank study">
-              Skip onboarding
-            </button>
-          )}
-          <button
-            className={styles.navBtn}
-            onClick={handleBack}
-            disabled={step === 0}
-          >
-            Back
-          </button>
-          <button
-            className={`${styles.navBtn} ${styles.navBtnPrimary}`}
-            onClick={handleNext}
-            disabled={!canAdvance() || isParsing}
-          >
-            {isParsing ? 'Parsing…' : 'Next'}
-          </button>
-        </div>
-      )}
-
-      {isFinalStep && (
-        <div className={styles.navButtons}>
-          {onSkip && (
-            <button className={styles.navBtnSkip} onClick={onSkip} title="Skip intake and create a blank study">
-              Skip onboarding
-            </button>
-          )}
-          <button className={styles.navBtn} onClick={handleBack}>
-            Back
-          </button>
-        </div>
-      )}
+        )}
+        <button
+          className={styles.navBtn}
+          onClick={handleBack}
+          disabled={step === 0}
+        >
+          Back
+        </button>
+        <button
+          className={`${styles.navBtn} ${styles.navBtnPrimary}`}
+          onClick={handleNext}
+          disabled={!canAdvance() || isParsing || isSubmitting}
+        >
+          {isParsing ? 'Parsing…' : isSubmitting ? 'Creating…' : isFinalStep ? 'Finish' : 'Next'}
+        </button>
+      </div>
     </Modal>
   );
 };

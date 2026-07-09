@@ -138,14 +138,9 @@
   transform: translateY(-1px);
 }
 
-.modeCardUpload {
-  background: color-mix(in srgb, var(--color-accent-bright) 10%, transparent);
-  border-color: var(--color-accent-bright);
-}
-
-.modeCardManual {
-  background: color-mix(in srgb, var(--color-accent-bright) 10%, transparent);
-  border-color: var(--color-accent-bright);
+.modeCardSelected {
+  background: color-mix(in srgb, var(--color-accent-bright) 10%, transparent) !important;
+  border-color: var(--color-accent-bright) !important;
 }
 
 .modeCardIcon {
@@ -229,6 +224,33 @@
   text-align: center;
   color: var(--text-color-secondary);
   font-size: 12px;
+  margin: 16px 0;
+  position: relative;
+}
+
+.orDivider::before,
+.orDivider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 30px);
+  height: 1px;
+  background: var(--border-color);
+}
+
+.orDivider::before {
+  left: 0;
+}
+
+.orDivider::after {
+  right: 0;
+}
+
+.orDivider span {
+  background: var(--color-background-primary, #fff);
+  padding: 0 12px;
+  position: relative;
+  z-index: 1;
 }
 
 .errorText {
@@ -520,30 +542,18 @@
   padding: 16px 18px;
   border-radius: 10px;
   cursor: pointer;
-  border: 2px solid transparent;
+  border: 2px solid var(--border-color);
+  background: var(--color-background-secondary);
   text-align: left;
   font-family: inherit;
   transition: border-color 0.15s, background 0.15s, transform 0.1s;
-}
-
-.shellBtn {
-  background: var(--color-background-secondary);
-  border-color: var(--border-color);
+  outline: none;
   color: var(--text-color-primary);
 }
 
-.shellBtn:hover:not(:disabled) {
+.shellBtn:hover,
+.aiBtn:hover {
   border-color: var(--color-accent-bright);
-}
-
-.aiBtn {
-  background: color-mix(in srgb, var(--color-accent-bright) 10%, transparent);
-  border-color: var(--color-accent-bright);
-  color: var(--text-color-primary);
-}
-
-.aiBtn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-accent-bright) 18%, transparent);
   transform: translateY(-1px);
 }
 
@@ -551,6 +561,11 @@
 .aiBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.actionBtnSelected {
+  background: color-mix(in srgb, var(--color-accent-bright) 10%, transparent) !important;
+  border-color: var(--color-accent-bright) !important;
 }
 
 .actionIcon {
@@ -798,3 +813,96 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Paste Textarea Styles ──────────────────────────────────────────── */
+
+.pasteTextarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'IBMPlexMono', monospace;
+  background: var(--input-bg-color, var(--color-background-secondary));
+  color: var(--text-color-primary);
+  resize: vertical;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+  min-height: 200px;
+}
+
+.pasteTextarea:focus {
+  border-color: var(--color-accent-bright);
+}
+
+.pasteTextarea::placeholder {
+  color: var(--text-color-secondary);
+  font-family: inherit;
+}
+
+/* ── Compact Summary Styles ─────────────────────────────────────────── */
+
+.hintCentered {
+  text-align: center;
+}
+
+.summaryCompact {
+  max-width: 600px;
+  margin: 32px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summaryCompactRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  transition: border-color 0.15s;
+}
+
+.summaryCompactRow:hover {
+  border-color: color-mix(in srgb, var(--color-accent-bright) 30%, transparent);
+}
+
+.summaryCompactIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.summaryCompactLabel {
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 11px;
+  color: var(--text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.summaryCompactValue {
+  font-size: 15px;
+  color: var(--text-color-primary);
+  line-height: 1.4;
+}
+
+.actionPromptCentered {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 20px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
