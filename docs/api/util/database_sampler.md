@@ -40,6 +40,29 @@ print(sampler.describe())
 Every domain that has a `PERSON_ID` column is filtered to the sampled patients;
 domains without `PERSON_ID` are passed through unchanged.
 
+## Using the sampler in a Study
+
+Calling `sample()` by hand is useful for exploration, but the usual pattern is to
+attach the sampler to the `Study`'s `Database`.
+
+```python
+from phenex import Cohort, Database, Study
+from phenex.util import DatabaseSampler
+from phenex.mappers import OMOPDomains
+
+study_db = Database(
+    mapper=OMOPDomains,
+    connector=con,                                   # con: your connector
+    sampler=DatabaseSampler(fraction=0.1, seed=42),  # 10% reproducible sample
+)
+
+cohort_a = Cohort(name="cohort_a", entry_criterion=entry_a, inclusions=inclusions, exclusions=exclusions)
+cohort_b = Cohort(name="cohort_b", entry_criterion=entry_b, inclusions=inclusions, exclusions=exclusions)
+
+study = Study(path="./results", name="my_study_sampled", cohorts=[cohort_a, cohort_b], database=study_db)
+study.execute(overwrite=True, lazy_execution=True)
+```
+
 ## Inspecting the sample
 
 `fetch_person_ids()` executes one database round-trip and loads the sampled IDs
