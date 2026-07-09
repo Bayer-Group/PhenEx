@@ -242,6 +242,22 @@ export const updateStudyDisplayOrder = async (study_id: string, display_order: n
   }
 };
 
+export const updateCohortDisplayOrder = async (
+  study_id: string,
+  cohort_id: string,
+  display_order: number,
+) => {
+  try {
+    const response = await api.patch(`/study/${study_id}/cohort/${cohort_id}/display_order`, null, {
+      params: { display_order },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in updateCohortDisplayOrder:', error);
+    throw error;
+  }
+};
+
 export interface CohortIntake {
   name: string;
   description: string;

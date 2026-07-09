@@ -1,591 +1,438 @@
-import { FC, useState, useEffect, useRef, useMemo } from 'react';
-import { ControlledTreeEnvironment, Tree, TreeItemIndex, TreeItem, TreeEnvironmentRef, InteractionMode } from 'react-complex-tree';
-import 'react-complex-tree/lib/style-modern.css';
+import { FC, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { LeftPanel } from './LeftPanel';
 import styles from './HierarchicalLeftPanel.module.css';
-import { HierarchicalTreeNode } from './HierarchicalLeftPanelDataService';
-import { HierarchicalLeftPanelDataService } from './HierarchicalLeftPanelDataService';
-import { MainViewService, ViewType } from '../MainView/MainView';
-import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar.tsx';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { TreeNodeAddButton } from '../../components/ButtonsAndTabs/TreeNodeAddButton/TreeNodeAddButton.tsx';
+import {
+  HierarchicalLeftPanelDataService,
+  HierarchicalTreeNode,
+  type PanelError,
+} from './HierarchicalLeftPanelDataService';
+import { MainViewService, ViewInfo } from '../MainView/MainView';
+import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { RightClickMenu, type RightClickMenuItem } from '../../components/RightClickMenu/RightClickMenu';
+import { TreeNodeAddButton } from '../../components/ButtonsAndTabs/TreeNodeAddButton/TreeNodeAddButton';
 
 interface HierarchicalLeftPanelProps {
   isVisible: boolean;
 }
 
-// Convert HierarchicalTreeNode to react-complex-tree format
-const convertToComplexTree = (nodes: HierarchicalTreeNode[]): Record<TreeItemIndex, TreeItem<HierarchicalTreeNode>> => {
-  
-  const items: Record<TreeItemIndex, TreeItem<HierarchicalTreeNode>> = {
-    root: {
-      index: 'root',
-      isFolder: true,
-      children: nodes.map(n => n.id),
-      data: undefined as any,
-    },
+/** The three depths of the navigation tree. */
+type RowKind = 'category' | 'study' | 'cohort';
+
+/** A single visible row, produced by flattening the tree against the expanded set. */
+interface FlatRow {
+  kind: RowKind;
+  node: HierarchicalTreeNode;
+  level: number;
+  /** Reorder group: the category id for studies, the study id for cohorts, '' for categories. */
+  parentId: string;
+  /** Root category ('mystudies' | 'publicstudies') this row descends from. */
+  categoryId: string;
+  hasChildren: boolean;
+  /** Public rows cannot be renamed. */
+  isPublic: boolean;
+}
+
+/** Which row (if any) is being renamed inline. */
+type Renaming = { kind: RowKind; id: string };
+
+/** Context-menu target. */
+type Menu = { x: number; y: number; row: FlatRow };
+
+/** Where a drag is currently hovering relative to a target row. */
+type DropTarget = { id: string; pos: 'before' | 'after' };
+
+/** An auto-focusing inline text input used for renaming (mirrors the OutlinePanel pattern). */
+const InlineEdit: FC<{ value: string; onCommit: (v: string) => void; onCancel: () => void }> = ({
+  value,
+  onCommit,
+  onCancel,
+}) => {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    ref.current?.focus();
+    ref.current?.select();
+  }, []);
+  const commit = () => {
+    const next = ref.current?.value.trim() ?? '';
+    if (next && next !== value) onCommit(next);
+    else onCancel();
   };
-
-
-  const processNode = (node: HierarchicalTreeNode) => {
-    const hasChildren = node.children && node.children.length > 0;
-    items[node.id] = {
-      index: node.id,
-      isFolder: hasChildren,
-      children: hasChildren ? (node.children as HierarchicalTreeNode[]).map(c => c.id) : undefined,
-      data: node,
-    };
-    
-
-    if (hasChildren) {
-      (node.children as HierarchicalTreeNode[]).forEach(processNode);
-    }
-  };
-
-  nodes.forEach(processNode);
-  
-  return items;
+  return (
+    <input
+      ref={ref}
+      className={styles.renameInput}
+      defaultValue={value}
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commit();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
+      }}
+      onBlur={commit}
+    />
+  );
 };
 
+/** Flatten the tree into the rows that are currently visible given `expanded`. */
+const buildRows = (tree: HierarchicalTreeNode[], expanded: Set<string>): FlatRow[] => {
+  const rows: FlatRow[] = [];
+  for (const category of tree) {
+    const isPublic = category.id === 'publicstudies';
+    const studies = category.children ?? [];
+    rows.push({
+      kind: 'category',
+      node: category,
+      level: 0,
+      parentId: '',
+      categoryId: category.id,
+      hasChildren: studies.length > 0,
+      isPublic,
+    });
+    if (!expanded.has(category.id)) continue;
+
+    for (const study of studies) {
+      const cohorts = study.children ?? [];
+      rows.push({
+        kind: 'study',
+        node: study,
+        level: 1,
+        parentId: category.id,
+        categoryId: category.id,
+        hasChildren: cohorts.length > 0,
+        isPublic,
+      });
+      if (!expanded.has(study.id)) continue;
+
+      for (const cohort of cohorts) {
+        rows.push({
+          kind: 'cohort',
+          node: cohort,
+          level: 2,
+          parentId: study.id,
+          categoryId: category.id,
+          hasChildren: false,
+          isPublic,
+        });
+      }
+    }
+  }
+  return rows;
+};
+
+/**
+ * Convert a "drop before `beforeId`" gesture into the index expected by the data
+ * service's reorder methods (which splice the dragged id out first, then insert).
+ */
+const computeReorderIndex = (siblingIds: string[], draggedId: string, beforeId: string | null): number => {
+  const from = siblingIds.indexOf(draggedId);
+  const to = beforeId ? siblingIds.indexOf(beforeId) : siblingIds.length;
+  return from < to ? to - 1 : to;
+};
+
+/**
+ * Left-panel study/cohort navigation tree.
+ *
+ * Reimplemented with the OutlinePanel interaction pattern — plain rows with
+ * native HTML5 drag-and-drop, inline rename, chevron expand/collapse and a
+ * right-click context menu — replacing the previous react-complex-tree tree.
+ */
 export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisible }) => {
-  const [treeData, setTreeData] = useState<HierarchicalTreeNode[]>([]);
-  const [expandedItems, setExpandedItems] = useState<TreeItemIndex[]>(['root', 'mystudies']);
-  const [selectedItems, setSelectedItems] = useState<TreeItemIndex[]>([]);
-  const [focusedItem, setFocusedItem] = useState<TreeItemIndex>();
   const dataService = useRef(HierarchicalLeftPanelDataService.getInstance());
-  const treeEnvironmentRef = useRef<TreeEnvironmentRef<HierarchicalTreeNode>>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const lastClickTime = useRef<{ itemId: TreeItemIndex; time: number } | null>(null);
-  const isExpandCollapseAction = useRef(false);
-  const isDragging = useRef(false);
-  const mouseDownTime = useRef<number>(0);
-  const mouseDownPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const navigationTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [treeData, setTreeData] = useState<HierarchicalTreeNode[]>([]);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(['mystudies', 'publicstudies']));
+  const [renaming, setRenaming] = useState<Renaming | null>(null);
+  const [menu, setMenu] = useState<Menu | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [dragRow, setDragRow] = useState<FlatRow | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const [programmaticSelection, setProgrammaticSelection] = useState<string | null>(null);
+  const [error, setError] = useState<PanelError | null>(null);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { studyId, cohortId } = useParams();
   const location = useLocation();
 
-  const DOUBLE_CLICK_THRESHOLD = 300; // ms
-  const DRAG_THRESHOLD = 5; // pixels - if mouse moves more than this, it's a drag
-
+  // Subscribe to tree data changes.
   useEffect(() => {
-    const updateTreeData = () => {
-      const rawTreeData = dataService.current.getTreeData();
-      setTreeData([...rawTreeData]); // Force new array reference to trigger re-render
-    };
-
-    updateTreeData();
-    dataService.current.addListener(updateTreeData);
-
-    return () => dataService.current.removeListener(updateTreeData);
+    const update = () => setTreeData([...dataService.current.getTreeData()]);
+    update();
+    dataService.current.addListener(update);
+    return () => dataService.current.removeListener(update);
   }, []);
 
-  // Auto-expand and select based on URL
+  // Surface background-persistence failures as a dismissible, retryable toast.
+  useEffect(() => {
+    const service = dataService.current;
+    const handle = (err: PanelError) => setError(err);
+    service.addErrorListener(handle);
+    return () => service.removeErrorListener(handle);
+  }, []);
+
+  // Auto-expand the category + study for the current URL.
   useEffect(() => {
     if (!studyId) return;
-
-    // Determine if this is a public study or user study
-    const isPublicStudy = dataService.current.isPublicStudy(studyId);
-    const rootSection = isPublicStudy ? 'publicstudies' : 'mystudies';
-
-    // Always expand the appropriate root section and the study
-    const newExpandedItems = ['root', rootSection];
-    if (!expandedItems.includes(studyId)) {
-      newExpandedItems.push(studyId);
-    } else {
-      newExpandedItems.push(...expandedItems.filter(id => id !== 'root' && id !== 'mystudies' && id !== 'publicstudies'));
-    }
-    setExpandedItems(newExpandedItems);
-
-    // Select the current study or cohort
-    if (cohortId) {
-      setSelectedItems([cohortId]);
-      dataService.current.selectNode(cohortId);
-    } else {
-      setSelectedItems([studyId]);
-      dataService.current.selectNode(studyId);
-    }
+    const categoryId = dataService.current.isPublicStudy(studyId) ? 'publicstudies' : 'mystudies';
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.add(categoryId);
+      next.add(studyId);
+      return next;
+    });
   }, [studyId, cohortId, location.pathname]);
-  
-  // Subscribe to MainViewService to sync selection when navigation happens
+
+  // Selection follows the URL; fall back to programmatic navigation events.
   useEffect(() => {
-    const mainViewService = MainViewService.getInstance();
-    
-    const handleNavigation = (viewInfo: any) => {
-      console.log('📍 Left panel received navigation event:', viewInfo);
-      
-      // Extract the ID from viewInfo.data to determine what should be selected
-      if (viewInfo.data) {
-        let itemIdToSelect: string | null = null;
-        
-        // For cohort views, select the cohort
-        if (viewInfo.viewType === 'sdef' || viewInfo.viewType === 'psdef' || viewInfo.viewType === 'newCohort') {
-          itemIdToSelect = viewInfo.data.cohortId || viewInfo.data.id;
-        }
-        // For study views, select the study
-        else if (viewInfo.viewType === 'studyViewer' || viewInfo.viewType === 'newStudy') {
-          itemIdToSelect = viewInfo.data.studyId || viewInfo.data.id;
-        }
-        
-        if (itemIdToSelect) {
-          console.log('📍 Selecting item in left panel:', itemIdToSelect);
-          setSelectedItems([itemIdToSelect]);
-          setFocusedItem(itemIdToSelect);
-          
-          // Expand parent if needed - use functional update to access current state
-          setExpandedItems(prevExpanded => {
-            if (!prevExpanded.includes(itemIdToSelect)) {
-              return [...prevExpanded, itemIdToSelect];
-            }
-            return prevExpanded;
-          });
-        }
-      }
+    const service = MainViewService.getInstance();
+    const handle = (viewInfo: ViewInfo) => {
+      const data = viewInfo.data;
+      const id = typeof data === 'string' ? data : data?.id;
+      if (id) setProgrammaticSelection(id);
     };
-    
-    mainViewService.addListener(handleNavigation);
-    return () => mainViewService.removeListener(handleNavigation);
-  }, []); // Empty deps - listener registered once
+    service.addListener(handle);
+    return () => service.removeListener(handle);
+  }, []);
 
-  const items = useMemo(() => {
-    const converted = convertToComplexTree(treeData);
-    return converted;
-  }, [treeData]);
+  const selectedId = cohortId ?? studyId ?? programmaticSelection;
 
-  const handleAddNewStudy = async () => {
-    // Use centralized helper to ensure consistent behavior
-    const { createAndNavigateToNewStudy } = await import('./studyNavigationHelpers');
-    await createAndNavigateToNewStudy(navigate);
+  const rows = useMemo(() => buildRows(treeData, expanded), [treeData, expanded]);
+
+  /** Ordered ids of the drag siblings (same parent + kind) that are currently visible. */
+  const siblingIdsFor = (row: FlatRow): string[] =>
+    rows.filter((r) => r.kind === row.kind && r.parentId === row.parentId).map((r) => r.node.id);
+
+  const nextSiblingId = (row: FlatRow): string | null => {
+    const siblings = siblingIdsFor(row);
+    const i = siblings.indexOf(row.node.id);
+    return i >= 0 && i < siblings.length - 1 ? siblings[i + 1] : null;
   };
 
-  const handleAddNewCohortToStudy = async (studyId: string) => {
-    // Use centralized helper to ensure consistent behavior
-    const { createAndNavigateToNewCohort } = await import('./studyNavigationHelpers');
-    await createAndNavigateToNewCohort(studyId, navigate);
-  };
+  const toggleExpand = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
-  const handleItemClick = (itemId: TreeItemIndex, item: TreeItem<HierarchicalTreeNode>) => {
-    const now = Date.now();
-    const lastClick = lastClickTime.current;
-
-    // Check for double-click
-    if (lastClick && lastClick.itemId === itemId && now - lastClick.time < DOUBLE_CLICK_THRESHOLD) {
-      // Double-click detected - trigger rename
-      console.log('✏️ Double-click detected on:', itemId);
-      
-      // Focus the item first
-      if (treeEnvironmentRef.current) {
-        treeEnvironmentRef.current.focusItem(itemId, 'hierarchical-tree');
-      }
-      
-      // Simulate F2 key press to trigger rename
-      setTimeout(() => {
-        const event = new KeyboardEvent('keydown', { key: 'F2' });
-        document.dispatchEvent(event);
-      }, 50);
-      
-      lastClickTime.current = null; // Reset
-      return;
-    }
-
-    // Update last click time
-    lastClickTime.current = { itemId, time: now };
-
-    // Single click - handle selection and navigation
-    if (!item.data) return;
-    const node = item.data;
-
-    // Handle special action items
-    if (node.id === 'new-study-action') {
-      handleAddNewStudy();
-      return;
-    }
-
-    // DON'T toggle if item is a folder and is already expanded
-    // The arrow click will handle toggling
-    const isExpanded = expandedItems.includes(itemId);
-    if (item.isFolder && isExpanded) {
-      console.log('📁 Item already expanded, not toggling on label click');
-      // Just handle selection/navigation, don't toggle
-    }
-
-    // Handle selection
-    dataService.current.selectNode(node.id);
-    
-    // Navigate using URL routing instead of MainViewService
-    if (node.viewInfo) {
-      const { viewType, data } = node.viewInfo;
-      
-      if (viewType === ViewType.StudyViewer && data) {
-        // Navigate to study URL - data is the study ID
-        navigate(`/studies/${data}`);
-      } else if ((viewType === ViewType.CohortDefinition || viewType === ViewType.PublicCohortDefinition) && data) {
-        // Navigate to cohort URL - data is the cohort object with id and study_id
-        const cohortId = typeof data === 'string' ? data : data.id;
-        const studyId = typeof data === 'object' && data.study_id ? data.study_id : null;
-        if (studyId && cohortId) {
-          navigate(`/studies/${studyId}/cohorts/${cohortId}`);
-        }
-      }
+  const navigateToRow = (row: FlatRow) => {
+    dataService.current.selectNode(row.node.id);
+    if (row.kind === 'category') {
+      navigate('/studies');
+    } else if (row.kind === 'study') {
+      navigate(`/studies/${row.node.id}`);
+    } else {
+      const data = row.node.viewInfo?.data as { study_id?: string } | undefined;
+      const parentStudyId = (data && data.study_id) || row.parentId;
+      navigate(`/studies/${parentStudyId}/cohorts/${row.node.id}`);
     }
   };
 
-  const handleSelectItems = (itemIds: TreeItemIndex[]) => {
-    if (itemIds.length === 0 || itemIds[0] === 'root') return;
+  const handleAddStudy = () => void dataService.current.addNewStudy();
+  const handleAddCohort = (studyId: string) => void dataService.current.addNewCohortToStudy({ id: studyId });
 
-    const itemId = itemIds[0];
-    const item = items[itemId];
-    if (!item || !item.data) return;
-
-    const node = item.data as HierarchicalTreeNode;
-
-    // Handle selection in data service
-    dataService.current.selectNode(node.id);
-
-    // Navigate using URL routing instead of MainViewService
-    if (node.viewInfo) {
-      const { viewType, data } = node.viewInfo;
-      
-      if (viewType === ViewType.StudyViewer && data) {
-        // Navigate to study URL - data is the study ID
-        navigate(`/studies/${data}`);
-      } else if ((viewType === ViewType.CohortDefinition || viewType === ViewType.PublicCohortDefinition) && data) {
-        // Navigate to cohort URL - data is the cohort object with id and study_id
-        const cohortId = typeof data === 'string' ? data : data.id;
-        const studyId = typeof data === 'object' && data.study_id ? data.study_id : null;
-        if (studyId && cohortId) {
-          navigate(`/studies/${studyId}/cohorts/${cohortId}`);
-        }
-      }
-    }
+  const commitRename = (row: FlatRow, name: string) => {
+    if (row.kind === 'study') dataService.current.updateStudyName(row.node.id, name);
+    else if (row.kind === 'cohort') dataService.current.updateCohortName(row.node.id, name);
+    setRenaming(null);
   };
 
-  if (Object.keys(items).length <= 1) { // Only root or less
-    return (
-      <LeftPanel isVisible={isVisible} width={280}>
-        <div className={styles.treeContainer}>
-          <div style={{ padding: '20px', color: 'red' }}>No tree data available (only {Object.keys(items).length} items)</div>
-        </div>
-      </LeftPanel>
+  const clearDrag = () => {
+    setDragRow(null);
+    setDropTarget(null);
+  };
+
+  const handleDrop = (target: FlatRow) => {
+    if (!dragRow || dragRow.kind === 'category') return clearDrag();
+    // Only reorder within the same group and level.
+    if (dragRow.kind !== target.kind || dragRow.parentId !== target.parentId) return clearDrag();
+
+    const pos = dropTarget?.id === target.node.id ? dropTarget.pos : 'before';
+    const beforeId = pos === 'after' ? nextSiblingId(target) : target.node.id;
+    if (beforeId === dragRow.node.id) return clearDrag();
+
+    const siblings = siblingIdsFor(dragRow);
+    const index = computeReorderIndex(siblings, dragRow.node.id, beforeId);
+    if (dragRow.kind === 'study') dataService.current.reorderStudy(dragRow.categoryId, dragRow.node.id, index);
+    else dataService.current.reorderCohort(dragRow.parentId, dragRow.node.id, index);
+    clearDrag();
+  };
+
+  // ── Row builders ────────────────────────────────────────────────────
+  const renderChevron = (row: FlatRow) =>
+    row.hasChildren ? (
+      <button
+        type="button"
+        className={styles.chevron}
+        aria-label={expanded.has(row.node.id) ? 'Collapse' : 'Expand'}
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleExpand(row.node.id);
+        }}
+      >
+        <span className={`${styles.chevronIcon} ${expanded.has(row.node.id) ? styles.chevronOpen : ''}`}>▸</span>
+      </button>
+    ) : (
+      <span className={styles.chevronSpacer} />
     );
-  }
+
+  const renderAddButton = (row: FlatRow) => {
+    if (hoveredId !== row.node.id) return null;
+    if (row.kind === 'category' && row.categoryId === 'mystudies') {
+      return <TreeNodeAddButton alwaysVisible tooltipText="Create a new study" onClick={handleAddStudy} />;
+    }
+    if (row.kind === 'study' && !row.isPublic) {
+      return (
+        <TreeNodeAddButton
+          alwaysVisible
+          tooltipText="Create a new cohort"
+          onClick={() => handleAddCohort(row.node.id)}
+        />
+      );
+    }
+    return null;
+  };
+
+  const renderRow = (row: FlatRow) => {
+    const { node } = row;
+    const isSelected = selectedId === node.id;
+    const editing = renaming?.kind === row.kind && renaming.id === node.id;
+    const canRename = row.kind === 'cohort' || (row.kind === 'study' && !row.isPublic);
+    const canDrag = (row.kind === 'study' || row.kind === 'cohort') && !editing;
+    const isDropTarget = dragRow != null && dragRow.node.id !== node.id && dropTarget?.id === node.id;
+    const dropClass = isDropTarget ? (dropTarget!.pos === 'after' ? styles.dropAfter : styles.dropBefore) : '';
+
+    return (
+      <div
+        key={`${row.kind}:${node.id}`}
+        className={`${styles.row} ${canDrag ? styles.rowDraggable : ''} ${dropClass}`}
+        style={{ paddingLeft: row.level * 12 }}
+        draggable={canDrag}
+        onMouseEnter={() => setHoveredId(node.id)}
+        onMouseLeave={() => setHoveredId((cur) => (cur === node.id ? null : cur))}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setMenu({ x: e.clientX, y: e.clientY, row });
+        }}
+        onDragStart={(e) => {
+          if (!canDrag) return;
+          e.dataTransfer.effectAllowed = 'move';
+          const btn = e.currentTarget.querySelector('button');
+          if (btn) {
+            btn.classList.add(styles.dragImage);
+            const rect = btn.getBoundingClientRect();
+            e.dataTransfer.setDragImage(btn, e.clientX - rect.left, e.clientY - rect.top);
+            setTimeout(() => btn.classList.remove(styles.dragImage), 0);
+          }
+          setDragRow(row);
+        }}
+        onDragEnd={clearDrag}
+        onDragOver={(e) => {
+          if (!dragRow || dragRow.kind !== row.kind || dragRow.parentId !== row.parentId) return;
+          e.preventDefault();
+          const rect = e.currentTarget.getBoundingClientRect();
+          const pos = e.clientY - rect.top < rect.height / 2 ? 'before' : 'after';
+          setDropTarget({ id: node.id, pos });
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          handleDrop(row);
+        }}
+      >
+        {renderChevron(row)}
+        {editing ? (
+          <InlineEdit
+            value={node.displayName ?? ''}
+            onCommit={(v) => commitRename(row, v)}
+            onCancel={() => setRenaming(null)}
+          />
+        ) : (
+          <button
+            type="button"
+            className={`${styles.item} ${styles[`level${row.level}`] ?? ''} ${isSelected ? styles.itemActive : ''}`}
+            onClick={() => navigateToRow(row)}
+            onDoubleClick={() => canRename && setRenaming({ kind: row.kind, id: node.id })}
+          >
+            {node.displayName}
+          </button>
+        )}
+        {renderAddButton(row)}
+      </div>
+    );
+  };
+
+  const buildMenuItems = (row: FlatRow): RightClickMenuItem[] => {
+    const canRename = row.kind === 'cohort' || (row.kind === 'study' && !row.isPublic);
+    const items: RightClickMenuItem[] = [{ label: 'Open', onClick: () => navigateToRow(row) }];
+    if (canRename) {
+      items.push({ label: 'Rename', onClick: () => setRenaming({ kind: row.kind, id: row.node.id }) });
+    }
+    if (row.kind === 'study' && !row.isPublic) {
+      items.push({ label: 'New cohort', onClick: () => handleAddCohort(row.node.id) });
+    }
+    if (row.kind === 'category' && row.categoryId === 'mystudies') {
+      items.push({ label: 'New study', onClick: handleAddStudy });
+    }
+    return items;
+  };
 
   return (
     <LeftPanel isVisible={isVisible} width={280}>
-      <div className={styles.treeContainer}>
-        <div 
-          ref={scrollContainerRef}
-          className={styles.scrollContainer}
-          onMouseDown={(e) => {
-            mouseDownTime.current = Date.now();
-            mouseDownPos.current = { x: e.clientX, y: e.clientY };
-          }}
-          onMouseMove={(e) => {
-            // If mouse has moved significantly since mousedown, mark as dragging
-            if (mouseDownTime.current > 0) {
-              const dx = Math.abs(e.clientX - mouseDownPos.current.x);
-              const dy = Math.abs(e.clientY - mouseDownPos.current.y);
-              if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) {
-                if (!isDragging.current) {
-                  console.log('🎯 DETECTED DRAG via mouse movement');
-                  isDragging.current = true;
-                }
-              }
-            }
-          }}
-          onMouseUp={() => {
-            mouseDownTime.current = 0;
-          }}
-        >
-          <ControlledTreeEnvironment<HierarchicalTreeNode>
-            ref={treeEnvironmentRef}
-            items={items}
-            getItemTitle={(item) => {
-              const title = item.data?.displayName || `Item ${item.index}`;
-              return title;
-            }}
-            renderItemTitle={({ title, item }) => {
-              const node = item.data;
-              const isSelected = selectedItems.includes(item.index);
-              
-              // Determine the level of this item
-              let level = 0;
-              if (item.index === 'mystudies' || item.index === 'publicstudies') {
-                level = 0; // Root items
-              } else {
-                // Find parent to determine level
-                const parentItem = Object.values(items).find(i => i.children?.includes(item.index as string));
-                if (parentItem) {
-                  if (parentItem.index === 'mystudies' || parentItem.index === 'publicstudies') {
-                    level = 1; // Studies
-                  } else if (parentItem.index === 'root') {
-                    level = 0;
-                  } else {
-                    // Check if parent is a study (level 1)
-                    const grandParentItem = Object.values(items).find(i => i.children?.includes(parentItem.index as string));
-                    if (grandParentItem && (grandParentItem.index === 'mystudies' || grandParentItem.index === 'publicstudies')) {
-                      level = 2; // Cohorts
-                    } else {
-                      level = 3; // Deeper nesting
-                    }
-                  }
-                }
-              }
-              
-              const levelClass = `level${level}`;
-              
-              // Use hasButton from node data
-              const showButton = node?.hasButton === true;
-              
-              // Determine tooltip text and handler based on level
-              let tooltipText = '';
-              let handleClick = () => {};
-              
-              if (level === 0 && item.index === 'mystudies') {
-                tooltipText = 'Create a new study';
-                handleClick = handleAddNewStudy;
-              } else if (level === 1) {
-                tooltipText = 'Create a new cohort';
-                // If it's a study node, handle adding cohort with navigation
-                if (node?.id) {
-                  handleClick = () => handleAddNewCohortToStudy(node.id);
-                }
-              }
-              
-              return (
-                <div 
-                  className={`${styles.itemTitle} ${styles[levelClass]}`}
-                  style={{ fontFamily: isSelected ? '"IBMPlexSans-bold"' : undefined }}
-                >
-                  <span>{title}</span>
-                  {showButton && (
-                    <TreeNodeAddButton
-                      tooltipText={tooltipText}
-                      onClick={handleClick}
-                    />
-                  )}
-                </div>
-              );
-            }}
-            viewState={{
-              'hierarchical-tree': {
-                expandedItems,
-                selectedItems,
-                focusedItem,
-              },
-            }}
-            defaultInteractionMode={InteractionMode.ClickArrowToExpand}
-            canRename={true}
-            canInvokePrimaryActionOnItemContainer={true}
-            onPrimaryAction={(item) => {
-              // Primary action (click) - this is separate from selection
-              if (!item.data) return;
-              const node = item.data;
-              
-              console.log('🎯 PRIMARY ACTION (click) - navigating');
-              
-              // Handle special action items
-              if (node.id === 'new-study-action') {
-                handleAddNewStudy();
-                return;
-              }
-              
-              // Handle root items
-              if (node.id === 'mystudies' || node.id === 'publicstudies') {
-                navigate('/studies');
-                return;
-              }
-              
-              // Navigate based on viewInfo
-              if (node.viewInfo) {
-                const { viewType, data } = node.viewInfo;
-                
-                if (viewType === ViewType.StudyViewer && data) {
-                  navigate(`/studies/${data}`);
-                } else if ((viewType === ViewType.CohortDefinition || viewType === ViewType.PublicCohortDefinition) && data) {
-                  const cohortId = typeof data === 'string' ? data : data.id;
-                  const studyId = typeof data === 'object' && data.study_id ? data.study_id : null;
-                  if (studyId && cohortId) {
-                    navigate(`/studies/${studyId}/cohorts/${cohortId}`);
-                  }
-                }
-              }
-            }}
-            onRenameItem={(item, newName) => {
-              
-              if (!item.data) {
-                console.warn('⚠️ No data for item:', item.index);
-                return;
-              }
-
-              const node = item.data;
-              
-              // Prevent renaming special action items
-              if (node.id === 'new-study-action') {
-                console.warn('⚠️ Cannot rename action items');
-                return;
-              }
-
-              // Determine if this is a study or cohort and update accordingly
-              const parentItem = Object.values(items).find(i => i.children?.includes(item.index as string));
-              const isStudy = parentItem && (parentItem.index === 'mystudies' || parentItem.index === 'publicstudies');
-              const isCohort = !isStudy && parentItem && parentItem.index !== 'root';
-
-              // Handle async updates
-              (async () => {
-                if (isStudy) {
-                  // It's a study - check if it's public
-                  const isPublic = parentItem.index === 'publicstudies';
-                  
-                  if (isPublic) {
-                    console.log('⚠️ Cannot rename public study');
-                    return;
-                  }
-
-                  // Update study name via data service
-                  try {
-                    await dataService.current.updateStudyName(node.id, newName);
-                  } catch (error) {
-                    console.error('Failed to rename study:', error);
-                  }
-                } else if (isCohort) {
-                  
-                  // Update cohort name via data service
-                  try {
-                    await dataService.current.updateCohortName(node.id, newName);
-                  } catch (error) {
-                    console.error('Failed to rename cohort:', error);
-                  }
-                } else {
-                  console.warn('⚠️ Cannot determine item type for rename');
-                }
-              })();
-            }}
-            onExpandItem={(item) => {
-              isExpandCollapseAction.current = true;
-              setExpandedItems([...expandedItems, item.index]);
-              // Reset flag after a short delay
-              setTimeout(() => {
-                isExpandCollapseAction.current = false;
-              }, 50);
-            }}
-            onCollapseItem={(item) => {
-              isExpandCollapseAction.current = true;
-              setExpandedItems(expandedItems.filter(id => id !== item.index));
-              // Reset flag after a short delay
-              setTimeout(() => {
-                isExpandCollapseAction.current = false;
-              }, 50);
-            }}
-            onSelectItems={(itemIds) => {
-              // Don't handle selection if it's from expand/collapse or drag action
-              if (isExpandCollapseAction.current || isDragging.current) {
-                console.log('🚫 Blocking selection during drag/expand:', { isDragging: isDragging.current, isExpandCollapse: isExpandCollapseAction.current });
-                return;
-              }
-              
-              // Just update selection state - navigation happens in onPrimaryAction
-              setSelectedItems(itemIds);
-              
-              if (itemIds.length > 0 && itemIds[0] !== 'root') {
-                const itemId = itemIds[0];
-                const item = items[itemId];
-                if (item?.data) {
-                  const node = item.data;
-                  dataService.current.selectNode(node.id);
-                  
-                  // If it's a folder, expand it
-                  if (item.isFolder && !expandedItems.includes(itemId)) {
-                    setExpandedItems([...expandedItems, itemId]);
-                  }
-                }
-              }
-            }}
-            onFocusItem={(item) => setFocusedItem(item.index)}
-            onDragStart={(items) => {
-              // Mark that we're starting a drag operation to prevent selection
-              console.log('🎯 DRAG START - setting isDragging to true');
-              isDragging.current = true;
-            }}
-            onDrop={(draggedItems, target) => {
-              console.log('🎯 DROP - resetting isDragging');
-              // Get the dragged item IDs
-              const draggedIds = draggedItems.map(item => item.index as string);
-              
-              // Only handle single item drag for now
-              if (draggedIds.length !== 1) {
-                console.warn('⚠️ Multiple item drag not supported yet');
-                return;
-              }
-
-              const draggedId = draggedIds[0];
-              const targetParentId = target.targetType === 'between-items' 
-                ? target.parentItem 
-                : target.targetType === 'item'
-                ? target.targetItem
-                : null;
-                
-              
-              // Handle reordering within the same parent
-              if (target.targetType === 'between-items') {
-                let childIndex = target.childIndex ?? 0;
-                
-                // Get the current index of the dragged item to determine if moving up or down
-                const parentItem = items[targetParentId as string];
-                if (parentItem?.children) {
-                  const currentIndex = parentItem.children.indexOf(draggedId);
-                  console.log('🎯 Current index of dragged item:', currentIndex);
-                  console.log('🎯 Target index:', childIndex);
-                  
-                  // If moving upward (to a lower index), the childIndex is already correct
-                  // because the library calculates it as the "insert before" position
-                  // If moving downward (to a higher index), we need to adjust by -1
-                  // because we'll remove the item first, shifting indices down
-                  if (currentIndex < childIndex) {
-                    // Moving down: adjust index to account for removal
-                    childIndex = childIndex - 1;
-                    console.log('🎯 Adjusted index for downward move:', childIndex);
-                  }
-                }
-                
-                console.log('🎯 Final child index:', childIndex);
-                
-                // Check if reordering studies
-                if (targetParentId === 'mystudies' || targetParentId === 'publicstudies') {
-                  // Reorder studies
-                  dataService.current.reorderStudy(targetParentId as string, draggedId, childIndex);
-                } else {
-                  // Check if reordering cohorts within a study
-                  // The targetParentId should be a study ID
-                  if (parentItem?.data) {
-                    console.log('🎯 Reordering cohort within study:', targetParentId);
-                    dataService.current.reorderCohort(targetParentId as string, draggedId, childIndex);
-                  } else {
-                    console.warn('⚠️ Drop target not supported:', target.targetType, targetParentId);
-                  }
-                }
-              } else {
-                console.warn('⚠️ Drop target type not supported:', target.targetType);
-              }
-              
-              // Reset dragging flag after drop is complete
-              setTimeout(() => {
-                isDragging.current = false;
-              }, 100);
-            }}
-            canDragAndDrop={true}
-            canDropOnFolder={true}
-            canReorderItems={true}
-          >
-            <Tree treeId="hierarchical-tree" rootItem="root" treeLabel="Navigation Tree" />
-          </ControlledTreeEnvironment>
+      <div className={styles.panel}>
+        <div ref={scrollRef} className={styles.scrollContent}>
+          {rows.map(renderRow)}
         </div>
-        <SimpleCustomScrollbar 
-          targetRef={scrollContainerRef}
-          orientation="vertical"
-          marginBottom={20}
-          marginToEnd={3}
-        />
+
+        {menu && (
+          <RightClickMenu
+            position={{ x: menu.x, y: menu.y }}
+            onClose={() => setMenu(null)}
+            items={buildMenuItems(menu.row)}
+          />
+        )}
+
+        {error && (
+          <div className={styles.errorToast} role="alert">
+            <span className={styles.errorToastMessage}>{error.message}</span>
+            <button
+              type="button"
+              className={styles.errorToastRetry}
+              onClick={() => {
+                const retry = error.retry;
+                setError(null);
+                retry();
+              }}
+            >
+              Retry
+            </button>
+            <button
+              type="button"
+              className={styles.errorToastDismiss}
+              aria-label="Dismiss"
+              onClick={() => setError(null)}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
+        <div className={styles.scrollbarRegion}>
+          <SimpleCustomScrollbar
+            targetRef={scrollRef}
+            orientation="vertical"
+            marginTop={10}
+            marginBottom={20}
+            marginToEnd={3}
+            classNameTrack={styles.scrollBarTrack}
+            classNameThumb={styles.scrollBarThumb}
+            showOnHover={true}
+          />
+        </div>
       </div>
     </LeftPanel>
   );

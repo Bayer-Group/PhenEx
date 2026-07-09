@@ -8,6 +8,7 @@ import {
   createNewStudy,
   updateStudy,
   updateStudyDisplayOrder,
+  updateCohortDisplayOrder,
   getUserCohort
 } from '../../api/text_to_cohort/route';
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
@@ -439,14 +440,12 @@ export class CohortsDataService {
    */
   public async updateCohortsDisplayOrder(study_id: string, cohortOrders: Array<{ cohort_id: string; display_order: number }>) {
     try {
-      // Update backend in parallel - fetch each cohort, update display_order, then save
+      // Persist to the dedicated display_order column (does NOT touch cohort_data
+      // or the cohort name, unlike a full cohort save).
       await Promise.all(
-        cohortOrders.map(async ({ cohort_id, display_order }) => {
-          const cohortResponse = await getUserCohort(study_id, cohort_id);
-          const cohortData = cohortResponse.cohort_data;
-          cohortData.display_order = display_order;
-          await updateCohort(study_id, cohort_id, cohortData);
-        })
+        cohortOrders.map(({ cohort_id, display_order }) =>
+          updateCohortDisplayOrder(study_id, cohort_id, display_order)
+        )
       );
 
       // Update local cache
@@ -468,6 +467,22 @@ export class CohortsDataService {
       console.error('Failed to update cohort display order:', error);
       throw error;
     }
+  }
+
+  /**
+   * Rename a cohort by persisting the new name to the cohort's `name` column.
+   * Fetches the stored cohort_data (name is held in a dedicated column, so the
+   * JSON doesn't include it) and re-saves it with the new name attached.
+   */
+  public async renameCohort(study_id: string, cohort_id: string, name: string) {
+    const cohortResponse = await getUserCohort(study_id, cohort_id);
+    const cohortData = cohortResponse?.cohort_data ?? { phenotypes: [] };
+    await updateCohort(study_id, cohort_id, { ...cohortData, name });
+
+    // Keep the cache in sync so the UI reflects the new name immediately.
+    const cohort = this._studyCohortsCache.get(study_id)?.find(c => c.id === cohort_id);
+    if (cohort) cohort.name = name;
+    this.notifyListeners();
   }
 
   public invalidateCache() {

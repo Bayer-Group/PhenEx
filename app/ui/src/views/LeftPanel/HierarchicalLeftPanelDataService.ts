@@ -51,9 +51,17 @@ interface StudyTreeData extends StudyData {
 
 type ChangeListener = () => void;
 
+/** An error surfaced from a failed optimistic update, with an action to retry it. */
+export interface PanelError {
+  message: string;
+  retry: () => void;
+}
+type ErrorListener = (error: PanelError) => void;
+
 export class HierarchicalLeftPanelDataService {
   private static instance: HierarchicalLeftPanelDataService;
   private changeListeners: ChangeListener[] = [];
+  private errorListeners: ErrorListener[] = [];
   private treeData: HierarchicalTreeNode[] = [];
   private dataService = CohortsDataService.getInstance();
 
@@ -241,6 +249,47 @@ export class HierarchicalLeftPanelDataService {
     }
   }
 
+  addErrorListener(listener: ErrorListener) {
+    this.errorListeners.push(listener);
+  }
+
+  removeErrorListener(listener: ErrorListener) {
+    const index = this.errorListeners.indexOf(listener);
+    if (index > -1) {
+      this.errorListeners.splice(index, 1);
+    }
+  }
+
+  private notifyError(message: string, retry: () => void) {
+    this.errorListeners.forEach(listener => listener({ message, retry }));
+  }
+
+  /** Reorder a child node within its parent's `children` array (optimistic tree edit). */
+  private reorderTreeChildren(parentNodeId: string, childId: string, newIndex: number) {
+    const parent = this.findNodeById(parentNodeId);
+    const children = parent?.children;
+    if (!children) return;
+    const from = children.findIndex(c => c.id === childId);
+    if (from === -1) return;
+    const [moved] = children.splice(from, 1);
+    children.splice(newIndex, 0, moved);
+  }
+
+  /** Find the study node id that owns the given cohort node, by scanning the tree. */
+  private findParentStudyId(cohortId: string): string | undefined {
+    const search = (nodes: HierarchicalTreeNode[]): string | undefined => {
+      for (const node of nodes) {
+        if (node.children?.some(c => c.id === cohortId)) return node.id;
+        if (node.children) {
+          const found = search(node.children as HierarchicalTreeNode[]);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+    return search(this.treeData);
+  }
+
   getTreeData(): HierarchicalTreeNode[] {
     // Return a new array reference to ensure React detects changes
     return [...this.treeData];
@@ -400,29 +449,29 @@ export class HierarchicalLeftPanelDataService {
       console.error(`❌ Study ${studyId} not found in ${parentId}`);
       return;
     }
-    
-    // Remove from current position
+
+    // ── Optimistic update: reorder cache + tree and render immediately ──
     const [movedStudy] = studyArray.splice(currentIndex, 1);
-    
-    // Insert at new position
     studyArray.splice(newIndex, 0, movedStudy);
-    
-    
-    // Update display_order for all affected studies
+    this.reorderTreeChildren(parentId, studyId, newIndex);
+    this.notifyListeners();
+
+    // Recompute display_order from the new order
     const studyOrders = studyArray.map((study, index) => ({
       study_id: study.id,
-      display_order: index
+      display_order: index,
     }));
-    
-    // Persist to backend
+
+    // ── Persist in the background; revert to server truth on failure ──
     try {
       await this.dataService.updateStudiesDisplayOrder(studyOrders);
     } catch (error) {
-      console.error('❌ Failed to persist display order:', error);
+      console.error('❌ Failed to persist study display order:', error);
+      await this.updateTreeData();
+      this.notifyError('Couldn’t save the new study order.', () =>
+        this.reorderStudy(parentId, studyId, newIndex)
+      );
     }
-    
-    // Update tree data and notify listeners
-    await this.updateTreeData();
   }
 
   /**
@@ -431,50 +480,34 @@ export class HierarchicalLeftPanelDataService {
    * @param cohortId The ID of the cohort being moved
    * @param newIndex The target index position
    */
-  public async reorderCohort(studyId: string, cohortId: string, newIndex: number) {    
-    try {
-      // Clear and reload cohorts to ensure we have fresh data
-      this.dataService.clearStudyCohortsCache(studyId);
-      const cohorts = await this.dataService.getCohortsForStudy(studyId);
-      
-      if (!cohorts || cohorts.length === 0) {
-        console.error(`❌ No cohorts found for study ${studyId}`);
-        return;
-      }
-      
-      
-      // Find current index
-      const currentIndex = cohorts.findIndex(c => c.id === cohortId);
-      if (currentIndex === -1) {
-        console.error(`❌ Cohort ${cohortId} not found in study ${studyId}`);
-        return;
-      }
-      
-      
-      // Remove from current position
+  public async reorderCohort(studyId: string, cohortId: string, newIndex: number) {
+    // ── Optimistic update: reorder the tree + cohort cache and render immediately ──
+    this.reorderTreeChildren(studyId, cohortId, newIndex);
+
+    const cohorts = await this.dataService.getCohortsForStudy(studyId);
+    const currentIndex = cohorts.findIndex(c => c.id === cohortId);
+    if (currentIndex !== -1) {
       const [movedCohort] = cohorts.splice(currentIndex, 1);
-      
-      // Insert at new position
       cohorts.splice(newIndex, 0, movedCohort);
-      
-      
-      // Update display_order for all affected cohorts
-      const cohortOrders = cohorts.map((cohort, index) => ({
-        cohort_id: cohort.id,
-        display_order: index
-      }));
-      
-      
-      // Persist to backend
+    }
+    this.notifyListeners();
+
+    // Recompute display_order from the new order
+    const cohortOrders = cohorts.map((cohort, index) => ({
+      cohort_id: cohort.id,
+      display_order: index,
+    }));
+
+    // ── Persist in the background; revert to server truth on failure ──
+    try {
       await this.dataService.updateCohortsDisplayOrder(studyId, cohortOrders);
-      
-      // Clear cache again to force fresh load
-      this.dataService.clearStudyCohortsCache(studyId);
-      
-      // Update tree data and notify listeners
-      await this.updateTreeData();
     } catch (error) {
-      console.error('❌ Failed to reorder cohort:', error);
+      console.error('❌ Failed to persist cohort display order:', error);
+      this.dataService.clearStudyCohortsCache(studyId);
+      await this.updateTreeData();
+      this.notifyError('Couldn’t save the new cohort order.', () =>
+        this.reorderCohort(studyId, cohortId, newIndex)
+      );
     }
   }
 
@@ -483,27 +516,28 @@ export class HierarchicalLeftPanelDataService {
    * @param studyId The ID of the study to rename
    * @param newName The new name for the study
    */
-  public async updateStudyName(studyId: string, newName: string) {    
+  public async updateStudyName(studyId: string, newName: string) {
+    const node = this.findNodeById(studyId);
+    const previousName = node?.displayName;
+
+    // ── Optimistic rename: update the tree + caches and render immediately ──
+    if (node) node.displayName = newName;
+    const userStudy = this.cachedUserStudies.find(s => s.id === studyId);
+    if (userStudy) userStudy.name = newName;
+    const publicStudy = this.cachedPublicStudies.find(s => s.id === studyId);
+    if (publicStudy) publicStudy.name = newName;
+    this.notifyListeners();
+
+    // ── Persist in the background; revert to server truth on failure ──
     try {
-      // Update the study name via the data service
       await this.dataService.updateStudyData(studyId, { name: newName });
-      
-      // Update cached studies
-      const userStudy = this.cachedUserStudies.find(s => s.id === studyId);
-      if (userStudy) {
-        userStudy.name = newName;
-      }
-      
-      const publicStudy = this.cachedPublicStudies.find(s => s.id === studyId);
-      if (publicStudy) {
-        publicStudy.name = newName;
-      }
-      
-      // Update tree data and notify listeners
-      await this.updateTreeData();
     } catch (error) {
       console.error('❌ Failed to update study name:', error);
-      throw error;
+      if (node && previousName !== undefined) node.displayName = previousName;
+      await this.updateTreeData();
+      this.notifyError('Couldn’t rename the study.', () =>
+        this.updateStudyName(studyId, newName)
+      );
     }
   }
 
@@ -513,37 +547,31 @@ export class HierarchicalLeftPanelDataService {
    * @param newName The new name for the cohort
    */
   public async updateCohortName(cohortId: string, newName: string) {
-    
+    const node = this.findNodeById(cohortId);
+    const previousName = node?.displayName;
+
+    // Find which study this cohort belongs to (from the current tree).
+    const studyId = this.findParentStudyId(cohortId);
+    if (!studyId) {
+      console.error('❌ Could not find study for cohort');
+      return;
+    }
+
+    // ── Optimistic rename: update the tree and render immediately ──
+    if (node) node.displayName = newName;
+    this.notifyListeners();
+
+    // ── Persist in the background; revert to server truth on failure ──
     try {
-      // Load the cohort data using CohortDataService
-      const cohortDataService = this.dataService['cohortDataService'];
-      
-      // Find which study this cohort belongs to
-      let studyId: string | undefined;
-      for (const study of [...this.cachedUserStudies, ...this.cachedPublicStudies]) {
-        const cohorts = await this.dataService.getCohortsForStudy(study.id);
-        if (cohorts.some(c => c.id === cohortId)) {
-          studyId = study.id;
-          break;
-        }
-      }
-      
-      if (!studyId) {
-        console.error('❌ Could not find study for cohort');
-        return;
-      }
-      
-      // Load the cohort, update the name, and save
-      await cohortDataService.loadCohortData(cohortId);
-      cohortDataService.cohort_name = newName;
-      await cohortDataService.saveChangesToCohort();
-            
-      // Clear cache and update tree data
-      this.dataService.clearStudyCohortsCache(studyId);
-      await this.updateTreeData();
+      await this.dataService.renameCohort(studyId, cohortId, newName);
     } catch (error) {
       console.error('❌ Failed to update cohort name:', error);
-      throw error;
+      if (node && previousName !== undefined) node.displayName = previousName;
+      this.dataService.clearStudyCohortsCache(studyId);
+      await this.updateTreeData();
+      this.notifyError('Couldn’t rename the cohort.', () =>
+        this.updateCohortName(cohortId, newName)
+      );
     }
   }
 }

@@ -147,6 +147,45 @@ async def update_cohort_database(
         raise HTTPException(status_code=500, detail="Failed to update database.")
 
 
+@router.patch("/study/{study_id}/cohort/{cohort_id}/display_order", tags=["cohort"])
+async def update_cohort_display_order(
+    request: Request,
+    study_id: str,
+    cohort_id: str,
+    display_order: int,
+):
+    """
+    Update the display order of a cohort within its study.
+
+    Path Parameters:
+    - study_id (str): The unique identifier of the parent study
+    - cohort_id (str): The unique identifier of the cohort
+
+    Query Parameters:
+    - display_order (int): The new display order value for UI sorting
+
+    Behavior:
+    - Updates only the display_order column, leaving the cohort's data and name unchanged.
+    """
+    user_id = get_authenticated_user_id(request)
+    try:
+        success = await db_manager.update_cohort_display_order(
+            user_id, cohort_id, display_order
+        )
+        if not success:
+            raise HTTPException(
+                status_code=404, detail=f"Cohort {cohort_id} not found or access denied."
+            )
+        return {"status": "success"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update display order for cohort {cohort_id}: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to update cohort display order."
+        )
+
+
 @router.delete("/study/{study_id}/cohort/{cohort_id}", tags=["cohort"])
 async def delete_cohort(request: Request, study_id: str, cohort_id: str):
     """

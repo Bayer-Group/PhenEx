@@ -547,6 +547,47 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
+    async def update_cohort_display_order(
+        self, user_id: str, cohort_id: str, display_order: int
+    ) -> bool:
+        """
+        Update the display_order column for all versions of a cohort.
+
+        The cohort list query sorts by the display_order column, so ordering is
+        persisted here rather than inside the cohort_data JSON. All versions of the
+        cohort are updated to keep the value consistent regardless of which version
+        the list query selects.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the cohort.
+            cohort_id (str): The ID of the cohort to update.
+            display_order (int): The new display order value.
+
+        Returns:
+            bool: True if successful, False if cohort not found or access denied.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+            query = f"""
+                UPDATE {self.full_table_name}
+                SET display_order = $3, updated_at = NOW()
+                WHERE user_id = $1 AND cohort_id = $2
+            """
+            result = await conn.execute(query, user_id, cohort_id, display_order)
+            if result == "UPDATE 0":
+                return False
+            logger.info(
+                f"Updated display_order={display_order} for cohort {cohort_id}"
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update display order for cohort {cohort_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
     async def delete_cohort_for_user(self, user_id: str, cohort_id: str) -> bool:
         """
         Delete all versions of a cohort for a user from the database.
