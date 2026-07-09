@@ -180,8 +180,6 @@ export const StudyExecutePanel: React.FC = () => {
     return `${date} — ${exec.status}`;
   };
 
-
-
   const renderControls = () => {
     const executeStateClass =
       executionState === 'running' ? styles.executeRunning

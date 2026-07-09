@@ -248,3 +248,27 @@
   word-break: break-word;
   margin: 0;
 }
+
+/* Export buttons */
+.exportButtons {
+  display: flex;
+  gap: 6px;
+}
+
+.exportBtn {
+  flex: 1;
+  padding: 7px 0;
+  background: var(--color-background-secondary);
+  color: var(--text-color-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'IBMPlexSans-regular';
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.exportBtn:hover {
+  border-color: var(--color-accent-bright);
+  background: var(--color-background-tertiary);
+}

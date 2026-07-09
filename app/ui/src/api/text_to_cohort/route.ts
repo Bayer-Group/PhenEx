@@ -376,3 +376,34 @@ export const deleteExecution = async (studyId: string, executionId: string): Pro
   });
   if (!resp.ok) throw new Error(`${resp.status}`);
 };
+
+export const exportStudy = async (studyId: string, format: 'py' | 'ipynb' = 'py'): Promise<void> => {
+  try {
+    const response = await authFetch(`${BACKEND_URL}/study/${studyId}/export?format=${format}`);
+    if (!response.ok) throw new Error(`${response.status}`);
+    
+    // Get the filename from Content-Disposition header
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = `study_${studyId}.${format}`;
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+      if (filenameMatch) {
+        filename = filenameMatch[1];
+      }
+    }
+    
+    // Download the file
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('Error in exportStudy:', error);
+    throw error;
+  }
+};

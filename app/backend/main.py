@@ -77,6 +77,7 @@ init_db()
 _tags_metadata = [
     {"name": "study", "description": "Study management"},
     {"name": "study execution", "description": "Study execution, reports, and logs"},
+    {"name": "study export", "description": "Export studies to Python/Jupyter formats"},
     {"name": "cohort", "description": "Cohort management (sub-resources of studies)"},
     {"name": "codelist", "description": "Codelist management"},
     {"name": "AI", "description": "AI / copilot endpoints"},
@@ -209,6 +210,11 @@ app.include_router(study_router)
 from .routes.study_execute import router as study_execute_router
 
 app.include_router(study_execute_router)
+
+# Include the study export router
+from .routes.study_export import router as study_export_router
+
+app.include_router(study_export_router)
 
 # Include the AI router under /copilot prefix
 from .routes.ai import router as ai_router
