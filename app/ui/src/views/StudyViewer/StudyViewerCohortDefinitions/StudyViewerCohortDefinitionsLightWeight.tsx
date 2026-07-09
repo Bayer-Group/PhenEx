@@ -6,6 +6,7 @@ import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { deleteCohort } from '@/api/text_to_cohort/route';
 import { CohortGroupView } from './CohortGroupView';
+import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
 
 // Scale range constants
 const MIN_SCALE = 0.3;
@@ -78,6 +79,7 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
   const transformRef = useRef<HTMLDivElement>(null);
   const cohortDefinitionsRef = useRef(cohortDefinitions);
   const navigate = useNavigate();
+  const { setLeftPanelShown } = useThreePanelCollapse();
   const lastZoomTime = useRef(0);
   
   // Current transform values (ref to avoid re-renders)
@@ -499,11 +501,19 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
     const cohortId = cohortDef.cohort.id;
     
     if (studyId && cohortId) {
+      // Navigate first so the CohortViewer mounts, then collapse the left
+      // panel on the next frame. This avoids the jarring double-transition
+      // where the StudyViewer visibly resizes before the CohortViewer renders.
       navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setLeftPanelShown(false);
+        });
+      });
     } else {
       console.error('Missing study_id or cohort_id for navigation');
     }
-  }, [studyDataService.study_data?.id, navigate]);
+  }, [studyDataService.study_data?.id, navigate, setLeftPanelShown]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsDragging(true);
