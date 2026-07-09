@@ -102,9 +102,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
     // Listen to right panel state changes
     const cohortViewerService = TwoPanelCohortViewerService.getInstance();
     
-    const handleRightPanelChange = (viewType: any, extraData: any, isCollapsed: boolean) => {
-      // Right panel is open if it's not collapsed
-      setIsRightPanelOpen(!isCollapsed);
+    const handleRightPanelChange = (viewType: any) => {
+      // Right panel is open when the phenotype popover is showing
+      setIsRightPanelOpen(viewType === 'phenotype');
     };
     
     cohortViewerService.addListener(handleRightPanelChange);

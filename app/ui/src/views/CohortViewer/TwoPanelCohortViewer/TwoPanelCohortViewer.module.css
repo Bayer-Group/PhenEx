@@ -95,3 +95,47 @@
   right: 20px;
   z-index: 100000;
 }
+
+/* Phenotype detail modal popover */
+.popoverOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.711);
+  z-index: 9999;
+  display: flex;
+  opacity: 0;
+  animation: popoverFadeIn 0.2s ease-in forwards;
+}
+
+.popoverContent {
+  width: 600px;
+  height: 600px;
+  background-color: transparent;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  right: 10%;
+  top: 10%;
+  opacity: 0;
+  animation: popoverFadeIn 0.2s ease-in forwards;
+}
+
+.popoverContent > div {
+  height: 100%;
+  width: 100%;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
