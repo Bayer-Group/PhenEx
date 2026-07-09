@@ -232,6 +232,10 @@ class ChatPanelDataService {
   }
 
   public setStudyMode(studyId: string, activeCohortId?: string): void {
+    // Clear messages if switching to a different study
+    if (this._studyId && this._studyId !== studyId) {
+      this.clearMessages();
+    }
     this._studyMode = true;
     this._studyId = studyId;
     this._activeCohortId = activeCohortId ?? null;

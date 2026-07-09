@@ -21,6 +21,7 @@ import { StudyExecutePanel } from '../SlideoverPanels/StudyExecutePanel/StudyExe
 import { MainBreadcrumb } from './MainBreadcrumb';
 import leftPanelIcon from '../../assets/icons/left_panel.svg';
 import { UserLogin } from '../LeftPanel/UserLogin/UserLogin';
+import { ExportButton } from '../../components/ExportButton/ExportButton';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -287,6 +288,15 @@ const MainViewInner = () => {
     setBorderOpen(innerModelRef.current, DockLocation.RIGHT, isRightPanelShown);
   }, [isRightPanelShown, setBorderOpen]);
 
+  // Hide right panel when on studies grid or empty view, show it for cohort/study views
+  useEffect(() => {
+    if (currentView.viewType === ViewType.StudiesGrid || currentView.viewType === ViewType.Empty) {
+      setRightPanelShown(false);
+    } else if (COHORT_STUDY_VIEWS.has(currentView.viewType)) {
+      setRightPanelShown(true);
+    }
+  }, [currentView.viewType, setRightPanelShown]);
+
   const handleOuterModelChange = useCallback((model: Model) => {
     if (syncingRef.current) return;
     const left = model.getBorderSet().getBorderMap().get(DockLocation.LEFT);
@@ -347,10 +357,28 @@ const MainViewInner = () => {
                 </button>
                 <MainBreadcrumb studyId={studyId} showCohort={isCohortView} />
                 <div className={styles.titleGroupRight}>
+                  <ExportButton studyId={studyId} />
                   <UserLogin />
                 </div>
               </div>
-              <div className={`${styles.page} ${styles.innerPage}`}>
+              <div 
+                className={`${styles.page} ${styles.innerPage}`}
+                style={{
+                  ...(currentView.viewType === ViewType.StudiesGrid || currentView.viewType === ViewType.Empty
+                    ? {
+                        '--right-border-display': 'none',
+                      } as React.CSSProperties
+                    : {})
+                }}
+              >
+                <style>{`
+                  ${currentView.viewType === ViewType.StudiesGrid || currentView.viewType === ViewType.Empty ? `
+                    .${styles.page} .flexlayout__border_right,
+                    .${styles.page} .flexlayout__layout_main + .flexlayout__splitter_border {
+                      display: none !important;
+                    }
+                  ` : ''}
+                `}</style>
                 <Layout
                   model={innerModelRef.current}
                   factory={factory}
