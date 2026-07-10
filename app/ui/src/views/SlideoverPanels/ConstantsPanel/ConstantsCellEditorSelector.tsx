@@ -54,6 +54,9 @@ export const ConstantsCellEditorSelector = forwardRef(
       isPopup() {
         return true;
       },
+      getPopupPosition() {
+        return 'under';
+      },
     }), []); // Empty deps - handle is stable
     
     // Use ref for onValueChange to avoid it being in callback deps and causing loops

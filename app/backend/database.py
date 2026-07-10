@@ -2269,4 +2269,254 @@ class DatabaseManager:
                 await conn.close()
 
 
+
+    # ========================================================================
+    # Constants Management
+    # ========================================================================
+
+    async def get_constants_for_study(self, study_id: str, user_id: str) -> List[Dict]:
+        """Get all constants for a study."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            rows = await conn.fetch(
+                """
+                SELECT c.constant_id, c.study_id, c.user_id, c.name, c.description,
+                       c.constant_type, c.value, c.display_order, c.created_at, c.updated_at
+                FROM constant c
+                WHERE c.study_id = $1 AND c.user_id = $2
+                ORDER BY c.constant_type, c.display_order
+                """,
+                study_id,
+                user_id,
+            )
+            return [
+                {
+                    "id": r["constant_id"],
+                    "study_id": r["study_id"],
+                    "user_id": str(r["user_id"]),
+                    "name": r["name"],
+                    "description": r["description"],
+                    "type": r["constant_type"],
+                    "value": r["value"],
+                    "display_order": r["display_order"],
+                    "created_at": r["created_at"].isoformat(),
+                    "updated_at": r["updated_at"].isoformat(),
+                }
+                for r in rows
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get constants for study {study_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_constant(self, constant_id: str, user_id: str) -> Optional[Dict]:
+        """Get a single constant by ID."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            row = await conn.fetchrow(
+                """
+                SELECT c.constant_id, c.study_id, c.user_id, c.name, c.description,
+                       c.constant_type, c.value, c.display_order, c.created_at, c.updated_at
+                FROM constant c
+                WHERE c.constant_id = $1 AND c.user_id = $2
+                """,
+                constant_id,
+                user_id,
+            )
+            if not row:
+                return None
+            return {
+                "id": row["constant_id"],
+                "study_id": row["study_id"],
+                "user_id": str(row["user_id"]),
+                "name": row["name"],
+                "description": row["description"],
+                "type": row["constant_type"],
+                "value": row["value"],
+                "display_order": row["display_order"],
+                "created_at": row["created_at"].isoformat(),
+                "updated_at": row["updated_at"].isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to get constant {constant_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def create_constant(
+        self,
+        constant_id: str,
+        study_id: str,
+        user_id: str,
+        name: str,
+        description: str,
+        constant_type: str,
+        value: dict,
+        display_order: int = 0,
+    ) -> Dict:
+        """Create a new constant."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            row = await conn.fetchrow(
+                """
+                INSERT INTO constant (constant_id, study_id, user_id, name, description, constant_type, value, display_order)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING constant_id, study_id, user_id, name, description, constant_type, value, display_order, created_at, updated_at
+                """,
+                constant_id,
+                study_id,
+                user_id,
+                name,
+                description,
+                constant_type,
+                json.dumps(value),
+                display_order,
+            )
+            return {
+                "id": row["constant_id"],
+                "study_id": row["study_id"],
+                "user_id": str(row["user_id"]),
+                "name": row["name"],
+                "description": row["description"],
+                "type": row["constant_type"],
+                "value": row["value"],
+                "display_order": row["display_order"],
+                "created_at": row["created_at"].isoformat(),
+                "updated_at": row["updated_at"].isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to create constant: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_constant(
+        self,
+        constant_id: str,
+        user_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        value: Optional[dict] = None,
+        display_order: Optional[int] = None,
+    ) -> Dict:
+        """Update an existing constant."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            
+            # Build dynamic update query
+            updates = []
+            params = []
+            param_idx = 1
+            
+            if name is not None:
+                updates.append(f"name = ${param_idx}")
+                params.append(name)
+                param_idx += 1
+            
+            if description is not None:
+                updates.append(f"description = ${param_idx}")
+                params.append(description)
+                param_idx += 1
+            
+            if value is not None:
+                updates.append(f"value = ${param_idx}")
+                params.append(json.dumps(value))
+                param_idx += 1
+            
+            if display_order is not None:
+                updates.append(f"display_order = ${param_idx}")
+                params.append(display_order)
+                param_idx += 1
+            
+            updates.append(f"updated_at = CURRENT_TIMESTAMP")
+            params.extend([constant_id, user_id])
+            
+            query = f"""
+                UPDATE constant
+                SET {', '.join(updates)}
+                WHERE constant_id = ${param_idx} AND user_id = ${param_idx + 1}
+                RETURNING constant_id, study_id, user_id, name, description, constant_type, value, display_order, created_at, updated_at
+            """
+            
+            row = await conn.fetchrow(query, *params)
+            if not row:
+                raise ValueError(f"Constant {constant_id} not found or access denied")
+            
+            return {
+                "id": row["constant_id"],
+                "study_id": row["study_id"],
+                "user_id": str(row["user_id"]),
+                "name": row["name"],
+                "description": row["description"],
+                "type": row["constant_type"],
+                "value": row["value"],
+                "display_order": row["display_order"],
+                "created_at": row["created_at"].isoformat(),
+                "updated_at": row["updated_at"].isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to update constant {constant_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def delete_constant(self, constant_id: str, user_id: str) -> bool:
+        """Delete a constant."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            result = await conn.execute(
+                """
+                DELETE FROM constant
+                WHERE constant_id = $1 AND user_id = $2
+                """,
+                constant_id,
+                user_id,
+            )
+            return result == "DELETE 1"
+        except Exception as e:
+            logger.error(f"Failed to delete constant {constant_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def check_constant_in_use(self, study_id: str, constant_name: str, user_id: str) -> bool:
+        """Check if a constant is referenced in any cohort."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            # Check if constant name appears in any cohort_data
+            row = await conn.fetchrow(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM cohort
+                    WHERE study_id = $1 
+                      AND user_id = $2
+                      AND cohort_data::text LIKE $3
+                ) AS in_use
+                """,
+                study_id,
+                user_id,
+                f'%"constant": "{constant_name}"%',
+            )
+            return row["in_use"] if row else False
+        except Exception as e:
+            logger.error(f"Failed to check constant usage: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+
 db_manager = DatabaseManager()

@@ -79,6 +79,7 @@ _tags_metadata = [
     {"name": "study execution", "description": "Study execution, reports, and logs"},
     {"name": "study export", "description": "Export studies to Python/Jupyter formats"},
     {"name": "cohort", "description": "Cohort management (sub-resources of studies)"},
+    {"name": "constants", "description": "Study-wide constants (filters, time ranges)"},
     {"name": "codelist", "description": "Codelist management"},
     {"name": "AI", "description": "AI / copilot endpoints"},
     {"name": "chat", "description": "Chat history"},
@@ -215,6 +216,11 @@ app.include_router(study_execute_router)
 from .routes.study_export import router as study_export_router
 
 app.include_router(study_export_router)
+
+# Include the constants router
+from .routes.constants import router as constants_router
+
+app.include_router(constants_router)
 
 # Include the AI router under /copilot prefix
 from .routes.ai import router as ai_router

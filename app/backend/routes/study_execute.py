@@ -14,6 +14,7 @@ from phenex.util.serialization.from_dict import from_dict
 
 from ..database import db_manager
 from ..utils.auth import get_authenticated_user_id
+from ..utils.constants import resolve_constants_in_cohort
 from ..routes.execute import prepare_cohort_for_phenex
 
 router = APIRouter()
@@ -75,12 +76,18 @@ async def execute_study(request: Request):
     if not cohorts:
         raise HTTPException(status_code=400, detail="Study has no cohorts to execute")
 
+    # Fetch study constants to resolve references
+    constants = await db_manager.get_constants_for_study(study_id, user_id)
+
     # Load full cohort data for each cohort
     full_cohorts = []
     for c in cohorts:
-        cohort_data = await db_manager.get_cohort_for_user(user_id, c["id"])
-        if cohort_data:
-            full_cohorts.append(cohort_data)
+        cohort_dict = await db_manager.get_cohort_for_user(user_id, c["id"])
+        if cohort_dict and "cohort_data" in cohort_dict:
+            # Resolve constants before execution
+            resolved_data = resolve_constants_in_cohort(cohort_dict["cohort_data"], constants)
+            cohort_dict["cohort_data"] = resolved_data
+            full_cohorts.append(cohort_dict)
 
     execution_id = str(uuid.uuid4())
     artifacts_dir = os.path.join(STUDY_ARTIFACTS_DIR, study_id)

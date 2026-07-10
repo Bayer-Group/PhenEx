@@ -8,6 +8,7 @@ from fastapi.responses import Response
 
 from ..database import db_manager
 from ..utils.auth import get_authenticated_user_id
+from ..utils.constants import resolve_constants_in_cohort
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -426,13 +427,19 @@ async def export_study(
     if not cohorts:
         logger.warning(f"Study {study_id} has no cohorts to export")
         cohorts = []
+        
+    # Get constants to resolve references
+    constants = await db_manager.get_constants_for_study(study_id, user_id)
     
     # Load full cohort data
     full_cohorts = []
     for c in cohorts:
-        cohort_data = await db_manager.get_cohort_for_user(user_id, c["id"])
-        if cohort_data:
-            full_cohorts.append(cohort_data)
+        cohort_dict = await db_manager.get_cohort_for_user(user_id, c["id"])
+        if cohort_dict and "cohort_data" in cohort_dict:
+            # Resolve constants before exporting
+            resolved_data = resolve_constants_in_cohort(cohort_dict["cohort_data"], constants)
+            cohort_dict["cohort_data"] = resolved_data
+            full_cohorts.append(cohort_dict)
     
     # Generate file content
     # Sanitize filename - remove special characters that could cause issues

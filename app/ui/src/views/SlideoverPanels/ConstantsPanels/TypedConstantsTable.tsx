@@ -118,10 +118,40 @@ export const TypedConstantsTable: React.FC<TypedConstantsTableProps> = ({ consta
       const lastRow = api.getLastDisplayedRow();
       const { rows } = dataService.constants_service.getRowsForType(constantType);
       api.setGridOption('rowData', rows);
-      requestAnimationFrame(() => {
-        api.ensureIndexVisible(firstRow, 'top');
-        api.ensureIndexVisible(lastRow, 'bottom');
-      });
+      
+      // Check if there's a pending edit constant
+      const pendingEditId = dataService.constants_service.getPendingEditConstantId();
+      if (pendingEditId) {
+        dataService.constants_service.clearPendingEditConstantId();
+        
+        // Find the row index in the filtered rows for this type
+        const actualIndex = dataService.constants_service.getActualIndexOfConstant(pendingEditId);
+        if (actualIndex >= 0) {
+          requestAnimationFrame(() => {
+            // Find which row in the grid corresponds to this actual index
+            let gridRowIndex = -1;
+            api.forEachNode((node: any, index: number) => {
+              if (node.data?._actualIndex === actualIndex) {
+                gridRowIndex = index;
+              }
+            });
+            
+            if (gridRowIndex >= 0) {
+              // Scroll to the row and start editing the value cell
+              api.ensureIndexVisible(gridRowIndex, 'middle');
+              api.startEditingCell({
+                rowIndex: gridRowIndex,
+                colKey: 'value',
+              });
+            }
+          });
+        }
+      } else {
+        requestAnimationFrame(() => {
+          api.ensureIndexVisible(firstRow, 'top');
+          api.ensureIndexVisible(lastRow, 'bottom');
+        });
+      }
     }
   };
 
