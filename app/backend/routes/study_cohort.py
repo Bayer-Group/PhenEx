@@ -11,7 +11,7 @@ from ..utils.auth import get_authenticated_user_id
 from ..utils.validation import validate_cohort_data_format
 
 
-@router.get("/study/{study_id}/cohort/{cohort_id}", tags=["cohort"])
+@router.get("/study/{study_id}/cohort/{cohort_id}", tags=["study cohort"])
 async def get_cohort(request: Request, study_id: str, cohort_id: str):
     """
     Retrieve a cohort by its ID within a specific study.
@@ -57,7 +57,7 @@ async def get_cohort(request: Request, study_id: str, cohort_id: str):
         )
 
 
-@router.put("/study/{study_id}/cohort/{cohort_id}", tags=["cohort"])
+@router.put("/study/{study_id}/cohort/{cohort_id}", tags=["study cohort"])
 async def create_or_update_cohort(
     request: Request,
     study_id: str,
@@ -116,7 +116,7 @@ async def create_or_update_cohort(
         raise HTTPException(status_code=500, detail="Failed to create/update cohort.")
 
 
-@router.patch("/study/{study_id}/cohort/{cohort_id}/database", tags=["cohort"])
+@router.patch("/study/{study_id}/cohort/{cohort_id}/database", tags=["study cohort"])
 async def update_cohort_database(
     request: Request,
     study_id: str,
@@ -147,7 +147,7 @@ async def update_cohort_database(
         raise HTTPException(status_code=500, detail="Failed to update database.")
 
 
-@router.patch("/study/{study_id}/cohort/{cohort_id}/display_order", tags=["cohort"])
+@router.patch("/study/{study_id}/cohort/{cohort_id}/display_order", tags=["study cohort"])
 async def update_cohort_display_order(
     request: Request,
     study_id: str,
@@ -186,7 +186,7 @@ async def update_cohort_display_order(
         )
 
 
-@router.delete("/study/{study_id}/cohort/{cohort_id}", tags=["cohort"])
+@router.delete("/study/{study_id}/cohort/{cohort_id}", tags=["study cohort"])
 async def delete_cohort(request: Request, study_id: str, cohort_id: str):
     """
     Delete a cohort and all its versions.

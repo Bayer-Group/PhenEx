@@ -924,10 +924,6 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def get_codelists_for_cohort(self, cohort_id: str) -> List[Dict]:
-        """Retrieve all codelists associated with a specific cohort (legacy, kept for compatibility)."""
-        return await self._get_codelists_by_field('cohort_id', cohort_id)
-
     async def get_codelists_for_study(self, study_id: str) -> List[Dict]:
         """Retrieve all codelists associated with a specific study."""
         return await self._get_codelists_by_field('study_id', study_id)
@@ -944,11 +940,12 @@ class DatabaseManager:
                     codelist_data->'filename' as filename, 
                     codelists, 
                     column_mapping,
+                    display_order,
                     created_at, 
                     updated_at 
                 FROM codelistfile 
                 WHERE {field} = $1
-                ORDER BY updated_at DESC
+                ORDER BY display_order ASC, created_at ASC
             """
 
             rows = await conn.fetch(query, value)
@@ -980,6 +977,7 @@ class DatabaseManager:
                             if column_mapping
                             else None
                         ),
+                        "display_order": row.get("display_order", 0),
                         "created_at": (
                             row["created_at"].isoformat() if row["created_at"] else None
                         ),
@@ -999,7 +997,7 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def get_codelist(self, user_id: str, codelist_id: str) -> Optional[Dict]:
+    async def get_codelist(self, user_id: str, codelist_id: str, study_id: str = None) -> Optional[Dict]:
         """
         Retrieve a specific codelist for a user from the database.
         Returns the latest version.
@@ -1007,6 +1005,7 @@ class DatabaseManager:
         Args:
             user_id (str): The user ID (UUID) whose codelist to retrieve.
             codelist_id (str): The ID of the codelist to retrieve.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
 
         Returns:
             Optional[Dict]: The codelist data or None if not found.
@@ -1015,16 +1014,25 @@ class DatabaseManager:
         try:
             conn = await self.get_connection()
 
-            # Get the highest version
-            query = """
-                SELECT codelist_data, column_mapping, codelists, version, created_at, updated_at 
-                FROM codelistfile 
-                WHERE user_id = $1 AND file_id = $2
-                ORDER BY version DESC
-                LIMIT 1
-            """
-
-            row = await conn.fetchrow(query, user_id, codelist_id)
+            # Get the highest version, optionally filtering by study_id
+            if study_id:
+                query = """
+                    SELECT codelist_data, column_mapping, codelists, version, created_at, updated_at 
+                    FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2 AND study_id = $3
+                    ORDER BY version DESC
+                    LIMIT 1
+                """
+                row = await conn.fetchrow(query, user_id, codelist_id, study_id)
+            else:
+                query = """
+                    SELECT codelist_data, column_mapping, codelists, version, created_at, updated_at 
+                    FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2
+                    ORDER BY version DESC
+                    LIMIT 1
+                """
+                row = await conn.fetchrow(query, user_id, codelist_id)
 
             if not row:
                 return None
@@ -1055,49 +1063,6 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def get_codelist_by_cohort(
-        self, cohort_id: str, codelist_id: str
-    ) -> Optional[tuple]:
-        """
-        Retrieve a codelist by cohort_id and codelist_id (latest version).
-        Returns (codelist_data_dict, user_id) or None. Used when resolving by cohort context.
-        """
-        conn = None
-        try:
-            conn = await self.get_connection()
-            query = """
-                SELECT user_id, codelist_data, column_mapping, codelists, version, created_at, updated_at
-                FROM codelistfile
-                WHERE cohort_id = $1 AND file_id = $2
-                ORDER BY version DESC
-                LIMIT 1
-            """
-            row = await conn.fetchrow(query, cohort_id, codelist_id)
-            if not row:
-                return None
-            codelist_data = {
-                "codelist_data": row["codelist_data"],
-                "column_mapping": row["column_mapping"],
-                "codelists": row["codelists"],
-                "version": row["version"],
-                "created_at": (
-                    row["created_at"].isoformat() if row["created_at"] else None
-                ),
-                "updated_at": (
-                    row["updated_at"].isoformat() if row["updated_at"] else None
-                ),
-            }
-            return (codelist_data, str(row["user_id"]))
-        except Exception as e:
-            error_msg = str(e)[:500]
-            logger.error(
-                f"Failed to retrieve codelist {codelist_id} for cohort {cohort_id}: {error_msg}"
-            )
-            raise
-        finally:
-            if conn:
-                await conn.close()
-
     async def save_codelist(
         self,
         user_id: str,
@@ -1105,7 +1070,6 @@ class DatabaseManager:
         codelist_data: Dict,
         column_mapping: Dict,
         codelists: List[str],
-        cohort_id: Optional[str] = None,
         file_name: Optional[str] = None,
         study_id: Optional[str] = None,
     ) -> bool:
@@ -1118,8 +1082,8 @@ class DatabaseManager:
             codelist_data (Dict): The codelist data.
             column_mapping (Dict): The column mapping.
             codelists (List[str]): List of codelist names contained in the file.
-            cohort_id (Optional[str]): The ID of the associated cohort, if applicable.
             file_name (Optional[str]): The name of the file. If not provided, will use first codelist name.
+            study_id (Optional[str]): The ID of the associated study.
 
         Returns:
             bool: True if successful.
@@ -1150,49 +1114,20 @@ class DatabaseManager:
             )
             target_version = current_max_version + 1
 
-            # Insert the new version
-            if study_id:
-                insert_query = """
-                    INSERT INTO codelistfile (file_id, file_name, user_id, study_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-                """
-                await conn.execute(
-                    insert_query,
-                    codelist_id, file_name, user_id, study_id,
-                    target_version,
-                    json.dumps(codelist_data), json.dumps(column_mapping), codelists,
-                )
-            elif cohort_id:
-                insert_query = """
-                    INSERT INTO codelistfile (file_id, file_name, user_id, cohort_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-                """
-                await conn.execute(
-                    insert_query,
-                    codelist_id,
-                    file_name,
-                    user_id,
-                    cohort_id,
-                    target_version,
-                    json.dumps(codelist_data),
-                    json.dumps(column_mapping),
-                    codelists,
-                )
-            else:
-                insert_query = """
-                    INSERT INTO codelistfile (file_id, file_name, user_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-                """
-                await conn.execute(
-                    insert_query,
-                    codelist_id,
-                    file_name,
-                    user_id,
-                    target_version,
-                    json.dumps(codelist_data),
-                    json.dumps(column_mapping),
-                    codelists,
-                )
+            # Insert the new version with study_id
+            if not study_id:
+                raise ValueError("study_id is required for saving codelists")
+                
+            insert_query = """
+                INSERT INTO codelistfile (file_id, file_name, user_id, study_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+            """
+            await conn.execute(
+                insert_query,
+                codelist_id, file_name, user_id, study_id,
+                target_version,
+                json.dumps(codelist_data), json.dumps(column_mapping), codelists,
+            )
 
             logger.info(
                 f"Successfully saved codelist {codelist_id} version {target_version} for user {user_id}"
@@ -1217,6 +1152,7 @@ class DatabaseManager:
         codelist_data: Dict = None,
         column_mapping: Dict = None,
         codelists: List[str] = None,
+        study_id: str = None,
     ) -> bool:
         """
         Update an existing codelist without creating a new version.
@@ -1227,6 +1163,7 @@ class DatabaseManager:
             codelist_data (Dict, optional): The codelist data to update.
             column_mapping (Dict, optional): The column mapping to update.
             codelists (List[str], optional): List of codelist names to update.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
 
         Returns:
             bool: True if successful.
@@ -1235,14 +1172,21 @@ class DatabaseManager:
         try:
             conn = await self.get_connection()
 
-            # Get the current max version
-            version_query = """
-                SELECT MAX(version) as max_version 
-                FROM codelistfile 
-                WHERE file_id = $1 AND user_id = $2
-            """
-
-            version_row = await conn.fetchrow(version_query, codelist_id, user_id)
+            # Get the current max version, optionally filtering by study_id
+            if study_id:
+                version_query = """
+                    SELECT MAX(version) as max_version 
+                    FROM codelistfile 
+                    WHERE file_id = $1 AND user_id = $2 AND study_id = $3
+                """
+                version_row = await conn.fetchrow(version_query, codelist_id, user_id, study_id)
+            else:
+                version_query = """
+                    SELECT MAX(version) as max_version 
+                    FROM codelistfile 
+                    WHERE file_id = $1 AND user_id = $2
+                """
+                version_row = await conn.fetchrow(version_query, codelist_id, user_id)
 
             if not version_row or not version_row["max_version"]:
                 return False  # Codelist doesn't exist
@@ -1274,12 +1218,21 @@ class DatabaseManager:
             if not update_parts:
                 return True  # Nothing to update
 
-            # Construct and execute the update query
-            update_query = f"""
-                UPDATE codelistfile 
-                SET {", ".join(update_parts)}
-                WHERE user_id = $1 AND file_id = $2 AND version = $3
-            """
+            # Construct and execute the update query, optionally filtering by study_id
+            if study_id:
+                update_parts.append(f"study_id = ${param_idx}")
+                params.append(study_id)
+                update_query = f"""
+                    UPDATE codelistfile 
+                    SET {", ".join(update_parts)}
+                    WHERE user_id = $1 AND file_id = $2 AND version = $3 AND study_id = ${param_idx}
+                """
+            else:
+                update_query = f"""
+                    UPDATE codelistfile 
+                    SET {", ".join(update_parts)}
+                    WHERE user_id = $1 AND file_id = $2 AND version = $3
+                """
 
             result = await conn.execute(update_query, *params)
 
@@ -1300,13 +1253,14 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def delete_codelist(self, user_id: str, codelist_id: str) -> bool:
+    async def delete_codelist(self, user_id: str, codelist_id: str, study_id: str = None) -> bool:
         """
         Delete a codelist for a user from the database.
 
         Args:
             user_id (str): The user ID (UUID) whose codelist to delete.
             codelist_id (str): The ID of the codelist to delete.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
 
         Returns:
             bool: True if successful.
@@ -1315,12 +1269,18 @@ class DatabaseManager:
         try:
             conn = await self.get_connection()
 
-            query = """
-                DELETE FROM codelistfile 
-                WHERE user_id = $1 AND file_id = $2
-            """
-
-            result = await conn.execute(query, user_id, codelist_id)
+            if study_id:
+                query = """
+                    DELETE FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2 AND study_id = $3
+                """
+                result = await conn.execute(query, user_id, codelist_id, study_id)
+            else:
+                query = """
+                    DELETE FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2
+                """
+                result = await conn.execute(query, user_id, codelist_id)
 
             if result == "DELETE 0":
                 return False  # Codelist not found
@@ -1333,6 +1293,57 @@ class DatabaseManager:
         except Exception as e:
             logger.error(
                 f"Failed to delete codelist {codelist_id} for user {user_id}: {e}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_codelist_display_order(
+        self, user_id: str, file_id: str, display_order: int, study_id: str = None
+    ) -> bool:
+        """
+        Update the display order of a codelist file.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the codelist.
+            file_id (str): The ID of the codelist file to update.
+            display_order (int): The new display order value.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
+
+        Returns:
+            bool: True if successful, False if codelist not found.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            if study_id:
+                query = """
+                    UPDATE codelistfile 
+                    SET display_order = $3, updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = $1 AND file_id = $2 AND study_id = $4
+                """
+                result = await conn.execute(query, user_id, file_id, display_order, study_id)
+            else:
+                query = """
+                    UPDATE codelistfile 
+                    SET display_order = $3, updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = $1 AND file_id = $2
+                """
+                result = await conn.execute(query, user_id, file_id, display_order)
+
+            if result == "UPDATE 0":
+                return False  # Codelist not found
+
+            logger.info(
+                f"Successfully updated display order for codelist {file_id} to {display_order}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Failed to update display order for codelist {file_id}: {e}"
             )
             raise
         finally:

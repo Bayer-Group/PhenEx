@@ -237,7 +237,7 @@ export async function createStudyFromIntake(
               codelist_column: headers.includes('codelist') ? 'codelist' : (headers[2] ?? headers[0]),
               contents: { headers, data },
             };
-            await saveCodelist('', filePayload, newStudy.id);
+            await saveCodelist(filePayload, newStudy.id);
             console.log(`✅ Uploaded codelist ${filename} to study ${newStudy.id}`);
           } catch (fileErr) {
             console.error(`❌ Failed to upload codelist ${filename}:`, fileErr);
