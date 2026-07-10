@@ -112,7 +112,8 @@ def _generate_python_code(study: dict, cohorts: list[dict]) -> str:
             # Codelist (for CodelistPhenotype)
             if pheno.get('codelist'):
                 codelist = pheno['codelist']
-                if codelist.get('codelist'):
+                # Handle both dict and string formats
+                if isinstance(codelist, dict) and codelist.get('codelist'):
                     codes = codelist['codelist']
                     # Format codes nicely
                     if isinstance(codes, dict):
@@ -125,34 +126,53 @@ def _generate_python_code(study: dict, cohorts: list[dict]) -> str:
                         code_lines.append(f'    ),')
                     else:
                         code_lines.append(f'    codelist={codes},')
+                elif isinstance(codelist, str):
+                    # If codelist is directly a string (e.g., a reference or ID)
+                    code_lines.append(f'    codelist="{codelist}",')
             
             # Value filter (for AgePhenotype, MeasurementPhenotype)
             if pheno.get('value_filter'):
                 value_filter = pheno['value_filter']
-                code_lines.append(f'    value_filter=ValueFilter(')
-                if value_filter.get('column_name'):
-                    code_lines.append(f'        column_name="{value_filter["column_name"]}",')
-                if value_filter.get('min_value'):
-                    min_val = value_filter['min_value']
-                    if isinstance(min_val, dict) and min_val.get('value') is not None:
-                        code_lines.append(f'        min_value={min_val["value"]},')
-                if value_filter.get('max_value'):
-                    max_val = value_filter['max_value']
-                    if isinstance(max_val, dict) and max_val.get('value') is not None:
-                        code_lines.append(f'        max_value={max_val["value"]},')
-                code_lines.append(f'    ),')
+                # Convert list to dict if needed (take first element)
+                if isinstance(value_filter, list):
+                    if len(value_filter) > 0:
+                        value_filter = value_filter[0]
+                    else:
+                        value_filter = None
+                
+                if value_filter and isinstance(value_filter, dict):
+                    code_lines.append(f'    value_filter=ValueFilter(')
+                    if value_filter.get('column_name'):
+                        code_lines.append(f'        column_name="{value_filter["column_name"]}",')
+                    if value_filter.get('min_value'):
+                        min_val = value_filter['min_value']
+                        if isinstance(min_val, dict) and min_val.get('value') is not None:
+                            code_lines.append(f'        min_value={min_val["value"]},')
+                    if value_filter.get('max_value'):
+                        max_val = value_filter['max_value']
+                        if isinstance(max_val, dict) and max_val.get('value') is not None:
+                            code_lines.append(f'        max_value={max_val["value"]},')
+                    code_lines.append(f'    ),')
             
             # Categorical filter (for CategoricalPhenotype)
             if pheno.get('categorical_filter'):
                 cat_filter = pheno['categorical_filter']
-                code_lines.append(f'    categorical_filter=CategoricalFilter(')
-                if cat_filter.get('column_name'):
-                    code_lines.append(f'        column_name="{cat_filter["column_name"]}",')
-                if cat_filter.get('operator'):
-                    code_lines.append(f'        operator="{cat_filter["operator"]}",')
-                if cat_filter.get('values'):
-                    code_lines.append(f'        values={cat_filter["values"]},')
-                code_lines.append(f'    ),')
+                # Convert list to dict if needed (take first element)
+                if isinstance(cat_filter, list):
+                    if len(cat_filter) > 0:
+                        cat_filter = cat_filter[0]
+                    else:
+                        cat_filter = None
+                
+                if cat_filter and isinstance(cat_filter, dict):
+                    code_lines.append(f'    categorical_filter=CategoricalFilter(')
+                    if cat_filter.get('column_name'):
+                        code_lines.append(f'        column_name="{cat_filter["column_name"]}",')
+                    if cat_filter.get('operator'):
+                        code_lines.append(f'        operator="{cat_filter["operator"]}",')
+                    if cat_filter.get('values'):
+                        code_lines.append(f'        values={cat_filter["values"]},')
+                    code_lines.append(f'    ),')
             
             # Time range - handle both list and dict formats
             if pheno.get('relative_time_range'):
@@ -393,7 +413,8 @@ import pandas as pd"""
         # Codelist
         if pheno.get('codelist'):
             codelist = pheno['codelist']
-            if codelist.get('codelist'):
+            # Handle both dict and string formats
+            if isinstance(codelist, dict) and codelist.get('codelist'):
                 codes = codelist['codelist']
                 if isinstance(codes, dict):
                     codes_json = json.dumps(codes, indent=4)
@@ -403,6 +424,9 @@ import pandas as pd"""
                     code_lines.append(f'    ),')
                 else:
                     code_lines.append(f'    codelist={codes},')
+            elif isinstance(codelist, str):
+                # If codelist is directly a string (e.g., a reference or ID)
+                code_lines.append(f'    codelist="{codelist}",')
         
         # Value filter
         if pheno.get('value_filter'):
