@@ -83,6 +83,8 @@ export const StudyIssuesPanel = () => {
   };
 
   const handleFixWithAI = (issue: StudyIssue, context?: string) => {
+    console.log('🔧 handleFixWithAI called');
+    
     // Format the issue message for AI
     let issueText = 'Please fix the following issue:\n\n';
     
@@ -100,11 +102,15 @@ export const StudyIssuesPanel = () => {
     
     issueText += `\nIssue: ${issue.message}`;
     
+    console.log('🔧 Clearing messages and sending to AI:', issueText.substring(0, 100) + '...');
+    
     // Start a new chat session by clearing previous messages
     chatPanelDataService.clearMessages();
     
     // Add the message to AI chat (this automatically sends it)
     chatPanelDataService.addUserMessageWithText(issueText);
+    
+    console.log('🔧 Calling mainViewLayoutService.openChatTab()');
     
     // Open the chat tab
     mainViewLayoutService.openChatTab();
