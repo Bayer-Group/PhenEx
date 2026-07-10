@@ -18,6 +18,7 @@ import {
 } from '../../contexts/ThreePanelCollapseContext';
 import { CohortRightPanel } from '../CohortViewer/CohortRightPanel/CohortRightPanel';
 import { StudyExecutePanel } from '../SlideoverPanels/StudyExecutePanel/StudyExecutePanel';
+import { StudyIssuesPanel } from '../SlideoverPanels/StudyIssuesPanel/StudyIssuesPanel';
 import { MainBreadcrumb } from './MainBreadcrumb';
 import leftPanelIcon from '../../assets/icons/left_panel.svg';
 import { UserLogin } from '../LeftPanel/UserLogin/UserLogin';
@@ -424,7 +425,15 @@ const MainViewInner = () => {
             </div>
           );
         case 'issues':
-          return <div className={styles.emptyPane} />;
+          return (
+            <div className={styles.rightPanelTab}>
+              {COHORT_STUDY_VIEWS.has(currentView.viewType) ? (
+                <StudyIssuesPanel />
+              ) : (
+                <div className={styles.emptyPane}>No issues for this view.</div>
+              )}
+            </div>
+          );
         default:
           return null;
       }

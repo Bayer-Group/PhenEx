@@ -232,16 +232,41 @@ async def create_or_update_codelist(
     ```
 
     Raises:
-    - 400: If study_id is missing
+    - 400: If study_id is missing or a codelist with the same filename already exists
     - 401: If user is not authenticated
     - 500: If there's an error saving the codelist to the database
 
     Notes:
     - Automatically extracts unique codelist names from codelist_column for caching
     - Stores both raw data and column mapping for efficient retrieval
-    - Operation is idempotent - can be called multiple times with same data
+    - Prevents duplicate uploads based on filename within the same study
+    - Operation is idempotent - can be called multiple times with same file_id
     """
     user_id = get_authenticated_user_id(request)
+
+    # Extract filename - can be in multiple places depending on format
+    filename = file.get("filename")
+    if not filename:
+        codelist_data = file.get("codelist_data", {})
+        filename = codelist_data.get("filename") or codelist_data.get("name")
+    
+    file_id = file.get("id")
+    
+    if filename and file_id:
+        # Check if a codelist with the same filename already exists for this study
+        # but with a different file_id (allow updates to the same file)
+        existing_codelists = await get_codelist_filenames_for_study(db_manager, study_id)
+        
+        for existing in existing_codelists:
+            # Prevent duplicate filenames with different IDs
+            if existing["filename"] == filename and existing["id"] != file_id:
+                logger.warning(
+                    f"Attempt to upload duplicate codelist '{filename}' for study {study_id} by user {user_id}"
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"A codelist with filename '{filename}' already exists in this study. Please use a different filename or delete the existing codelist first."
+                )
 
     success = await save_codelist_file_for_study(
         db_manager,

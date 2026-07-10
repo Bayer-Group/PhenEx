@@ -272,3 +272,14 @@
   border-color: var(--color-accent-bright);
   background: var(--color-background-tertiary);
 }
+
+.validationWarning {
+  padding: 8px 12px;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: rgb(239, 68, 68);
+  font-size: 12px;
+  font-family: 'IBMPlexSans-regular';
+  line-height: 1.4;
+}
