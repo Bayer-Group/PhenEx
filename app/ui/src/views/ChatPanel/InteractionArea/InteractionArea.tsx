@@ -19,6 +19,9 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
     'empty' | 'thinking' | 'interactive' | 'retry'
   >('empty');
   const [isProvisional, setIsProvisional] = useState<boolean>(false);
+  const [isAIThinking, setIsAIThinking] = useState<boolean>(false);
+
+  console.log('🎯 InteractionArea render - state:', interactionState, 'isProvisional:', isProvisional, 'isAIThinking:', isAIThinking);
 
   // Expose focus method to parent components
   useImperativeHandle(ref, () => ({
@@ -33,6 +36,12 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
   // In study mode the per-cohort accept/reject in ChatPanel handles this — skip here.
   useEffect(() => {
     const checkProvisionalState = () => {
+      // Don't change state if AI is currently thinking
+      if (chatPanelDataService.isAIThinking()) {
+        console.log('🔔 AI is thinking, not changing state');
+        return;
+      }
+      
       // Study mode: accept/reject is handled per-cohort in ChatPanel, not here
       if (chatPanelDataService['_studyMode']) {
         setIsProvisional(false);
@@ -85,14 +94,34 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
     return () => chatPanelDataService.removeMessagesUpdatedListener(handleMessagesUpdated);
   }, []);
 
+  // Listen for messages to track AI thinking state
+  useEffect(() => {
+    const handleMessagesUpdated = () => {
+      setIsAIThinking(chatPanelDataService.isAIThinking());
+    };
+    
+    chatPanelDataService.onMessagesUpdated(handleMessagesUpdated);
+    return () => chatPanelDataService.removeMessagesUpdatedListener(handleMessagesUpdated);
+  }, []);
+
   useEffect(() => {
     const handleAICompletion = (success: boolean) => {
+      setIsAIThinking(false);
+      
       if (!success) {
         // Only handle failure case - show retry button
         setInteractionState('retry');
+      } else {
+        // Success case: reset to empty or check provisional state
+        const cohortDataService = CohortDataService.getInstance();
+        const provisional = cohortDataService.cohort_data?.is_provisional === true;
+        
+        if (provisional) {
+          setInteractionState('interactive');
+        } else {
+          setInteractionState('empty');
+        }
       }
-      // Success case: do nothing here - let checkProvisionalState handle button visibility
-      // This ensures buttons are ONLY shown when cohort is actually provisional
     };
 
     chatPanelDataService.onAICompletion(handleAICompletion);
@@ -117,18 +146,34 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
       e.preventDefault();
       const text = textBoxRef.current?.innerText.trim();
       if (text) {
-        // Set state to thinking
-        setInteractionState('thinking');
-
-        // Add user message
-        chatPanelDataService.addUserMessageWithText(text);
-
-        // Clear the text box
-        if (textBoxRef.current) {
-          textBoxRef.current.innerText = '';
-        }
+        handleSendMessage(text);
       }
     }
+  };
+
+  const handleSendMessage = (text?: string) => {
+    const messageText = text || textBoxRef.current?.innerText.trim();
+    if (!messageText) return;
+    
+    console.log('🎯 Setting state to THINKING');
+    // Set state to thinking
+    setInteractionState('thinking');
+    setIsAIThinking(true);
+
+    // Add user message
+    chatPanelDataService.addUserMessageWithText(messageText);
+
+    // Clear the text box
+    if (textBoxRef.current) {
+      textBoxRef.current.innerText = '';
+    }
+  };
+
+  const handleStopAI = () => {
+    console.log('🛑 Stop button clicked');
+    chatPanelDataService.stopAI();
+    setIsAIThinking(false);
+    setInteractionState('empty');
   };
 
   const handleAccept = () => {
@@ -172,6 +217,9 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
           onRetry={handleRetry}
           onNewChat={handleNewChat}
           onHistory={onHistory}
+          onSend={() => handleSendMessage()}
+          onStop={handleStopAI}
+          isAIThinking={isAIThinking}
         />
       </div>
       <div className={styles.transparentHeaderGradient} />
@@ -182,7 +230,6 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
           ref={textBoxRef}
           onKeyDown={handleKeyDown}
         ></div>
-
       </div>
     </div>
   );

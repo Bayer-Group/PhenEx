@@ -64,6 +64,10 @@ class ChatPanelDataService {
   public modifiedCohortIds: string[] = [];
   public modifiedCohortNames: string[] = [];
   
+  // Abort controller for stopping AI requests
+  private abortController: AbortController | null = null;
+  private isAIRunning: boolean = false;
+  
   private get cohortDataService(): CohortDataService {
     if (!this._cohortDataService) {
       this._cohortDataService = CohortDataService.getInstance();
@@ -86,6 +90,29 @@ class ChatPanelDataService {
 
   public getUserMessageCount(): number {
     return this.messages.filter(message => message.isUser).length;
+  }
+
+  public isAIThinking(): boolean {
+    return this.isAIRunning;
+  }
+
+  public stopAI(): void {
+    if (this.abortController) {
+      console.log('🛑 Stopping AI request...');
+      this.abortController.abort();
+      this.abortController = null;
+      this.isAIRunning = false;
+      
+      // Update the last message to show it was stopped
+      const lastMessage = this.messages[this.messages.length - 1];
+      if (lastMessage && !lastMessage.isUser && lastMessage.isLoading) {
+        lastMessage.isLoading = false;
+        lastMessage.text = 'Request stopped by user.';
+        this.notifyListeners();
+      }
+      
+      this.notifyAICompletionListeners(false);
+    }
   }
 
   public addUserMessageWithText(text: string): Message {
@@ -284,9 +311,14 @@ class ChatPanelDataService {
   private async sendAIRequest(inputText: string): Promise<void> {
     let stream: ReadableStream<Uint8Array>;
 
+    // Create new abort controller for this request
+    this.abortController = new AbortController();
+    this.isAIRunning = true;
+
     if (this._studyMode) {
       if (!this._studyId) {
         console.error('AI request failed: No study ID set in study mode');
+        this.isAIRunning = false;
         this.notifyAICompletionListeners(false);
         return;
       }
@@ -298,9 +330,11 @@ class ChatPanelDataService {
           this.getConversationHistory(),
           undefined,
           this._activeCohortId ?? undefined,
+          this.abortController.signal,
         );
       } catch (error) {
         console.error('AI study request failed:', error);
+        this.isAIRunning = false;
         this.notifyAICompletionListeners(false);
         return;
       }
@@ -343,9 +377,11 @@ class ChatPanelDataService {
           this.getConversationHistory(),
           cohortDescription || undefined,
           cohortId,
+          this.abortController.signal,
         );
       } catch (error) {
         console.error('AI cohort request failed:', error);
+        this.isAIRunning = false;
         this.notifyAICompletionListeners(false);
         return;
       }
@@ -464,8 +500,20 @@ class ChatPanelDataService {
       this.notifyListeners();
       this.notifyAICompletionListeners(true);
       console.log('AI request completed successfully');
+      this.isAIRunning = false;
+      this.abortController = null;
     } catch (error) {
       console.error('AI request failed:', error);
+      this.isAIRunning = false;
+      this.abortController = null;
+      
+      // Check if it was aborted
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('AI request was aborted by user');
+        // The stopAI method already handles the message update
+        return;
+      }
+      
       const lastMessage = this.messages[this.messages.length - 1];
       if (lastMessage && !lastMessage.isUser && lastMessage.isLoading) {
         lastMessage.isLoading = false;

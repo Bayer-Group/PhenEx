@@ -103,6 +103,7 @@ export const suggestChangesForStudy = async (
   conversation_history?: Array<{user?: string; system?: string; user_action?: string}>,
   cohort_description?: string,
   active_cohort_id?: string,
+  signal?: AbortSignal,
 ): Promise<ReadableStream<Uint8Array>> => {
   const baseURL = (api.defaults.baseURL || '').replace(/\/$/, '');
   const url = new URL(`${baseURL}/copilot/chat`);
@@ -118,6 +119,7 @@ export const suggestChangesForStudy = async (
       conversation_history: conversation_history || [],
       cohort_description: cohort_description || null,
     }),
+    signal,
   });
 
   if (!response.ok) throw new Error(`Request failed with status ${response.status}`);

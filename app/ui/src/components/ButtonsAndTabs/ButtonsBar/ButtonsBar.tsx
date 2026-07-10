@@ -25,6 +25,8 @@ export const ButtonsBar: FC<ButtonsBarProps> = ({ width, height, buttons, action
         const isNewChat = button === 'New Chat';
         const isHistory = button === 'History';
         const isBack = button === 'Back';
+        const isStop = button === 'Stop';
+        const isSend = button === 'Send';
         
         // Determine styles based on button type
         let backgroundColor: string;
@@ -35,14 +37,14 @@ export const ButtonsBar: FC<ButtonsBarProps> = ({ width, height, buttons, action
           backgroundColor = 'var(--color_inclusion)';
           color = 'white';
           border = '1px solid var(--color_inclusion)';
-        } else if (isReject) {
+        } else if (isReject || isStop) {
           backgroundColor = 'var(--color_exclusion)';
           color = 'white';
           border = '1px solid var(--color_exclusion)';
-        } else if (isRetry) {
-          backgroundColor = 'var(--color_inclusion)';
+        } else if (isRetry || isSend) {
+          backgroundColor = 'var(--color-accent-bright)';
           color = 'white';
-          border = '1px solid var(--color_inclusion)';
+          border = '1px solid var(--color-accent-bright)';
         } else if (isNewChat || isHistory || isBack) {
           // Make New Chat, History, and Back buttons solid (non-transparent)
           backgroundColor = 'var(--button-color-inactive)';
