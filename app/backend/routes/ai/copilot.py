@@ -1592,7 +1592,7 @@ async def atomic_update_codelist(
         logger.info(f"🔍 Looking up codelist by name: '{codelist_name}'")
         try:
             user_id = ctx.deps.user_id
-            cohort_id = ctx.deps.cohort_id
+            study_id = ctx.deps.study_id
             db = ctx.deps.db_manager
             conn = await db.get_connection()
 
@@ -1602,24 +1602,24 @@ async def atomic_update_codelist(
                     sql_query = """
                         SELECT file_id, file_name, codelist_data, codelists, column_mapping 
                         FROM codelistfile 
-                        WHERE user_id = $1 AND cohort_id = $2 AND file_id = $3
+                        WHERE user_id = $1 AND study_id = $2 AND file_id = $3
                     """
                     all_files = await conn.fetch(
-                        sql_query, user_id, cohort_id, codelist_id
+                        sql_query, user_id, study_id, codelist_id
                     )
                 else:
-                    # Search all files in cohort
+                    # Search all files in study
                     sql_query = """
                         SELECT file_id, file_name, codelist_data, codelists, column_mapping 
                         FROM codelistfile 
-                        WHERE user_id = $1 AND cohort_id = $2
+                        WHERE user_id = $1 AND study_id = $2
                     """
-                    all_files = await conn.fetch(sql_query, user_id, cohort_id)
+                    all_files = await conn.fetch(sql_query, user_id, study_id)
             finally:
                 await conn.close()
 
             if not all_files:
-                return f"❌ ERROR: No codelist files found in this cohort."
+                return f"❌ ERROR: No codelist files found in this study."
 
             print(f"🔍 SEARCHING FOR CODELIST: '{codelist_name}'")
             print(f"📁 Found {len(all_files)} codelist files to search")
@@ -2269,15 +2269,15 @@ async def list_codelists(ctx: RunContext[CohortContext]) -> str:
         conn = await db.get_connection()
 
         try:
-            # Fetch ALL codelist files for this cohort (no filtering)
+            # Fetch ALL codelist files for this study (no filtering)
             sql_query = """
                 SELECT file_id, file_name, codelist_data, column_mapping, codelists 
                 FROM codelistfile 
-                WHERE user_id = $1 AND cohort_id = $2
+                WHERE user_id = $1 AND study_id = $2
                 ORDER BY file_id
             """
-            print(f"   Executing query with user_id={user_id}, cohort_id={cohort_id}")
-            all_codelists = await conn.fetch(sql_query, user_id, cohort_id)
+            print(f"   Executing query with user_id={user_id}, study_id={study_id}")
+            all_codelists = await conn.fetch(sql_query, user_id, study_id)
             print(f"   Found {len(all_codelists)} total codelist files")
         finally:
             await conn.close()
