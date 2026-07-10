@@ -36,9 +36,17 @@ def _generate_python_code(study: dict, cohorts: list[dict]) -> str:
     lines.append('    AgePhenotype,')
     lines.append('    DeathPhenotype,')
     lines.append('    CategoricalPhenotype,')
+    lines.append('    MeasurementPhenotype,')
+    lines.append('    TimeRangePhenotype,')
+    lines.append('    EventCountPhenotype,')
+    lines.append('    LogicPhenotype,')
     lines.append(')')
     lines.append('from phenex.codelists import Codelist')
-    lines.append('from phenex.filters import RelativeTimeRange')
+    lines.append('from phenex.filters import (')
+    lines.append('    RelativeTimeRange,')
+    lines.append('    ValueFilter,')
+    lines.append('    CategoricalFilter,')
+    lines.append(')')
     lines.append('')
     
     # Database configuration
@@ -101,28 +109,74 @@ def _generate_python_code(study: dict, cohorts: list[dict]) -> str:
             if pheno.get('return_date'):
                 code_lines.append(f'    return_date="{pheno["return_date"]}",')
             
-            # Codelist
+            # Codelist (for CodelistPhenotype)
             if pheno.get('codelist'):
                 codelist = pheno['codelist']
                 if codelist.get('codelist'):
                     codes = codelist['codelist']
                     # Format codes nicely
                     if isinstance(codes, dict):
+                        # Pretty print the codelist
+                        codes_json = json.dumps(codes, indent=4)
+                        # Indent properly for nested structure
+                        indented_codes = '\n        '.join(codes_json.split('\n'))
                         code_lines.append(f'    codelist=Codelist(')
-                        code_lines.append(f'        {json.dumps(codes)},')
+                        code_lines.append(f'        {indented_codes},')
                         code_lines.append(f'    ),')
                     else:
                         code_lines.append(f'    codelist={codes},')
             
-            # Time range
+            # Value filter (for AgePhenotype, MeasurementPhenotype)
+            if pheno.get('value_filter'):
+                value_filter = pheno['value_filter']
+                code_lines.append(f'    value_filter=ValueFilter(')
+                if value_filter.get('column_name'):
+                    code_lines.append(f'        column_name="{value_filter["column_name"]}",')
+                if value_filter.get('min_value'):
+                    min_val = value_filter['min_value']
+                    if isinstance(min_val, dict) and min_val.get('value') is not None:
+                        code_lines.append(f'        min_value={min_val["value"]},')
+                if value_filter.get('max_value'):
+                    max_val = value_filter['max_value']
+                    if isinstance(max_val, dict) and max_val.get('value') is not None:
+                        code_lines.append(f'        max_value={max_val["value"]},')
+                code_lines.append(f'    ),')
+            
+            # Categorical filter (for CategoricalPhenotype)
+            if pheno.get('categorical_filter'):
+                cat_filter = pheno['categorical_filter']
+                code_lines.append(f'    categorical_filter=CategoricalFilter(')
+                if cat_filter.get('column_name'):
+                    code_lines.append(f'        column_name="{cat_filter["column_name"]}",')
+                if cat_filter.get('operator'):
+                    code_lines.append(f'        operator="{cat_filter["operator"]}",')
+                if cat_filter.get('values'):
+                    code_lines.append(f'        values={cat_filter["values"]},')
+                code_lines.append(f'    ),')
+            
+            # Time range - handle both list and dict formats
             if pheno.get('relative_time_range'):
                 time_range = pheno['relative_time_range']
-                code_lines.append(f'    relative_time_range=RelativeTimeRange(')
-                if time_range.get('start'):
-                    code_lines.append(f'        start={time_range["start"]},')
-                if time_range.get('end'):
-                    code_lines.append(f'        end={time_range["end"]},')
-                code_lines.append(f'    ),')
+                # Convert list to dict if needed (take first element)
+                if isinstance(time_range, list):
+                    if len(time_range) > 0:
+                        time_range = time_range[0]
+                    else:
+                        time_range = None
+                
+                if time_range and isinstance(time_range, dict):
+                    code_lines.append(f'    relative_time_range=RelativeTimeRange(')
+                    if time_range.get('when'):
+                        code_lines.append(f'        when="{time_range["when"]}",')
+                    if time_range.get('min_days'):
+                        min_days = time_range['min_days']
+                        if isinstance(min_days, dict) and min_days.get('value') is not None:
+                            code_lines.append(f'        min_days={min_days["value"]},')
+                    if time_range.get('max_days'):
+                        max_days = time_range['max_days']
+                        if isinstance(max_days, dict) and max_days.get('value') is not None:
+                            code_lines.append(f'        max_days={max_days["value"]},')
+                    code_lines.append(f'    ),')
             
             code_lines.append(')')
             return var_name, '\n'.join(code_lines)
@@ -255,9 +309,17 @@ from phenex.phenotypes import (
     AgePhenotype,
     DeathPhenotype,
     CategoricalPhenotype,
+    MeasurementPhenotype,
+    TimeRangePhenotype,
+    EventCountPhenotype,
+    LogicPhenotype,
 )
 from phenex.codelists import Codelist
-from phenex.filters import RelativeTimeRange
+from phenex.filters import (
+    RelativeTimeRange,
+    ValueFilter,
+    CategoricalFilter,
+)
 import pandas as pd"""
     
     cells.append({
@@ -311,6 +373,91 @@ import pandas as pd"""
             "source": config_lines
         })
     
+    # Helper function to generate phenotype code (reuse from _generate_python_code)
+    def generate_phenotype_for_notebook(pheno: dict, var_prefix: str) -> tuple[str, list[str]]:
+        """Generate code for a phenotype. Returns (variable_name, code_lines_list)."""
+        pheno_id = pheno.get('id', '').replace('-', '_')
+        var_name = f"{var_prefix}_{pheno_id}"
+        class_name = pheno.get('class_name', 'CodelistPhenotype')
+        
+        code_lines = []
+        code_lines.append(f"{var_name} = {class_name}(")
+        code_lines.append(f'    name="{pheno.get("name", "")}",' )
+        
+        if pheno.get('domain'):
+            code_lines.append(f'    domain="{pheno["domain"]}",')
+        
+        if pheno.get('return_date'):
+            code_lines.append(f'    return_date="{pheno["return_date"]}",')
+        
+        # Codelist
+        if pheno.get('codelist'):
+            codelist = pheno['codelist']
+            if codelist.get('codelist'):
+                codes = codelist['codelist']
+                if isinstance(codes, dict):
+                    codes_json = json.dumps(codes, indent=4)
+                    indented_codes = '\n        '.join(codes_json.split('\n'))
+                    code_lines.append(f'    codelist=Codelist(')
+                    code_lines.append(f'        {indented_codes},')
+                    code_lines.append(f'    ),')
+                else:
+                    code_lines.append(f'    codelist={codes},')
+        
+        # Value filter
+        if pheno.get('value_filter'):
+            value_filter = pheno['value_filter']
+            code_lines.append(f'    value_filter=ValueFilter(')
+            if value_filter.get('column_name'):
+                code_lines.append(f'        column_name="{value_filter["column_name"]}",')
+            if value_filter.get('min_value'):
+                min_val = value_filter['min_value']
+                if isinstance(min_val, dict) and min_val.get('value') is not None:
+                    code_lines.append(f'        min_value={min_val["value"]},')
+            if value_filter.get('max_value'):
+                max_val = value_filter['max_value']
+                if isinstance(max_val, dict) and max_val.get('value') is not None:
+                    code_lines.append(f'        max_value={max_val["value"]},')
+            code_lines.append(f'    ),')
+        
+        # Categorical filter
+        if pheno.get('categorical_filter'):
+            cat_filter = pheno['categorical_filter']
+            code_lines.append(f'    categorical_filter=CategoricalFilter(')
+            if cat_filter.get('column_name'):
+                code_lines.append(f'        column_name="{cat_filter["column_name"]}",')
+            if cat_filter.get('operator'):
+                code_lines.append(f'        operator="{cat_filter["operator"]}",')
+            if cat_filter.get('values'):
+                code_lines.append(f'        values={cat_filter["values"]},')
+            code_lines.append(f'    ),')
+        
+        # Time range
+        if pheno.get('relative_time_range'):
+            time_range = pheno['relative_time_range']
+            if isinstance(time_range, list):
+                if len(time_range) > 0:
+                    time_range = time_range[0]
+                else:
+                    time_range = None
+            
+            if time_range and isinstance(time_range, dict):
+                code_lines.append(f'    relative_time_range=RelativeTimeRange(')
+                if time_range.get('when'):
+                    code_lines.append(f'        when="{time_range["when"]}",')
+                if time_range.get('min_days'):
+                    min_days = time_range['min_days']
+                    if isinstance(min_days, dict) and min_days.get('value') is not None:
+                        code_lines.append(f'        min_days={min_days["value"]},')
+                if time_range.get('max_days'):
+                    max_days = time_range['max_days']
+                    if isinstance(max_days, dict) and max_days.get('value') is not None:
+                        code_lines.append(f'        max_days={max_days["value"]},')
+                code_lines.append(f'    ),')
+        
+        code_lines.append(')')
+        return var_name, code_lines
+    
     # Each cohort gets its own section
     for i, cohort in enumerate(cohorts):
         cohort_data = cohort.get('cohort_data', {})
@@ -327,26 +474,87 @@ import pandas as pd"""
             "source": cohort_md.split('\n')
         })
         
-        # Generate the cohort code (similar to Python script)
-        # This is a simplified version - you could expand it
-        cohort_code_lines = [f"# TODO: Define phenotypes for {cohort['name']}"]
-        cohort_code_lines.append(f"cohort_{i + 1} = Cohort(")
-        cohort_code_lines.append(f"    name='{cohort['name']}',")
+        # Organize phenotypes by type
+        entry_phenotypes = [p for p in phenotypes if p.get('type') == 'entry']
+        inclusion_phenotypes = [p for p in phenotypes if p.get('type') == 'inclusion']
+        exclusion_phenotypes = [p for p in phenotypes if p.get('type') == 'exclusion']
+        baseline_phenotypes = [p for p in phenotypes if p.get('type') == 'baseline']
+        outcome_phenotypes = [p for p in phenotypes if p.get('type') == 'outcome']
+        
+        # Generate all phenotype code
+        all_code_lines = []
+        entry_vars = []
+        inclusion_vars = []
+        exclusion_vars = []
+        
+        # Entry phenotypes
+        if entry_phenotypes:
+            all_code_lines.append('# Entry Criterion (Index Date)')
+            for pheno in entry_phenotypes:
+                var_name, code = generate_phenotype_for_notebook(pheno, 'entry')
+                entry_vars.append(var_name)
+                all_code_lines.extend(code)
+                all_code_lines.append('')
+        
+        # Inclusion phenotypes
+        if inclusion_phenotypes:
+            all_code_lines.append('# Inclusion Criteria')
+            for pheno in inclusion_phenotypes:
+                var_name, code = generate_phenotype_for_notebook(pheno, 'inclusion')
+                inclusion_vars.append(var_name)
+                all_code_lines.extend(code)
+                all_code_lines.append('')
+        
+        # Exclusion phenotypes
+        if exclusion_phenotypes:
+            all_code_lines.append('# Exclusion Criteria')
+            for pheno in exclusion_phenotypes:
+                var_name, code = generate_phenotype_for_notebook(pheno, 'exclusion')
+                exclusion_vars.append(var_name)
+                all_code_lines.extend(code)
+                all_code_lines.append('')
+        
+        # Create cohort instance
+        cohort_var = f"cohort_{i + 1}"
+        all_code_lines.append(f'# Create cohort instance')
+        all_code_lines.append(f'{cohort_var} = Cohort(')
+        all_code_lines.append(f'    name="{cohort["name"]}",')
         if cohort.get('description'):
-            cohort_code_lines.append(f"    description='{cohort['description']}',")
-        cohort_code_lines.append("    # Add your phenotype definitions here")
-        cohort_code_lines.append(")")
+            all_code_lines.append(f'    description="{cohort["description"]}",')
+        
+        if entry_vars:
+            all_code_lines.append(f'    entry_criterion={entry_vars[0]},')
+        
+        if inclusion_vars:
+            if len(inclusion_vars) == 1:
+                all_code_lines.append(f'    inclusions={inclusion_vars[0]},')
+            else:
+                all_code_lines.append(f'    inclusions=[')
+                for var in inclusion_vars:
+                    all_code_lines.append(f'        {var},')
+                all_code_lines.append(f'    ],')
+        
+        if exclusion_vars:
+            if len(exclusion_vars) == 1:
+                all_code_lines.append(f'    exclusions={exclusion_vars[0]},')
+            else:
+                all_code_lines.append(f'    exclusions=[')
+                for var in exclusion_vars:
+                    all_code_lines.append(f'        {var},')
+                all_code_lines.append(f'    ],')
+        
+        all_code_lines.append(')')
         
         cells.append({
             "cell_type": "code",
             "execution_count": None,
             "metadata": {},
             "outputs": [],
-            "source": cohort_code_lines
+            "source": all_code_lines
         })
         
         # Add execution cell
-        exec_code = f"# Execute cohort_{i + 1}\n# results_{i + 1} = cohort_{i + 1}.execute(database)"
+        exec_code = f"# Execute {cohort_var}\n# results_{i + 1} = {cohort_var}.execute(database)\n# print(f'Cohort size: {{len(results_{i + 1})}}')"
         cells.append({
             "cell_type": "code",
             "execution_count": None,
