@@ -8,6 +8,7 @@ import titleStyles from './SectionRowTitle.module.css';
 import { BarChartCellRendererCompact } from '../GraphsAndTables/RowRenderers/BarChartCellRendererCompact';
 import { CategoricalBarChartCellRenderer } from '../GraphsAndTables/RowRenderers/CategoricalBarChartCellRenderer';
 import { BoxPlotCellRenderer } from '../GraphsAndTables/RowRenderers/BoxPlotCellRenderer';
+import { NumericTableCellRenderer } from '../GraphsAndTables/RowRenderers/NumericTableCellRenderer';
 import { KaplanMeierCellRenderer } from '../GraphsAndTables/RowRenderers/KaplanMeierCellRenderer';
 import { Table2CellRenderer } from '../GraphsAndTables/RowRenderers/Table2CellRenderer';
 
@@ -24,6 +25,8 @@ export interface SectionRowRendererProps {
   hideBarChartHeader?: boolean;
   /** Bars expand to fill grid item height; body scrolls on overflow (grid context). */
   fillHeight?: boolean;
+  /** Chart display variant id (see rowVariants); falls back to the default. */
+  variant?: string;
 }
 
 /**

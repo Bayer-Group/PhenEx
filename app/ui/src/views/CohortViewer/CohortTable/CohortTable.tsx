@@ -51,10 +51,11 @@ interface CohortTableProps {
   customGetRowHeight?: (params: any) => number;
   gridBottomPadding?: number;
   components?: any; // AG Grid components map for custom cell renderers
+  flipScrollDirection?: boolean; // When true: scroll up/down → horizontal; shift+scroll → vertical
 }
 
 export const CohortTable = forwardRef<any, CohortTableProps>(
-  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 28, tableTheme, tableGridOptions, customGetRowHeight, gridBottomPadding = 0, components}, ref) => {
+  ({ data, currentlyViewing, onCellValueChanged, onRowDragEnd, hideScrollbars, hideVerticalScrollbar, hideHorizontalScrollbar, domLayout = 'normal', headerHeight = 28, tableTheme, tableGridOptions, customGetRowHeight, gridBottomPadding = 0, components, flipScrollDirection = false}, ref) => {
 
     const default_theme = {
       accentColor: 'transparent',
@@ -395,6 +396,7 @@ export const CohortTable = forwardRef<any, CohortTableProps>(
             hideVerticalScrollbar={hideVerticalScrollbar}
             hideHorizontalScrollbar={true}
             bottomPadding={gridBottomPadding}
+            flipScrollDirection={flipScrollDirection}
             key={currentlyViewing} // This will force a complete re-render when currentlyViewing changes
             ref={gridRef}
             noRowsOverlayComponent={NoRowsOverlayText()}

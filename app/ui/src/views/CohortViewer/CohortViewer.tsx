@@ -4,7 +4,7 @@ import styles from './CohortViewer.module.css';
 import { CohortDataService } from './CohortDataService/CohortDataService';
 import { getUserCohort, getStudy } from '../../api/text_to_cohort/route';
 import { PopoverHeader } from '../../components/PopoverHeader/PopoverHeader';
-import { CohortTable } from './CohortTable/CohortTable';
+import { CohortCardViewer } from './CohortCardViewer/CohortCardViewer';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsBar/CustomizableDropdownButton';
 import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
@@ -58,6 +58,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [flipScrollDirection, setFlipScrollDirection] = useState(false);
   
   const fadeInStyle = useFadeIn();
 
@@ -319,7 +320,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
 
   const renderTable = () => {
     return (
-      <CohortTable
+      <CohortCardViewer
         data={dataService.table_data}
         currentlyViewing={currentView}
         onCellValueChanged={onCellValueChanged}
@@ -328,6 +329,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
         hideVerticalScrollbar={isRightPanelOpen}
         ref={gridRef}
         gridBottomPadding={400}
+        flipScrollDirection={flipScrollDirection}
       />
     );
   };
@@ -411,6 +413,8 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
             onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
             onViewNavigationScroll={handleViewNavigationScroll}
             onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+            flipScrollDirection={flipScrollDirection}
+            onFlipScrollDirectionChange={setFlipScrollDirection}
           />
         </div>
       </div>

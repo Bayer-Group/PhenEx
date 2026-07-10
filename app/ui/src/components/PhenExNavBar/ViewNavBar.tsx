@@ -16,6 +16,8 @@ interface ViewNavBarProps {
   scrollbarTooltipLabel?: string; // Custom tooltip for scrollbar thumb
   leftArrowTooltipLabel?: string; // Custom tooltip for left arrow
   rightArrowTooltipLabel?: string; // Custom tooltip for right arrow
+  flipScrollDirection?: boolean;
+  onFlipScrollDirectionChange?: (value: boolean) => void;
 }
 
 // Visibility Menu Component
@@ -26,6 +28,8 @@ const VisibilityMenu: React.FC<{
   menuRef: React.RefObject<HTMLDivElement>;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  flipScrollDirection: boolean;
+  onFlipScrollDirectionChange: (value: boolean) => void;
 }> = ({
   isOpen,
   onClose,
@@ -33,6 +37,8 @@ const VisibilityMenu: React.FC<{
   menuRef,
   onMouseEnter,
   onMouseLeave,
+  flipScrollDirection,
+  onFlipScrollDirectionChange,
 }) => {
   const dataService = CohortDataService.getInstance();
   const [showDescriptions, setShowDescriptions] = useState(true);
@@ -68,6 +74,12 @@ const VisibilityMenu: React.FC<{
           value={showChildren}
           onValueChange={handleShowChildrenChange}
         />
+
+        <SwitchButton
+          label="Flip Scroll Direction"
+          value={flipScrollDirection}
+          onValueChange={onFlipScrollDirectionChange}
+        />
       </div>
     </PhenExNavBarMenu>
   );
@@ -84,6 +96,8 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
   scrollbarTooltipLabel = "Scroll Through Parameters",
   leftArrowTooltipLabel = "Go to Previous Parameter",
   rightArrowTooltipLabel = "Go to Next Parameter",
+  flipScrollDirection = false,
+  onFlipScrollDirectionChange,
 }) => {
   const scrollBarRef = useRef<HTMLDivElement>(null);
   const scrollThumbRef = useRef<HTMLDivElement>(null);
@@ -242,6 +256,8 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
         menuRef={menuRef}
         onMouseEnter={() => setIsVisibilityMenuOpen(true)}
         onMouseLeave={() => setIsVisibilityMenuOpen(false)}
+        flipScrollDirection={flipScrollDirection}
+        onFlipScrollDirectionChange={onFlipScrollDirectionChange ?? (() => {})}
       />
     </div>
   );
