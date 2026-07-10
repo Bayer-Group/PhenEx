@@ -35,7 +35,10 @@ class MainViewLayoutService {
 
     if (border) {
       // Chat tab is at index 2 (Execute=0, Constants=1, Chat=2, Issues=3)
+      console.log('MainViewLayoutService: Opening Chat tab (index 2)');
       this.modelRef.doAction(Actions.updateNodeAttributes(border.getId(), { selected: 2 }));
+    } else {
+      console.warn('MainViewLayoutService: Right border not found');
     }
   }
 

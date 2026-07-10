@@ -10,6 +10,7 @@ import {
   deleteExecution,
 } from '../../../api/text_to_cohort/route';
 import { getStudyIssues } from '../../../api/study/route';
+import { mainViewLayoutService } from '../../MainView/MainViewLayoutService';
 
 type LogEntry = { message: string; type: 'log' | 'error' | 'complete'; timestamp: Date };
 type Execution = { execution_id: string; started_at: string | null; status: string };
@@ -231,7 +232,18 @@ export const StudyExecutePanel: React.FC = () => {
         </button>
         {hasValidationErrors && (
           <div className={styles.validationWarning}>
-            {validationErrorCount} issue{validationErrorCount !== 1 ? 's' : ''} must be fixed before execution. See Issues tab.
+            {validationErrorCount} issue{validationErrorCount !== 1 ? 's' : ''} must be fixed before execution.{' '}
+            <span 
+              style={{ 
+                textDecoration: 'underline', 
+                cursor: 'pointer',
+                color: 'var(--color-accent-bright)'
+              }}
+              onClick={() => mainViewLayoutService.openRightPanelTab(3)}
+            >
+              See Issues tab
+            </span>
+            .
           </div>
         )}
       </div>

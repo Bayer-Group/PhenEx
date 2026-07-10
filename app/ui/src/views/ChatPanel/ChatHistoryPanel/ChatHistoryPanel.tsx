@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styles from './ChatHistoryPanel.module.css';
 import { getChatSessions, deleteChatSession, type ChatSession } from '../../../api/chat_history/route';
 import { chatPanelDataService } from '../ChatPanelDataService';
+import { ButtonsBar } from '../../../components/ButtonsAndTabs/ButtonsBar/ButtonsBar';
 
 interface ChatHistoryPanelProps {
   studyId?: string;
@@ -88,6 +89,14 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ studyId, onR
           ))}
         </ul>
       )}
+      <div style={{ padding: '10px', borderTop: '1px solid var(--line-color)' }}>
+        <ButtonsBar
+          width="100%"
+          height={30}
+          buttons={['Back']}
+          actions={[onResumeSession]}
+        />
+      </div>
     </div>
   );
 };
