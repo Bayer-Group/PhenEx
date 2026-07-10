@@ -4,14 +4,35 @@ import { CohortIssue } from './CohortIssuesDisplay';
 import { PhenotypeType } from '../../SlideoverPanels/PhenotypeViewer/phenotype';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 import typeStyles from '../../../styles/study_types.module.css';
+import buttonStyles from '../../SlideoverPanels/StudyIssuesPanel/FixWithAIButton.module.css';
+import { chatPanelDataService } from '../../ChatPanel/ChatPanelDataService';
 
 interface IssuesPopoverListProps {
   issues: CohortIssue[];
+  onSwitchToAIChat?: () => void;
 }
 
 
-const IssuesPopoverList: React.FC<IssuesPopoverListProps> = ({ issues }) => {
+const IssuesPopoverList: React.FC<IssuesPopoverListProps> = ({ issues, onSwitchToAIChat }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const handleFixWithAI = (issue: CohortIssue, event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    // Format the issue message for AI
+    const issueText = `Please fix the following issue in the "${issue.phenotype_name}" ${issue.type} phenotype:\n\n${issue.issues.map(i => `- ${i}`).join('\n')}`;
+    
+    // Start a new chat session by clearing previous messages
+    chatPanelDataService.clearMessages();
+    
+    // Add the message to AI chat (this automatically sends it)
+    chatPanelDataService.addUserMessageWithText(issueText);
+    
+    // Switch to AI Chat tab if callback is provided
+    if (onSwitchToAIChat) {
+      onSwitchToAIChat();
+    }
+  };
 
   useEffect(() => {
     const cohortViewerService = TwoPanelCohortViewerService.getInstance();
@@ -99,7 +120,16 @@ const IssuesPopoverList: React.FC<IssuesPopoverListProps> = ({ issues }) => {
           {renderTypeLabel(issue)}
           {issue.phenotype_name}
         </div>
-        <p className={styles.issuesList}>missing {issue.issues.join(', ')}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <p className={styles.issuesList} style={{ flex: 1, margin: 0 }}>missing {issue.issues.join(', ')}</p>
+          <button
+            className={buttonStyles.fixWithAIButton}
+            onClick={(e) => handleFixWithAI(issue, e)}
+            title="Fix with AI"
+          >
+            Fix with AI
+          </button>
+        </div>
       </div>
     );
   };

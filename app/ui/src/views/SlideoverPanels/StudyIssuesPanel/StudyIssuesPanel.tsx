@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { getStudyIssues, StudyIssue } from '../../../api/study/route';
 import styles from './StudyIssuesPanel.module.css';
+import buttonStyles from './FixWithAIButton.module.css';
+import { chatPanelDataService } from '../../ChatPanel/ChatPanelDataService';
+import { mainViewLayoutService } from '../../MainView/MainViewLayoutService';
 
 interface GroupedIssues {
   cohortId: string;
@@ -77,6 +80,54 @@ export const StudyIssuesPanel = () => {
       }
       return next;
     });
+  };
+
+  const handleFixWithAI = (issue: StudyIssue, context?: string) => {
+    // Format the issue message for AI
+    let issueText = 'Please fix the following issue:\n\n';
+    
+    if (context) {
+      issueText += `Context: ${context}\n`;
+    }
+    
+    if (issue.cohort_name) {
+      issueText += `Cohort: "${issue.cohort_name}"\n`;
+    }
+    
+    if (issue.phenotype_name) {
+      issueText += `Phenotype: "${issue.phenotype_name}"\n`;
+    }
+    
+    issueText += `\nIssue: ${issue.message}`;
+    
+    // Start a new chat session by clearing previous messages
+    chatPanelDataService.clearMessages();
+    
+    // Add the message to AI chat (this automatically sends it)
+    chatPanelDataService.addUserMessageWithText(issueText);
+    
+    // Open the chat tab
+    mainViewLayoutService.openChatTab();
+  };
+
+  const renderIssue = (issue: StudyIssue, idx: number, severity: 'error' | 'warning', context?: string) => {
+    const isError = severity === 'error';
+    const className = isError ? styles.issueError : styles.issueWarning;
+    const icon = isError ? '✕' : '⚠';
+    
+    return (
+      <div key={`${severity}-${idx}`} className={className} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span className={styles.issueIcon}>{icon}</span>
+        <span className={styles.issueMessage} style={{ flex: 1 }}>{issue.message}</span>
+        <button
+          className={buttonStyles.fixWithAIButton}
+          onClick={() => handleFixWithAI(issue, context)}
+          title="Fix with AI"
+        >
+          Fix with AI
+        </button>
+      </div>
+    );
   };
 
   // Group issues by cohort and phenotype
@@ -188,18 +239,8 @@ export const StudyIssuesPanel = () => {
           {(studyLevelErrors.length > 0 || studyLevelWarnings.length > 0) && (
             <div className={styles.issueSection}>
               <div className={styles.sectionTitle}>Study Configuration</div>
-              {studyLevelErrors.map((issue, idx) => (
-                <div key={`study-error-${idx}`} className={styles.issueError}>
-                  <span className={styles.issueIcon}>✕</span>
-                  <span className={styles.issueMessage}>{issue.message}</span>
-                </div>
-              ))}
-              {studyLevelWarnings.map((issue, idx) => (
-                <div key={`study-warning-${idx}`} className={styles.issueWarning}>
-                  <span className={styles.issueIcon}>⚠</span>
-                  <span className={styles.issueMessage}>{issue.message}</span>
-                </div>
-              ))}
+              {studyLevelErrors.map((issue, idx) => renderIssue(issue, idx, 'error', 'Study Configuration'))}
+              {studyLevelWarnings.map((issue, idx) => renderIssue(issue, idx, 'warning', 'Study Configuration'))}
             </div>
           )}
 
@@ -235,18 +276,8 @@ export const StudyIssuesPanel = () => {
                 {isExpanded && (
                   <>
                     {/* Cohort-level issues */}
-                    {cohortGroup.cohortLevelErrors.map((issue, idx) => (
-                      <div key={`cohort-error-${idx}`} className={styles.issueError}>
-                        <span className={styles.issueIcon}>✕</span>
-                        <span className={styles.issueMessage}>{issue.message}</span>
-                      </div>
-                    ))}
-                    {cohortGroup.cohortLevelWarnings.map((issue, idx) => (
-                      <div key={`cohort-warning-${idx}`} className={styles.issueWarning}>
-                        <span className={styles.issueIcon}>⚠</span>
-                        <span className={styles.issueMessage}>{issue.message}</span>
-                      </div>
-                    ))}
+                    {cohortGroup.cohortLevelErrors.map((issue, idx) => renderIssue(issue, idx, 'error', cohortGroup.cohortName))}
+                    {cohortGroup.cohortLevelWarnings.map((issue, idx) => renderIssue(issue, idx, 'warning', cohortGroup.cohortName))}
                     
                     {/* Phenotype-grouped issues */}
                     {cohortGroup.phenotypeIssues.map(phenotypeGroup => (
@@ -254,18 +285,8 @@ export const StudyIssuesPanel = () => {
                         <div className={styles.phenotypeTitle}>
                           {phenotypeGroup.phenotypeName}
                         </div>
-                        {phenotypeGroup.errors.map((issue, idx) => (
-                          <div key={`pheno-error-${idx}`} className={styles.issueError}>
-                            <span className={styles.issueIcon}>✕</span>
-                            <span className={styles.issueMessage}>{issue.message}</span>
-                          </div>
-                        ))}
-                        {phenotypeGroup.warnings.map((issue, idx) => (
-                          <div key={`pheno-warning-${idx}`} className={styles.issueWarning}>
-                            <span className={styles.issueIcon}>⚠</span>
-                            <span className={styles.issueMessage}>{issue.message}</span>
-                          </div>
-                        ))}
+                        {phenotypeGroup.errors.map((issue, idx) => renderIssue(issue, idx, 'error', `${cohortGroup.cohortName} > ${phenotypeGroup.phenotypeName}`))}
+                        {phenotypeGroup.warnings.map((issue, idx) => renderIssue(issue, idx, 'warning', `${cohortGroup.cohortName} > ${phenotypeGroup.phenotypeName}`))}
                       </div>
                     ))}
                   </>

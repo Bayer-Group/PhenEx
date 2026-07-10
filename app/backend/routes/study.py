@@ -891,8 +891,23 @@ async def get_study_issues(request: Request, study_id: str):
                                     })
                         elif codelist_type == "manual":
                             # Check if codes are provided
+                            # Handle both formats:
+                            # 1. New format: {"codes": [code1, code2, ...]}
+                            # 2. PhenEx library format: {"codelist": {"null": [codes]} or {"ICD10": [codes]}}
                             codes = codelist.get("codes")
-                            if not codes or (isinstance(codes, list) and len(codes) == 0):
+                            codelist_dict = codelist.get("codelist")
+                            
+                            has_codes = False
+                            if codes and (isinstance(codes, list) and len(codes) > 0):
+                                has_codes = True
+                            elif codelist_dict and isinstance(codelist_dict, dict):
+                                # Check if any code type has codes
+                                for code_type, code_list in codelist_dict.items():
+                                    if isinstance(code_list, list) and len(code_list) > 0:
+                                        has_codes = True
+                                        break
+                            
+                            if not has_codes:
                                 errors.append({
                                     "message": "Manual codelist has no codes - please add codes",
                                     "cohort_id": cohort_id,

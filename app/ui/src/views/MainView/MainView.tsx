@@ -23,6 +23,7 @@ import { MainBreadcrumb } from './MainBreadcrumb';
 import leftPanelIcon from '../../assets/icons/left_panel.svg';
 import { UserLogin } from '../LeftPanel/UserLogin/UserLogin';
 import { ExportButton } from '../../components/ExportButton/ExportButton';
+import { mainViewLayoutService } from './MainViewLayoutService';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -288,6 +289,11 @@ const MainViewInner = () => {
   useEffect(() => {
     setBorderOpen(innerModelRef.current, DockLocation.RIGHT, isRightPanelShown);
   }, [isRightPanelShown, setBorderOpen]);
+
+  // Set up the layout service with the inner model (which has the right border)
+  useEffect(() => {
+    mainViewLayoutService.setModel(innerModelRef.current);
+  }, []);
 
   // Hide right panel when on studies grid or empty view, show it for cohort/study views
   useEffect(() => {
