@@ -78,7 +78,10 @@ _tags_metadata = [
     {"name": "study", "description": "Study management"},
     {"name": "study execution", "description": "Study execution, reports, and logs"},
     {"name": "study export", "description": "Export studies to Python/Jupyter formats"},
-    {"name": "study cohort", "description": "Cohort management (sub-resources of studies)"},
+    {
+        "name": "study cohort",
+        "description": "Cohort management (sub-resources of studies)",
+    },
     {"name": "constants", "description": "Study-wide constants (filters, time ranges)"},
     {"name": "codelist", "description": "Codelist management"},
     {"name": "AI", "description": "AI / copilot endpoints"},
@@ -235,7 +238,9 @@ app.include_router(chat_history_router)
 # Include the codelist router
 from .routes.codelist import router as codelist_router
 
-app.include_router(codelist_router)  # Codelist routes with /study/{study_id}/codelist pattern
+app.include_router(
+    codelist_router
+)  # Codelist routes with /study/{study_id}/codelist pattern
 
 # Include the report router
 from .routes.report import router as report_router

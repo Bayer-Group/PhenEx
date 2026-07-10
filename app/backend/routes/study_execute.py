@@ -29,8 +29,11 @@ def _get_mock_database(mapper, n_patients: int = 1000):
     """Return a cached Database backed by DatabaseMocker, built once per n_patients value."""
     if n_patients not in _db_cache:
         from phenex.sim import DatabaseMocker
+
         logger.info(f"Building DatabaseMocker with {n_patients} patients (one-time)...")
-        _db_cache[n_patients] = DatabaseMocker(domains_dict=mapper, n_patients=n_patients).get_database()
+        _db_cache[n_patients] = DatabaseMocker(
+            domains_dict=mapper, n_patients=n_patients
+        ).get_database()
         logger.info("DatabaseMocker ready and cached.")
     return _db_cache[n_patients]
 
@@ -85,7 +88,9 @@ async def execute_study(request: Request):
         cohort_dict = await db_manager.get_cohort_for_user(user_id, c["id"])
         if cohort_dict and "cohort_data" in cohort_dict:
             # Resolve constants before execution
-            resolved_data = resolve_constants_in_cohort(cohort_dict["cohort_data"], constants)
+            resolved_data = resolve_constants_in_cohort(
+                cohort_dict["cohort_data"], constants
+            )
             cohort_dict["cohort_data"] = resolved_data
             full_cohorts.append(cohort_dict)
 
@@ -158,6 +163,7 @@ async def execute_study(request: Request):
                 db_config = database
                 if db_config["mapper"] == "OMOP":
                     from phenex.mappers import OMOPDomains
+
                     mapper = OMOPDomains
                     print("Using OMOP mapper")
 
@@ -172,6 +178,7 @@ async def execute_study(request: Request):
                     try:
                         from phenex.connectors.snowflake import SnowflakeConnector
                         from phenex.core.database import Database
+
                         con = SnowflakeConnector(
                             SNOWFLAKE_SOURCE_DATABASE=db_cfg["source_database"],
                             SNOWFLAKE_DEST_DATABASE=db_cfg["destination_database"],
@@ -186,7 +193,10 @@ async def execute_study(request: Request):
                 px_cohorts = []
                 for cohort_wrapper in full_cohorts:
                     cohort_data = cohort_wrapper.get("cohort_data", cohort_wrapper)
-                    cohort_name = cohort_wrapper.get("name", cohort_data.get("name", cohort_data.get("id", "unknown")))
+                    cohort_name = cohort_wrapper.get(
+                        "name",
+                        cohort_data.get("name", cohort_data.get("id", "unknown")),
+                    )
                     # name/description live in dedicated DB columns now; inject into cohort_data
                     # so prepare_cohort_for_phenex and from_dict see them
                     cohort_data = dict(cohort_data)
@@ -201,7 +211,9 @@ async def execute_study(request: Request):
 
                 from phenex.core.study import Study
 
-                print(f"Creating Study object, artifacts will be saved to {artifacts_dir}")
+                print(
+                    f"Creating Study object, artifacts will be saved to {artifacts_dir}"
+                )
                 os.makedirs(artifacts_dir, exist_ok=True)
 
                 px_study = Study(
@@ -220,12 +232,18 @@ async def execute_study(request: Request):
                 # Determine the timestamped execution directory created by Study
                 exec_dirs = sorted(
                     [
-                        d for d in os.listdir(px_study.path)
-                        if os.path.isdir(os.path.join(px_study.path, d)) and d.startswith("D")
+                        d
+                        for d in os.listdir(px_study.path)
+                        if os.path.isdir(os.path.join(px_study.path, d))
+                        and d.startswith("D")
                     ],
                     reverse=True,
                 )
-                exec_dir = os.path.join(px_study.path, exec_dirs[0]) if exec_dirs else px_study.path
+                exec_dir = (
+                    os.path.join(px_study.path, exec_dirs[0])
+                    if exec_dirs
+                    else px_study.path
+                )
 
                 # Write manifest.json listing all generated artifacts
                 manifest = {
@@ -239,9 +257,7 @@ async def execute_study(request: Request):
                 for root, dirs, files in os.walk(exec_dir):
                     for fname in files:
                         fpath = os.path.join(root, fname)
-                        manifest["files"].append(
-                            os.path.relpath(fpath, exec_dir)
-                        )
+                        manifest["files"].append(os.path.relpath(fpath, exec_dir))
 
                 manifest_path = os.path.join(exec_dir, "manifest.json")
                 with open(manifest_path, "w") as f:
@@ -253,6 +269,7 @@ async def execute_study(request: Request):
 
             except Exception as e:
                 import traceback
+
                 err = f"Study execution failed: {str(e)}\n{traceback.format_exc()}"
                 print(f"ERROR: {err}")
                 final_result["status"] = "failure"
@@ -290,6 +307,7 @@ async def execute_study(request: Request):
         # Persist execution result to DB
         try:
             import asyncpg
+
             await db_manager.update_study_execution(
                 execution_id=execution_id,
                 status=final_result.get("status", "failure"),
@@ -346,7 +364,9 @@ async def get_study_executions(request: Request, study_id: str):
         return await db_manager.get_study_executions(study_id, user_id)
     except Exception as e:
         logger.error(f"Failed to get study executions: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve study executions")
+        raise HTTPException(
+            status_code=500, detail="Failed to retrieve study executions"
+        )
 
 
 @router.get("/study/{study_id}/report", tags=["study execution"])
@@ -374,7 +394,11 @@ async def get_study_report(request: Request, study_id: str):
 
     # Find the most recent timestamped execution directory
     exec_dirs = sorted(
-        [d for d in os.listdir(study_dir) if os.path.isdir(os.path.join(study_dir, d)) and d.startswith("D")],
+        [
+            d
+            for d in os.listdir(study_dir)
+            if os.path.isdir(os.path.join(study_dir, d)) and d.startswith("D")
+        ],
         reverse=True,
     )
     if not exec_dirs:
@@ -382,14 +406,18 @@ async def get_study_report(request: Request, study_id: str):
 
     report_path = os.path.join(study_dir, exec_dirs[0], "index.html")
     if not os.path.isfile(report_path):
-        raise HTTPException(status_code=404, detail="index.html not found for this execution")
+        raise HTTPException(
+            status_code=404, detail="index.html not found for this execution"
+        )
 
     with open(report_path, "r", encoding="utf-8") as f:
         content = f.read()
     return HTMLResponse(content=content)
 
 
-@router.get("/study/{study_id}/execution/{execution_id}/report", tags=["study execution"])
+@router.get(
+    "/study/{study_id}/execution/{execution_id}/report", tags=["study execution"]
+)
 async def get_execution_report(request: Request, study_id: str, execution_id: str):
     """
     Return the index.html report for a specific execution.
@@ -410,14 +438,18 @@ async def get_execution_report(request: Request, study_id: str, execution_id: st
     """
     user_id = get_authenticated_user_id(request)
     executions = await db_manager.get_study_executions(study_id, user_id)
-    exec_record = next((e for e in executions if e["execution_id"] == execution_id), None)
+    exec_record = next(
+        (e for e in executions if e["execution_id"] == execution_id), None
+    )
     if not exec_record or not exec_record.get("manifest_path"):
         raise HTTPException(status_code=404, detail="Execution not found")
 
     exec_dir = os.path.dirname(exec_record["manifest_path"])
     report_path = os.path.join(exec_dir, "index.html")
     if not os.path.isfile(report_path):
-        raise HTTPException(status_code=404, detail="Report not found for this execution")
+        raise HTTPException(
+            status_code=404, detail="Report not found for this execution"
+        )
 
     with open(report_path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -445,7 +477,9 @@ async def get_execution_log(request: Request, study_id: str, execution_id: str):
     """
     user_id = get_authenticated_user_id(request)
     executions = await db_manager.get_study_executions(study_id, user_id)
-    exec_record = next((e for e in executions if e["execution_id"] == execution_id), None)
+    exec_record = next(
+        (e for e in executions if e["execution_id"] == execution_id), None
+    )
     if not exec_record or not exec_record.get("manifest_path"):
         raise HTTPException(status_code=404, detail="Execution not found")
 
@@ -457,6 +491,7 @@ async def get_execution_log(request: Request, study_id: str, execution_id: str):
     with open(log_path, "r", encoding="utf-8") as f:
         content = f.read()
     from fastapi.responses import PlainTextResponse
+
     return PlainTextResponse(content=content)
 
 
@@ -486,6 +521,7 @@ async def delete_execution(request: Request, study_id: str, execution_id: str):
         exec_dir = os.path.dirname(manifest_path)
         if os.path.isdir(exec_dir):
             import shutil
+
             shutil.rmtree(exec_dir)
     return {"deleted": True}
 
@@ -508,6 +544,7 @@ async def create_demo_study(request: Request):
     """
     user_id = get_authenticated_user_id(request)
     from ..init.populate_sample_cohorts import SampleCohortsInitializer
+
     initializer = SampleCohortsInitializer()
     items = initializer.get_sample_cohorts_and_studies()
 

@@ -46,6 +46,7 @@ try:
     # Try relative imports first (for normal FastAPI operation)
     from ...database import DatabaseManager, db_manager
     from ...utils import CohortUtils
+
     # from .rag import query_faiss_index
 except ImportError:
     # Fallback for direct imports (for testing)
@@ -151,16 +152,16 @@ class DeletePhenotypeCall(BaseModel):
 # Context for the AI agent — operates at study level, targets one cohort at a time
 class CohortContext(BaseModel):
     user_id: str
-    cohort_id: str          # currently-targeted cohort (mutable — tools switch this)
+    cohort_id: str  # currently-targeted cohort (mutable — tools switch this)
     study_id: str
-    current_cohort: Dict    # data for cohort_id (mutable — tools switch this)
+    current_cohort: Dict  # data for cohort_id (mutable — tools switch this)
     # Study-level fields
-    cohorts: Dict = {}          # cohort_id → full cohort_data for all study cohorts
-    cohort_names: Dict = {}     # cohort_id → display name
-    active_cohort_id: Optional[str] = None   # hint: which cohort user is viewing
-    modified_cohort_ids: List[str] = []      # cohorts changed this AI turn
-    cohort_snapshots: Dict = {}              # cohort_id → deep copy before agent runs
-    cohort_diffs: Dict = {}                  # cohort_id → diff summary (for visualization)
+    cohorts: Dict = {}  # cohort_id → full cohort_data for all study cohorts
+    cohort_names: Dict = {}  # cohort_id → display name
+    active_cohort_id: Optional[str] = None  # hint: which cohort user is viewing
+    modified_cohort_ids: List[str] = []  # cohorts changed this AI turn
+    cohort_snapshots: Dict = {}  # cohort_id → deep copy before agent runs
+    cohort_diffs: Dict = {}  # cohort_id → diff summary (for visualization)
     db_manager: Any = None
 
     class Config:
@@ -2619,7 +2620,9 @@ async def get_study_run_history(ctx: RunContext[CohortContext]) -> str:
 
 
 @agent.tool
-async def get_execution_manifest(ctx: RunContext[CohortContext], execution_id: str) -> str:
+async def get_execution_manifest(
+    ctx: RunContext[CohortContext], execution_id: str
+) -> str:
     """Return the manifest for a specific execution, listing all output files.
 
     Use this after get_study_run_history to see which files were produced by a
@@ -2632,7 +2635,9 @@ async def get_execution_manifest(ctx: RunContext[CohortContext], execution_id: s
         executions = await ctx.deps.db_manager.get_study_executions(
             ctx.deps.study_id, ctx.deps.user_id
         )
-        record = next((e for e in executions if e["execution_id"] == execution_id), None)
+        record = next(
+            (e for e in executions if e["execution_id"] == execution_id), None
+        )
         if not record:
             return f"❌ Execution '{execution_id}' not found."
         manifest_path = record.get("manifest_path")
@@ -2675,7 +2680,9 @@ async def read_execution_file(
         executions = await ctx.deps.db_manager.get_study_executions(
             ctx.deps.study_id, ctx.deps.user_id
         )
-        record = next((e for e in executions if e["execution_id"] == execution_id), None)
+        record = next(
+            (e for e in executions if e["execution_id"] == execution_id), None
+        )
         if not record:
             return f"❌ Execution '{execution_id}' not found."
         manifest_path = record.get("manifest_path")
@@ -2694,6 +2701,7 @@ async def read_execution_file(
         if ext == ".parquet":
             try:
                 import pandas as pd
+
                 df = pd.read_parquet(full_path)
                 rows, cols = df.shape
                 summary_lines = [
@@ -2715,7 +2723,9 @@ async def read_execution_file(
                                 f"mean={df[col].mean():.4g}, nulls={n_null}"
                             )
                         except Exception:
-                            summary_lines.append(f"  - `{col}` ({dtype}): {n_null} nulls")
+                            summary_lines.append(
+                                f"  - `{col}` ({dtype}): {n_null} nulls"
+                            )
                 if rows <= 20:
                     summary_lines.append("\n**All rows:**")
                     summary_lines.append(df.to_string(index=False))
@@ -2729,6 +2739,7 @@ async def read_execution_file(
         elif ext == ".csv":
             try:
                 import pandas as pd
+
                 df = pd.read_csv(full_path)
                 rows, cols = df.shape
                 lines = [f"📄 **{file_path}** — {rows:,} rows × {cols} columns\n"]
@@ -2778,8 +2789,12 @@ async def list_cohorts(ctx: RunContext[CohortContext]) -> str:
     for cid, cdata in cohorts.items():
         name = names.get(cid, cdata.get("name", cid))
         n_phenotypes = len(cdata.get("phenotypes", []))
-        active_marker = " 👁️ (currently viewing)" if cid == ctx.deps.active_cohort_id else ""
-        lines.append(f"  - **{name}** (`{cid}`) — {n_phenotypes} phenotype(s){active_marker}")
+        active_marker = (
+            " 👁️ (currently viewing)" if cid == ctx.deps.active_cohort_id else ""
+        )
+        lines.append(
+            f"  - **{name}** (`{cid}`) — {n_phenotypes} phenotype(s){active_marker}"
+        )
     return "\n".join(lines)
 
 
@@ -2849,7 +2864,11 @@ async def get_latest_execution(ctx: RunContext[CohortContext]) -> str:
         executions = await ctx.deps.db_manager.get_study_executions(
             ctx.deps.study_id, ctx.deps.user_id
         )
-        successful = [e for e in executions if e.get("status") == "success" and e.get("manifest_path")]
+        successful = [
+            e
+            for e in executions
+            if e.get("status") == "success" and e.get("manifest_path")
+        ]
         if not successful:
             all_count = len(executions)
             return f"No successful executions found (total runs: {all_count})."
@@ -2907,7 +2926,10 @@ async def update_context_only(
             # Track which cohort was modified at the point the change is applied,
             # not at the point of the DB save — this ensures multi-cohort edits are
             # all saved at the end even if the AI switched target cohorts mid-turn.
-            if context.cohort_id and context.cohort_id not in context.modified_cohort_ids:
+            if (
+                context.cohort_id
+                and context.cohort_id not in context.modified_cohort_ids
+            ):
                 context.modified_cohort_ids.append(context.cohort_id)
         else:
             print(
@@ -3016,6 +3038,7 @@ router = APIRouter(tags=["AI"])
 
 # -- STUDY INTAKE PARSING --
 
+
 class CohortIntake(BaseModel):
     name: str
     description: str = ""
@@ -3023,13 +3046,16 @@ class CohortIntake(BaseModel):
     inclusions: List[str] = []
     exclusions: List[str] = []
 
+
 class AvailableDatabase(BaseModel):
     database: str
     schemas: List[str] = []
 
+
 class StudyConceptParseRequest(BaseModel):
     text: str
     available_databases: List[AvailableDatabase] = []
+
 
 class StudyConceptParseResponse(BaseModel):
     study_name: str = ""
@@ -3039,6 +3065,7 @@ class StudyConceptParseResponse(BaseModel):
     codelist_notes: str = ""
     database: str = ""
     schema: str = ""
+
 
 @router.post("/parse_concept", tags=["AI"])
 async def parse_study_concept(
@@ -3082,9 +3109,15 @@ async def parse_study_concept(
         if body.available_databases:
             db_lines = []
             for db in body.available_databases:
-                schema_str = f" (schemas: {', '.join(db.schemas)})" if db.schemas else ""
+                schema_str = (
+                    f" (schemas: {', '.join(db.schemas)})" if db.schemas else ""
+                )
                 db_lines.append(f"  - {db.database}{schema_str}")
-            db_options_section = "\n\nAVAILABLE DATABASES (use EXACT names from this list):\n" + "\n".join(db_lines) + "\n"
+            db_options_section = (
+                "\n\nAVAILABLE DATABASES (use EXACT names from this list):\n"
+                + "\n".join(db_lines)
+                + "\n"
+            )
 
         system_prompt = f"""You are a medical research study analyst. Extract structured information from the study concept document provided.
 
@@ -3151,23 +3184,30 @@ Rules:
             brace_start = raw.find("{")
             brace_end = raw.rfind("}")
             if brace_start != -1 and brace_end != -1 and brace_end > brace_start:
-                raw = raw[brace_start:brace_end + 1]
+                raw = raw[brace_start : brace_end + 1]
             else:
                 logger.error(f"No JSON object found in response. Full response: {raw}")
-                raise HTTPException(status_code=500, detail="AI returned malformed response")
+                raise HTTPException(
+                    status_code=500, detail="AI returned malformed response"
+                )
 
         try:
             parsed = json.loads(raw)
         except json.JSONDecodeError:
             # Strategy 3: try to fix common issues — trailing commas, single quotes
             import re
-            fixed = re.sub(r',\s*([}\]])', r'\1', raw)   # trailing commas
-            fixed = re.sub(r"(?<![\\])'", '"', fixed)     # single → double quotes
+
+            fixed = re.sub(r",\s*([}\]])", r"\1", raw)  # trailing commas
+            fixed = re.sub(r"(?<![\\])'", '"', fixed)  # single → double quotes
             try:
                 parsed = json.loads(fixed)
             except json.JSONDecodeError as e2:
-                logger.error(f"JSON parse failed after cleanup. Error: {e2}. Raw: {raw[:400]}")
-                raise HTTPException(status_code=500, detail="AI returned malformed response")
+                logger.error(
+                    f"JSON parse failed after cleanup. Error: {e2}. Raw: {raw[:400]}"
+                )
+                raise HTTPException(
+                    status_code=500, detail="AI returned malformed response"
+                )
 
         cohorts = [
             CohortIntake(
@@ -3194,7 +3234,10 @@ Rules:
         raise
     except Exception as e:
         logger.error(f"Failed to parse study concept: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to parse study concept: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to parse study concept: {str(e)}"
+        )
+
 
 @router.post("/chat", tags=["AI"])
 async def suggest_changes_v2(
@@ -3227,7 +3270,9 @@ async def suggest_changes_v2(
     # Load all cohorts for this study
     cohort_records = await db_manager.get_cohorts_for_study(study_id, user_id)
     if not cohort_records:
-        raise HTTPException(status_code=404, detail=f"Study {study_id} not found or has no cohorts")
+        raise HTTPException(
+            status_code=404, detail=f"Study {study_id} not found or has no cohorts"
+        )
 
     # Load full cohort data for each cohort
     cohorts: Dict = {}
@@ -3241,7 +3286,13 @@ async def suggest_changes_v2(
             # Inject name into cohort_data so tools see it
             cdata["name"] = name
             # Strip legacy keys
-            for k in ("entry_criterion", "inclusions", "exclusions", "characteristics", "outcomes"):
+            for k in (
+                "entry_criterion",
+                "inclusions",
+                "exclusions",
+                "characteristics",
+                "outcomes",
+            ):
                 cdata.pop(k, None)
             cohorts[cid] = cdata
             cohort_names[cid] = name
@@ -3250,7 +3301,9 @@ async def suggest_changes_v2(
         raise HTTPException(status_code=404, detail="No cohort data could be loaded")
 
     # Determine the initially targeted cohort
-    target_cohort_id = active_cohort_id if active_cohort_id in cohorts else next(iter(cohorts))
+    target_cohort_id = (
+        active_cohort_id if active_cohort_id in cohorts else next(iter(cohorts))
+    )
     target_cohort = cohorts[target_cohort_id]
 
     context = CohortContext(
@@ -3292,11 +3345,16 @@ async def suggest_changes_v2(
     # Show current targeted cohort phenotypes + valid IDs
     initial_state = await get_current_cohort_from_context(context)
     current_phenotypes = target_cohort.get("phenotypes", [])
-    phenotype_id_list = [f"'{p.get('id')}' ({p.get('name')})" for p in current_phenotypes]
+    phenotype_id_list = [
+        f"'{p.get('id')}' ({p.get('name')})" for p in current_phenotypes
+    ]
 
     try:
         from phenex.mappers import OMOPDomains
-        domain_info = f"\n\n🗂️ **AVAILABLE DATABASE DOMAINS:**\n{', '.join(OMOPDomains.keys())}\n"
+
+        domain_info = (
+            f"\n\n🗂️ **AVAILABLE DATABASE DOMAINS:**\n{', '.join(OMOPDomains.keys())}\n"
+        )
     except Exception:
         domain_info = ""
 
@@ -3314,7 +3372,9 @@ async def suggest_changes_v2(
 
     description_context = ""
     if req_body.cohort_description:
-        description_context = f"\n📋 **STUDY DESCRIPTION:**\n{req_body.cohort_description}\n\n"
+        description_context = (
+            f"\n📋 **STUDY DESCRIPTION:**\n{req_body.cohort_description}\n\n"
+        )
 
     user_message = f"""{conversation_context}{description_context}{study_summary}
 🔍 **CURRENTLY TARGETED COHORT STATE** (editing tools default to this cohort):
@@ -3373,10 +3433,15 @@ User request: {req_body.user_request}
         try:
             # Snapshot all cohort state before the agent runs so we can diff afterwards
             import copy
-            context.cohort_snapshots = {cid: copy.deepcopy(data) for cid, data in context.cohorts.items()}
+
+            context.cohort_snapshots = {
+                cid: copy.deepcopy(data) for cid, data in context.cohorts.items()
+            }
 
             # Stream the agent response in real-time using Pydantic AI's streaming API
-            async with agent.run_stream(user_message, deps=context, model_settings={"max_tokens": 8192}) as result:
+            async with agent.run_stream(
+                user_message, deps=context, model_settings={"max_tokens": 8192}
+            ) as result:
                 # Interleave AI text tokens with tool call messages
                 async for text_chunk in result.stream_text(delta=True):
                     # First, drain any pending tool messages
@@ -3408,23 +3473,41 @@ User request: {req_body.user_request}
                 if before != after:
                     context.modified_cohort_ids.append(cid)
                     # Store a lightweight diff: added/removed/changed phenotype ids
-                    before_phenotypes = {p["id"]: p for p in snapshot.get("phenotypes", []) if "id" in p}
-                    after_phenotypes = {p["id"]: p for p in current_data.get("phenotypes", []) if "id" in p}
+                    before_phenotypes = {
+                        p["id"]: p for p in snapshot.get("phenotypes", []) if "id" in p
+                    }
+                    after_phenotypes = {
+                        p["id"]: p
+                        for p in current_data.get("phenotypes", [])
+                        if "id" in p
+                    }
                     diff = {
                         "type": "modified",
-                        "added": [pid for pid in after_phenotypes if pid not in before_phenotypes],
-                        "removed": [pid for pid in before_phenotypes if pid not in after_phenotypes],
+                        "added": [
+                            pid
+                            for pid in after_phenotypes
+                            if pid not in before_phenotypes
+                        ],
+                        "removed": [
+                            pid
+                            for pid in before_phenotypes
+                            if pid not in after_phenotypes
+                        ],
                         "changed": [
-                            pid for pid in before_phenotypes
+                            pid
+                            for pid in before_phenotypes
                             if pid in after_phenotypes
-                            and json.dumps(before_phenotypes[pid], sort_keys=True) != json.dumps(after_phenotypes[pid], sort_keys=True)
+                            and json.dumps(before_phenotypes[pid], sort_keys=True)
+                            != json.dumps(after_phenotypes[pid], sort_keys=True)
                         ],
                         "before": snapshot,
                         "after": current_data,
                     }
                     context.cohort_diffs[cid] = diff
 
-            print(f"💾 FINAL_SAVE: Cohorts with actual changes: {context.modified_cohort_ids}")
+            print(
+                f"💾 FINAL_SAVE: Cohorts with actual changes: {context.modified_cohort_ids}"
+            )
             cohorts_to_save = list(context.modified_cohort_ids)
             print(f"💾 FINAL_SAVE: Cohorts to save: {cohorts_to_save}")
 
@@ -3435,7 +3518,9 @@ User request: {req_body.user_request}
                 saved_cohort = context.current_cohort
                 context.cohort_id = cid
                 context.current_cohort = context.cohorts[cid]
-                print(f"\n💾 FINAL_SAVE: Saving cohort {cid} ({context.cohort_names.get(cid, cid)})")
+                print(
+                    f"\n💾 FINAL_SAVE: Saving cohort {cid} ({context.cohort_names.get(cid, cid)})"
+                )
                 await save_final_cohort(context, f"Final save for cohort {cid}")
                 await asyncio.sleep(0)
                 context.cohort_id = saved_id
@@ -3459,9 +3544,7 @@ User request: {req_body.user_request}
 
             # Send completion signal — include which cohorts were modified
             modified = context.modified_cohort_ids
-            modified_names = [
-                context.cohort_names.get(cid, cid) for cid in modified
-            ]
+            modified_names = [context.cohort_names.get(cid, cid) for cid in modified]
             yield f"data: {json.dumps({'type': 'complete', 'modified_cohort_ids': modified, 'modified_cohort_names': modified_names})}\n\n"
 
         except Exception as e:
@@ -3701,4 +3784,3 @@ async def get_changes(request: Request, cohort_id: str):
             status_code=500,
             detail=f"Failed to get changes for cohort {cohort_id} for user {user_id}",
         )
-

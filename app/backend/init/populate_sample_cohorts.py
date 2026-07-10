@@ -95,7 +95,10 @@ class SampleCohortsInitializer:
                     "value_filter": {
                         "class_name": "ValueFilter",
                         "column_name": "VALUE",
-                        "min_value": {"class_name": "GreaterThanOrEqualTo", "value": 18},
+                        "min_value": {
+                            "class_name": "GreaterThanOrEqualTo",
+                            "value": 18,
+                        },
                     },
                 },
                 {
@@ -183,7 +186,10 @@ class SampleCohortsInitializer:
                     "value_filter": {
                         "class_name": "ValueFilter",
                         "column_name": "VALUE",
-                        "min_value": {"class_name": "GreaterThanOrEqualTo", "value": 18},
+                        "min_value": {
+                            "class_name": "GreaterThanOrEqualTo",
+                            "value": 18,
+                        },
                     },
                 },
                 {

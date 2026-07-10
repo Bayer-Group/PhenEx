@@ -275,7 +275,8 @@ class AzureADAuthenticator:
             logger.warning(
                 "Failed to fetch Azure AD keys from %s: %s. "
                 "AD authentication will be unavailable until keys are fetched.",
-                keys_url, e,
+                keys_url,
+                e,
             )
             self.keys = {"keys": []}
 

@@ -39,6 +39,7 @@ def list_runs() -> List[str]:
 
 # ── List files in a run directory (debug) ────────────────────────────────
 
+
 @router.get("/report/runs/{run_id}/files")
 def list_run_files(run_id: str) -> List[str]:
     """Return filenames (non-directory) at the run level.  Useful for debugging."""
@@ -78,11 +79,13 @@ def get_table1(
     Excludes value_distributions to keep the payload small.
     """
     data = storage.read_json(run_id, cohort_name, f"{report}.json")
-    return _nan_to_none({
-        "rows": data.get("rows", []),
-        "sections": data.get("sections", {}),
-        "kdes": data.get("kdes", {}),
-    })
+    return _nan_to_none(
+        {
+            "rows": data.get("rows", []),
+            "sections": data.get("sections", {}),
+            "kdes": data.get("kdes", {}),
+        }
+    )
 
 
 # ── Value distributions (lazy-loaded per variable) ───────────────────────
@@ -122,6 +125,7 @@ def get_distributions(
 
 # ── Combined frozen cohort definitions ──────────────────────────────────
 
+
 @router.get("/report/runs/{run_id}/frozen_cohorts_combined")
 def get_frozen_cohorts_combined(run_id: str) -> list:
     """Return the combined list of frozen cohort definitions (codelists stripped).
@@ -137,6 +141,7 @@ def get_frozen_cohorts_combined(run_id: str) -> list:
 
 # ── Combined waterfall (all cohorts in one file) ─────────────────────────
 
+
 @router.get("/report/runs/{run_id}/waterfall_combined")
 def get_waterfall_combined(run_id: str) -> Dict[str, Any]:
     """Return combined waterfall data for all cohorts in a single response.
@@ -151,6 +156,7 @@ def get_waterfall_combined(run_id: str) -> Dict[str, Any]:
 
 
 # ── Combined KDE distributions (all cohorts in one file) ─────────────────
+
 
 @router.get("/report/runs/{run_id}/kde_combined")
 def get_kde_combined(
@@ -171,6 +177,7 @@ def get_kde_combined(
 
 # ── Combined table1 (all cohorts in one file) ────────────────────────────
 
+
 @router.get("/report/runs/{run_id}/table1_combined")
 def get_table1_combined(
     run_id: str,
@@ -189,11 +196,14 @@ def get_table1_combined(
         logger.exception("get_table1_combined: error reading %s", filename)
         raise HTTPException(status_code=500, detail=f"Error reading {filename}: {e}")
     if combined is None:
-        raise HTTPException(status_code=404, detail=f"'{filename}' not found for run '{run_id}'")
+        raise HTTPException(
+            status_code=404, detail=f"'{filename}' not found for run '{run_id}'"
+        )
     return _nan_to_none(combined)
 
 
 # ── Combined Table2 (incidence rates, all cohorts) ───────────────────────
+
 
 @router.get("/report/runs/{run_id}/table2_combined")
 def get_table2_combined(run_id: str) -> Dict[str, Any]:
@@ -209,6 +219,7 @@ def get_table2_combined(run_id: str) -> Dict[str, Any]:
 
 
 # ── Combined TimeToEvent (Kaplan–Meier, all cohorts) ─────────────────────
+
 
 @router.get("/report/runs/{run_id}/time_to_event_combined")
 def get_time_to_event_combined(run_id: str) -> Dict[str, Any]:

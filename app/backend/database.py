@@ -217,7 +217,11 @@ class DatabaseManager:
                     "version": provisional_row["version"],
                     "is_provisional": provisional_row["is_provisional"],
                     "study_id": provisional_row["study_id"],
-                    "database": json.loads(provisional_row["database"]) if provisional_row["database"] else None,
+                    "database": (
+                        json.loads(provisional_row["database"])
+                        if provisional_row["database"]
+                        else None
+                    ),
                     "created_at": (
                         provisional_row["created_at"].isoformat()
                         if provisional_row["created_at"]
@@ -260,7 +264,11 @@ class DatabaseManager:
                 "version": non_provisional_row["version"],
                 "is_provisional": non_provisional_row["is_provisional"],
                 "study_id": non_provisional_row["study_id"],
-                "database": json.loads(non_provisional_row["database"]) if non_provisional_row["database"] else None,
+                "database": (
+                    json.loads(non_provisional_row["database"])
+                    if non_provisional_row["database"]
+                    else None
+                ),
                 "created_at": (
                     non_provisional_row["created_at"].isoformat()
                     if non_provisional_row["created_at"]
@@ -316,7 +324,11 @@ class DatabaseManager:
         # Extract name and description to dedicated columns; strip them from stored JSON
         cohort_name = cohort_data.get("name") or cohort_id
         cohort_description = cohort_data.get("description")
-        cohort_data = {k: v for k, v in cohort_data.items() if k not in ("name", "description", "database")}
+        cohort_data = {
+            k: v
+            for k, v in cohort_data.items()
+            if k not in ("name", "description", "database")
+        }
 
         conn = None
         try:
@@ -577,9 +589,7 @@ class DatabaseManager:
             result = await conn.execute(query, user_id, cohort_id, display_order)
             if result == "UPDATE 0":
                 return False
-            logger.info(
-                f"Updated display_order={display_order} for cohort {cohort_id}"
-            )
+            logger.info(f"Updated display_order={display_order} for cohort {cohort_id}")
             return True
         except Exception as e:
             logger.error(f"Failed to update display order for cohort {cohort_id}: {e}")
@@ -926,7 +936,7 @@ class DatabaseManager:
 
     async def get_codelists_for_study(self, study_id: str) -> List[Dict]:
         """Retrieve all codelists associated with a specific study."""
-        return await self._get_codelists_by_field('study_id', study_id)
+        return await self._get_codelists_by_field("study_id", study_id)
 
     async def _get_codelists_by_field(self, field: str, value: str) -> List[Dict]:
         conn = None
@@ -997,7 +1007,9 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def get_codelist(self, user_id: str, codelist_id: str, study_id: str = None) -> Optional[Dict]:
+    async def get_codelist(
+        self, user_id: str, codelist_id: str, study_id: str = None
+    ) -> Optional[Dict]:
         """
         Retrieve a specific codelist for a user from the database.
         Returns the latest version.
@@ -1117,16 +1129,21 @@ class DatabaseManager:
             # Insert the new version with study_id
             if not study_id:
                 raise ValueError("study_id is required for saving codelists")
-                
+
             insert_query = """
                 INSERT INTO codelistfile (file_id, file_name, user_id, study_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
             """
             await conn.execute(
                 insert_query,
-                codelist_id, file_name, user_id, study_id,
+                codelist_id,
+                file_name,
+                user_id,
+                study_id,
                 target_version,
-                json.dumps(codelist_data), json.dumps(column_mapping), codelists,
+                json.dumps(codelist_data),
+                json.dumps(column_mapping),
+                codelists,
             )
 
             logger.info(
@@ -1179,7 +1196,9 @@ class DatabaseManager:
                     FROM codelistfile 
                     WHERE file_id = $1 AND user_id = $2 AND study_id = $3
                 """
-                version_row = await conn.fetchrow(version_query, codelist_id, user_id, study_id)
+                version_row = await conn.fetchrow(
+                    version_query, codelist_id, user_id, study_id
+                )
             else:
                 version_query = """
                     SELECT MAX(version) as max_version 
@@ -1253,7 +1272,9 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def delete_codelist(self, user_id: str, codelist_id: str, study_id: str = None) -> bool:
+    async def delete_codelist(
+        self, user_id: str, codelist_id: str, study_id: str = None
+    ) -> bool:
         """
         Delete a codelist for a user from the database.
 
@@ -1324,7 +1345,9 @@ class DatabaseManager:
                     SET display_order = $3, updated_at = CURRENT_TIMESTAMP
                     WHERE user_id = $1 AND file_id = $2 AND study_id = $4
                 """
-                result = await conn.execute(query, user_id, file_id, display_order, study_id)
+                result = await conn.execute(
+                    query, user_id, file_id, display_order, study_id
+                )
             else:
                 query = """
                     UPDATE codelistfile 
@@ -1342,9 +1365,7 @@ class DatabaseManager:
             return True
 
         except Exception as e:
-            logger.error(
-                f"Failed to update display order for codelist {file_id}: {e}"
-            )
+            logger.error(f"Failed to update display order for codelist {file_id}: {e}")
             raise
         finally:
             if conn:
@@ -1390,7 +1411,9 @@ class DatabaseManager:
                         "creator_id": row["creator_id"],
                         "visible_by": row["visible_by"],
                         "display_order": row["display_order"],
-                        "database": json.loads(row["database"]) if row["database"] else None,
+                        "database": (
+                            json.loads(row["database"]) if row["database"] else None
+                        ),
                         "created_at": (
                             row["created_at"].isoformat() if row["created_at"] else None
                         ),
@@ -1443,7 +1466,9 @@ class DatabaseManager:
                         "creator_id": row["creator_id"],
                         "visible_by": row["visible_by"],
                         "display_order": row["display_order"],
-                        "database": json.loads(row["database"]) if row["database"] else None,
+                        "database": (
+                            json.loads(row["database"]) if row["database"] else None
+                        ),
                         "created_at": (
                             row["created_at"].isoformat() if row["created_at"] else None
                         ),
@@ -2019,8 +2044,12 @@ class DatabaseManager:
                     "study_id": row["study_id"],
                     "user_id": str(row["user_id"]),
                     "status": row["status"],
-                    "started_at": row["started_at"].isoformat() if row["started_at"] else None,
-                    "ended_at": row["ended_at"].isoformat() if row["ended_at"] else None,
+                    "started_at": (
+                        row["started_at"].isoformat() if row["started_at"] else None
+                    ),
+                    "ended_at": (
+                        row["ended_at"].isoformat() if row["ended_at"] else None
+                    ),
                     "manifest_path": row["manifest_path"],
                     "error_message": row["error_message"],
                 }
@@ -2033,8 +2062,7 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-
-# Global instance
+    # Global instance
     async def delete_study_execution(self, execution_id: str, user_id: str) -> Dict:
         """Delete an execution record and return its manifest_path so the caller can clean up files."""
         conn = None
@@ -2057,13 +2085,16 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-
     # -------------------------------------------------------------------------
     # Chat history
     # -------------------------------------------------------------------------
 
     async def create_chat_session(
-        self, user_id: str, study_id: Optional[str], title: Optional[str] = None, session_id: Optional[str] = None
+        self,
+        user_id: str,
+        study_id: Optional[str],
+        title: Optional[str] = None,
+        session_id: Optional[str] = None,
     ) -> Dict:
         conn = None
         try:
@@ -2107,7 +2138,9 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def get_chat_sessions(self, user_id: str, study_id: Optional[str]) -> List[Dict]:
+    async def get_chat_sessions(
+        self, user_id: str, study_id: Optional[str]
+    ) -> List[Dict]:
         conn = None
         try:
             conn = await self.get_connection()
@@ -2238,7 +2271,9 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def update_chat_session_title(self, session_id: str, user_id: str, title: str) -> bool:
+    async def update_chat_session_title(
+        self, session_id: str, user_id: str, title: str
+    ) -> bool:
         conn = None
         try:
             conn = await self.get_connection()
@@ -2278,8 +2313,6 @@ class DatabaseManager:
         finally:
             if conn:
                 await conn.close()
-
-
 
     # ========================================================================
     # Constants Management
@@ -2421,46 +2454,46 @@ class DatabaseManager:
         conn = None
         try:
             conn = await self.get_connection()
-            
+
             # Build dynamic update query
             updates = []
             params = []
             param_idx = 1
-            
+
             if name is not None:
                 updates.append(f"name = ${param_idx}")
                 params.append(name)
                 param_idx += 1
-            
+
             if description is not None:
                 updates.append(f"description = ${param_idx}")
                 params.append(description)
                 param_idx += 1
-            
+
             if value is not None:
                 updates.append(f"value = ${param_idx}")
                 params.append(json.dumps(value))
                 param_idx += 1
-            
+
             if display_order is not None:
                 updates.append(f"display_order = ${param_idx}")
                 params.append(display_order)
                 param_idx += 1
-            
+
             updates.append(f"updated_at = CURRENT_TIMESTAMP")
             params.extend([constant_id, user_id])
-            
+
             query = f"""
                 UPDATE constant
                 SET {', '.join(updates)}
                 WHERE constant_id = ${param_idx} AND user_id = ${param_idx + 1}
                 RETURNING constant_id, study_id, user_id, name, description, constant_type, value, display_order, created_at, updated_at
             """
-            
+
             row = await conn.fetchrow(query, *params)
             if not row:
                 raise ValueError(f"Constant {constant_id} not found or access denied")
-            
+
             return {
                 "id": row["constant_id"],
                 "study_id": row["study_id"],
@@ -2501,7 +2534,9 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def check_constant_in_use(self, study_id: str, constant_name: str, user_id: str) -> bool:
+    async def check_constant_in_use(
+        self, study_id: str, constant_name: str, user_id: str
+    ) -> bool:
         """Check if a constant is referenced in any cohort."""
         conn = None
         try:

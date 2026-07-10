@@ -337,13 +337,15 @@ async def create_or_update_study(
     - 500: If there's an error creating or updating the study in the database
     """
     user_id = get_authenticated_user_id(request)
-    
+
     # If study_id is "new", use the ID from the request body or generate one
     if study_id == "new":
         # Check if the frontend provided an ID in the body
         actual_study_id = study.get("id")
         if actual_study_id:
-            logger.info(f"Creating new study with frontend-provided ID: {actual_study_id}")
+            logger.info(
+                f"Creating new study with frontend-provided ID: {actual_study_id}"
+            )
         else:
             # Fallback: generate a UUID if no ID provided
             actual_study_id = str(uuid.uuid4())
@@ -437,7 +439,9 @@ async def delete_study_for_user(request: Request, study_id: str):
         )
 
 
-@router.patch("/study/{study_id}/display_order", tags=["study"], response_model=StatusResponse)
+@router.patch(
+    "/study/{study_id}/display_order", tags=["study"], response_model=StatusResponse
+)
 async def update_study_display_order(
     request: Request, study_id: str, display_order: int
 ):
@@ -446,7 +450,7 @@ async def update_study_display_order(
 
     Path Parameters:
     - study_id (str): The unique identifier of the study to update
-    
+
     Query Parameters:
     - display_order (int): The new display order value for UI sorting
 
@@ -518,9 +522,7 @@ async def update_study_database(
     user_id = get_authenticated_user_id(request)
     database = body.get("database")
     try:
-        success = await db_manager.update_study_database(
-            user_id, study_id, database
-        )
+        success = await db_manager.update_study_database(user_id, study_id, database)
         if not success:
             raise HTTPException(status_code=404, detail=f"Study {study_id} not found")
         return {"status": "success"}
@@ -648,247 +650,282 @@ async def get_study_issues(request: Request, study_id: str):
     - 500: If there's an error during validation
     """
     user_id = get_authenticated_user_id(request)
-    
+
     errors = []
     warnings = []
-    
+
     try:
         # 1. Check study exists and is accessible
         study = await db_manager.get_study_for_user(user_id, study_id)
         if not study:
             raise HTTPException(
-                status_code=404,
-                detail=f"Study {study_id} not found or access denied"
+                status_code=404, detail=f"Study {study_id} not found or access denied"
             )
-        
+
         # 2. Validate database configuration
         database_config = study.get("database")
         if not database_config:
-            errors.append({
-                "message": "Database configuration is required",
-                "severity": "error"
-            })
+            errors.append(
+                {"message": "Database configuration is required", "severity": "error"}
+            )
         else:
             if not database_config.get("mapper"):
-                errors.append({
-                    "message": "Database mapper is required",
-                    "severity": "error"
-                })
+                errors.append(
+                    {"message": "Database mapper is required", "severity": "error"}
+                )
             if not database_config.get("connector"):
-                errors.append({
-                    "message": "Database connector is required",
-                    "severity": "error"
-                })
-            
+                errors.append(
+                    {"message": "Database connector is required", "severity": "error"}
+                )
+
             connector = database_config.get("connector")
             if connector == "snowflake":
                 config = database_config.get("config", {})
                 if not config.get("source_database"):
-                    errors.append({
-                        "message": "Snowflake source_database is required",
-                        "severity": "error"
-                    })
+                    errors.append(
+                        {
+                            "message": "Snowflake source_database is required",
+                            "severity": "error",
+                        }
+                    )
                 if not config.get("destination_database"):
-                    errors.append({
-                        "message": "Snowflake destination_database is required",
-                        "severity": "error"
-                    })
-        
+                    errors.append(
+                        {
+                            "message": "Snowflake destination_database is required",
+                            "severity": "error",
+                        }
+                    )
+
         # 3. Validate cohorts exist
         cohorts = await db_manager.get_cohorts_for_study(study_id, user_id)
         if not cohorts:
-            errors.append({
-                "message": "Study must have at least one cohort",
-                "severity": "error"
-            })
-            return {
-                "valid": len(errors) == 0,
-                "errors": errors,
-                "warnings": warnings
-            }
-        
+            errors.append(
+                {"message": "Study must have at least one cohort", "severity": "error"}
+            )
+            return {"valid": len(errors) == 0, "errors": errors, "warnings": warnings}
+
         # 4. Validate each cohort
         for cohort in cohorts:
             cohort_id = cohort["id"]
             cohort_name = cohort.get("name", "Unnamed Cohort")
-            
+
             try:
                 cohort_data = await db_manager.get_cohort_for_user(user_id, cohort_id)
                 if not cohort_data or "cohort_data" not in cohort_data:
-                    errors.append({
-                        "message": "Cohort data not found",
-                        "cohort_id": cohort_id,
-                        "cohort_name": cohort_name,
-                        "severity": "error"
-                    })
+                    errors.append(
+                        {
+                            "message": "Cohort data not found",
+                            "cohort_id": cohort_id,
+                            "cohort_name": cohort_name,
+                            "severity": "error",
+                        }
+                    )
                     continue
-                
+
                 # 4a. Format validation
                 try:
                     validate_cohort_data_format(cohort_data["cohort_data"])
                 except ValueError as e:
-                    errors.append({
-                        "message": str(e),
-                        "cohort_id": cohort_id,
-                        "cohort_name": cohort_name,
-                        "severity": "error"
-                    })
+                    errors.append(
+                        {
+                            "message": str(e),
+                            "cohort_id": cohort_id,
+                            "cohort_name": cohort_name,
+                            "severity": "error",
+                        }
+                    )
                     continue
-                
+
                 phenotypes = cohort_data["cohort_data"].get("phenotypes", [])
-                
+
                 # Validate phenotypes is actually a list
                 if not isinstance(phenotypes, list):
-                    logger.error(f"Cohort {cohort_id} phenotypes is not a list: {type(phenotypes).__name__}")
-                    errors.append({
-                        "message": "Cohort data is corrupted - please try re-creating the cohort",
-                        "cohort_id": cohort_id,
-                        "cohort_name": cohort_name,
-                        "severity": "error"
-                    })
+                    logger.error(
+                        f"Cohort {cohort_id} phenotypes is not a list: {type(phenotypes).__name__}"
+                    )
+                    errors.append(
+                        {
+                            "message": "Cohort data is corrupted - please try re-creating the cohort",
+                            "cohort_id": cohort_id,
+                            "cohort_name": cohort_name,
+                            "severity": "error",
+                        }
+                    )
                     continue
-                
+
                 # 4b. Entry criterion check
                 entry_phenotypes = []
                 for p in phenotypes:
                     if isinstance(p, dict) and p.get("type") == "entry":
                         entry_phenotypes.append(p)
-                
+
                 if not entry_phenotypes:
-                    errors.append({
-                        "message": "Must have at least one entry phenotype",
-                        "cohort_id": cohort_id,
-                        "cohort_name": cohort_name,
-                        "severity": "error"
-                    })
+                    errors.append(
+                        {
+                            "message": "Must have at least one entry phenotype",
+                            "cohort_id": cohort_id,
+                            "cohort_name": cohort_name,
+                            "severity": "error",
+                        }
+                    )
                 elif len(entry_phenotypes) > 1:
-                    warnings.append({
-                        "message": f"Has {len(entry_phenotypes)} entry phenotypes (only first will be used)",
-                        "cohort_id": cohort_id,
-                        "cohort_name": cohort_name,
-                        "severity": "warning"
-                    })
-                
+                    warnings.append(
+                        {
+                            "message": f"Has {len(entry_phenotypes)} entry phenotypes (only first will be used)",
+                            "cohort_id": cohort_id,
+                            "cohort_name": cohort_name,
+                            "severity": "warning",
+                        }
+                    )
+
                 # 4c. Phenotype validation
                 for idx, pheno in enumerate(phenotypes):
                     # Check if phenotype is a dict
                     if not isinstance(pheno, dict):
-                        logger.error(f"Phenotype at index {idx} in cohort {cohort_id} is not a dict: {type(pheno).__name__}")
-                        errors.append({
-                            "message": f"Phenotype at position {idx + 1} is corrupted - please delete and re-create it",
-                            "cohort_id": cohort_id,
-                            "cohort_name": cohort_name,
-                            "severity": "error"
-                        })
+                        logger.error(
+                            f"Phenotype at index {idx} in cohort {cohort_id} is not a dict: {type(pheno).__name__}"
+                        )
+                        errors.append(
+                            {
+                                "message": f"Phenotype at position {idx + 1} is corrupted - please delete and re-create it",
+                                "cohort_id": cohort_id,
+                                "cohort_name": cohort_name,
+                                "severity": "error",
+                            }
+                        )
                         continue
-                    
+
                     pheno_id = pheno.get("id", f"index_{idx}")
                     pheno_name = pheno.get("name", f"Phenotype {idx + 1}")
-                    
+
                     # Validate required fields
                     if not pheno.get("class_name"):
-                        errors.append({
-                            "message": "Missing class_name field",
-                            "cohort_id": cohort_id,
-                            "cohort_name": cohort_name,
-                            "phenotype_id": pheno_id,
-                            "phenotype_name": pheno_name,
-                            "severity": "error"
-                        })
-                    
+                        errors.append(
+                            {
+                                "message": "Missing class_name field",
+                                "cohort_id": cohort_id,
+                                "cohort_name": cohort_name,
+                                "phenotype_id": pheno_id,
+                                "phenotype_name": pheno_name,
+                                "severity": "error",
+                            }
+                        )
+
                     if not pheno.get("type"):
-                        errors.append({
-                            "message": "Missing type field (should be: entry, inclusion, exclusion, baseline, or outcome)",
-                            "cohort_id": cohort_id,
-                            "cohort_name": cohort_name,
-                            "phenotype_id": pheno_id,
-                            "phenotype_name": pheno_name,
-                            "severity": "error"
-                        })
-                    
+                        errors.append(
+                            {
+                                "message": "Missing type field (should be: entry, inclusion, exclusion, baseline, or outcome)",
+                                "cohort_id": cohort_id,
+                                "cohort_name": cohort_name,
+                                "phenotype_id": pheno_id,
+                                "phenotype_name": pheno_name,
+                                "severity": "error",
+                            }
+                        )
+
                     if not pheno.get("domain"):
-                        errors.append({
-                            "message": "Missing domain field",
-                            "cohort_id": cohort_id,
-                            "cohort_name": cohort_name,
-                            "phenotype_id": pheno_id,
-                            "phenotype_name": pheno_name,
-                            "severity": "error"
-                        })
-                    
+                        errors.append(
+                            {
+                                "message": "Missing domain field",
+                                "cohort_id": cohort_id,
+                                "cohort_name": cohort_name,
+                                "phenotype_id": pheno_id,
+                                "phenotype_name": pheno_name,
+                                "severity": "error",
+                            }
+                        )
+
                     # 4d. Codelist validation
                     if pheno.get("class_name") == "CodelistPhenotype":
                         codelist = pheno.get("codelist")
-                        
+
                         if not codelist:
-                            errors.append({
-                                "message": "Codelist is not defined - please select or create a codelist",
-                                "cohort_id": cohort_id,
-                                "cohort_name": cohort_name,
-                                "phenotype_id": pheno_id,
-                                "phenotype_name": pheno_name,
-                                "severity": "error"
-                            })
-                            continue
-                        
-                        if not isinstance(codelist, dict):
-                            # User can't control this - log but skip
-                            logger.warning(f"Codelist for phenotype {pheno_id} is not a dict: {type(codelist).__name__}")
-                            errors.append({
-                                "message": "Codelist data is corrupted - please re-select the codelist",
-                                "cohort_id": cohort_id,
-                                "cohort_name": cohort_name,
-                                "phenotype_id": pheno_id,
-                                "phenotype_name": pheno_name,
-                                "severity": "error"
-                            })
-                            continue
-                        
-                        codelist_type = codelist.get("codelist_type")
-                        
-                        if not codelist_type:
-                            errors.append({
-                                "message": "Codelist type is not specified - please select a codelist",
-                                "cohort_id": cohort_id,
-                                "cohort_name": cohort_name,
-                                "phenotype_id": pheno_id,
-                                "phenotype_name": pheno_name,
-                                "severity": "error"
-                            })
-                        elif codelist_type == "from_file":
-                            file_id = codelist.get("file_id")
-                            if not file_id:
-                                errors.append({
-                                    "message": "No codelist file selected - please choose a codelist file",
+                            errors.append(
+                                {
+                                    "message": "Codelist is not defined - please select or create a codelist",
                                     "cohort_id": cohort_id,
                                     "cohort_name": cohort_name,
                                     "phenotype_id": pheno_id,
                                     "phenotype_name": pheno_name,
-                                    "severity": "error"
-                                })
-                            else:
-                                # Check if file exists
-                                try:
-                                    file_exists = await db_manager.get_codelist(user_id, file_id, study_id)
-                                    if not file_exists:
-                                        errors.append({
-                                            "message": f"Codelist file not found - the file may have been deleted",
-                                            "cohort_id": cohort_id,
-                                            "cohort_name": cohort_name,
-                                            "phenotype_id": pheno_id,
-                                            "phenotype_name": pheno_name,
-                                            "severity": "error"
-                                        })
-                                except Exception as e:
-                                    logger.error(f"Error checking codelist file {file_id}: {e}")
-                                    errors.append({
-                                        "message": "Unable to verify codelist file - please re-select it",
+                                    "severity": "error",
+                                }
+                            )
+                            continue
+
+                        if not isinstance(codelist, dict):
+                            # User can't control this - log but skip
+                            logger.warning(
+                                f"Codelist for phenotype {pheno_id} is not a dict: {type(codelist).__name__}"
+                            )
+                            errors.append(
+                                {
+                                    "message": "Codelist data is corrupted - please re-select the codelist",
+                                    "cohort_id": cohort_id,
+                                    "cohort_name": cohort_name,
+                                    "phenotype_id": pheno_id,
+                                    "phenotype_name": pheno_name,
+                                    "severity": "error",
+                                }
+                            )
+                            continue
+
+                        codelist_type = codelist.get("codelist_type")
+
+                        if not codelist_type:
+                            errors.append(
+                                {
+                                    "message": "Codelist type is not specified - please select a codelist",
+                                    "cohort_id": cohort_id,
+                                    "cohort_name": cohort_name,
+                                    "phenotype_id": pheno_id,
+                                    "phenotype_name": pheno_name,
+                                    "severity": "error",
+                                }
+                            )
+                        elif codelist_type == "from_file":
+                            file_id = codelist.get("file_id")
+                            if not file_id:
+                                errors.append(
+                                    {
+                                        "message": "No codelist file selected - please choose a codelist file",
                                         "cohort_id": cohort_id,
                                         "cohort_name": cohort_name,
                                         "phenotype_id": pheno_id,
                                         "phenotype_name": pheno_name,
-                                        "severity": "error"
-                                    })
+                                        "severity": "error",
+                                    }
+                                )
+                            else:
+                                # Check if file exists
+                                try:
+                                    file_exists = await db_manager.get_codelist(
+                                        user_id, file_id, study_id
+                                    )
+                                    if not file_exists:
+                                        errors.append(
+                                            {
+                                                "message": f"Codelist file not found - the file may have been deleted",
+                                                "cohort_id": cohort_id,
+                                                "cohort_name": cohort_name,
+                                                "phenotype_id": pheno_id,
+                                                "phenotype_name": pheno_name,
+                                                "severity": "error",
+                                            }
+                                        )
+                                except Exception as e:
+                                    logger.error(
+                                        f"Error checking codelist file {file_id}: {e}"
+                                    )
+                                    errors.append(
+                                        {
+                                            "message": "Unable to verify codelist file - please re-select it",
+                                            "cohort_id": cohort_id,
+                                            "cohort_name": cohort_name,
+                                            "phenotype_id": pheno_id,
+                                            "phenotype_name": pheno_name,
+                                            "severity": "error",
+                                        }
+                                    )
                         elif codelist_type == "manual":
                             # Check if codes are provided
                             # Handle both formats:
@@ -896,120 +933,138 @@ async def get_study_issues(request: Request, study_id: str):
                             # 2. PhenEx library format: {"codelist": {"null": [codes]} or {"ICD10": [codes]}}
                             codes = codelist.get("codes")
                             codelist_dict = codelist.get("codelist")
-                            
+
                             has_codes = False
                             if codes and (isinstance(codes, list) and len(codes) > 0):
                                 has_codes = True
                             elif codelist_dict and isinstance(codelist_dict, dict):
                                 # Check if any code type has codes
                                 for code_type, code_list in codelist_dict.items():
-                                    if isinstance(code_list, list) and len(code_list) > 0:
+                                    if (
+                                        isinstance(code_list, list)
+                                        and len(code_list) > 0
+                                    ):
                                         has_codes = True
                                         break
-                            
+
                             if not has_codes:
-                                errors.append({
-                                    "message": "Manual codelist has no codes - please add codes",
-                                    "cohort_id": cohort_id,
-                                    "cohort_name": cohort_name,
-                                    "phenotype_id": pheno_id,
-                                    "phenotype_name": pheno_name,
-                                    "severity": "error"
-                                })
-                    
-                    # No class-specific validation - removed AgePhenotype/SexPhenotype checks
-                    # Those fields are optional or have defaults
-            
-            except ValueError as e:
-                # Specific error for format validation issues
-                errors.append({
-                    "message": f"Cohort format error: {str(e)}",
-                    "cohort_id": cohort_id,
-                    "cohort_name": cohort_name,
-                    "severity": "error"
-                })
-            except KeyError as e:
-                # Specific error for missing required keys
-                errors.append({
-                    "message": f"Missing required field in cohort data: {str(e)}",
-                    "cohort_id": cohort_id,
-                    "cohort_name": cohort_name,
-                    "severity": "error"
-                })
-            except Exception as e:
-                # Last resort - but include more context
-                logger.error(f"Unexpected error validating cohort {cohort_id}: {type(e).__name__}: {e}", exc_info=True)
-                errors.append({
-                    "message": f"Unexpected error during validation: {type(e).__name__}: {str(e)}",
-                    "cohort_id": cohort_id,
-                    "cohort_name": cohort_name,
-                    "severity": "error"
-                })
-        
-        # 5. Validate constants (check for undefined references)
-        try:
-            constants = await db_manager.get_constants_for_study(study_id, user_id)
-            constant_names = {c["name"] for c in constants}
-            
-            for cohort in cohorts:
-                cohort_id = cohort["id"]
-                cohort_name = cohort.get("name", "Unnamed Cohort")
-                
-                try:
-                    cohort_data = await db_manager.get_cohort_for_user(user_id, cohort_id)
-                    if not cohort_data or "cohort_data" not in cohort_data:
-                        continue
-                    
-                    phenotypes = cohort_data["cohort_data"].get("phenotypes", [])
-                    
-                    if not isinstance(phenotypes, list):
-                        continue
-                    
-                    for idx, pheno in enumerate(phenotypes):
-                        if not isinstance(pheno, dict):
-                            continue
-                        
-                        pheno_id = pheno.get("id", f"index_{idx}")
-                        pheno_name = pheno.get("name", f"Phenotype {idx + 1}")
-                        
-                        # Check various fields that might reference constants
-                        fields_to_check = [
-                            ("relative_time_range", "relative time range"),
-                            ("value_filter", "value filter"),
-                            ("categorical_filter", "categorical filter")
-                        ]
-                        
-                        for field_name, field_label in fields_to_check:
-                            field_value = pheno.get(field_name)
-                            if isinstance(field_value, dict) and field_value.get("useConstant"):
-                                const_name = field_value.get("constant")
-                                if const_name and const_name not in constant_names:
-                                    errors.append({
-                                        "message": f"Referenced constant '{const_name}' not found in {field_label}",
+                                errors.append(
+                                    {
+                                        "message": "Manual codelist has no codes - please add codes",
                                         "cohort_id": cohort_id,
                                         "cohort_name": cohort_name,
                                         "phenotype_id": pheno_id,
                                         "phenotype_name": pheno_name,
-                                        "severity": "error"
-                                    })
-                
+                                        "severity": "error",
+                                    }
+                                )
+
+                    # No class-specific validation - removed AgePhenotype/SexPhenotype checks
+                    # Those fields are optional or have defaults
+
+            except ValueError as e:
+                # Specific error for format validation issues
+                errors.append(
+                    {
+                        "message": f"Cohort format error: {str(e)}",
+                        "cohort_id": cohort_id,
+                        "cohort_name": cohort_name,
+                        "severity": "error",
+                    }
+                )
+            except KeyError as e:
+                # Specific error for missing required keys
+                errors.append(
+                    {
+                        "message": f"Missing required field in cohort data: {str(e)}",
+                        "cohort_id": cohort_id,
+                        "cohort_name": cohort_name,
+                        "severity": "error",
+                    }
+                )
+            except Exception as e:
+                # Last resort - but include more context
+                logger.error(
+                    f"Unexpected error validating cohort {cohort_id}: {type(e).__name__}: {e}",
+                    exc_info=True,
+                )
+                errors.append(
+                    {
+                        "message": f"Unexpected error during validation: {type(e).__name__}: {str(e)}",
+                        "cohort_id": cohort_id,
+                        "cohort_name": cohort_name,
+                        "severity": "error",
+                    }
+                )
+
+        # 5. Validate constants (check for undefined references)
+        try:
+            constants = await db_manager.get_constants_for_study(study_id, user_id)
+            constant_names = {c["name"] for c in constants}
+
+            for cohort in cohorts:
+                cohort_id = cohort["id"]
+                cohort_name = cohort.get("name", "Unnamed Cohort")
+
+                try:
+                    cohort_data = await db_manager.get_cohort_for_user(
+                        user_id, cohort_id
+                    )
+                    if not cohort_data or "cohort_data" not in cohort_data:
+                        continue
+
+                    phenotypes = cohort_data["cohort_data"].get("phenotypes", [])
+
+                    if not isinstance(phenotypes, list):
+                        continue
+
+                    for idx, pheno in enumerate(phenotypes):
+                        if not isinstance(pheno, dict):
+                            continue
+
+                        pheno_id = pheno.get("id", f"index_{idx}")
+                        pheno_name = pheno.get("name", f"Phenotype {idx + 1}")
+
+                        # Check various fields that might reference constants
+                        fields_to_check = [
+                            ("relative_time_range", "relative time range"),
+                            ("value_filter", "value filter"),
+                            ("categorical_filter", "categorical filter"),
+                        ]
+
+                        for field_name, field_label in fields_to_check:
+                            field_value = pheno.get(field_name)
+                            if isinstance(field_value, dict) and field_value.get(
+                                "useConstant"
+                            ):
+                                const_name = field_value.get("constant")
+                                if const_name and const_name not in constant_names:
+                                    errors.append(
+                                        {
+                                            "message": f"Referenced constant '{const_name}' not found in {field_label}",
+                                            "cohort_id": cohort_id,
+                                            "cohort_name": cohort_name,
+                                            "phenotype_id": pheno_id,
+                                            "phenotype_name": pheno_name,
+                                            "severity": "error",
+                                        }
+                                    )
+
                 except Exception as e:
-                    logger.error(f"Error checking constants in cohort {cohort_id}: {e}", exc_info=True)
-        
+                    logger.error(
+                        f"Error checking constants in cohort {cohort_id}: {e}",
+                        exc_info=True,
+                    )
+
         except Exception as e:
             logger.error(f"Error validating constants: {e}")
-        
-        return {
-            "valid": len(errors) == 0,
-            "errors": errors,
-            "warnings": warnings
-        }
-    
+
+        return {"valid": len(errors) == 0, "errors": errors, "warnings": warnings}
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error validating study {study_id}: {e}")
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to validate study: {str(e)}"
+            status_code=500, detail=f"Failed to validate study: {str(e)}"
         )

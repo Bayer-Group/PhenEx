@@ -24,7 +24,9 @@ router = APIRouter()
 # Only include medconb router if it's enabled and available
 if MEDCONB_ENABLED and medconb_router is not None:
     router.include_router(medconb_router, prefix="/medconb")
-    logging.getLogger(__name__).info("MedConB router registered at /study/{study_id}/codelist/medconb")
+    logging.getLogger(__name__).info(
+        "MedConB router registered at /study/{study_id}/codelist/medconb"
+    )
 else:
     logging.getLogger(__name__).warning(
         "MedConB router not registered - integration disabled"
@@ -37,7 +39,11 @@ logger = logging.getLogger(__name__)
 # -- CODELIST API ENDPOINTS --
 
 
-@router.get("/study/{study_id}/codelists", tags=["codelist"], response_model=list[CodelistMetadata])
+@router.get(
+    "/study/{study_id}/codelists",
+    tags=["codelist"],
+    response_model=list[CodelistMetadata],
+)
 async def get_codelists_for_study(study_id: str):
     """
     Get a list of all codelists associated with a study.
@@ -48,7 +54,11 @@ async def get_codelists_for_study(study_id: str):
     return await get_codelist_filenames_for_study(db_manager, study_id)
 
 
-@router.get("/study/{study_id}/codelist/{file_id}", tags=["codelist"], response_model=CodelistFile)
+@router.get(
+    "/study/{study_id}/codelist/{file_id}",
+    tags=["codelist"],
+    response_model=CodelistFile,
+)
 async def get_codelist(request: Request, study_id: str, file_id: str):
     """
     Get the complete contents of a specific codelist file.
@@ -124,11 +134,13 @@ async def get_codelist(request: Request, study_id: str, file_id: str):
         codelist_data = codelist.get("codelist_data", {})
         if isinstance(codelist_data, str):
             import json
+
             codelist_data = json.loads(codelist_data)
 
         column_mapping = codelist.get("column_mapping", {})
         if isinstance(column_mapping, str):
             import json
+
             column_mapping = json.loads(column_mapping)
 
         # Get contents and ensure it has both data and headers
@@ -168,10 +180,10 @@ async def get_codelist(request: Request, study_id: str, file_id: str):
         )
 
 
-@router.put("/study/{study_id}/codelist", tags=["codelist"], response_model=StatusResponse)
-async def create_or_update_codelist(
-    request: Request, study_id: str, file: dict
-):
+@router.put(
+    "/study/{study_id}/codelist", tags=["codelist"], response_model=StatusResponse
+)
+async def create_or_update_codelist(request: Request, study_id: str, file: dict):
     """
     Create or update a codelist file for a study (idempotent operation).
 
@@ -249,14 +261,16 @@ async def create_or_update_codelist(
     if not filename:
         codelist_data = file.get("codelist_data", {})
         filename = codelist_data.get("filename") or codelist_data.get("name")
-    
+
     file_id = file.get("id")
-    
+
     if filename and file_id:
         # Check if a codelist with the same filename already exists for this study
         # but with a different file_id (allow updates to the same file)
-        existing_codelists = await get_codelist_filenames_for_study(db_manager, study_id)
-        
+        existing_codelists = await get_codelist_filenames_for_study(
+            db_manager, study_id
+        )
+
         for existing in existing_codelists:
             # Prevent duplicate filenames with different IDs
             if existing["filename"] == filename and existing["id"] != file_id:
@@ -265,7 +279,7 @@ async def create_or_update_codelist(
                 )
                 raise HTTPException(
                     status_code=400,
-                    detail=f"A codelist with filename '{filename}' already exists in this study. Please use a different filename or delete the existing codelist first."
+                    detail=f"A codelist with filename '{filename}' already exists in this study. Please use a different filename or delete the existing codelist first.",
                 )
 
     success = await save_codelist_file_for_study(
@@ -286,7 +300,11 @@ async def create_or_update_codelist(
     }
 
 
-@router.delete("/study/{study_id}/codelist/{file_id}", tags=["codelist"], response_model=StatusResponse)
+@router.delete(
+    "/study/{study_id}/codelist/{file_id}",
+    tags=["codelist"],
+    response_model=StatusResponse,
+)
 async def delete_codelist(request: Request, study_id: str, file_id: str):
     """
     Delete a codelist file and all its contents.
@@ -322,7 +340,7 @@ async def delete_codelist(request: Request, study_id: str, file_id: str):
     """
     user_id = get_authenticated_user_id(request)
     success = await db_manager.delete_codelist(user_id, file_id, study_id=study_id)
-    
+
     if not success:
         raise HTTPException(
             status_code=404,
@@ -335,7 +353,11 @@ async def delete_codelist(request: Request, study_id: str, file_id: str):
     }
 
 
-@router.patch("/study/{study_id}/codelist/{file_id}/display_order", tags=["codelist"], response_model=StatusResponse)
+@router.patch(
+    "/study/{study_id}/codelist/{file_id}/display_order",
+    tags=["codelist"],
+    response_model=StatusResponse,
+)
 async def update_codelist_display_order(
     request: Request, study_id: str, file_id: str, display_order: int
 ):
@@ -378,7 +400,10 @@ async def update_codelist_display_order(
     user_id = get_authenticated_user_id(request)
     try:
         success = await db_manager.update_codelist_display_order(
-            user_id=user_id, file_id=file_id, display_order=display_order, study_id=study_id
+            user_id=user_id,
+            file_id=file_id,
+            display_order=display_order,
+            study_id=study_id,
         )
 
         if success:
@@ -402,7 +427,9 @@ async def update_codelist_display_order(
 
 
 @router.patch(
-    "/study/{study_id}/codelist/{file_id}/column_mapping", tags=["codelist"], response_model=ColumnMappingUpdateResponse
+    "/study/{study_id}/codelist/{file_id}/column_mapping",
+    tags=["codelist"],
+    response_model=ColumnMappingUpdateResponse,
 )
 async def update_codelist_column_mapping(
     request: Request,
@@ -507,7 +534,8 @@ async def update_codelist_column_mapping(
 
         if not success:
             raise HTTPException(
-                status_code=404, detail=f"Failed to update codelist file {file_id} for study {study_id}"
+                status_code=404,
+                detail=f"Failed to update codelist file {file_id} for study {study_id}",
             )
 
         logger.info(
@@ -526,43 +554,46 @@ async def update_codelist_column_mapping(
         raise HTTPException(status_code=500, detail="Failed to update column mapping")
 
 
-
-async def get_codelist_file_for_study(db_manager, study_id: str, file_id: str, user_id: str):
+async def get_codelist_file_for_study(
+    db_manager, study_id: str, file_id: str, user_id: str
+):
     """
     Get a specific codelist file for a study.
-    
+
     Args:
         db_manager: DatabaseManager instance for database interactions
         study_id (str): The ID of the study.
         file_id (str): The ID of the codelist file.
         user_id (str): The authenticated user ID.
-    
+
     Returns:
         dict: The codelist file data, or None if not found.
     """
     try:
         codelist = await db_manager.get_codelist(user_id, file_id, study_id=study_id)
-        
+
         if not codelist:
             logger.warning(f"Codelist file {file_id} not found for study {study_id}")
             return None
-        
+
         # Parse JSON strings if needed
         codelist_data = codelist.get("codelist_data", {})
         if isinstance(codelist_data, str):
             import json
+
             codelist_data = json.loads(codelist_data)
-        
+
         column_mapping = codelist.get("column_mapping", {})
         if isinstance(column_mapping, str):
             import json
+
             column_mapping = json.loads(column_mapping)
-        
+
         # Get contents and ensure it has both data and headers
         contents = codelist_data.get("contents", {})
         if "headers" not in contents and "data" in contents:
             contents["headers"] = list(contents["data"].keys())
-        
+
         # Create the reconstructed file structure
         result = {
             "id": file_id,
@@ -576,10 +607,12 @@ async def get_codelist_file_for_study(db_manager, study_id: str, file_id: str, u
             "created_at": codelist.get("created_at"),
             "updated_at": codelist.get("updated_at"),
         }
-        
+
         return result
     except Exception as e:
-        logger.error(f"Failed to retrieve codelist file {file_id} for study {study_id}: {e}")
+        logger.error(
+            f"Failed to retrieve codelist file {file_id} for study {study_id}: {e}"
+        )
         return None
 
 

@@ -96,10 +96,14 @@ async def create_or_update_cohort(
 
     if existing_cohort:
         effective_study_id = existing_cohort.get("study_id", study_id)
-        logger.info(f"Updating existing cohort {cohort_id} with study_id {effective_study_id}")
+        logger.info(
+            f"Updating existing cohort {cohort_id} with study_id {effective_study_id}"
+        )
     else:
         effective_study_id = study_id
-        logger.info(f"Creating new cohort {cohort_id} with study_id {effective_study_id}")
+        logger.info(
+            f"Creating new cohort {cohort_id} with study_id {effective_study_id}"
+        )
 
     try:
         await db_manager.update_cohort_for_user(
@@ -147,7 +151,9 @@ async def update_cohort_database(
         raise HTTPException(status_code=500, detail="Failed to update database.")
 
 
-@router.patch("/study/{study_id}/cohort/{cohort_id}/display_order", tags=["study cohort"])
+@router.patch(
+    "/study/{study_id}/cohort/{cohort_id}/display_order", tags=["study cohort"]
+)
 async def update_cohort_display_order(
     request: Request,
     study_id: str,
@@ -174,7 +180,8 @@ async def update_cohort_display_order(
         )
         if not success:
             raise HTTPException(
-                status_code=404, detail=f"Cohort {cohort_id} not found or access denied."
+                status_code=404,
+                detail=f"Cohort {cohort_id} not found or access denied.",
             )
         return {"status": "success"}
     except HTTPException:
@@ -223,5 +230,3 @@ async def delete_cohort(request: Request, study_id: str, cohort_id: str):
             status_code=500,
             detail=f"Failed to delete cohort {cohort_id}",
         )
-
-
