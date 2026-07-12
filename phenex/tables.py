@@ -231,17 +231,30 @@ class PhenexTable:
         Apply date formatting if the source column has a DATE_FORMAT entry.
 
         DATE_FORMAT values can be:
-        - A format string: the column is parsed directly via to_timestamp.
+        - A format string: the column is parsed directly via to_timestamp, then cast to date.
         - A [format, position] list: for year-only (YYYY / %Y) or year-month
           (YYYYMM / %Y%m) formats, position resolves the ambiguous day:
             'first'  — Jan 1 or the 1st of the month
             'middle' — Jul 2 or the 15th of the month
             'last'   — Dec 31 or the last day of the month
 
+        All paths return a date (not timestamp) so that downstream date arithmetic
+        (e.g. DateDelta) works consistently across backends.
         Blank/empty strings are nullified before parsing to avoid format errors.
+        Columns already typed as date are returned as-is; timestamp columns (e.g.
+        timestamp('UTC') from Snowflake on re-instantiation) are cast to date.
         """
         if col_name not in self.DATE_FORMAT:
             return col_ref
+
+        # If the column is already a date, no further processing is needed.
+        # If it's a timestamp (e.g. timestamp('UTC') from Snowflake after a prior
+        # instantiation), cast down to date so downstream date arithmetic stays consistent.
+        col_type = str(col_ref.type())
+        if col_type.startswith("date") and not col_type.startswith("timestamp"):
+            return col_ref
+        if col_type.startswith("timestamp"):
+            return col_ref.cast("date")
 
         fmt_spec = self.DATE_FORMAT[col_name]
         fmt, position = (fmt_spec[0], fmt_spec[1]) if isinstance(fmt_spec, list) else (fmt_spec, None)
@@ -249,22 +262,22 @@ class PhenexTable:
         col_ref = col_ref.nullif("")
 
         if position is None:
-            return col_ref.to_timestamp(fmt)
+            return col_ref.to_timestamp(fmt).cast("date")
 
         # Detect backend style: Snowflake has no '%'; DuckDB/BigQuery use '%' prefixes.
         full_date_fmt = "YYYYMMDD" if "%" not in fmt else "%Y%m%d"
 
         if fmt in ("YYYY", "%Y"):  # year-only
             suffix = {"first": "0101", "middle": "0702", "last": "1231"}[position]
-            return col_ref.concat(suffix).to_timestamp(full_date_fmt)
+            return col_ref.concat(suffix).to_timestamp(full_date_fmt).cast("date")
 
         if fmt in ("YYYYMM", "%Y%m"):  # year-month
             if position == "last":
                 # Parse as 1st of month, then advance to the true last day.
                 first_of_month = col_ref.concat("01").to_timestamp(full_date_fmt)
-                return (first_of_month + ibis.interval(months=1) - ibis.interval(days=1)).cast("timestamp")
+                return (first_of_month + ibis.interval(months=1) - ibis.interval(days=1)).cast("date")
             suffix = {"first": "01", "middle": "15"}[position]
-            return col_ref.concat(suffix).to_timestamp(full_date_fmt)
+            return col_ref.concat(suffix).to_timestamp(full_date_fmt).cast("date")
 
         raise ValueError(
             f"DATE_FORMAT position '{position}' is only supported for year-only "

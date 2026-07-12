@@ -51,27 +51,10 @@ class DeathPhenotype(Phenotype):
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]
+        person_table = person_table.mutate(EVENT_DATE=person_table.DATE_OF_DEATH)
         assert is_phenex_person_table(person_table)
 
-        if "MONTH_OF_DEATH" in person_table.columns:
-            month_of_death = person_table.MONTH_OF_DEATH.cast("int64")
-            month_date = ibis.date(
-                month_of_death // 100,
-                month_of_death % 100,
-                15,
-            )
-            if "DATE_OF_DEATH" in person_table.columns:
-                date_of_death = ibis.coalesce(
-                    ibis.date(person_table.DATE_OF_DEATH), month_date
-                )
-            else:
-                date_of_death = month_date
-        else:
-            date_of_death = ibis.date(person_table.DATE_OF_DEATH)
-
-        person_table = person_table.mutate(EVENT_DATE=date_of_death)
-        death_table = person_table.filter(person_table.EVENT_DATE.notnull())
-
+        death_table = person_table.filter(person_table.DATE_OF_DEATH.notnull())
         if self.date_range is not None:
             death_table = self.date_range.filter(death_table)
 
@@ -79,12 +62,19 @@ class DeathPhenotype(Phenotype):
             for rtr in self.relative_time_range:
                 death_table = rtr.filter(death_table)
 
+            # Compute VALUE = death_date - anchor_date using the first filter's anchor.
+            # attach_anchor_and_get_reference_date joins the anchor phenotype if provided,
+            # otherwise reads INDEX_DATE directly from the table.
+            # NOTE: Filter.filter() strips any columns added during filtering (e.g.
+            # DAYS_FROM_ANCHOR), so we must compute the day diff explicitly here.
             from phenex.phenotypes.functions import attach_anchor_and_get_reference_date
 
             rtr0 = self.relative_time_range[0]
             death_table, reference_column = attach_anchor_and_get_reference_date(
                 death_table, anchor_phenotype=rtr0.anchor_phenotype
             )
+            # reference_column.delta(b) = reference - b  (anchor - death)
+            # We want death - anchor, so negate.
             day_diff = (-reference_column.delta(death_table.EVENT_DATE, "day")).cast(
                 "float64"
             )
@@ -93,7 +83,5 @@ class DeathPhenotype(Phenotype):
             death_table = death_table.mutate(VALUE=ibis.null("float64"))
 
         death_table = death_table.mutate(BOOLEAN=True)
-        cols = ["PERSON_ID", "EVENT_DATE", "VALUE", "BOOLEAN"]
-        if "INDEX_DATE" in death_table.columns:
-            cols.append("INDEX_DATE")
-        return death_table.select(cols)
+        death_table = death_table.mutate(EVENT_DATE=death_table.DATE_OF_DEATH)
+        return death_table.select(["PERSON_ID", "EVENT_DATE", "VALUE", "BOOLEAN"])
