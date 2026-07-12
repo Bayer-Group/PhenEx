@@ -36,25 +36,44 @@ class PhenexTable:
 
     IMPORTANT: The format string must use the syntax of your database backend, not Python strftime.
     Common formats by backend:
-    - Snowflake: "YYYYMMDD", "YYYYMM", "YYYY-MM-DD"
-    - DuckDB: "%Y%m%d", "%Y%m", "%Y-%m-%d"
-    - BigQuery: "%Y%m%d", "%Y%m", "%Y-%m-%d"
+    - Snowflake: "YYYYMMDD", "YYYYMM", "YYYY", "YYYY-MM-DD"
+    - DuckDB:    "%Y%m%d",  "%Y%m",  "%Y",  "%Y-%m-%d"
+    - BigQuery:  "%Y%m%d",  "%Y%m",  "%Y",  "%Y-%m-%d"
 
-    Example (Snowflake):
+    Each DATE_FORMAT value can be either a plain format string or a two-element list
+    [format, position]. The list form is meaningful for year-only (YYYY / %Y) and
+    year-month (YYYYMM / %Y%m) formats, which do not encode a specific day. position
+    resolves the ambiguity:
+
+    - 'first'  — first day of the year (Jan 1) or month (the 1st)
+    - 'middle' — mid-year (Jul 2) or mid-month (the 15th)
+    - 'last'   — last day of the year (Dec 31) or last day of the month
+
+    Examples:
     ```python
     class MyCodeTable(CodeTable):
         DATE_FORMAT = {"EVENTDATE": "YYYYMMDD"}  # parse "20240115" -> 2024-01-15
         DEFAULT_MAPPING = {
-            "EVENT_DATE": "EVENTDATE",  # single column with date formatting
+            "EVENT_DATE": "EVENTDATE",
         }
 
     class MyCodeTableCoalesce(CodeTable):
         DATE_FORMAT = {
-            "STARTDATE": "YYYYMMDD",      # parse "20240115" -> 2024-01-15
+            "STARTDATE": "YYYYMMDD",       # parse "20240115" -> 2024-01-15
             "RECORDEDDATE": "DD/MM/YYYY",  # parse "15/01/2024" -> 2024-01-15
         }
         DEFAULT_MAPPING = {
             "EVENT_DATE": ["STARTDATE", "RECORDEDDATE"],  # coalesce after formatting
+        }
+
+    class MyYearMonthTable(CodeTable):  # Snowflake, year-month columns
+        DATE_FORMAT = {
+            "STUDY_MONTH": ["YYYYMM", "first"],   # "202401" -> 2024-01-01
+            "BIRTH_YEAR":  ["YYYY",   "middle"],  # "1990"   -> 1990-07-02
+            "ENROL_MONTH": ["YYYYMM", "last"],    # "202401" -> 2024-01-31
+        }
+        DEFAULT_MAPPING = {
+            "EVENT_DATE": "STUDY_MONTH",
         }
     ```
 
@@ -210,16 +229,47 @@ class PhenexTable:
     def _format_column(self, col_ref, col_name):
         """
         Apply date formatting if the source column has a DATE_FORMAT entry.
-        Parses string columns to timestamps using the backend's native format.
 
-        Blank/empty strings cannot be parsed into a timestamp, so they are
-        nullified before parsing. This drops unformattable values to null
-        instead of raising a date-formatting error.
+        DATE_FORMAT values can be:
+        - A format string: the column is parsed directly via to_timestamp.
+        - A [format, position] list: for year-only (YYYY / %Y) or year-month
+          (YYYYMM / %Y%m) formats, position resolves the ambiguous day:
+            'first'  — Jan 1 or the 1st of the month
+            'middle' — Jul 2 or the 15th of the month
+            'last'   — Dec 31 or the last day of the month
+
+        Blank/empty strings are nullified before parsing to avoid format errors.
         """
-        if col_name in self.DATE_FORMAT:
-            col_ref = col_ref.nullif("")
-            return col_ref.to_timestamp(self.DATE_FORMAT[col_name])
-        return col_ref
+        if col_name not in self.DATE_FORMAT:
+            return col_ref
+
+        fmt_spec = self.DATE_FORMAT[col_name]
+        fmt, position = (fmt_spec[0], fmt_spec[1]) if isinstance(fmt_spec, list) else (fmt_spec, None)
+
+        col_ref = col_ref.nullif("")
+
+        if position is None:
+            return col_ref.to_timestamp(fmt)
+
+        # Detect backend style: Snowflake has no '%'; DuckDB/BigQuery use '%' prefixes.
+        full_date_fmt = "YYYYMMDD" if "%" not in fmt else "%Y%m%d"
+
+        if fmt in ("YYYY", "%Y"):  # year-only
+            suffix = {"first": "0101", "middle": "0702", "last": "1231"}[position]
+            return col_ref.concat(suffix).to_timestamp(full_date_fmt)
+
+        if fmt in ("YYYYMM", "%Y%m"):  # year-month
+            if position == "last":
+                # Parse as 1st of month, then advance to the true last day.
+                first_of_month = col_ref.concat("01").to_timestamp(full_date_fmt)
+                return (first_of_month + ibis.interval(months=1) - ibis.interval(days=1)).cast("timestamp")
+            suffix = {"first": "01", "middle": "15"}[position]
+            return col_ref.concat(suffix).to_timestamp(full_date_fmt)
+
+        raise ValueError(
+            f"DATE_FORMAT position '{position}' is only supported for year-only "
+            f"(YYYY / %Y) or year-month (YYYYMM / %Y%m) formats, got '{fmt}'."
+        )
 
     def _resolve_column_mapping(self, table, column_mapping):
         """
