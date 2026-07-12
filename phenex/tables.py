@@ -257,7 +257,11 @@ class PhenexTable:
             return col_ref.cast("date")
 
         fmt_spec = self.DATE_FORMAT[col_name]
-        fmt, position = (fmt_spec[0], fmt_spec[1]) if isinstance(fmt_spec, list) else (fmt_spec, None)
+        fmt, position = (
+            (fmt_spec[0], fmt_spec[1])
+            if isinstance(fmt_spec, list)
+            else (fmt_spec, None)
+        )
 
         col_ref = col_ref.nullif("")
 
@@ -275,7 +279,9 @@ class PhenexTable:
             if position == "last":
                 # Parse as 1st of month, then advance to the true last day.
                 first_of_month = col_ref.concat("01").to_timestamp(full_date_fmt)
-                return (first_of_month + ibis.interval(months=1) - ibis.interval(days=1)).cast("date")
+                return (
+                    first_of_month + ibis.interval(months=1) - ibis.interval(days=1)
+                ).cast("date")
             suffix = {"first": "01", "middle": "15"}[position]
             return col_ref.concat(suffix).to_timestamp(full_date_fmt).cast("date")
 

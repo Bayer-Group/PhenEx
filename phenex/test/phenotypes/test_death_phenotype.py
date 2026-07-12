@@ -321,9 +321,9 @@ class DeathPhenotypeBothDateColumnsTestGenerator(PhenotypeTestGenerator):
                 # P0: exact date wins over month; P1: only month (date is null); P2: only date (month is null); P3: neither
                 "DATE_OF_DEATH": [
                     datetime.datetime(2022, 1, 10),  # P0: exact date
-                    None,                             # P1: falls back to month
+                    None,  # P1: falls back to month
                     datetime.datetime(2022, 3, 20),  # P2: exact date, no month
-                    None,                             # P3: no death
+                    None,  # P3: no death
                 ],
                 "MONTH_OF_DEATH": [202201, 202112, None, None],
                 "INDEX_DATE": datetime.datetime(2022, 1, 1),
