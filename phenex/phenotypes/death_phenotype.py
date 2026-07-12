@@ -82,6 +82,10 @@ class DeathPhenotype(Phenotype):
         else:
             death_table = death_table.mutate(VALUE=ibis.null("float64"))
 
+        death_table = death_table.mutate(EVENT_DATE=death_table.DATE_OF_DEATH.cast("date"))
         death_table = death_table.mutate(BOOLEAN=True)
-        death_table = death_table.mutate(EVENT_DATE=death_table.DATE_OF_DEATH)
-        return death_table.select(["PERSON_ID", "EVENT_DATE", "VALUE", "BOOLEAN"])
+
+        cols = ["PERSON_ID", "EVENT_DATE", "VALUE", "BOOLEAN"]
+        if "INDEX_DATE" in death_table.columns:
+            cols.append("INDEX_DATE")
+        return death_table.select(cols)

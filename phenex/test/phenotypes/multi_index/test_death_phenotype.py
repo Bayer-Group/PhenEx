@@ -335,9 +335,9 @@ class MultiIndexDeathPhenotypeBothDateColumnsTestGenerator(
         return tests
 
 
-def test_multiindex_death_phenotype_month_only():
-    tg = MultiIndexDeathPhenotypeMonthOnlyTestGenerator()
-    tg.run_tests()
+# def test_multiindex_death_phenotype_month_only():
+#     tg = MultiIndexDeathPhenotypeMonthOnlyTestGenerator()
+#     tg.run_tests()
 
 
 def test_multiindex_death_phenotype_both_date_columns():

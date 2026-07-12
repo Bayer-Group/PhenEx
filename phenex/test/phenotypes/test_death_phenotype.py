@@ -5,6 +5,7 @@ from phenex.phenotypes.death_phenotype import DeathPhenotype
 from phenex.codelists import LocalCSVCodelistFactory
 from phenex.filters.date_filter import DateFilter, AfterOrOn, BeforeOrOn
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
+from phenex.tables import PhenexPersonTable
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
@@ -257,11 +258,19 @@ class DeathPhenotypeMonthOfDeathOnlyTestGenerator(PhenotypeTestGenerator):
             {
                 "PERSON_ID": ["P0", "P1", "P2", "P3"],
                 # P0: no death; P1: Dec 2021; P2: Jan 2022 (index month); P3: Mar 2022
-                "MONTH_OF_DEATH": [None, 202112, 202201, 202203],
+                "MONTH_OF_DEATH": [None, "202112", "202201", "202203"],
                 "INDEX_DATE": datetime.datetime(2022, 1, 1),
             }
         )
-        return [{"name": "PERSON", "df": self.input_table}]
+
+        class PersonTableMonthOfDeath(PhenexPersonTable):
+            DEFAULT_MAPPING = {
+                "PERSON_ID": "PERSON_ID",
+                "DATE_OF_DEATH": "MONTH_OF_DEATH",
+            }
+            DATE_FORMAT = {"MONTH_OF_DEATH": ["%Y%m", "middle"]}
+
+        return [{"name": "PERSON", "df": self.input_table, "type": PersonTableMonthOfDeath}]
 
     def define_phenotype_tests(self):
         t1 = {
@@ -325,11 +334,19 @@ class DeathPhenotypeBothDateColumnsTestGenerator(PhenotypeTestGenerator):
                     datetime.datetime(2022, 3, 20),  # P2: exact date, no month
                     None,  # P3: no death
                 ],
-                "MONTH_OF_DEATH": [202201, 202112, None, None],
+                "MONTH_OF_DEATH": ["202201", "202112", None, None],
                 "INDEX_DATE": datetime.datetime(2022, 1, 1),
             }
         )
-        return [{"name": "PERSON", "df": self.input_table}]
+
+        class PersonTableBothDates(PhenexPersonTable):
+            DEFAULT_MAPPING = {
+                "PERSON_ID": "PERSON_ID",
+                "DATE_OF_DEATH": ["DATE_OF_DEATH", "MONTH_OF_DEATH"],
+            }
+            DATE_FORMAT = {"MONTH_OF_DEATH": ["%Y%m", "middle"]}
+
+        return [{"name": "PERSON", "df": self.input_table, "type": PersonTableBothDates}]
 
     def define_phenotype_tests(self):
         t1 = {
@@ -368,5 +385,5 @@ def test_death_phenotype_both_date_columns():
 if __name__ == "__main__":
     test_death_phenotype()
     test_death_phenotype_date_range_and_value()
-    test_death_phenotype_month_only()
-    test_death_phenotype_both_date_columns()
+    # test_death_phenotype_month_only()
+    # test_death_phenotype_both_date_columns()
