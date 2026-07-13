@@ -70,7 +70,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
 
   // Step 2 – cohorts (may be pre-filled by AI)
   const [cohorts, setCohorts] = useState<CohortIntake[]>([
-    { name: '', description: '', entry_criterion: '', inclusions: [''], exclusions: [''] },
+    { name: '', description: '', entry_criterion: '', inclusions: [], exclusions: [] },
   ]);
 
   // Step 3 – codelists
@@ -100,7 +100,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
     setParseError('');
     setStudyName('');
     setRawDescription('');
-    setCohorts([{ name: '', description: '', entry_criterion: '', inclusions: [''], exclusions: [''] }]);
+    setCohorts([{ name: '', description: '', entry_criterion: '', inclusions: [], exclusions: [] }]);
     setCodelistNotes('');
     setCodelistFiles([]);
     setSelectedDatabase('');
@@ -177,8 +177,8 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
         setCohorts(
           result.cohorts.map(c => ({
             ...c,
-            inclusions: c.inclusions.length ? c.inclusions : [''],
-            exclusions: c.exclusions.length ? c.exclusions : [''],
+            inclusions: c.inclusions.length ? c.inclusions : [],
+            exclusions: c.exclusions.length ? c.exclusions : [],
           })),
         );
       }
@@ -222,13 +222,13 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
       prev.map((c, i) => {
         if (i !== cohortIdx) return c;
         const list = c[field].filter((_, li) => li !== itemIdx);
-        return { ...c, [field]: list.length ? list : [''] };
+        return { ...c, [field]: list };
       }),
     );
   };
 
   const addCohort = () => {
-    setCohorts(prev => [...prev, { name: '', description: '', entry_criterion: '', inclusions: [''], exclusions: [''] }]);
+    setCohorts(prev => [...prev, { name: '', description: '', entry_criterion: '', inclusions: [], exclusions: [] }]);
   };
 
   const removeCohort = (idx: number) => {
@@ -262,8 +262,8 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
             result.cohorts.map(c => ({
               ...c,
               entry_criterion: c.entry_criterion || '',
-              inclusions: c.inclusions.length ? c.inclusions : [''],
-              exclusions: c.exclusions.length ? c.exclusions : [''],
+              inclusions: c.inclusions.length ? c.inclusions : [],
+              exclusions: c.exclusions.length ? c.exclusions : [],
             })),
           );
         }
