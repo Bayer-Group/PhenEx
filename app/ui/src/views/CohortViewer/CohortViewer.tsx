@@ -328,7 +328,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
         hideScrollbars={showIssuesPopover}
         hideVerticalScrollbar={isRightPanelOpen}
         ref={gridRef}
-        gridBottomPadding={400}
+        gridBottomPadding={200}
         flipScrollDirection={flipScrollDirection}
       />
     );

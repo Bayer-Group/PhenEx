@@ -80,6 +80,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     const rootRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const pinnedContentRef = useRef<HTMLDivElement>(null);
+    const prevScrollTopRef = useRef(0);
     const pinnedRowEls = useRef<Map<string, HTMLDivElement>>(new Map());
     const scrollRowEls = useRef<Map<string, HTMLDivElement>>(new Map());
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
@@ -423,6 +424,10 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     // new scrollTop, so the guard short-circuits.
     const handleScrollPanelScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
       const top = e.currentTarget.scrollTop;
+      // If scrollTop didn't change, this event was fired by a scrollLeft update
+      // (e.g. the NavBar scrubber). Skip vertical sync to avoid glitches.
+      if (top === prevScrollTopRef.current) return;
+      prevScrollTopRef.current = top;
       if (pinnedContentRef.current && pinnedContentRef.current.scrollTop !== top) {
         pinnedContentRef.current.scrollTop = top;
       }
@@ -435,18 +440,32 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       }
     }, []);
 
-    const handleScrollPanelWheel = useCallback(
-      (e: React.WheelEvent<HTMLDivElement>) => {
+    // Attach a non-passive wheel listener so e.preventDefault() actually suppresses
+    // the browser's native vertical scroll when we convert it to horizontal scroll.
+    // React's synthetic onWheel can be passive in React 17+, making preventDefault a no-op.
+    useEffect(() => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const handler = (e: WheelEvent) => {
         if (!flipScrollDirection) return;
-        const el = scrollRef.current;
-        if (!el) return;
-        // Vertical wheel drives horizontal scroll; shift+wheel keeps vertical.
-        if (!e.shiftKey && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          // Shift+scroll → vertical scroll.
+          // On macOS the OS converts shift+vertical gesture to deltaX, so fall back to it.
+          e.preventDefault();
+          const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+          el.scrollTop += delta;
+        } else if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          // Plain vertical wheel → horizontal scroll (flipped)
           el.scrollLeft += e.deltaY;
+        } else {
+          // Predominantly horizontal gesture → horizontal scroll
+          el.scrollLeft += e.deltaX;
         }
-      },
-      [flipScrollDirection]
-    );
+      };
+      el.addEventListener('wheel', handler, { passive: false });
+      return () => el.removeEventListener('wheel', handler);
+    }, [flipScrollDirection]);
 
     useImperativeHandle(
       ref,
@@ -525,7 +544,6 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
               contentWidth={scrollWidth}
               bottomPadding={gridBottomPadding}
               onScroll={handleScrollPanelScroll}
-              onWheel={handleScrollPanelWheel}
             >
               {renderHeaderRow(scrollColumns)}
               {renderRows('scroll', scrollColumns)}
