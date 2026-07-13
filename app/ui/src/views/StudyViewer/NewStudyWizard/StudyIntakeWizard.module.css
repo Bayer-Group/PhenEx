@@ -295,94 +295,146 @@
   margin: 4px 0;
 }
 
-/* ── Step 3: cohorts ────────────────────────────────────────────────── */
+/* ── Step 2: cohorts ────────────────────────────────────────────────── */
+
+.cohortsList {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
 
 .cohortCard {
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
+  border-radius: 12px;
+  overflow: hidden;
   background: var(--color-background-secondary);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  box-shadow: 0 1px 6px color-mix(in srgb, var(--text-color-primary) 6%, transparent);
 }
 
+/* Top zone: cohort identity — this is the primary visual element */
 .cohortCardHeader {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px 16px;
+  background: color-mix(in srgb, var(--color-accent-bright) 6%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-accent-bright) 15%, var(--border-color));
+}
+
+.cohortIdentity {
+  flex: 1;
+  min-width: 0;
 }
 
 .cohortNameInput {
-  flex: 1;
-  padding: 8px 12px;
-  font-size: 15px;
+  display: block;
+  width: 100%;
+  padding: 0;
+  font-size: 17px;
   font-family: 'IBMPlexSans-semibold', sans-serif;
   color: var(--color-accent-bright);
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--border-color);
-  outline: none;
-}
-
-.cohortNameInput:focus {
-  border-color: var(--color-accent-bright);
-}
-
-.cohortDescInput {
-  width: 100%;
-  padding: 7px 12px;
-  font-size: 13px;
-  font-family: inherit;
-  color: var(--text-color-primary);
-  background: transparent;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
   outline: none;
   box-sizing: border-box;
 }
 
-.entryBox {
-  background: color-mix(in srgb, var(--color-accent-bright) 6%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-accent-bright) 30%, transparent);
-  border-radius: 6px;
-  padding: 10px 12px;
+.cohortNameInput::placeholder {
+  color: color-mix(in srgb, var(--color-accent-bright) 40%, transparent);
+  font-family: 'IBMPlexSans', sans-serif;
+}
+
+.cohortDescInput {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 0;
+  font-size: 13px;
+  font-family: inherit;
+  font-style: italic;
+  color: var(--text-color-secondary);
+  background: transparent;
+  border: none;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.cohortDescInput::placeholder {
+  color: color-mix(in srgb, var(--text-color-secondary) 55%, transparent);
+}
+
+.removeCohortBtn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-color-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  opacity: 0.5;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.removeCohortBtn:hover {
+  opacity: 1;
+  color: #ef4444;
+  background: color-mix(in srgb, #ef4444 10%, transparent);
+}
+
+/* Criteria zone: below a divider */
+.cohortCriteria {
+  border-top: 1px solid var(--border-color);
+  padding: 14px 20px 18px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
+}
+
+/* Entry criterion — secondary to cohort, primary within criteria */
+.entryRow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 4px;
+  padding: 8px 10px 10px;
+  background: color-mix(in srgb, var(--color-accent-bright) 4%, transparent);
+  border-radius: 7px;
 }
 
 .entryLabel {
   font-family: 'IBMPlexSans-semibold', sans-serif;
-  font-size: 11px;
-  color: var(--color-accent-bright);
-  margin: 0;
+  font-size: 12px;
+  color: var(--text-color-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.entryInput {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-color-primary);
+  background: var(--input-bg-color, var(--color-background-primary));
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.entryInput:focus {
+  border-color: var(--color-accent-bright);
+}
+
+.entryInput::placeholder {
+  color: var(--text-color-secondary);
 }
 
 .required {
   color: #ef4444;
-}
-
-.entryInput {
-  border-color: color-mix(in srgb, var(--color-accent-bright) 40%, transparent) !important;
-}
-
-.removeCohortBtn {
-  background: none;
-  border: none;
-  color: var(--text-color-secondary);
-  font-size: 14px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-}
-
-.removeCohortBtn:hover {
-  color: #ef4444;
-  background: color-mix(in srgb, #ef4444 10%, transparent);
 }
 
 .criteriaRow {
@@ -461,6 +513,7 @@
 }
 
 .addCohortBtn {
+  margin-top: 4px;
   padding: 10px 18px;
   background: none;
   border: 1px dashed var(--border-color);
