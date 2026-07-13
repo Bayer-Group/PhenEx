@@ -186,7 +186,12 @@ class _BaseSheetWriter:
     @staticmethod
     def _clean_numeric(value):
         """Convert whole-number floats to int (e.g. 98.0 -> 98)."""
-        if isinstance(value, float) and not math.isnan(value) and value == int(value):
+        if (
+            isinstance(value, float)
+            and not math.isnan(value)
+            and not math.isinf(value)
+            and value == int(value)
+        ):
             return int(value)
         return value
 
@@ -201,6 +206,29 @@ class _BaseSheetWriter:
             return None
         value = max(235 - 20 * (lvl - 1), 100)
         return f"{value:02X}{value:02X}{value:02X}"
+
+    @staticmethod
+    def _lighten_hex(hex_color: Optional[str], level) -> Optional[str]:
+        """Lighten a hex colour by blending toward white based on nesting level.
+
+        Used for component rows so that deeper nesting levels appear
+        progressively lighter while preserving the parent's hue.
+        """
+        if not hex_color:
+            return hex_color
+        try:
+            lvl = int(level)
+        except (TypeError, ValueError):
+            lvl = 0
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        # Each level blends ~22% further toward white, capped at 70%.
+        factor = min(0.22 * max(lvl, 1), 0.7)
+        r = int(r + (255 - r) * factor)
+        g = int(g + (255 - g) * factor)
+        b = int(b + (255 - b) * factor)
+        return f"{r:02X}{g:02X}{b:02X}"
 
     @staticmethod
     def _cohort_text_colors(hex_color: str) -> Tuple[str, str]:

@@ -222,17 +222,21 @@ class Table1(Reporter):
         dfs = []
         for phenotype in value_phenotypes:
             _table = phenotype.table.select(["PERSON_ID", "VALUE"]).distinct()
+            # Cast VALUE to float to avoid integer-overflow in variance/std
+            # computations on fixed-precision backends (e.g. Snowflake computes
+            # SUM(VALUE^2), which overflows NUMBER(38,0) for large values).
+            _value = _table["VALUE"].cast("float64")
             d = {
                 "N": self._get_boolean_count_for_phenotype(phenotype),
-                "Mean": _table["VALUE"].mean().execute(),
-                "STD": _table["VALUE"].std().execute(),
-                "Min": _table["VALUE"].min().execute(),
-                "P10": _table["VALUE"].quantile(0.10).execute(),
-                "P25": _table["VALUE"].quantile(0.25).execute(),
-                "Median": _table["VALUE"].median().execute(),
-                "P75": _table["VALUE"].quantile(0.75).execute(),
-                "P90": _table["VALUE"].quantile(0.90).execute(),
-                "Max": _table["VALUE"].max().execute(),
+                "Mean": _value.mean().execute(),
+                "STD": _value.std().execute(),
+                "Min": _value.min().execute(),
+                "P10": _value.quantile(0.10).execute(),
+                "P25": _value.quantile(0.25).execute(),
+                "Median": _value.median().execute(),
+                "P75": _value.quantile(0.75).execute(),
+                "P90": _value.quantile(0.90).execute(),
+                "Max": _value.max().execute(),
                 "inex_order": self.cohort_names_in_order.index(phenotype.name),
                 "_level": getattr(phenotype, "_level", 0),
             }
@@ -389,6 +393,11 @@ class Table1(Reporter):
 
         with filepath.open("w") as f:
             json.dump(payload, f, indent=2, default=str)
+
+        if hasattr(self, "_value_distributions") and self._value_distributions:
+            dist_path = filepath.with_stem(f"{filepath.stem}_value_distributions")
+            with dist_path.open("w") as f:
+                json.dump(self._value_distributions, f, indent=2, default=str)
 
         return str(filepath.absolute())
 

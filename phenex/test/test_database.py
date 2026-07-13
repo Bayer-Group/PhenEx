@@ -6,6 +6,7 @@ import pytest
 from phenex.core.database import Database
 from phenex.filters import After, Before
 from phenex.mappers import OMOPDomains
+from phenex.util.database_sampler import DatabaseSampler
 from datetime import date
 import json
 
@@ -242,9 +243,37 @@ def test_database_with_only_data_period():
     db.validate()
 
 
+def test_database_sampler_default_is_none():
+    """sampler defaults to None when not provided — backward-compat contract."""
+    db = Database()
+    assert db.sampler is None
+
+
+def test_database_repr_surfaces_sampler_config():
+    """repr() must surface the sampler's fraction and seed when one is set.
+
+    (Regression: Database.repr() interpolated repr(sampler), which was the default
+    <object at 0x..> until DatabaseSampler.__repr__ was added — the config was invisible.)
+    """
+    db = Database(sampler=DatabaseSampler(fraction=0.25, seed=7), name="sampler_db")
+    r = repr(db)
+    assert "fraction=0.25" in r and "seed=7" in r, f"repr() hides sampler config: {r}"
+
+
+def test_database_repr_without_sampler_shows_none():
+    """repr() is safe when sampler is None and says so explicitly."""
+    db = Database(name="no_sampler_db")
+    r = repr(db)
+    assert "no_sampler_db" in r
+    assert "sampler=None" in r
+
+
 if __name__ == "__main__":
     test_database_with_only_data_period()
     test_database_default_name()
     test_snowflake_connector_serialization()
     test_postgres_connector_serialization()
+    test_database_sampler_default_is_none()
+    test_database_repr_surfaces_sampler_config()
+    test_database_repr_without_sampler_shows_none()
     # pytest.main([__file__])

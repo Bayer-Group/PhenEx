@@ -26,8 +26,11 @@ class ScorePhenotypeTestGenerator(PhenotypeTestGenerator):
             event_date_columnname="EVENT_DATE",
         )
 
+        index_date = datetime.date(2022, 1, 1)
+        df["INDEX_DATE"] = index_date
         df_person = pd.DataFrame()
         df_person["PERSON_ID"] = df["PERSON_ID"].unique()
+        df_person["INDEX_DATE"] = index_date
         return [
             {
                 "name": "CONDITION_OCCURRENCE",
@@ -143,8 +146,11 @@ class ScorePhenotypeValueFilterTestGenerator(PhenotypeTestGenerator):
             event_date_columnname="EVENT_DATE",
         )
 
+        index_date = datetime.date(2022, 1, 1)
+        df["INDEX_DATE"] = index_date
         df_person = pd.DataFrame()
         df_person["PERSON_ID"] = df["PERSON_ID"].unique()
+        df_person["INDEX_DATE"] = index_date
         return [
             {
                 "name": "CONDITION_OCCURRENCE",

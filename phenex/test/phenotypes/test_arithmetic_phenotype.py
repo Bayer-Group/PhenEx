@@ -50,9 +50,12 @@ class ArithmeticPhenotypeArithmeticPhenotypeTestGenerator(PhenotypeTestGenerator
             event_date_columnname="EVENT_DATE",
         )
         df["VALUE"] = range(df.shape[0])
+        index_date = datetime.date(2022, 1, 1)
+        df["INDEX_DATE"] = index_date
 
         df_person = pd.DataFrame()
         df_person["PERSON_ID"] = list(df["PERSON_ID"].unique())
+        df_person["INDEX_DATE"] = index_date
 
         return [
             {"name": "measurement", "df": df},
@@ -185,9 +188,13 @@ class ArithmeticPhenotypeCountPhenotypeTestGenerator(PhenotypeTestGenerator):
             ["c1"] * n_p1_c1 + ["c2"] * n_p1_c2 + ["c1"] * n_p2_c1 + ["c2"] * n_p2_c2
         )
         df["CODE_TYPE"] = ["ICD10CM"] * df.shape[0]
+        index_date = datetime.date(2022, 1, 1)
+        df["EVENT_DATE"] = index_date
+        df["INDEX_DATE"] = index_date
 
         df_person = pd.DataFrame()
         df_person["PERSON_ID"] = list(df["PERSON_ID"].unique())
+        df_person["INDEX_DATE"] = index_date
 
         return [
             {"name": "condition_occurrence", "df": df},
@@ -247,9 +254,12 @@ class ArithmeticPhenotypeIntegerArithmeticTestGenerator(PhenotypeTestGenerator):
             event_date_columnname="EVENT_DATE",
         )
         df["VALUE"] = range(df.shape[0])
+        index_date = datetime.date(2022, 1, 1)
+        df["INDEX_DATE"] = index_date
 
         df_person = pd.DataFrame()
         df_person["PERSON_ID"] = list(df["PERSON_ID"].unique())
+        df_person["INDEX_DATE"] = index_date
 
         return [
             {"name": "measurement", "df": df},

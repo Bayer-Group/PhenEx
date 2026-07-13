@@ -20,17 +20,27 @@ class ExclusionsTableNode(Node):
         self.index_phenotype = index_phenotype
 
     def _execute(self, tables: Dict[str, Table]):
-        exclusions_table = self.index_phenotype.table.select(["PERSON_ID"])
+        # Build base from entry criterion; add INDEX_DATE if ALL phenotype tables have it
+        if self.phenotypes and all(
+            "INDEX_DATE" in pt.table.columns for pt in self.phenotypes
+        ):
+            join_keys = ["PERSON_ID", "INDEX_DATE"]
+            exclusions_table = self.index_phenotype.table.mutate(
+                INDEX_DATE=self.index_phenotype.table.EVENT_DATE
+            ).select(["PERSON_ID", "INDEX_DATE"])
+        else:
+            join_keys = ["PERSON_ID"]
+            exclusions_table = self.index_phenotype.table.select(["PERSON_ID"])
 
         for pt in self.phenotypes:
-            pt_table = pt.table.select(["PERSON_ID", "BOOLEAN"]).rename(
+            pt_table = pt.table.select([*join_keys, "BOOLEAN"]).rename(
                 **{
                     f"{pt.name}_BOOLEAN": "BOOLEAN",
                 }
             )
-            exclusions_table = exclusions_table.left_join(pt_table, ["PERSON_ID"])
-            columns = exclusions_table.columns
-            columns.remove("PERSON_ID_right")
+            exclusions_table = exclusions_table.left_join(pt_table, join_keys)
+            drop_cols = [f"{k}_right" for k in join_keys]
+            columns = [c for c in exclusions_table.columns if c not in drop_cols]
             exclusions_table = exclusions_table.select(columns)
 
         # fill all nones with False
