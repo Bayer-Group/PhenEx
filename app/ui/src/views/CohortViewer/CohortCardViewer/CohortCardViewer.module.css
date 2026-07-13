@@ -25,19 +25,15 @@
   background-color: var(--background_color_light);
 }
 
-/* Scrollable area inside the pinned panel — sits below the sticky header. */
-.pinnedScrollArea {
-  position: relative;
+/* Scrollable body of the pinned panel — synced to the right panel via scrollTop. */
+.pinnedBody {
   flex: 1 1 0;
-  overflow: hidden;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scrollbar-width: none; /* Firefox */
 }
-
-.pinnedContent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  will-change: transform;
+.pinnedBody::-webkit-scrollbar {
+  display: none; /* Chrome / Safari */
 }
 
 /* ---- Scroll (right) panel ---- */
@@ -106,6 +102,30 @@
   font-size: 18px;
   font-family: 'IBMPlexSans-regular';
   color: black;
+}
+
+/* ---- Vertical scrollbar overlay ---- */
+/* Absolutely positioned over the full viewer height; pointer-events are
+   disabled on the region itself so it never blocks clicks on the grid. */
+.scrollbarRegion {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+.scrollbarRegion > * {
+  pointer-events: all;
+}
+
+.scrollBarTrack {
+  background-color: transparent;
+}
+
+.scrollBarThumb {
+  background-color: rgba(100, 96, 96, 0.2) !important;
+  width: 8px;
 }
 
 /* ---- Header row ---- */

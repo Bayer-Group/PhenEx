@@ -26,6 +26,10 @@ interface CohortCardRowProps {
   onDragOver: (e: React.DragEvent, rowIndex: number) => void;
   onDrop: (e: React.DragEvent, rowIndex: number) => void;
   onDragEnd: (e: React.DragEvent) => void;
+  /** Pinned-panel card appearance: round the top corners of this row. */
+  isCardHead?: boolean;
+  /** Pinned-panel card appearance: round the bottom corners of this row. */
+  isCardTail?: boolean;
 }
 
 export const CohortCardRow: React.FC<CohortCardRowProps> = ({
@@ -49,6 +53,8 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
   onDragOver,
   onDrop,
   onDragEnd,
+  isCardHead,
+  isCardTail,
 }) => {
   const id = rowData?.id ?? String(rowIndex);
   const backgroundColor = getHierarchicalBackgroundColor(
@@ -58,6 +64,8 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
 
   const rowStyle: React.CSSProperties = {
     ...(backgroundColor ? { backgroundColor } : {}),
+    ...(isCardHead ? { borderTopLeftRadius: 8, borderTopRightRadius: 8 } : {}),
+    ...(isCardTail ? { borderBottomLeftRadius: 8, borderBottomRightRadius: 8 } : {}),
   };
 
   return (

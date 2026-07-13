@@ -13,6 +13,7 @@ import { TableData } from '../tableTypes';
 import { CohortCardViewerPinnedCols } from './CohortCardViewerPinnedCols';
 import { CohortCardViewerScrollCols } from './CohortCardViewerScrollCols';
 import { CohortCardRow } from './CohortCardRow';
+import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import {
   ShimApi,
   ShimBacking,
@@ -416,11 +417,21 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       el.scrollLeft = (percentage / 100) * max;
     }, []);
 
-    // Sync the pinned panel's vertical position + optional wheel-to-horizontal.
+    // Sync vertical scroll between both panels via direct scrollTop assignment.
+    // The equality guard prevents a ping-pong loop: by the time the programmatic
+    // scroll event fires on the other panel, the source element already has the
+    // new scrollTop, so the guard short-circuits.
     const handleScrollPanelScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
       const top = e.currentTarget.scrollTop;
-      if (pinnedContentRef.current) {
-        pinnedContentRef.current.style.transform = `translateY(${-top}px)`;
+      if (pinnedContentRef.current && pinnedContentRef.current.scrollTop !== top) {
+        pinnedContentRef.current.scrollTop = top;
+      }
+    }, []);
+
+    const handlePinnedBodyScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+      const top = e.currentTarget.scrollTop;
+      if (scrollRef.current && scrollRef.current.scrollTop !== top) {
+        scrollRef.current.scrollTop = top;
       }
     }, []);
 
@@ -465,6 +476,8 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       rows.map((rowData, rowIndex) => {
         const id = rowData?.id ?? String(rowIndex);
         const isEditingRow = editing != null && editing.rowId === id;
+        const isCardHead = panel === 'pinned' && rowIndex === 0;
+        const isCardTail = panel === 'pinned' && rowIndex === rows.length - 1;
         return (
           <div key={id} data-row-id={id} style={{ display: 'contents' }}>
             <CohortCardRow
@@ -488,6 +501,8 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onDragEnd={handleDragEnd}
+              isCardHead={isCardHead}
+              isCardTail={isCardTail}
             />
           </div>
         );
@@ -502,7 +517,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           <div className={styles.emptyState}>No phenotypes defined</div>
         ) : (
           <>
-            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)}>
+            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)} bottomPadding={gridBottomPadding} onScroll={handlePinnedBodyScroll}>
               {renderRows('pinned', pinnedColumns)}
             </CohortCardViewerPinnedCols>
             <CohortCardViewerScrollCols
@@ -515,6 +530,18 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
               {renderHeaderRow(scrollColumns)}
               {renderRows('scroll', scrollColumns)}
             </CohortCardViewerScrollCols>
+            <div className={styles.scrollbarRegion}>
+              <SimpleCustomScrollbar
+                targetRef={scrollRef}
+                orientation="vertical"
+                marginTop={28}
+                marginBottom={10}
+                marginToEnd={10}
+                classNameTrack={styles.scrollBarTrack}
+                classNameThumb={styles.scrollBarThumb}
+                showOnHover={true}
+              />
+            </div>
           </>
         )}
       </div>
