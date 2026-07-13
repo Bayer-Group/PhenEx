@@ -50,7 +50,6 @@
   right: 0;
   bottom: 0;
   width: 20px;
-  pointer-events: none;
   z-index: 10;
 }
 
