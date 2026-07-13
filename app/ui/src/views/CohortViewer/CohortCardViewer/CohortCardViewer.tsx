@@ -95,6 +95,8 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     // --- Column split: pinned (left) vs scrollable (right) ---
     const pinnedColumns = useMemo(() => columns.filter(c => c.pinned === 'left' || c.pinned === true), [columns]);
     const scrollColumns = useMemo(() => columns.filter(c => !(c.pinned === 'left' || c.pinned === true)), [columns]);
+    const scrollColumnsRef = useRef(scrollColumns);
+    scrollColumnsRef.current = scrollColumns;
 
     const pinnedWidth = useMemo(
       () => pinnedColumns.reduce((sum, c) => sum + (c.flex ? 250 : c.width ?? 150), 0),
@@ -400,8 +402,26 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       (direction: 'left' | 'right') => {
         const el = scrollRef.current;
         if (!el) return;
-        const delta = 250 * (direction === 'right' ? 1 : -1);
-        el.scrollBy({ left: delta, behavior: 'smooth' });
+
+        // Build cumulative left-edge positions for each scroll column.
+        const boundaries = scrollColumnsRef.current.reduce<number[]>((acc, col) => {
+          const prev = acc.length > 0 ? acc[acc.length - 1] : 0;
+          acc.push(prev + (col.width ?? 150));
+          return acc;
+        }, [0]);
+        // boundaries[i] = left edge of column i; last entry = total scroll width
+
+        const current = el.scrollLeft;
+        let target: number;
+        if (direction === 'right') {
+          // Snap to the first boundary strictly greater than current position.
+          target = boundaries.find(b => b > current + 1) ?? boundaries[boundaries.length - 1];
+        } else {
+          // Snap to the last boundary strictly less than current position.
+          const candidates = boundaries.filter(b => b < current - 1);
+          target = candidates.length > 0 ? candidates[candidates.length - 1] : 0;
+        }
+        el.scrollTo({ left: target, behavior: 'smooth' });
       },
       []
     );
