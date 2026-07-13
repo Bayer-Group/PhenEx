@@ -11,7 +11,7 @@ from ..utils.auth import get_authenticated_user_id
 from ..utils.validation import validate_cohort_data_format
 
 
-@router.get("/study/{study_id}/cohort/{cohort_id}", tags=["cohort"])
+@router.get("/study/{study_id}/cohort/{cohort_id}", tags=["study cohort"])
 async def get_cohort(request: Request, study_id: str, cohort_id: str):
     """
     Retrieve a cohort by its ID within a specific study.
@@ -57,7 +57,7 @@ async def get_cohort(request: Request, study_id: str, cohort_id: str):
         )
 
 
-@router.put("/study/{study_id}/cohort/{cohort_id}", tags=["cohort"])
+@router.put("/study/{study_id}/cohort/{cohort_id}", tags=["study cohort"])
 async def create_or_update_cohort(
     request: Request,
     study_id: str,
@@ -96,10 +96,14 @@ async def create_or_update_cohort(
 
     if existing_cohort:
         effective_study_id = existing_cohort.get("study_id", study_id)
-        logger.info(f"Updating existing cohort {cohort_id} with study_id {effective_study_id}")
+        logger.info(
+            f"Updating existing cohort {cohort_id} with study_id {effective_study_id}"
+        )
     else:
         effective_study_id = study_id
-        logger.info(f"Creating new cohort {cohort_id} with study_id {effective_study_id}")
+        logger.info(
+            f"Creating new cohort {cohort_id} with study_id {effective_study_id}"
+        )
 
     try:
         await db_manager.update_cohort_for_user(
@@ -116,7 +120,7 @@ async def create_or_update_cohort(
         raise HTTPException(status_code=500, detail="Failed to create/update cohort.")
 
 
-@router.patch("/study/{study_id}/cohort/{cohort_id}/database", tags=["cohort"])
+@router.patch("/study/{study_id}/cohort/{cohort_id}/database", tags=["study cohort"])
 async def update_cohort_database(
     request: Request,
     study_id: str,
@@ -147,7 +151,9 @@ async def update_cohort_database(
         raise HTTPException(status_code=500, detail="Failed to update database.")
 
 
-@router.patch("/study/{study_id}/cohort/{cohort_id}/display_order", tags=["cohort"])
+@router.patch(
+    "/study/{study_id}/cohort/{cohort_id}/display_order", tags=["study cohort"]
+)
 async def update_cohort_display_order(
     request: Request,
     study_id: str,
@@ -174,7 +180,8 @@ async def update_cohort_display_order(
         )
         if not success:
             raise HTTPException(
-                status_code=404, detail=f"Cohort {cohort_id} not found or access denied."
+                status_code=404,
+                detail=f"Cohort {cohort_id} not found or access denied.",
             )
         return {"status": "success"}
     except HTTPException:
@@ -186,7 +193,7 @@ async def update_cohort_display_order(
         )
 
 
-@router.delete("/study/{study_id}/cohort/{cohort_id}", tags=["cohort"])
+@router.delete("/study/{study_id}/cohort/{cohort_id}", tags=["study cohort"])
 async def delete_cohort(request: Request, study_id: str, cohort_id: str):
     """
     Delete a cohort and all its versions.
@@ -223,5 +230,3 @@ async def delete_cohort(request: Request, study_id: str, cohort_id: str):
             status_code=500,
             detail=f"Failed to delete cohort {cohort_id}",
         )
-
-

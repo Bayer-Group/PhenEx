@@ -70,7 +70,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
 
   // Step 2 – cohorts (may be pre-filled by AI)
   const [cohorts, setCohorts] = useState<CohortIntake[]>([
-    { name: '', description: '', entry_criterion: '', inclusions: [''], exclusions: [''] },
+    { name: '', description: '', entry_criterion: '', inclusions: [], exclusions: [] },
   ]);
 
   // Step 3 – codelists
@@ -100,7 +100,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
     setParseError('');
     setStudyName('');
     setRawDescription('');
-    setCohorts([{ name: '', description: '', entry_criterion: '', inclusions: [''], exclusions: [''] }]);
+    setCohorts([{ name: '', description: '', entry_criterion: '', inclusions: [], exclusions: [] }]);
     setCodelistNotes('');
     setCodelistFiles([]);
     setSelectedDatabase('');
@@ -116,11 +116,18 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
     onClose();
   };
 
+  const fillEmptyCohortFields = (list: CohortIntake[]): CohortIntake[] =>
+    list.map((c, i) => ({
+      ...c,
+      name: c.name.trim() || `Cohort ${i + 1}`,
+      description: c.description.trim() || `Patient group ${i + 1}`,
+    }));
+
   const intake: StudyIntake = {
     studyType: 'cohort',
     studyName,
     rawDescription,
-    cohorts: cohorts.filter(c => c.name.trim()),
+    cohorts: fillEmptyCohortFields(cohorts).filter(c => c.name.trim()),
     codelistNotes,
     codelistFiles,
     conceptMode,
@@ -170,8 +177,8 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
         setCohorts(
           result.cohorts.map(c => ({
             ...c,
-            inclusions: c.inclusions.length ? c.inclusions : [''],
-            exclusions: c.exclusions.length ? c.exclusions : [''],
+            inclusions: c.inclusions.length ? c.inclusions : [],
+            exclusions: c.exclusions.length ? c.exclusions : [],
           })),
         );
       }
@@ -215,13 +222,13 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
       prev.map((c, i) => {
         if (i !== cohortIdx) return c;
         const list = c[field].filter((_, li) => li !== itemIdx);
-        return { ...c, [field]: list.length ? list : [''] };
+        return { ...c, [field]: list };
       }),
     );
   };
 
   const addCohort = () => {
-    setCohorts(prev => [...prev, { name: '', description: '', entry_criterion: '', inclusions: [''], exclusions: [''] }]);
+    setCohorts(prev => [...prev, { name: '', description: '', entry_criterion: '', inclusions: [], exclusions: [] }]);
   };
 
   const removeCohort = (idx: number) => {
@@ -234,7 +241,7 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
   const canAdvance = () => {
     if (step === 0) return conceptMode === 'manual' || uploadedText.trim().length > 0;
     if (step === 1) return studyName.trim().length > 0;
-    if (step === 2) return cohorts.some(c => c.name.trim() && c.entry_criterion.trim());
+    if (step === 2) return cohorts.some(c => c.entry_criterion.trim());
     if (step === 3) return true;
     if (step === 4) return true;
     if (step === 5) return selectedAction !== null;
@@ -255,8 +262,8 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
             result.cohorts.map(c => ({
               ...c,
               entry_criterion: c.entry_criterion || '',
-              inclusions: c.inclusions.length ? c.inclusions : [''],
-              exclusions: c.exclusions.length ? c.exclusions : [''],
+              inclusions: c.inclusions.length ? c.inclusions : [],
+              exclusions: c.exclusions.length ? c.exclusions : [],
             })),
           );
         }
@@ -277,6 +284,11 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
       return;
     }
     
+    // Fill default cohort name/description before leaving the cohorts step
+    if (step === 2) {
+      setCohorts(fillEmptyCohortFields(cohorts));
+    }
+
     if (step < STEP_TITLES.length - 1) setStep(s => s + 1);
   };
 
@@ -410,88 +422,97 @@ export const StudyIntakeWizard: FC<StudyIntakeWizardProps> = ({
         clinical event that defines a patient's index date (e.g. first prescription, first diagnosis).
       </p>
 
-      {cohorts.map((cohort, ci) => (
-        <div key={ci} className={styles.cohortCard}>
-          <div className={styles.cohortCardHeader}>
-            <input
-              className={styles.cohortNameInput}
-              value={cohort.name}
-              onChange={e => updateCohort(ci, 'name', e.target.value)}
-              placeholder={`Cohort ${ci + 1} name (e.g. Treatment Arm)`}
-            />
-            {cohorts.length > 1 && (
-              <button className={styles.removeCohortBtn} onClick={() => removeCohort(ci)}>
-                ✕
-              </button>
-            )}
-          </div>
-
-          <input
-            className={styles.cohortDescInput}
-            value={cohort.description}
-            onChange={e => updateCohort(ci, 'description', e.target.value)}
-            placeholder="Brief description of this cohort (optional)"
-          />
-
-          <div className={styles.entryBox}>
-            <p className={styles.entryLabel}>Entry criterion (index date) <span className={styles.required}>*</span></p>
-            <input
-              className={`${styles.cohortDescInput} ${styles.entryInput}`}
-              value={cohort.entry_criterion}
-              onChange={e => updateCohort(ci, 'entry_criterion', e.target.value)}
-              placeholder="e.g. First prescription of an SGLT2 inhibitor"
-            />
-          </div>
-
-          <div className={styles.criteriaRow}>
-            <div className={styles.criteriaCol}>
-              <p className={styles.criteriaLabel}>Inclusion criteria</p>
-              {cohort.inclusions.map((inc, ii) => (
-                <div key={ii} className={styles.criteriaItem}>
-                  <input
-                    className={styles.criteriaInput}
-                    value={inc}
-                    onChange={e => updateListItem(ci, 'inclusions', ii, e.target.value)}
-                    placeholder="e.g. Age ≥ 18 years"
-                  />
-                  <button
-                    className={styles.criteriaRemoveBtn}
-                    onClick={() => removeListItem(ci, 'inclusions', ii)}
-                  >
-                    −
-                  </button>
-                </div>
-              ))}
-              <button className={styles.criteriaAddBtn} onClick={() => addListItem(ci, 'inclusions')}>
-                + Add criterion
-              </button>
+      <div className={styles.cohortsList}>
+        {cohorts.map((cohort, ci) => (
+          <div key={ci} className={styles.cohortCard}>
+            {/* Identity zone */}
+            <div className={styles.cohortCardHeader}>
+              <div className={styles.cohortIdentity}>
+                <input
+                  className={styles.cohortNameInput}
+                  value={cohort.name}
+                  onChange={e => updateCohort(ci, 'name', e.target.value)}
+                  placeholder={`Cohort ${ci + 1} name`}
+                />
+                <input
+                  className={styles.cohortDescInput}
+                  value={cohort.description}
+                  onChange={e => updateCohort(ci, 'description', e.target.value)}
+                  placeholder="Brief description of this patient group"
+                />
+              </div>
+              {cohorts.length > 1 && (
+                <button className={styles.removeCohortBtn} onClick={() => removeCohort(ci)}>
+                  ✕
+                </button>
+              )}
             </div>
 
-            <div className={styles.criteriaCol}>
-              <p className={styles.criteriaLabel}>Exclusion criteria</p>
-              {cohort.exclusions.map((exc, ei) => (
-                <div key={ei} className={styles.criteriaItem}>
-                  <input
-                    className={styles.criteriaInput}
-                    value={exc}
-                    onChange={e => updateListItem(ci, 'exclusions', ei, e.target.value)}
-                    placeholder="e.g. Prior history of cancer"
-                  />
-                  <button
-                    className={styles.criteriaRemoveBtn}
-                    onClick={() => removeListItem(ci, 'exclusions', ei)}
-                  >
-                    −
+            {/* Criteria zone */}
+            <div className={styles.cohortCriteria}>
+              <div className={styles.entryRow}>
+                <p className={styles.entryLabel}>
+                  Entry criterion (index date) <span className={styles.required}>*</span>
+                </p>
+                <input
+                  className={styles.entryInput}
+                  value={cohort.entry_criterion}
+                  onChange={e => updateCohort(ci, 'entry_criterion', e.target.value)}
+                  placeholder="e.g. First prescription of an SGLT2 inhibitor"
+                />
+              </div>
+
+              <div className={styles.criteriaRow}>
+                <div className={styles.criteriaCol}>
+                  <p className={styles.criteriaLabel}>Inclusion criteria</p>
+                  {cohort.inclusions.map((inc, ii) => (
+                    <div key={ii} className={styles.criteriaItem}>
+                      <input
+                        className={styles.criteriaInput}
+                        value={inc}
+                        onChange={e => updateListItem(ci, 'inclusions', ii, e.target.value)}
+                        placeholder="e.g. Age ≥ 18 years"
+                      />
+                      <button
+                        className={styles.criteriaRemoveBtn}
+                        onClick={() => removeListItem(ci, 'inclusions', ii)}
+                      >
+                        −
+                      </button>
+                    </div>
+                  ))}
+                  <button className={styles.criteriaAddBtn} onClick={() => addListItem(ci, 'inclusions')}>
+                    + Add criterion
                   </button>
                 </div>
-              ))}
-              <button className={styles.criteriaAddBtn} onClick={() => addListItem(ci, 'exclusions')}>
-                + Add criterion
-              </button>
+
+                <div className={styles.criteriaCol}>
+                  <p className={styles.criteriaLabel}>Exclusion criteria</p>
+                  {cohort.exclusions.map((exc, ei) => (
+                    <div key={ei} className={styles.criteriaItem}>
+                      <input
+                        className={styles.criteriaInput}
+                        value={exc}
+                        onChange={e => updateListItem(ci, 'exclusions', ei, e.target.value)}
+                        placeholder="e.g. Prior history of cancer"
+                      />
+                      <button
+                        className={styles.criteriaRemoveBtn}
+                        onClick={() => removeListItem(ci, 'exclusions', ei)}
+                      >
+                        −
+                      </button>
+                    </div>
+                  ))}
+                  <button className={styles.criteriaAddBtn} onClick={() => addListItem(ci, 'exclusions')}>
+                    + Add criterion
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       <button className={styles.addCohortBtn} onClick={addCohort}>
         + Add another cohort

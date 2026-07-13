@@ -1,68 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import styles from './CodelistsViewer.module.css';
-import { TabsWithDropdown } from '../../../components/ButtonsAndTabs/Tabs/TabsWithDropdown';
-import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { AgGridReact } from '@ag-grid-community/react';
+import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { FileDropZone } from './FileDropZone/FileDropZone';
-import { CodelistInfoAccordianTabbedInfoDisplay } from './CodelistInfoAccordianTabbedInfoDisplay/CodelistInfoAccordianTabbedInfoDisplay';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
-import { AllCodelistsSummaryTable } from './CodelistsInfoDisplay/AllCodelistsSummaryTable';
+import { CodelistFilesTable } from './CodelistFilesTable';
+import { InfoPanelUploadButton } from '../../../components/ButtonsAndTabs/InfoPanelButton/InfoPanelUploadButton';
+
 interface CodelistsViewerProps {
   showTitle?: boolean;
 }
 
 export const CodelistsViewer: React.FC<CodelistsViewerProps> = ({ showTitle = true }) => {
   const [dataService] = useState(() => CohortDataService.getInstance());
-  const [activeTab, setActiveTab] = useState(0);
-  const [gridData, setGridData] = useState<{ columnDefs: any[]; rowData: any[] }>({
-    columnDefs: [],
-    rowData: [],
-  });
-  const [tabs, setTabs] = useState<string[]>(['All Codelists']);
+  const [, forceUpdate] = useState(0);
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleFilenamesChange = () => {
-      // setGridData(dataService.codelists_service.prepareAllCodelistsData());
-      setTabs(['All Codelists', ...(dataService.codelists_service._filenames || [])]);
-    };
+    // Load codelists from backend on mount
+    dataService.codelists_service.setFilenamesForCohort();
 
-    handleFilenamesChange();
-    dataService.codelists_service.addListener(handleFilenamesChange);
+    // Listen for changes to force re-render (e.g. after file upload)
+    const listener = () => forceUpdate(n => n + 1);
+    dataService.codelists_service.addListener(listener);
     return () => {
-      dataService.codelists_service.removeListener(handleFilenamesChange);
+      dataService.codelists_service.removeListener(listener);
     };
   }, [dataService]);
-
-  const handleTabChange = (index: number) => {
-    setActiveTab(index);
-    dataService.codelists_service.setActiveFile(index);
-    setGridData(
-      index === 0
-        ? dataService.codelists_service.prepareAllCodelistsData()
-        : dataService.codelists_service.prepareFileData(index)
-    );
-  };
-
-  useEffect(() => {
-    setGridData(dataService.codelists_service.prepareAllCodelistsData());
-  }, []);
 
   const handleFileDrop = (files: FileList) => {
     Array.from(files).forEach(file => {
       const reader = new FileReader();
-      reader.onload = e => {
+      reader.onload = async e => {
         try {
           const content = e.target?.result as string;
-          console.log("TRYING TO ADD FILE", content)
-
-          dataService.codelists_service.addFile({ filename: file.name, contents: content });
-          setGridData(dataService.codelists_service.prepareAllCodelistsData());
+          await dataService.codelists_service.addFile({ filename: file.name, contents: content });
         } catch (error) {
           console.error('Error parsing file:', error);
         }
       };
       reader.readAsText(file);
     });
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      handleFileDrop(files);
+    }
+  };
+
+  const handleFileSelect = (fileId: string | null) => {
+    setSelectedFileId(prev => prev === fileId ? null : fileId);
   };
 
   const infoContent = () => {
@@ -104,52 +92,49 @@ export const CodelistsViewer: React.FC<CodelistsViewerProps> = ({ showTitle = tr
     );
   };
 
-  const renderBottomContent = () => {
-    if (activeTab==0){
-      return <AllCodelistsSummaryTable />;
-    }
+  const headerControls = (
+    <InfoPanelUploadButton 
+      tooltipText="Upload Codelist" 
+      onFileSelect={handleFileUpload}
+      accept=".csv"
+      multiple={true}
+    />
+  );
+
+  const renderPreviewTable = () => {
+    if (!selectedFileId) return null;
+
+    const fileData = dataService.codelists_service.prepareFileDataById(selectedFileId);
+    if (!fileData) return null;
+
     return (
-      <AgGridReact
-        rowData={gridData.rowData}
-        columnDefs={gridData.columnDefs}
-        defaultColDef={{
-          sortable: true,
-          filter: true,
-          resizable: true,
-        }}
-        animateRows={true}
-        theme={dataService.codelists_service.getTheme()}
-      />
+      <div style={{ height: 250, minHeight: 250, marginTop: 8, borderTop: '1px solid var(--line-color-grid, #e0e0e0)' }}>
+        <AgGridReact
+          rowData={fileData.rowData}
+          columnDefs={fileData.columnDefs}
+          defaultColDef={{
+            sortable: true,
+            filter: true,
+            resizable: true,
+          }}
+          animateRows={true}
+          headerHeight={28}
+          theme={dataService.codelists_service.getTheme()}
+        />
+      </div>
     );
-  }
+  };
 
   return (
     <FileDropZone onFileDrop={handleFileDrop}>
-      <SlideoverPanel title="Codelists" info={infoContent()} showTitle={showTitle}>
-        <div className={styles.container}>
-          <div className={styles.topSection}>
-            <div className={styles.tabsContainer}>
-              <TabsWithDropdown
-                width="auto"
-                height="auto"
-                tabs={tabs}
-                active_tab_index={activeTab}
-                onTabChange={handleTabChange}
-              />
-            </div>
-              <div className={styles.infoBox}>
-                {activeTab !== 0 && (
-                  <CodelistInfoAccordianTabbedInfoDisplay title={tabs[activeTab]} />
-                )}
-            </div>
-          </div>
-          <div className={styles.bottomSection}>
-            <div className={styles.tableBox}>
-             {renderBottomContent()}
-            </div>
-
-          </div>
-        </div>
+      <SlideoverPanel 
+        title="Codelists" 
+        info={infoContent()} 
+        showTitle={showTitle}
+        headerControls={headerControls}
+      >
+        <CodelistFilesTable onFileSelect={handleFileSelect} selectedFileId={selectedFileId} />
+        {renderPreviewTable()}
       </SlideoverPanel>
     </FileDropZone>
   );

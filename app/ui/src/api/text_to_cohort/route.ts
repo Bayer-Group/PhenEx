@@ -103,6 +103,7 @@ export const suggestChangesForStudy = async (
   conversation_history?: Array<{user?: string; system?: string; user_action?: string}>,
   cohort_description?: string,
   active_cohort_id?: string,
+  signal?: AbortSignal,
 ): Promise<ReadableStream<Uint8Array>> => {
   const baseURL = (api.defaults.baseURL || '').replace(/\/$/, '');
   const url = new URL(`${baseURL}/copilot/chat`);
@@ -118,6 +119,7 @@ export const suggestChangesForStudy = async (
       conversation_history: conversation_history || [],
       cohort_description: cohort_description || null,
     }),
+    signal,
   });
 
   if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
@@ -404,6 +406,50 @@ export const exportStudy = async (studyId: string, format: 'py' | 'ipynb' = 'py'
     document.body.removeChild(a);
   } catch (error) {
     console.error('Error in exportStudy:', error);
+    throw error;
+  }
+};
+
+// ============================================================================
+// Constants API
+// ============================================================================
+
+export const getStudyConstants = async (studyId: string) => {
+  try {
+    const response = await api.get(`/study/${studyId}/constants`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching constants:', error);
+    throw error;
+  }
+};
+
+export const createConstant = async (studyId: string, constantData: any) => {
+  try {
+    const response = await api.post(`/study/${studyId}/constants`, constantData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating constant:', error);
+    throw error;
+  }
+};
+
+export const updateConstant = async (studyId: string, constantId: string, constantData: any) => {
+  try {
+    const response = await api.put(`/study/${studyId}/constants/${constantId}`, constantData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating constant:', error);
+    throw error;
+  }
+};
+
+export const deleteConstant = async (studyId: string, constantId: string) => {
+  try {
+    const response = await api.delete(`/study/${studyId}/constants/${constantId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting constant:', error);
     throw error;
   }
 };

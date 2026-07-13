@@ -164,6 +164,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         console.log('PhenexCellEditor: isPopup() called');
         return true;
       },
+      getPopupPosition() {
+        return 'under';
+      },
       isCancelAfterEnd() {
         console.log('PhenexCellEditor: isCancelAfterEnd() called');
         return false;

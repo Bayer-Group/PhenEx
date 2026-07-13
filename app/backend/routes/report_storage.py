@@ -79,6 +79,7 @@ def _sanitise(name: str) -> str:
 
 # ── Public API ───────────────────────────────────────────────────────────
 
+
 def list_runs() -> List[str]:
     """Return available run directory names."""
     if _get_s3_bucket():
@@ -86,7 +87,8 @@ def list_runs() -> List[str]:
     if not LOCAL_DATA_DIR.is_dir():
         return []
     return sorted(
-        d.name for d in LOCAL_DATA_DIR.iterdir()
+        d.name
+        for d in LOCAL_DATA_DIR.iterdir()
         if d.is_dir() and not d.name.startswith(".")
     )
 
@@ -94,7 +96,9 @@ def list_runs() -> List[str]:
 def list_cohorts(run_id: str) -> List[str]:
     """Return cohort directory names inside a run."""
     safe = _sanitise(run_id)
-    logger.info("list_cohorts: run_id=%r safe=%r s3=%s", run_id, safe, bool(_get_s3_bucket()))
+    logger.info(
+        "list_cohorts: run_id=%r safe=%r s3=%s", run_id, safe, bool(_get_s3_bucket())
+    )
     if _get_s3_bucket():
         _assert_prefix_exists(safe)
         result = _s3_list_dirs(_s3_prefix(safe))
@@ -137,7 +141,9 @@ def read_json(run_id: str, cohort_name: str, filename: str) -> Dict[str, Any]:
     if _get_s3_bucket():
         text = _s3_read_text(safe_run, safe_cohort, filename)
         if text is None:
-            raise HTTPException(status_code=404, detail=f"'{filename}' not found in cohort")
+            raise HTTPException(
+                status_code=404, detail=f"'{filename}' not found in cohort"
+            )
         try:
             return json.loads(text)
         except Exception as e:
@@ -170,7 +176,9 @@ def find_frozen_cohort(run_id: str, cohort_name: str) -> Optional[Dict[str, Any]
         try:
             s3 = _s3_client()
             resp = s3.list_objects_v2(
-                Bucket=bucket, Prefix=prefix, MaxKeys=1000,
+                Bucket=bucket,
+                Prefix=prefix,
+                MaxKeys=1000,
             )
             for obj in resp.get("Contents", []):
                 key = obj["Key"]
@@ -198,15 +206,14 @@ def find_frozen_cohort(run_id: str, cohort_name: str) -> Optional[Dict[str, Any]
 
 # ── S3 helpers ───────────────────────────────────────────────────────────
 
+
 def _s3_list_dirs(prefix: str) -> List[str]:
     """List immediate 'subdirectories' under an S3 prefix."""
     bucket = _get_s3_bucket()
     s3 = _s3_client()
     paginator = s3.get_paginator("list_objects_v2")
     dirs: List[str] = []
-    for page in paginator.paginate(
-        Bucket=bucket, Prefix=prefix, Delimiter="/"
-    ):
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix, Delimiter="/"):
         for cp in page.get("CommonPrefixes", []):
             name = cp["Prefix"].rstrip("/").rsplit("/", 1)[-1]
             if not name.startswith("."):
@@ -228,12 +235,26 @@ def _s3_read_text(run_id: str, *parts: str) -> Optional[str]:
         logger.info("_s3_read_text: success, %d bytes", len(body))
         return body
     except Exception as e:
-        error_code = getattr(getattr(e, 'response', {}).get('Error', {}), '__getitem__', lambda k: None)('Code') if hasattr(e, 'response') else None
-        if hasattr(e, 'response') and isinstance(e.response, dict):
-            error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+        error_code = (
+            getattr(
+                getattr(e, "response", {}).get("Error", {}),
+                "__getitem__",
+                lambda k: None,
+            )("Code")
+            if hasattr(e, "response")
+            else None
+        )
+        if hasattr(e, "response") and isinstance(e.response, dict):
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
         else:
             error_code = type(e).__name__
-        logger.warning("_s3_read_text FAILED: bucket=%r key=%r error_code=%s error=%s", bucket, key, error_code, e)
+        logger.warning(
+            "_s3_read_text FAILED: bucket=%r key=%r error_code=%s error=%s",
+            bucket,
+            key,
+            error_code,
+            e,
+        )
         return None
 
 
@@ -249,6 +270,7 @@ def _assert_prefix_exists(run_id: str) -> None:
 
 # ── Local helpers ────────────────────────────────────────────────────────
 
+
 def read_run_file(run_id: str, filename: str) -> Optional[Dict[str, Any]]:
     """Read a JSON file directly from the run directory (not a cohort subdir).
 
@@ -259,7 +281,9 @@ def read_run_file(run_id: str, filename: str) -> Optional[Dict[str, Any]]:
     if _get_s3_bucket():
         text = _s3_read_text(safe_run, filename)
         if text is None:
-            logger.warning("read_run_file: %r not found in S3 for run %r", filename, run_id)
+            logger.warning(
+                "read_run_file: %r not found in S3 for run %r", filename, run_id
+            )
             return None
         return json.loads(text)
 
@@ -267,7 +291,9 @@ def read_run_file(run_id: str, filename: str) -> Optional[Dict[str, Any]]:
     if not json_file.is_file():
         logger.warning("read_run_file: %s not found", json_file)
         return None
-    logger.info("read_run_file: reading %s (%.1f MB)", json_file, json_file.stat().st_size / 1e6)
+    logger.info(
+        "read_run_file: reading %s (%.1f MB)", json_file, json_file.stat().st_size / 1e6
+    )
     with json_file.open() as f:
         return json.load(f)
 
@@ -298,6 +324,10 @@ def _resolve_local_run(safe_run_id: str) -> Path:
     run_dir = LOCAL_DATA_DIR / safe_run_id
     logger.info("_resolve_local_run: checking %s", run_dir)
     if not run_dir.is_dir():
-        logger.error("_resolve_local_run: run not found at %s (LOCAL_DATA_DIR=%s)", run_dir, LOCAL_DATA_DIR)
+        logger.error(
+            "_resolve_local_run: run not found at %s (LOCAL_DATA_DIR=%s)",
+            run_dir,
+            LOCAL_DATA_DIR,
+        )
         raise HTTPException(status_code=404, detail=f"Run '{safe_run_id}' not found")
     return run_dir

@@ -17,35 +17,71 @@ export const ButtonsBar: FC<ButtonsBarProps> = ({ width, height, buttons, action
         height: height ? (typeof height === 'number' ? `${height}px` : height) : undefined,
       }}
     >
-      {buttons.map((button, index) => (
-        <button 
-          key={index} 
-          className={styles.button} 
-          style={{
-            backgroundColor: button.toLowerCase() === 'accept' ? 'var(--color_inclusion)' : 
-                           button.toLowerCase() === 'reject' ? 'var(--color_exclusion)' : 
-                           button === 'Retry' ? 'var(--color_inclusion)' : 'transparent',
-            color: button.toLowerCase() === 'accept' || button.toLowerCase() === 'reject' || button === 'Retry' ? 'white' : 'var(--text-color-inactive)',
-            border: button.toLowerCase() === 'accept' ? '1px solid var(--color_inclusion)' : 
-                    button.toLowerCase() === 'reject' ? '1px solid var(--color_exclusion)' : 
-                    button === 'Retry' ? '1px solid var(--color_inclusion)' : '1px solid var(--line-color)',
-            zIndex: 100
-          }}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (typeof actions[index] === 'function') {
-              try {
-                actions[index]();
-              } catch (error) {
-                console.error(`ButtonsBar: Error executing action ${index}:`, error);
+      {buttons.map((button, index) => {
+        const buttonLower = button.toLowerCase();
+        const isAccept = buttonLower === 'accept';
+        const isReject = buttonLower === 'reject';
+        const isRetry = button === 'Retry';
+        const isNewChat = button === 'New Chat';
+        const isHistory = button === 'History';
+        const isBack = button === 'Back';
+        const isStop = button === 'Stop';
+        const isSend = button === 'Send';
+        
+        // Determine styles based on button type
+        let backgroundColor: string;
+        let color: string;
+        let border: string;
+        
+        if (isAccept) {
+          backgroundColor = 'var(--color_inclusion)';
+          color = 'white';
+          border = '1px solid var(--color_inclusion)';
+        } else if (isReject || isStop) {
+          backgroundColor = 'var(--color_exclusion)';
+          color = 'white';
+          border = '1px solid var(--color_exclusion)';
+        } else if (isRetry || isSend) {
+          backgroundColor = 'var(--color-accent-bright)';
+          color = 'white';
+          border = '1px solid var(--color-accent-bright)';
+        } else if (isNewChat || isHistory || isBack) {
+          // Make New Chat, History, and Back buttons solid (non-transparent)
+          backgroundColor = 'var(--button-color-inactive)';
+          color = 'var(--text-color-inactive)';
+          border = '1px solid var(--line-color)';
+        } else {
+          backgroundColor = 'transparent';
+          color = 'var(--text-color-inactive)';
+          border = '1px solid var(--line-color)';
+        }
+        
+        return (
+          <button 
+            key={index} 
+            className={styles.button} 
+            style={{
+              backgroundColor,
+              color,
+              border,
+              zIndex: 100
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (typeof actions[index] === 'function') {
+                try {
+                  actions[index]();
+                } catch (error) {
+                  console.error(`ButtonsBar: Error executing action ${index}:`, error);
+                }
               }
-            }
-          }}
-        >
-          {button}
-        </button>
-      ))}
+            }}
+          >
+            {button}
+          </button>
+        );
+      })}
     </div>
   );
 };

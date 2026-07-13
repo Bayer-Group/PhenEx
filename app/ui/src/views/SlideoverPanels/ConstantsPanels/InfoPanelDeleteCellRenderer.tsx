@@ -21,7 +21,7 @@ interface InfoPanelDeleteCellRendererParams extends ICellRendererParams {
 }
 
 export const InfoPanelDeleteCellRenderer: React.FC<InfoPanelDeleteCellRendererParams> = (params) => {
-  const onDelete = params.colDef?.cellRendererParams?.onDelete;
+  const onDelete = params.onDelete;
   const handleClick = () => {
     if (onDelete && params.data) {
       onDelete(params.data);

@@ -1,6 +1,7 @@
-import { FC, useState, useEffect } from 'react';
+import { FC } from 'react';
 import { ButtonsBar } from '../../../components/ButtonsAndTabs/ButtonsBar/ButtonsBar';
 import styles from './InteractionBar.module.css';
+import { chatPanelDataService } from '../ChatPanelDataService';
 
 type InteractionState = 'empty' | 'thinking' | 'interactive' | 'retry';
 
@@ -12,77 +13,79 @@ interface InteractionBarProps {
   onRetry?: () => void;
   onNewChat?: () => void;
   onHistory?: () => void;
+  onSend?: () => void;
+  onStop?: () => void;
+  isAIThinking?: boolean;
 }
 
-export const InteractionBar: FC<InteractionBarProps> = ({ state, isProvisional = false, onAccept, onReject, onRetry, onNewChat, onHistory }) => {
-  const [dots, setDots] = useState('');
-
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
-
-    if (state === 'thinking') {
-      intervalId = setInterval(() => {
-        setDots(prev => {
-          switch (prev) {
-            case '':
-              return '.';
-            case '.':
-              return '..';
-            case '..':
-              return '...';
-
-            default:
-              return '';
-          }
-        });
-      }, 500);
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [state]);
-
-  if (state === 'thinking') {
-    return <span className={styles.thinkingContainer}>{dots}</span>;
-  }
+export const InteractionBar: FC<InteractionBarProps> = ({ 
+  state, 
+  isProvisional = false, 
+  onAccept, 
+  onReject, 
+  onRetry, 
+  onNewChat, 
+  onHistory,
+  onSend,
+  onStop,
+  isAIThinking = false
+}) => {
+  console.log('🔘 InteractionBar render - state:', state, 'isProvisional:', isProvisional, 'isAIThinking:', isAIThinking);
 
   // For all states, show appropriate buttons
   let buttons: string[] = [];
   let actions: (() => void)[] = [];
 
-  console.log('🔘 InteractionBar: Rendering with state:', state, 'isProvisional:', isProvisional);
+  console.log('🔘 InteractionBar: Rendering with state:', state, 'isProvisional:', isProvisional, 'isAIThinking:', isAIThinking);
+
+  if (isAIThinking) {
+    // Show thinking dots and Stop button
+    console.log('🔘 Rendering STOP button with dots:', dots);
+    return (
+      <div className={styles.buttonContainer}>
+        <ButtonsBar
+          width="auto"
+          height={30}
+          buttons={['Stop']}
+          actions={[() => {
+            console.log('🛑 Stop button clicked!');
+            if (onStop) onStop();
+          }]}
+        />
+      </div>
+    );
+  }
 
   if (state === 'interactive') {
     // Only show ACCEPT/REJECT if the cohort is provisional
     if (isProvisional) {
       console.log('✅ InteractionBar: Showing Accept/Reject buttons (provisional=true)');
-      buttons = ['Accept', 'Reject', 'New Chat', 'History'];
+      buttons = ['Accept', 'Reject', 'New Chat', 'History', 'Send'];
       actions = [
         onAccept || (() => {}),
         onReject || (() => {}),
         onNewChat || (() => {}),
-        onHistory || (() => {})
+        onHistory || (() => {}),
+        onSend || (() => {})
       ];
     } else {
       console.log('❌ InteractionBar: NOT showing Accept/Reject (provisional=false)');
-      buttons = ['New Chat', 'History'];
-      actions = [onNewChat || (() => {}), onHistory || (() => {})];
+      buttons = ['New Chat', 'History', 'Send'];
+      actions = [onNewChat || (() => {}), onHistory || (() => {}), onSend || (() => {})];
     }
   } else if (state === 'retry') {
     // Show RETRY NEW CHAT
-    buttons = ['Retry', 'New Chat', 'History'];
+    buttons = ['Retry', 'New Chat', 'History', 'Send'];
     actions = [
       onRetry || (() => {}),
       onNewChat || (() => {}),
-      onHistory || (() => {})
+      onHistory || (() => {}),
+      onSend || (() => {})
     ];
   } else {
-    // For 'empty' state, show only NEW CHAT
-    buttons = ['New Chat', 'History'];
-    actions = [onNewChat || (() => {}), onHistory || (() => {})];
+    // For 'empty' state, show only NEW CHAT HISTORY SEND
+    buttons = ['New Chat', 'History', 'Send'];
+    actions = [onNewChat || (() => {}), onHistory || (() => {}), onSend || (() => {})];
   }
 
   return (

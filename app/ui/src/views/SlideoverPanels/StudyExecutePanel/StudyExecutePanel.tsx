@@ -9,6 +9,8 @@ import {
   getExecutionLog,
   deleteExecution,
 } from '../../../api/text_to_cohort/route';
+import { getStudyIssues } from '../../../api/study/route';
+import { mainViewLayoutService } from '../../MainView/MainViewLayoutService';
 
 type LogEntry = { message: string; type: 'log' | 'error' | 'complete'; timestamp: Date };
 type Execution = { execution_id: string; started_at: string | null; status: string };
@@ -23,6 +25,8 @@ export const StudyExecutePanel: React.FC = () => {
   const [showRunsDropdown, setShowRunsDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<'logs' | 'log-file' | null>(null);
   const [logFileContent, setLogFileContent] = useState<string | null>(null);
+  const [hasValidationErrors, setHasValidationErrors] = useState(false);
+  const [validationErrorCount, setValidationErrorCount] = useState(0);
   const logsContainerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +43,18 @@ export const StudyExecutePanel: React.FC = () => {
     }
   };
 
+  const checkValidation = async () => {
+    const studyId = getStudyId();
+    if (!studyId) return;
+    try {
+      const validation = await getStudyIssues(studyId);
+      setHasValidationErrors(!validation.valid);
+      setValidationErrorCount(validation.errors.length);
+    } catch {
+      // silently ignore
+    }
+  };
+
   // Poll until the StudyDataService has a study loaded, then fetch executions once.
   useEffect(() => {
     let cancelled = false;
@@ -46,6 +62,7 @@ export const StudyExecutePanel: React.FC = () => {
       const studyId = getStudyId();
       if (studyId) {
         await fetchExecutions();
+        await checkValidation();
         return;
       }
       // Retry until study is available
@@ -56,6 +73,7 @@ export const StudyExecutePanel: React.FC = () => {
     };
     tryFetch();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -78,6 +96,18 @@ export const StudyExecutePanel: React.FC = () => {
   const handleExecute = async () => {
     const studyId = getStudyId();
     if (!studyId || isExecuting) return;
+
+    // Check validation before executing
+    await checkValidation();
+    if (hasValidationErrors) {
+      setLogs([{
+        message: `Cannot execute: Study has ${validationErrorCount} validation error${validationErrorCount !== 1 ? 's' : ''}. Please check the Issues tab.`,
+        type: 'error',
+        timestamp: new Date()
+      }]);
+      setViewMode('logs');
+      return;
+    }
 
     setIsExecuting(true);
     setExecutionState('running');
@@ -106,6 +136,7 @@ export const StudyExecutePanel: React.FC = () => {
     } finally {
       setIsExecuting(false);
       await fetchExecutions();
+      await checkValidation();
     }
   };
 
@@ -186,15 +217,35 @@ export const StudyExecutePanel: React.FC = () => {
       : executionState === 'success' ? styles.executeSuccess
       : executionState === 'failed' ? styles.executeFailed
       : '';
+    
+    const isDisabled = isExecuting || hasValidationErrors;
+    
     return (
       <div className={styles.controls}>
         <button
           className={`${styles.executeBtn} ${executeStateClass}`}
           onClick={handleExecute}
-          disabled={isExecuting}
+          disabled={isDisabled}
+          title={hasValidationErrors ? `Cannot execute: ${validationErrorCount} validation error${validationErrorCount !== 1 ? 's' : ''}. Check Issues tab.` : ''}
         >
           {isExecuting ? 'Running…' : 'Execute Study'}
         </button>
+        {hasValidationErrors && (
+          <div className={styles.validationWarning}>
+            {validationErrorCount} issue{validationErrorCount !== 1 ? 's' : ''} must be fixed before execution.{' '}
+            <span 
+              style={{ 
+                textDecoration: 'underline', 
+                cursor: 'pointer',
+                color: 'var(--color-accent-bright)'
+              }}
+              onClick={() => mainViewLayoutService.openRightPanelTab(3)}
+            >
+              See Issues tab
+            </span>
+            .
+          </div>
+        )}
       </div>
     );
   };

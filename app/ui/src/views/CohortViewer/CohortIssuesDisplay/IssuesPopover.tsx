@@ -24,6 +24,10 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
     setActiveTabIndex(index);
   };
 
+  const handleSwitchToAIChat = () => {
+    setActiveTabIndex(1); // Switch to AI Chat tab (index 1)
+  };
+
   const renderTabs = () => (
     <div className={styles.tabsWithIcon}>
       <img src={BirdIcon} alt="Fox" className={styles.birdIcon} />
@@ -75,7 +79,7 @@ export const IssuesPopover: React.FC<IssuesPopoverProps> = ({ issues, onClose, d
       <div className={`${styles.popover} ${issues.length === 0 ? styles.noIssues : ''}`}>
         {renderTransparentHeader()}
         {selectedView === 'Issues' ? (
-          <div ref={bodyRef} className={styles.body}><IssuesPopoverList issues={issues} /></div>
+          <div ref={bodyRef} className={styles.body}><IssuesPopoverList issues={issues} onSwitchToAIChat={handleSwitchToAIChat} /></div>
         ) : (
           <div ref={bodyRef} className={styles.body}>
             <ChatPanel/>

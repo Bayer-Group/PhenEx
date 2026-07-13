@@ -51,6 +51,7 @@ export const ConstantsTable: React.FC = () => {
               onCellValueChanged={onCellValueChanged}
               animateRows={true}
               domLayout="autoHeight"
+              stopEditingWhenCellsLoseFocus={false}
               defaultColDef={{
                 flex: 1,
                 minWidth: 100,

@@ -65,6 +65,7 @@ export class CohortDataService {
   public get report_service(): ReportDataService { return this._activeCohort.report_service; }
   public get execution_service(): CohortExecutionService { return this._activeCohort.execution_service; }
 
+  public getStudyIdForCohort(): string | null { return this._activeCohort.getStudyIdForCohort(); }
   public getStudyNameForCohort(): string { return this._activeCohort.getStudyNameForCohort(); }
   public tableDataFromCohortData(): TableData { return this._activeCohort.tableDataFromCohortData(); }
   public loadCohortData(cohortData: any): void { return this._activeCohort.loadCohortData(cohortData); }

@@ -19,15 +19,14 @@ from ..database import db_manager
 from ..utils.auth import get_authenticated_user_id
 
 # Create routers for codelist endpoints
-# list_router: for /codelists endpoint (no prefix)
-# router: for /codelist operations (with /codelist prefix)
-list_router = APIRouter()
 router = APIRouter()
 
 # Only include medconb router if it's enabled and available
 if MEDCONB_ENABLED and medconb_router is not None:
     router.include_router(medconb_router, prefix="/medconb")
-    logging.getLogger(__name__).info("MedConB router registered at /codelist/medconb")
+    logging.getLogger(__name__).info(
+        "MedConB router registered at /study/{study_id}/codelist/medconb"
+    )
 else:
     logging.getLogger(__name__).warning(
         "MedConB router not registered - integration disabled"
@@ -40,29 +39,32 @@ logger = logging.getLogger(__name__)
 # -- CODELIST API ENDPOINTS --
 
 
-@list_router.get("/codelists", tags=["codelist"], response_model=list[CodelistMetadata])
-async def get_codelists_for_cohort(study_id: str = None, cohort_id: str = None):
+@router.get(
+    "/study/{study_id}/codelists",
+    tags=["codelist"],
+    response_model=list[CodelistMetadata],
+)
+async def get_codelists_for_study(study_id: str):
     """
-    Get a list of all codelists associated with a study (or cohort for legacy).
+    Get a list of all codelists associated with a study.
 
-    Query Parameters:
+    Path Parameters:
     - study_id (str): The ID of the study to retrieve codelists for.
-    - cohort_id (str): Legacy parameter, still accepted for backward compatibility.
     """
-    if study_id:
-        return await get_codelist_filenames_for_study(db_manager, study_id)
-    if cohort_id:
-        return await get_codelist_filenames_for_cohort(db_manager, cohort_id)
-    return []
+    return await get_codelist_filenames_for_study(db_manager, study_id)
 
 
-@router.get("", tags=["codelist"], response_model=CodelistFile)
-async def get_codelist(request: Request, cohort_id: str, file_id: str):
+@router.get(
+    "/study/{study_id}/codelist/{file_id}",
+    tags=["codelist"],
+    response_model=CodelistFile,
+)
+async def get_codelist(request: Request, study_id: str, file_id: str):
     """
     Get the complete contents of a specific codelist file.
 
-    Query Parameters:
-    - cohort_id (str): The ID of the cohort containing the codelist
+    Path Parameters:
+    - study_id (str): The ID of the study containing the codelist
     - file_id (str): The unique identifier of the codelist file
 
     Authentication:
@@ -109,25 +111,56 @@ async def get_codelist(request: Request, cohort_id: str, file_id: str):
 
     Raises:
     - 401: If user is not authenticated
-    - 404: If codelist file is not found for the given cohort and file_id
+    - 404: If codelist file is not found for the given study and file_id
     - 500: If there's an error retrieving the codelist from the database
     """
     try:
         user_id = get_authenticated_user_id(request)
         logger.info(
-            f"Getting codelist file_id={file_id} for cohort_id={cohort_id}, user_id={user_id}"
+            f"Getting codelist file_id={file_id} for study_id={study_id}, user_id={user_id}"
         )
 
-        result = await get_codelist_file_for_cohort(
-            db_manager, cohort_id, file_id, user_id
-        )
+        # Use study_id to validate the codelist belongs to this study
+        codelist = await db_manager.get_codelist(user_id, file_id, study_id=study_id)
 
-        if result is None:
-            logger.warning(f"Codelist file {file_id} not found for cohort {cohort_id}")
+        if not codelist:
+            logger.warning(f"Codelist file {file_id} not found for study {study_id}")
             raise HTTPException(
                 status_code=404,
-                detail=f"Codelist file {file_id} not found for cohort {cohort_id}",
+                detail=f"Codelist file {file_id} not found for study {study_id}",
             )
+
+        # Parse JSON strings if needed
+        codelist_data = codelist.get("codelist_data", {})
+        if isinstance(codelist_data, str):
+            import json
+
+            codelist_data = json.loads(codelist_data)
+
+        column_mapping = codelist.get("column_mapping", {})
+        if isinstance(column_mapping, str):
+            import json
+
+            column_mapping = json.loads(column_mapping)
+
+        # Get contents and ensure it has both data and headers
+        contents = codelist_data.get("contents", {})
+        if "headers" not in contents and "data" in contents:
+            contents["headers"] = list(contents["data"].keys())
+
+        # Create the reconstructed file structure
+        result = {
+            "id": file_id,
+            "filename": codelist_data.get("filename", ""),
+            "code_column": column_mapping.get("code_column", ""),
+            "code_type_column": column_mapping.get("code_type_column", ""),
+            "codelist_column": column_mapping.get("codelist_column", ""),
+            "contents": contents,
+            "codelists": codelist.get("codelists", []),
+            "version": codelist.get("version"),
+            "created_at": codelist.get("created_at"),
+            "updated_at": codelist.get("updated_at"),
+        }
 
         # Log summary without overwhelming the logs
         num_codelists = len(result.get("codelists", []))
@@ -140,22 +173,22 @@ async def get_codelist(request: Request, cohort_id: str, file_id: str):
         raise
     except Exception as e:
         logger.error(
-            f"Error retrieving codelist {file_id} for cohort {cohort_id}: {str(e)[:200]}"
+            f"Error retrieving codelist {file_id} for study {study_id}: {str(e)[:200]}"
         )
         raise HTTPException(
             status_code=500, detail=f"Error retrieving codelist: {str(e)[:100]}"
         )
 
 
-@router.put("", tags=["codelist"], response_model=StatusResponse)
-async def create_or_update_codelist(
-    request: Request, file: dict, cohort_id: str = None
-):
+@router.put(
+    "/study/{study_id}/codelist", tags=["codelist"], response_model=StatusResponse
+)
+async def create_or_update_codelist(request: Request, study_id: str, file: dict):
     """
-    Create or update a codelist file for a cohort (idempotent operation).
+    Create or update a codelist file for a study (idempotent operation).
 
-    Query Parameters:
-    - cohort_id (str): The ID of the cohort to associate the codelist with
+    Path Parameters:
+    - study_id (str): The ID of the study to associate the codelist with
 
     Request Body:
     - file (dict): The codelist file data containing:
@@ -211,30 +244,46 @@ async def create_or_update_codelist(
     ```
 
     Raises:
-    - 400: If cohort_id is missing
+    - 400: If study_id is missing or a codelist with the same filename already exists
     - 401: If user is not authenticated
     - 500: If there's an error saving the codelist to the database
 
     Notes:
     - Automatically extracts unique codelist names from codelist_column for caching
     - Stores both raw data and column mapping for efficient retrieval
-    - Operation is idempotent - can be called multiple times with same data
+    - Prevents duplicate uploads based on filename within the same study
+    - Operation is idempotent - can be called multiple times with same file_id
     """
     user_id = get_authenticated_user_id(request)
 
-    # Accept study_id or cohort_id (study_id preferred)
-    study_id = request.query_params.get("study_id")
-    if study_id is None:
-        study_id = None  # will fall through to cohort_id
-    if cohort_id is None:
-        cohort_id = request.query_params.get("cohort_id")
+    # Extract filename - can be in multiple places depending on format
+    filename = file.get("filename")
+    if not filename:
+        codelist_data = file.get("codelist_data", {})
+        filename = codelist_data.get("filename") or codelist_data.get("name")
 
-    if not study_id and not cohort_id:
-        raise HTTPException(status_code=400, detail="study_id or cohort_id is required")
+    file_id = file.get("id")
 
-    success = await save_codelist_file_for_cohort(
+    if filename and file_id:
+        # Check if a codelist with the same filename already exists for this study
+        # but with a different file_id (allow updates to the same file)
+        existing_codelists = await get_codelist_filenames_for_study(
+            db_manager, study_id
+        )
+
+        for existing in existing_codelists:
+            # Prevent duplicate filenames with different IDs
+            if existing["filename"] == filename and existing["id"] != file_id:
+                logger.warning(
+                    f"Attempt to upload duplicate codelist '{filename}' for study {study_id} by user {user_id}"
+                )
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"A codelist with filename '{filename}' already exists in this study. Please use a different filename or delete the existing codelist first.",
+                )
+
+    success = await save_codelist_file_for_study(
         db_manager,
-        cohort_id or study_id,  # pass as positional cohort_id for the helper signature
         file["id"],
         file,
         user_id,
@@ -251,14 +300,21 @@ async def create_or_update_codelist(
     }
 
 
-@router.delete("", tags=["codelist"], response_model=StatusResponse)
-async def delete_codelist(cohort_id: str, file_id: str):
+@router.delete(
+    "/study/{study_id}/codelist/{file_id}",
+    tags=["codelist"],
+    response_model=StatusResponse,
+)
+async def delete_codelist(request: Request, study_id: str, file_id: str):
     """
     Delete a codelist file and all its contents.
 
-    Query Parameters:
-    - cohort_id (str): The ID of the cohort containing the codelist
+    Path Parameters:
+    - study_id (str): The ID of the study containing the codelist
     - file_id (str): The unique identifier of the codelist file to delete
+
+    Authentication:
+    - Requires authenticated user. Only deletes codelists owned by the authenticated user.
 
     Returns:
     - StatusResponse: Status response containing:
@@ -274,6 +330,7 @@ async def delete_codelist(cohort_id: str, file_id: str):
     ```
 
     Raises:
+    - 401: If user is not authenticated
     - 404: If codelist file is not found
     - 500: If there's an error deleting the codelist from the database
 
@@ -281,7 +338,14 @@ async def delete_codelist(cohort_id: str, file_id: str):
     - This operation permanently deletes the codelist and cannot be undone
     - All associated data including codes, mappings, and metadata will be removed
     """
-    await delete_codelist_file_for_cohort(db_manager, cohort_id, file_id)
+    user_id = get_authenticated_user_id(request)
+    success = await db_manager.delete_codelist(user_id, file_id, study_id=study_id)
+
+    if not success:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Codelist {file_id} not found for study {study_id}",
+        )
 
     return {
         "status": "success",
@@ -290,13 +354,88 @@ async def delete_codelist(cohort_id: str, file_id: str):
 
 
 @router.patch(
-    "/column_mapping", tags=["codelist"], response_model=ColumnMappingUpdateResponse
+    "/study/{study_id}/codelist/{file_id}/display_order",
+    tags=["codelist"],
+    response_model=StatusResponse,
+)
+async def update_codelist_display_order(
+    request: Request, study_id: str, file_id: str, display_order: int
+):
+    """
+    Update the display order of a codelist file.
+
+    Path Parameters:
+    - study_id (str): The ID of the study containing the codelist
+    - file_id (str): The unique identifier of the codelist file to update
+
+    Query Parameters:
+    - display_order (int): The new display order value for UI sorting
+
+    Authentication:
+    - Requires authenticated user. Only allows updating codelists owned by the authenticated user.
+
+    Behavior:
+    - Updates only the display_order field, leaving all other codelist fields unchanged
+    - Display order is used for custom sorting in the UI
+    - Lower values typically appear first in sorted lists
+
+    Returns:
+    - StatusResponse: Status object containing:
+        - status (str): "success" if update completed
+        - message (str): Confirmation message
+
+    Example Response:
+    ```json
+    {
+        "status": "success",
+        "message": "Codelist display order updated successfully."
+    }
+    ```
+
+    Raises:
+    - 401: If user is not authenticated
+    - 404: If codelist file is not found or user doesn't have access to update it
+    - 500: If there's an error updating the codelist in the database
+    """
+    user_id = get_authenticated_user_id(request)
+    try:
+        success = await db_manager.update_codelist_display_order(
+            user_id=user_id,
+            file_id=file_id,
+            display_order=display_order,
+            study_id=study_id,
+        )
+
+        if success:
+            return {
+                "status": "success",
+                "message": "Codelist display order updated successfully.",
+            }
+        else:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Codelist {file_id} not found for study {study_id} or access denied.",
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating codelist display order: {str(e)[:200]}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error updating codelist display order: {str(e)[:100]}",
+        )
+
+
+@router.patch(
+    "/study/{study_id}/codelist/{file_id}/column_mapping",
+    tags=["codelist"],
+    response_model=ColumnMappingUpdateResponse,
 )
 async def update_codelist_column_mapping(
     request: Request,
+    study_id: str,
     file_id: str,
     column_mapping: ColumnMapping,
-    cohort_id: Optional[str] = None,
 ):
     """
     Update the column mapping configuration for an existing codelist file.
@@ -305,7 +444,8 @@ async def update_codelist_column_mapping(
     code types, and codelist categories. It also automatically recalculates and caches
     the unique list of codelist names based on the new codelist_column.
 
-    Query Parameters:
+    Path Parameters:
+    - study_id (str): The ID of the study containing the codelist
     - file_id (str): The unique identifier of the codelist file to update
 
     Request Body:
@@ -358,16 +498,12 @@ async def update_codelist_column_mapping(
     column_mapping_dict = column_mapping.model_dump()
 
     try:
-        # Resolve codelist: try by (user_id, file_id) first; if not found and cohort_id provided, try by (cohort_id, file_id)
-        codelist = await db_manager.get_codelist(user_id, file_id)
-        if not codelist and cohort_id:
-            by_cohort = await db_manager.get_codelist_by_cohort(cohort_id, file_id)
-            if by_cohort:
-                codelist, user_id = by_cohort
+        # Get codelist and validate it belongs to the study
+        codelist = await db_manager.get_codelist(user_id, file_id, study_id=study_id)
         if not codelist:
             raise HTTPException(
                 status_code=404,
-                detail=f"Codelist file {file_id} not found for user {user_id}",
+                detail=f"Codelist file {file_id} not found for study {study_id}",
             )
 
         # Parse codelist_data if needed
@@ -387,21 +523,23 @@ async def update_codelist_column_mapping(
             # Get unique codelist names
             codelists_array = list(set(data[codelist_column]))
 
-        # Update both column mapping and codelists array
+        # Update both column mapping and codelists array, validating study_id
         success = await db_manager.update_codelist(
             user_id,
             file_id,
             column_mapping=column_mapping_dict,
             codelists=codelists_array,
+            study_id=study_id,
         )
 
         if not success:
             raise HTTPException(
-                status_code=404, detail=f"Failed to update codelist file {file_id}"
+                status_code=404,
+                detail=f"Failed to update codelist file {file_id} for study {study_id}",
             )
 
         logger.info(
-            f"Updated column mapping and codelists array for codelist {file_id} for user {user_id}"
+            f"Updated column mapping and codelists array for codelist {file_id} in study {study_id}"
         )
         return {
             "status": "success",
@@ -416,80 +554,29 @@ async def update_codelist_column_mapping(
         raise HTTPException(status_code=500, detail="Failed to update column mapping")
 
 
-# -- CODELIST FILE MANAGEMENT --
-async def get_codelist_filenames_for_cohort(db_manager, cohort_id: str) -> list:
+async def get_codelist_file_for_study(
+    db_manager, study_id: str, file_id: str, user_id: str
+):
     """
-    Get a list of codelist filenames for a given cohort ID using database.
-    Includes cached codelists array and column mapping to avoid loading full data.
+    Get a specific codelist file for a study.
 
     Args:
         db_manager: DatabaseManager instance for database interactions
-        cohort_id (str): The ID of the cohort.
-
-    Returns:
-        list: A list of codelist metadata including id, filename, codelists array, and column mapping.
-    """
-    try:
-        codelists = await db_manager.get_codelists_for_cohort(cohort_id)
-        return [
-            {
-                "id": cl["id"],
-                "filename": cl["filename"],
-                "codelists": cl.get("codelists", []),
-                "code_column": cl.get("code_column"),
-                "code_type_column": cl.get("code_type_column"),
-                "codelist_column": cl.get("codelist_column"),
-            }
-            for cl in codelists
-        ]
-    except Exception as e:
-        logger.error(
-            f"Failed to retrieve codelist filenames for cohort {cohort_id}: {e}"
-        )
-        return []
-
-
-async def get_codelist_filenames_for_study(db_manager, study_id: str) -> list:
-    try:
-        codelists = await db_manager.get_codelists_for_study(study_id)
-        return [
-            {
-                "id": cl["id"],
-                "filename": cl["filename"],
-                "codelists": cl.get("codelists", []),
-                "code_column": cl.get("code_column"),
-                "code_type_column": cl.get("code_type_column"),
-                "codelist_column": cl.get("codelist_column"),
-            }
-            for cl in codelists
-        ]
-    except Exception as e:
-        logger.error(f"Failed to retrieve codelist filenames for study {study_id}: {e}")
-        return []
-
-
-async def get_codelist_file_for_cohort(
-    db_manager, cohort_id: str, file_id: str, user_id: str
-) -> Optional[dict]:
-    """
-    Get a codelist file for a given cohort ID and file ID from database.
-
-    Args:
-        db_manager: DatabaseManager instance for database interactions
-        cohort_id (str): The ID of the cohort.
+        study_id (str): The ID of the study.
         file_id (str): The ID of the codelist file.
-        user_id (str): The ID of the authenticated user.
+        user_id (str): The authenticated user ID.
 
     Returns:
-        dict: The codelist file or None if not found.
+        dict: The codelist file data, or None if not found.
     """
     try:
-        # Get codelist using the user_id and file_id
-        codelist = await db_manager.get_codelist(user_id, file_id)
+        codelist = await db_manager.get_codelist(user_id, file_id, study_id=study_id)
 
         if not codelist:
+            logger.warning(f"Codelist file {file_id} not found for study {study_id}")
             return None
-        # Parse JSON strings if they are strings (database returns JSONB as strings sometimes)
+
+        # Parse JSON strings if needed
         codelist_data = codelist.get("codelist_data", {})
         if isinstance(codelist_data, str):
             import json
@@ -505,11 +592,10 @@ async def get_codelist_file_for_cohort(
         # Get contents and ensure it has both data and headers
         contents = codelist_data.get("contents", {})
         if "headers" not in contents and "data" in contents:
-            # If headers is missing, derive it from the data keys
             contents["headers"] = list(contents["data"].keys())
 
         # Create the reconstructed file structure
-        reconstructed_file = {
+        result = {
             "id": file_id,
             "filename": codelist_data.get("filename", ""),
             "code_column": column_mapping.get("code_column", ""),
@@ -522,31 +608,58 @@ async def get_codelist_file_for_cohort(
             "updated_at": codelist.get("updated_at"),
         }
 
-        return reconstructed_file
-
+        return result
     except Exception as e:
-        # Truncate error message to prevent log flooding
-        error_msg = str(e)[:500]
         logger.error(
-            f"Failed to retrieve codelist file {file_id} for cohort {cohort_id}: {error_msg}"
+            f"Failed to retrieve codelist file {file_id} for study {study_id}: {e}"
         )
         return None
 
 
-async def save_codelist_file_for_cohort(
-    db_manager, cohort_id: str, file_id: str, codelist_file: dict, user_id: str,
-    study_id: str = None,
+async def get_codelist_filenames_for_study(db_manager, study_id: str) -> list:
+    """
+    Get a list of codelist filenames for a given study ID using database.
+    Includes cached codelists array and column mapping to avoid loading full data.
+
+    Args:
+        db_manager: DatabaseManager instance for database interactions
+        study_id (str): The ID of the study.
+
+    Returns:
+        list: A list of codelist metadata including id, filename, codelists array, and column mapping.
+    """
+    try:
+        codelists = await db_manager.get_codelists_for_study(study_id)
+        return [
+            {
+                "id": cl["id"],
+                "filename": cl["filename"],
+                "codelists": cl.get("codelists", []),
+                "code_column": cl.get("code_column"),
+                "code_type_column": cl.get("code_type_column"),
+                "codelist_column": cl.get("codelist_column"),
+                "display_order": cl.get("display_order", 0),
+            }
+            for cl in codelists
+        ]
+    except Exception as e:
+        logger.error(f"Failed to retrieve codelist filenames for study {study_id}: {e}")
+        return []
+
+
+async def save_codelist_file_for_study(
+    db_manager, file_id: str, codelist_file: dict, user_id: str, study_id: str
 ) -> bool:
     """
-    Save a codelist file for a given cohort ID and file ID to database.
+    Save a codelist file for a given study ID and file ID to database.
     Also calculates and stores the codelists array based on codelist_column.
 
     Args:
         db_manager: DatabaseManager instance for database interactions
-        cohort_id (str): The ID of the cohort.
         file_id (str): The ID of the codelist file.
         codelist_file (dict): The codelist file data.
         user_id (str): The ID of the authenticated user.
+        study_id (str): The ID of the study.
 
     Returns:
         bool: True if successful, False otherwise.
@@ -586,7 +699,7 @@ async def save_codelist_file_for_cohort(
             codelists_array[:10] if len(codelists_array) > 10 else codelists_array
         )
         logger.info(
-            f"save_codelist_file_for_cohort: calculated {len(codelists_array)} unique codelists for file {file_name}. "
+            f"save_codelist_file_for_study: calculated {len(codelists_array)} unique codelists for file {file_name}. "
             f"First {len(codelists_preview)}: {codelists_preview}"
         )
 
@@ -597,44 +710,11 @@ async def save_codelist_file_for_cohort(
             codelist_data,
             column_mapping,
             codelists_array,
-            cohort_id if not study_id else None,
             file_name,
             study_id=study_id,
         )
     except Exception as e:
         logger.error(
-            f"Failed to save codelist file {file_id} for cohort {cohort_id}: {e}"
+            f"Failed to save codelist file {file_id} for study {study_id}: {e}"
         )
         raise
-
-
-async def delete_codelist_file_for_cohort(
-    db_manager, cohort_id: str, file_id: str
-) -> bool:
-    """
-    Delete a codelist file for a given cohort ID and file ID from database.
-
-    Args:
-        db_manager: DatabaseManager instance for database interactions
-        cohort_id (str): The ID of the cohort.
-        file_id (str): The ID of the codelist file.
-
-    Returns:
-        bool: True if successful, False otherwise.
-    """
-    try:
-        # Get cohort to determine user_id
-        cohort = await db_manager.get_cohort_for_user(None, cohort_id)
-        if not cohort or not cohort.get("cohort_data", {}).get("user_id"):
-            logger.error(f"Could not find user_id for cohort {cohort_id}")
-            return False
-
-        user_id = cohort["cohort_data"]["user_id"]
-
-        # Delete codelist from database
-        return await db_manager.delete_codelist(user_id, file_id)
-    except Exception as e:
-        logger.error(
-            f"Failed to delete codelist file {file_id} for cohort {cohort_id}: {e}"
-        )
-        return False

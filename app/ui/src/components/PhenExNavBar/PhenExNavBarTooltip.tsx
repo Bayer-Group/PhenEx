@@ -18,7 +18,7 @@ export const PhenExNavBarTooltip: React.FC<PhenExNavBarTooltipProps> = ({
   label,
   verticalPosition = 'above',
   horizontalAlignment = 'center',
-  gap = 10,
+  gap = 0, // Changed from 10 to 0 so the mouse doesn't fall into a gap
   delay,
 }) => {
   const tooltipRef = useRef<HTMLDivElement>(null);

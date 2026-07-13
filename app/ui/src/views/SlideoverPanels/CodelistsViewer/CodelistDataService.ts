@@ -3,10 +3,13 @@ import {
   getCodelistsForStudy,
   getCodelist,
   saveCodelist,
+  deleteCodelist,
   updateCodelistColumnMapping,
+  updateCodelistDisplayOrder,
 } from '../../../api/codelists/route';
 import { createID } from '../../../types/createID';
 import { CohortModel } from '../../CohortViewer/CohortDataService/CohortModel';
+import { StudyDataService } from '../../StudyViewer/StudyDataService';
 
 interface CodelistFile {
   filename: string;
@@ -52,8 +55,8 @@ export class CodelistDataService {
   public _filenames: string[] | null = null;
   private listeners: (() => void)[] = [];
   public files: CodelistFile[] = [];
-  private filesMetadata: FileMetadata[] = [];
-  private lastFetchedCohortId: string | null = null;
+  public filesMetadata: FileMetadata[] = [];
+  private lastFetchedStudyId: string | null = null;
   private readonly CACHE_KEY = 'phenex_codelist_cache';
 
   private usedCodelists: UsedCodelist[] = [
@@ -82,14 +85,40 @@ export class CodelistDataService {
 
   constructor() {}
 
-  // LocalStorage cache methods
-  private getCacheKey(cohortId: string): string {
-    return `${this.CACHE_KEY}_${cohortId}`;
+  private getStudyId(): string | null {
+    return StudyDataService.getInstance().study_data?.id || null;
   }
 
-  private getCodelistCache(cohortId: string): CodelistCache[] {
+  public async refresh(): Promise<void> {
+    this.lastFetchedStudyId = null; // Force re-fetch
+    await this.setFilenamesForCohort();
+  }
+
+  public async deleteFile(fileId: string): Promise<void> {
+    const studyId = this.getStudyId();
+    if (!studyId) {
+      throw new Error('Cannot delete codelist: no study_id available');
+    }
+    await deleteCodelist(studyId, fileId);
+    await this.refresh();
+  }
+
+  public async updateFileDisplayOrder(fileId: string, displayOrder: number): Promise<void> {
+    const studyId = this.getStudyId();
+    if (!studyId) {
+      throw new Error('Cannot update display order: no study_id available');
+    }
+    await updateCodelistDisplayOrder(studyId, fileId, displayOrder);
+  }
+
+  // LocalStorage cache methods
+  private getCacheKey(studyId: string): string {
+    return `${this.CACHE_KEY}_${studyId}`;
+  }
+
+  private getCodelistCache(studyId: string): CodelistCache[] {
     try {
-      const cached = localStorage.getItem(this.getCacheKey(cohortId));
+      const cached = localStorage.getItem(this.getCacheKey(studyId));
       return cached ? JSON.parse(cached) : [];
     } catch (error) {
       console.error('Failed to read codelist cache:', error);
@@ -97,16 +126,16 @@ export class CodelistDataService {
     }
   }
 
-  private setCodelistCache(cohortId: string, cache: CodelistCache[]): void {
+  private setCodelistCache(studyId: string, cache: CodelistCache[]): void {
     try {
-      localStorage.setItem(this.getCacheKey(cohortId), JSON.stringify(cache));
+      localStorage.setItem(this.getCacheKey(studyId), JSON.stringify(cache));
     } catch (error) {
       console.error('Failed to write codelist cache:', error);
     }
   }
 
-  private updateCacheForFile(cohortId: string, filename: string, mapping: any, codelists: string[]): void {
-    const cache = this.getCodelistCache(cohortId);
+  private updateCacheForFile(studyId: string, filename: string, mapping: any, codelists: string[]): void {
+    const cache = this.getCodelistCache(studyId);
     const existingIndex = cache.findIndex(c => c.filename === filename);
     
     const newEntry: CodelistCache = {
@@ -125,11 +154,11 @@ export class CodelistDataService {
       cache.push(newEntry);
     }
 
-    this.setCodelistCache(cohortId, cache);
+    this.setCodelistCache(studyId, cache);
   }
 
-  private getCodelistsFromCache(cohortId: string, filename: string, column: string): string[] | null {
-    const cache = this.getCodelistCache(cohortId);
+  private getCodelistsFromCache(studyId: string, filename: string, column: string): string[] | null {
+    const cache = this.getCodelistCache(studyId);
     const entry = cache.find(c => c.filename === filename);
     
     if (!entry) {
@@ -145,25 +174,24 @@ export class CodelistDataService {
   }
 
   public async setFilenamesForCohort() {
-    const studyId = this.cohortDataService?.cohort_data?.study_id as string | undefined;
-    const cohortId = this.cohortDataService?.cohort_data?.id;
-    const lookupId = studyId || cohortId;
-    if (!lookupId) {
+    const studyId = this.getStudyId();
+    
+    if (!studyId) {
       this._filenames = [];
       this.filesMetadata = [];
       this.files = [];
-      this.lastFetchedCohortId = null;
+      this.lastFetchedStudyId = null;
       this.notifyListeners();
       return;
     }
 
-    // If we already have filenames loaded for this cohort, skip the backend call
-    if (this.lastFetchedCohortId === lookupId && this._filenames && this._filenames.length > 0) {
+    // If we already have filenames loaded for this study, skip the backend call
+    if (this.lastFetchedStudyId === studyId && this._filenames && this._filenames.length > 0) {
       return;
     }
 
-    // Switching cohort: clear previous cohort's data so we don't mix or show stale files
-    if (this.lastFetchedCohortId !== null && this.lastFetchedCohortId !== lookupId) {
+    // Switching study: clear previous study's data so we don't mix or show stale files
+    if (this.lastFetchedStudyId !== null && this.lastFetchedStudyId !== studyId) {
       this.files = [];
       this.filesMetadata = [];
       this._filenames = [];
@@ -171,10 +199,8 @@ export class CodelistDataService {
     }
 
     // Fetch metadata from backend (lightweight call)
-    const filenames = studyId
-      ? await getCodelistsForStudy(studyId)
-      : await getCodelistsForStudy(cohortId!); // fallback
-    this.lastFetchedCohortId = lookupId;
+    const filenames = await getCodelistsForStudy(studyId);
+    this.lastFetchedStudyId = studyId;
     
     // Store the metadata (including cached codelists array) separately
     // This allows us to avoid loading full file contents when we just need codelist names
@@ -186,14 +212,15 @@ export class CodelistDataService {
       codelists: fileinfo.codelists || [],
       code_column: fileinfo.code_column,
       code_type_column: fileinfo.code_type_column,
-      codelist_column: fileinfo.codelist_column
+      codelist_column: fileinfo.codelist_column,
+      display_order: fileinfo.display_order || 0
     }));
     
     // Update localStorage cache with data from backend
     this.filesMetadata.forEach(meta => {
       if (meta.codelists && meta.codelists.length > 0 && meta.codelist_column) {
         this.updateCacheForFile(
-          lookupId,
+          studyId,
           meta.filename,
           {
             code_column: meta.code_column,
@@ -220,14 +247,13 @@ export class CodelistDataService {
     if (filesToLoad.length > 0) {
       const filePromises = await Promise.all(
         filesToLoad.map((fileinfo: any) =>
-          getCodelist(cohortId!, fileinfo.id)
+          getCodelist(studyId, fileinfo.id)
         )
       );
       
       // Filter out any undefined/null results and add to existing files
       const newFiles = filePromises.filter(file => file && file.contents && file.contents.data);
       this.files = [...this.files, ...newFiles];
-    } else {
     }
     
     this.notifyListeners();
@@ -250,6 +276,12 @@ export class CodelistDataService {
     this.cohortDataService.addListener(() => {
       this.setFilenamesForCohort();
     });
+    // Listen for study changes so codelists reload when study is loaded
+    StudyDataService.getInstance().addStudyDataServiceListener(() => {
+      this.setFilenamesForCohort();
+    });
+    // Load codelists immediately if study_id is available
+    this.setFilenamesForCohort();
   }
 
   public getTotalCodes(): number {
@@ -266,7 +298,7 @@ export class CodelistDataService {
     return this.usedCodelists.length;
   }
 
-  public addFile(file: { filename: string; contents: any }): void {
+  public async addFile(file: { filename: string; contents: any }): Promise<void> {
     const csvData = this.parseCSVContents(file.contents);
     const newFile: CodelistFile = {
       filename: file.filename,
@@ -276,12 +308,33 @@ export class CodelistDataService {
       codelist_column: 'codelist',
       contents: csvData,
     };
-    this.files.push(newFile);
-    if (!this._filenames) this._filenames = [];
-    this._filenames.push(newFile.filename);
-    this.notifyListeners();
-    const studyId = this.cohortDataService?.cohort_data?.study_id as string | undefined;
-    saveCodelist(this.cohortDataService.cohort_data.id, newFile, studyId);
+    const studyId = this.getStudyId();
+    
+    if (!studyId) {
+      console.error('Cannot save codelist: no study_id available');
+      throw new Error('Cannot save codelist: no study_id available');
+    }
+    
+    // Save to backend first, only update state if successful
+    try {
+      await saveCodelist(newFile, studyId);
+      this.files.push(newFile);
+      if (!this._filenames) this._filenames = [];
+      this._filenames.push(newFile.filename);
+      // Update filesMetadata so the table shows the new file immediately
+      this.filesMetadata.push({
+        id: newFile.id!,
+        filename: newFile.filename,
+        codelists: [],
+        code_column: newFile.code_column,
+        code_type_column: newFile.code_type_column,
+        codelist_column: newFile.codelist_column,
+      });
+      this.notifyListeners();
+    } catch (error) {
+      console.error('Failed to add codelist file:', error);
+      throw error;
+    }
   }
 
   private parseCSVContents(contents: string): any {
@@ -445,9 +498,58 @@ export class CodelistDataService {
     this.activeFile = this.files[fileIndex - 1];
   }
 
-  public saveChangesToActiveFile() {
-    const studyId = this.cohortDataService?.cohort_data?.study_id as string | undefined;
-    saveCodelist(this.cohortDataService.cohort_data.id, this.activeFile, studyId);
+  public prepareFileDataById(fileId: string): { columnDefs: any[]; rowData: any[] } | null {
+    const file = this.files.find(f => f.id === fileId);
+    if (!file || !file.contents || !file.contents.headers) {
+      return null;
+    }
+
+    const specialColumns = [
+      file.code_column,
+      file.code_type_column,
+      file.codelist_column
+    ].filter(col => col && file.contents.headers.includes(col));
+
+    const remainingHeaders = file.contents.headers.filter(
+      header => !specialColumns.includes(header)
+    );
+
+    const specialColumnDefs = specialColumns.map(header => ({
+      field: header,
+      headerName: header,
+      width: 100,
+      pinned: 'left' as const,
+    }));
+
+    const remainingColumnDefs = remainingHeaders.map(header => ({
+      field: header,
+      headerName: header,
+      width: 100,
+    }));
+
+    const columnDefs = [...specialColumnDefs, ...remainingColumnDefs];
+
+    const dataLength = file.contents.data[file.contents.headers[0]]?.length || 0;
+    const rowData = Array.from({ length: dataLength }, (_, index) => {
+      const row: { [key: string]: string } = {};
+      file.contents.headers.forEach(header => {
+        row[header] = file.contents.data[header][index];
+      });
+      return row;
+    });
+
+    return { columnDefs, rowData };
+  }
+
+  public async saveChangesToActiveFile(): Promise<void> {
+    const studyId = this.getStudyId();
+    
+    if (!studyId) {
+      console.error('Cannot save codelist: no study_id available');
+      throw new Error('Cannot save codelist: no study_id available');
+    }
+    
+    await saveCodelist(this.activeFile, studyId);
   }
 
   public async saveColumnMappingForActiveFile() {
@@ -463,19 +565,23 @@ export class CodelistDataService {
     };
 
     try {
-      const cohortId = this.cohortDataService?.cohort_data?.id;
-      const studyId = this.cohortDataService?.cohort_data?.study_id as string | undefined;
+      const studyId = this.getStudyId();
+      
+      if (!studyId) {
+        console.error('Cannot save column mapping: no study_id available');
+        throw new Error('Cannot save column mapping: no study_id available');
+      }
+      
       const response = await updateCodelistColumnMapping(
+        studyId,
         this.activeFile.id,
-        columnMapping,
-        cohortId
+        columnMapping
       );
       
       // Update localStorage cache with new codelists from backend response
-      const cacheId = studyId || cohortId;
-      if (response && response.codelists && cacheId) {
+      if (response && response.codelists) {
         this.updateCacheForFile(
-          cacheId,
+          studyId,
           this.activeFile.filename,
           columnMapping,
           response.codelists
@@ -511,7 +617,11 @@ export class CodelistDataService {
   }
 
   public getCodelistsForFileInColumn(filename: string, column: string) {
-    const cohortId = this.cohortDataService.cohort_data.id;
+    const studyId = this.getStudyId();
+    
+    if (!studyId) {
+      return [];
+    }
     
     // Remove quotes if they exist in the search filename
     let searchFilename = filename;
@@ -520,7 +630,7 @@ export class CodelistDataService {
     }
     
     // STEP 1: Check localStorage cache first (fastest)
-    const cachedCodelists = this.getCodelistsFromCache(cohortId, searchFilename, column);
+    const cachedCodelists = this.getCodelistsFromCache(studyId, searchFilename, column);
     if (cachedCodelists) {
       return cachedCodelists;
     }
@@ -532,7 +642,7 @@ export class CodelistDataService {
       if (metadata.codelist_column === column && metadata.codelists && metadata.codelists.length > 0) {
         // Store to localStorage for next time
         this.updateCacheForFile(
-          cohortId,
+          studyId,
           searchFilename,
           {
             code_column: metadata.code_column,
@@ -559,7 +669,7 @@ export class CodelistDataService {
     const uniqueCodelistNames = Array.from(new Set(file.contents.data[column]));
     // Store the result in localStorage for next time
     this.updateCacheForFile(
-      cohortId,
+      studyId,
       searchFilename,
       {
         code_column: file.code_column,

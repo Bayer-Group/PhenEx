@@ -1,4 +1,5 @@
 """Chat history API routes."""
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
@@ -50,7 +51,9 @@ async def get_sessions(request: Request, study_id: Optional[str] = None):
     """List chat sessions for a user (optionally filtered by study)."""
     user_id = get_authenticated_user_id(request)
     try:
-        sessions = await db_manager.get_chat_sessions(user_id=user_id, study_id=study_id)
+        sessions = await db_manager.get_chat_sessions(
+            user_id=user_id, study_id=study_id
+        )
         return sessions
     except Exception as e:
         logger.error(f"get_sessions error: {e}")
@@ -62,7 +65,9 @@ async def get_messages(session_id: str, request: Request):
     """Get all messages for a session (user must own the session)."""
     user_id = get_authenticated_user_id(request)
     try:
-        messages = await db_manager.get_chat_messages(session_id=session_id, user_id=user_id)
+        messages = await db_manager.get_chat_messages(
+            session_id=session_id, user_id=user_id
+        )
         return messages
     except Exception as e:
         logger.error(f"get_messages error: {e}")
@@ -74,7 +79,9 @@ async def add_message(session_id: str, request: Request, body: AddMessageRequest
     """Append a message to a session."""
     user_id = get_authenticated_user_id(request)
     if body.role not in ("user", "assistant"):
-        raise HTTPException(status_code=400, detail="role must be 'user' or 'assistant'")
+        raise HTTPException(
+            status_code=400, detail="role must be 'user' or 'assistant'"
+        )
     try:
         msg = await db_manager.add_chat_message(
             session_id=session_id,

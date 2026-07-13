@@ -1,0 +1,101 @@
+/* CohortCardViewer — self-drawn (non AG Grid) cohort table.
+   Left pinned panel + right horizontally-scrolling panel, kept row-aligned
+   via shared per-row heights (row height = tallest cell in the row). */
+
+.viewerRoot {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--background_color_light);
+  position: relative;
+}
+
+/* ---- Pinned (left) panel ---- */
+.pinnedPanel {
+  position: relative;
+  flex: 0 0 auto;
+  height: 100%;
+  overflow: hidden;
+  border-right: 1px solid var(--line-color-grid);
+  z-index: 2;
+  background-color: var(--background_color_light);
+}
+
+.pinnedContent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  will-change: transform;
+}
+
+/* ---- Scroll (right) panel ---- */
+.scrollPanel {
+  position: relative;
+  flex: 1 1 auto;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.scrollContent {
+  position: relative;
+  min-height: 100%;
+}
+
+/* ---- Rows ---- */
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 24px;
+}
+
+.rowSelected {
+  /* Selection band is drawn by the SelectionCellRenderer; keep hook for styling. */
+}
+
+.rowDragging {
+  opacity: 0.5;
+}
+
+.rowDragOver {
+  box-shadow: inset 0 2px 0 0 var(--color-accent-bright, #3b82f6);
+}
+
+/* ---- Cells ---- */
+.cell {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.plainValue {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.inlineTextEditor {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--color-accent-bright, #3b82f6);
+  padding: 2px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+
+.emptyState {
+  padding: 40px 20px;
+  font-size: 18px;
+  font-family: 'IBMPlexSans-regular';
+  color: black;
+}

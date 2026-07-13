@@ -25,13 +25,13 @@
 }
 
 .button:hover {
-  transform: scale(1.15);
   background: var(--color_accent_dark);
   color: white;
+  opacity: 1;
 }
 
 .button:active {
-  transform: scale(1.05);
+  transform: scale(0.95);
 }
 
 .button svg {

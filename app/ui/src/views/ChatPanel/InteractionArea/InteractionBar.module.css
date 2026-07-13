@@ -1,11 +1,18 @@
 .thinkingContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 30px;
+  margin-top: 0px;
+  width: 100%;
+  padding: 0 10px;
+  padding-right: 50px;
+}
+
+.thinkingContainer > span {
   color: black;
   font-size: 50px;
-  height: 30px;
-  top: -30px;
-  position: relative;
-  left: 10px;
-  /* overflow: hidden; */
+  line-height: 1;
 }
 
 .buttonContainer {
@@ -14,4 +21,5 @@
   display: flex;
   justify-content: flex-end;
   width: 100%;
+  padding-right: 50px;
 }

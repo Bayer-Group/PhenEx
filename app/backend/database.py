@@ -217,7 +217,11 @@ class DatabaseManager:
                     "version": provisional_row["version"],
                     "is_provisional": provisional_row["is_provisional"],
                     "study_id": provisional_row["study_id"],
-                    "database": json.loads(provisional_row["database"]) if provisional_row["database"] else None,
+                    "database": (
+                        json.loads(provisional_row["database"])
+                        if provisional_row["database"]
+                        else None
+                    ),
                     "created_at": (
                         provisional_row["created_at"].isoformat()
                         if provisional_row["created_at"]
@@ -260,7 +264,11 @@ class DatabaseManager:
                 "version": non_provisional_row["version"],
                 "is_provisional": non_provisional_row["is_provisional"],
                 "study_id": non_provisional_row["study_id"],
-                "database": json.loads(non_provisional_row["database"]) if non_provisional_row["database"] else None,
+                "database": (
+                    json.loads(non_provisional_row["database"])
+                    if non_provisional_row["database"]
+                    else None
+                ),
                 "created_at": (
                     non_provisional_row["created_at"].isoformat()
                     if non_provisional_row["created_at"]
@@ -316,7 +324,11 @@ class DatabaseManager:
         # Extract name and description to dedicated columns; strip them from stored JSON
         cohort_name = cohort_data.get("name") or cohort_id
         cohort_description = cohort_data.get("description")
-        cohort_data = {k: v for k, v in cohort_data.items() if k not in ("name", "description", "database")}
+        cohort_data = {
+            k: v
+            for k, v in cohort_data.items()
+            if k not in ("name", "description", "database")
+        }
 
         conn = None
         try:
@@ -577,9 +589,7 @@ class DatabaseManager:
             result = await conn.execute(query, user_id, cohort_id, display_order)
             if result == "UPDATE 0":
                 return False
-            logger.info(
-                f"Updated display_order={display_order} for cohort {cohort_id}"
-            )
+            logger.info(f"Updated display_order={display_order} for cohort {cohort_id}")
             return True
         except Exception as e:
             logger.error(f"Failed to update display order for cohort {cohort_id}: {e}")
@@ -924,13 +934,9 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def get_codelists_for_cohort(self, cohort_id: str) -> List[Dict]:
-        """Retrieve all codelists associated with a specific cohort (legacy, kept for compatibility)."""
-        return await self._get_codelists_by_field('cohort_id', cohort_id)
-
     async def get_codelists_for_study(self, study_id: str) -> List[Dict]:
         """Retrieve all codelists associated with a specific study."""
-        return await self._get_codelists_by_field('study_id', study_id)
+        return await self._get_codelists_by_field("study_id", study_id)
 
     async def _get_codelists_by_field(self, field: str, value: str) -> List[Dict]:
         conn = None
@@ -944,11 +950,12 @@ class DatabaseManager:
                     codelist_data->'filename' as filename, 
                     codelists, 
                     column_mapping,
+                    display_order,
                     created_at, 
                     updated_at 
                 FROM codelistfile 
                 WHERE {field} = $1
-                ORDER BY updated_at DESC
+                ORDER BY display_order ASC, created_at ASC
             """
 
             rows = await conn.fetch(query, value)
@@ -980,6 +987,7 @@ class DatabaseManager:
                             if column_mapping
                             else None
                         ),
+                        "display_order": row.get("display_order", 0),
                         "created_at": (
                             row["created_at"].isoformat() if row["created_at"] else None
                         ),
@@ -999,7 +1007,9 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def get_codelist(self, user_id: str, codelist_id: str) -> Optional[Dict]:
+    async def get_codelist(
+        self, user_id: str, codelist_id: str, study_id: str = None
+    ) -> Optional[Dict]:
         """
         Retrieve a specific codelist for a user from the database.
         Returns the latest version.
@@ -1007,6 +1017,7 @@ class DatabaseManager:
         Args:
             user_id (str): The user ID (UUID) whose codelist to retrieve.
             codelist_id (str): The ID of the codelist to retrieve.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
 
         Returns:
             Optional[Dict]: The codelist data or None if not found.
@@ -1015,16 +1026,25 @@ class DatabaseManager:
         try:
             conn = await self.get_connection()
 
-            # Get the highest version
-            query = """
-                SELECT codelist_data, column_mapping, codelists, version, created_at, updated_at 
-                FROM codelistfile 
-                WHERE user_id = $1 AND file_id = $2
-                ORDER BY version DESC
-                LIMIT 1
-            """
-
-            row = await conn.fetchrow(query, user_id, codelist_id)
+            # Get the highest version, optionally filtering by study_id
+            if study_id:
+                query = """
+                    SELECT codelist_data, column_mapping, codelists, version, created_at, updated_at 
+                    FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2 AND study_id = $3
+                    ORDER BY version DESC
+                    LIMIT 1
+                """
+                row = await conn.fetchrow(query, user_id, codelist_id, study_id)
+            else:
+                query = """
+                    SELECT codelist_data, column_mapping, codelists, version, created_at, updated_at 
+                    FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2
+                    ORDER BY version DESC
+                    LIMIT 1
+                """
+                row = await conn.fetchrow(query, user_id, codelist_id)
 
             if not row:
                 return None
@@ -1055,49 +1075,6 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def get_codelist_by_cohort(
-        self, cohort_id: str, codelist_id: str
-    ) -> Optional[tuple]:
-        """
-        Retrieve a codelist by cohort_id and codelist_id (latest version).
-        Returns (codelist_data_dict, user_id) or None. Used when resolving by cohort context.
-        """
-        conn = None
-        try:
-            conn = await self.get_connection()
-            query = """
-                SELECT user_id, codelist_data, column_mapping, codelists, version, created_at, updated_at
-                FROM codelistfile
-                WHERE cohort_id = $1 AND file_id = $2
-                ORDER BY version DESC
-                LIMIT 1
-            """
-            row = await conn.fetchrow(query, cohort_id, codelist_id)
-            if not row:
-                return None
-            codelist_data = {
-                "codelist_data": row["codelist_data"],
-                "column_mapping": row["column_mapping"],
-                "codelists": row["codelists"],
-                "version": row["version"],
-                "created_at": (
-                    row["created_at"].isoformat() if row["created_at"] else None
-                ),
-                "updated_at": (
-                    row["updated_at"].isoformat() if row["updated_at"] else None
-                ),
-            }
-            return (codelist_data, str(row["user_id"]))
-        except Exception as e:
-            error_msg = str(e)[:500]
-            logger.error(
-                f"Failed to retrieve codelist {codelist_id} for cohort {cohort_id}: {error_msg}"
-            )
-            raise
-        finally:
-            if conn:
-                await conn.close()
-
     async def save_codelist(
         self,
         user_id: str,
@@ -1105,7 +1082,6 @@ class DatabaseManager:
         codelist_data: Dict,
         column_mapping: Dict,
         codelists: List[str],
-        cohort_id: Optional[str] = None,
         file_name: Optional[str] = None,
         study_id: Optional[str] = None,
     ) -> bool:
@@ -1118,8 +1094,8 @@ class DatabaseManager:
             codelist_data (Dict): The codelist data.
             column_mapping (Dict): The column mapping.
             codelists (List[str]): List of codelist names contained in the file.
-            cohort_id (Optional[str]): The ID of the associated cohort, if applicable.
             file_name (Optional[str]): The name of the file. If not provided, will use first codelist name.
+            study_id (Optional[str]): The ID of the associated study.
 
         Returns:
             bool: True if successful.
@@ -1150,49 +1126,25 @@ class DatabaseManager:
             )
             target_version = current_max_version + 1
 
-            # Insert the new version
-            if study_id:
-                insert_query = """
-                    INSERT INTO codelistfile (file_id, file_name, user_id, study_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-                """
-                await conn.execute(
-                    insert_query,
-                    codelist_id, file_name, user_id, study_id,
-                    target_version,
-                    json.dumps(codelist_data), json.dumps(column_mapping), codelists,
-                )
-            elif cohort_id:
-                insert_query = """
-                    INSERT INTO codelistfile (file_id, file_name, user_id, cohort_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-                """
-                await conn.execute(
-                    insert_query,
-                    codelist_id,
-                    file_name,
-                    user_id,
-                    cohort_id,
-                    target_version,
-                    json.dumps(codelist_data),
-                    json.dumps(column_mapping),
-                    codelists,
-                )
-            else:
-                insert_query = """
-                    INSERT INTO codelistfile (file_id, file_name, user_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-                """
-                await conn.execute(
-                    insert_query,
-                    codelist_id,
-                    file_name,
-                    user_id,
-                    target_version,
-                    json.dumps(codelist_data),
-                    json.dumps(column_mapping),
-                    codelists,
-                )
+            # Insert the new version with study_id
+            if not study_id:
+                raise ValueError("study_id is required for saving codelists")
+
+            insert_query = """
+                INSERT INTO codelistfile (file_id, file_name, user_id, study_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+            """
+            await conn.execute(
+                insert_query,
+                codelist_id,
+                file_name,
+                user_id,
+                study_id,
+                target_version,
+                json.dumps(codelist_data),
+                json.dumps(column_mapping),
+                codelists,
+            )
 
             logger.info(
                 f"Successfully saved codelist {codelist_id} version {target_version} for user {user_id}"
@@ -1217,6 +1169,7 @@ class DatabaseManager:
         codelist_data: Dict = None,
         column_mapping: Dict = None,
         codelists: List[str] = None,
+        study_id: str = None,
     ) -> bool:
         """
         Update an existing codelist without creating a new version.
@@ -1227,6 +1180,7 @@ class DatabaseManager:
             codelist_data (Dict, optional): The codelist data to update.
             column_mapping (Dict, optional): The column mapping to update.
             codelists (List[str], optional): List of codelist names to update.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
 
         Returns:
             bool: True if successful.
@@ -1235,14 +1189,23 @@ class DatabaseManager:
         try:
             conn = await self.get_connection()
 
-            # Get the current max version
-            version_query = """
-                SELECT MAX(version) as max_version 
-                FROM codelistfile 
-                WHERE file_id = $1 AND user_id = $2
-            """
-
-            version_row = await conn.fetchrow(version_query, codelist_id, user_id)
+            # Get the current max version, optionally filtering by study_id
+            if study_id:
+                version_query = """
+                    SELECT MAX(version) as max_version 
+                    FROM codelistfile 
+                    WHERE file_id = $1 AND user_id = $2 AND study_id = $3
+                """
+                version_row = await conn.fetchrow(
+                    version_query, codelist_id, user_id, study_id
+                )
+            else:
+                version_query = """
+                    SELECT MAX(version) as max_version 
+                    FROM codelistfile 
+                    WHERE file_id = $1 AND user_id = $2
+                """
+                version_row = await conn.fetchrow(version_query, codelist_id, user_id)
 
             if not version_row or not version_row["max_version"]:
                 return False  # Codelist doesn't exist
@@ -1274,12 +1237,21 @@ class DatabaseManager:
             if not update_parts:
                 return True  # Nothing to update
 
-            # Construct and execute the update query
-            update_query = f"""
-                UPDATE codelistfile 
-                SET {", ".join(update_parts)}
-                WHERE user_id = $1 AND file_id = $2 AND version = $3
-            """
+            # Construct and execute the update query, optionally filtering by study_id
+            if study_id:
+                update_parts.append(f"study_id = ${param_idx}")
+                params.append(study_id)
+                update_query = f"""
+                    UPDATE codelistfile 
+                    SET {", ".join(update_parts)}
+                    WHERE user_id = $1 AND file_id = $2 AND version = $3 AND study_id = ${param_idx}
+                """
+            else:
+                update_query = f"""
+                    UPDATE codelistfile 
+                    SET {", ".join(update_parts)}
+                    WHERE user_id = $1 AND file_id = $2 AND version = $3
+                """
 
             result = await conn.execute(update_query, *params)
 
@@ -1300,13 +1272,16 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def delete_codelist(self, user_id: str, codelist_id: str) -> bool:
+    async def delete_codelist(
+        self, user_id: str, codelist_id: str, study_id: str = None
+    ) -> bool:
         """
         Delete a codelist for a user from the database.
 
         Args:
             user_id (str): The user ID (UUID) whose codelist to delete.
             codelist_id (str): The ID of the codelist to delete.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
 
         Returns:
             bool: True if successful.
@@ -1315,12 +1290,18 @@ class DatabaseManager:
         try:
             conn = await self.get_connection()
 
-            query = """
-                DELETE FROM codelistfile 
-                WHERE user_id = $1 AND file_id = $2
-            """
-
-            result = await conn.execute(query, user_id, codelist_id)
+            if study_id:
+                query = """
+                    DELETE FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2 AND study_id = $3
+                """
+                result = await conn.execute(query, user_id, codelist_id, study_id)
+            else:
+                query = """
+                    DELETE FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2
+                """
+                result = await conn.execute(query, user_id, codelist_id)
 
             if result == "DELETE 0":
                 return False  # Codelist not found
@@ -1334,6 +1315,57 @@ class DatabaseManager:
             logger.error(
                 f"Failed to delete codelist {codelist_id} for user {user_id}: {e}"
             )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_codelist_display_order(
+        self, user_id: str, file_id: str, display_order: int, study_id: str = None
+    ) -> bool:
+        """
+        Update the display order of a codelist file.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the codelist.
+            file_id (str): The ID of the codelist file to update.
+            display_order (int): The new display order value.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
+
+        Returns:
+            bool: True if successful, False if codelist not found.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            if study_id:
+                query = """
+                    UPDATE codelistfile 
+                    SET display_order = $3, updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = $1 AND file_id = $2 AND study_id = $4
+                """
+                result = await conn.execute(
+                    query, user_id, file_id, display_order, study_id
+                )
+            else:
+                query = """
+                    UPDATE codelistfile 
+                    SET display_order = $3, updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = $1 AND file_id = $2
+                """
+                result = await conn.execute(query, user_id, file_id, display_order)
+
+            if result == "UPDATE 0":
+                return False  # Codelist not found
+
+            logger.info(
+                f"Successfully updated display order for codelist {file_id} to {display_order}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to update display order for codelist {file_id}: {e}")
             raise
         finally:
             if conn:
@@ -1379,7 +1411,9 @@ class DatabaseManager:
                         "creator_id": row["creator_id"],
                         "visible_by": row["visible_by"],
                         "display_order": row["display_order"],
-                        "database": json.loads(row["database"]) if row["database"] else None,
+                        "database": (
+                            json.loads(row["database"]) if row["database"] else None
+                        ),
                         "created_at": (
                             row["created_at"].isoformat() if row["created_at"] else None
                         ),
@@ -1432,7 +1466,9 @@ class DatabaseManager:
                         "creator_id": row["creator_id"],
                         "visible_by": row["visible_by"],
                         "display_order": row["display_order"],
-                        "database": json.loads(row["database"]) if row["database"] else None,
+                        "database": (
+                            json.loads(row["database"]) if row["database"] else None
+                        ),
                         "created_at": (
                             row["created_at"].isoformat() if row["created_at"] else None
                         ),
@@ -2008,8 +2044,12 @@ class DatabaseManager:
                     "study_id": row["study_id"],
                     "user_id": str(row["user_id"]),
                     "status": row["status"],
-                    "started_at": row["started_at"].isoformat() if row["started_at"] else None,
-                    "ended_at": row["ended_at"].isoformat() if row["ended_at"] else None,
+                    "started_at": (
+                        row["started_at"].isoformat() if row["started_at"] else None
+                    ),
+                    "ended_at": (
+                        row["ended_at"].isoformat() if row["ended_at"] else None
+                    ),
                     "manifest_path": row["manifest_path"],
                     "error_message": row["error_message"],
                 }
@@ -2022,8 +2062,7 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-
-# Global instance
+    # Global instance
     async def delete_study_execution(self, execution_id: str, user_id: str) -> Dict:
         """Delete an execution record and return its manifest_path so the caller can clean up files."""
         conn = None
@@ -2046,13 +2085,16 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-
     # -------------------------------------------------------------------------
     # Chat history
     # -------------------------------------------------------------------------
 
     async def create_chat_session(
-        self, user_id: str, study_id: Optional[str], title: Optional[str] = None, session_id: Optional[str] = None
+        self,
+        user_id: str,
+        study_id: Optional[str],
+        title: Optional[str] = None,
+        session_id: Optional[str] = None,
     ) -> Dict:
         conn = None
         try:
@@ -2096,7 +2138,9 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def get_chat_sessions(self, user_id: str, study_id: Optional[str]) -> List[Dict]:
+    async def get_chat_sessions(
+        self, user_id: str, study_id: Optional[str]
+    ) -> List[Dict]:
         conn = None
         try:
             conn = await self.get_connection()
@@ -2227,7 +2271,9 @@ class DatabaseManager:
             if conn:
                 await conn.close()
 
-    async def update_chat_session_title(self, session_id: str, user_id: str, title: str) -> bool:
+    async def update_chat_session_title(
+        self, session_id: str, user_id: str, title: str
+    ) -> bool:
         conn = None
         try:
             conn = await self.get_connection()
@@ -2263,6 +2309,256 @@ class DatabaseManager:
             return True
         except Exception as e:
             logger.error(f"Failed to delete chat session: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    # ========================================================================
+    # Constants Management
+    # ========================================================================
+
+    async def get_constants_for_study(self, study_id: str, user_id: str) -> List[Dict]:
+        """Get all constants for a study."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            rows = await conn.fetch(
+                """
+                SELECT c.constant_id, c.study_id, c.user_id, c.name, c.description,
+                       c.constant_type, c.value, c.display_order, c.created_at, c.updated_at
+                FROM constant c
+                WHERE c.study_id = $1 AND c.user_id = $2
+                ORDER BY c.constant_type, c.display_order
+                """,
+                study_id,
+                user_id,
+            )
+            return [
+                {
+                    "id": r["constant_id"],
+                    "study_id": r["study_id"],
+                    "user_id": str(r["user_id"]),
+                    "name": r["name"],
+                    "description": r["description"],
+                    "type": r["constant_type"],
+                    "value": r["value"],
+                    "display_order": r["display_order"],
+                    "created_at": r["created_at"].isoformat(),
+                    "updated_at": r["updated_at"].isoformat(),
+                }
+                for r in rows
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get constants for study {study_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_constant(self, constant_id: str, user_id: str) -> Optional[Dict]:
+        """Get a single constant by ID."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            row = await conn.fetchrow(
+                """
+                SELECT c.constant_id, c.study_id, c.user_id, c.name, c.description,
+                       c.constant_type, c.value, c.display_order, c.created_at, c.updated_at
+                FROM constant c
+                WHERE c.constant_id = $1 AND c.user_id = $2
+                """,
+                constant_id,
+                user_id,
+            )
+            if not row:
+                return None
+            return {
+                "id": row["constant_id"],
+                "study_id": row["study_id"],
+                "user_id": str(row["user_id"]),
+                "name": row["name"],
+                "description": row["description"],
+                "type": row["constant_type"],
+                "value": row["value"],
+                "display_order": row["display_order"],
+                "created_at": row["created_at"].isoformat(),
+                "updated_at": row["updated_at"].isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to get constant {constant_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def create_constant(
+        self,
+        constant_id: str,
+        study_id: str,
+        user_id: str,
+        name: str,
+        description: str,
+        constant_type: str,
+        value: dict,
+        display_order: int = 0,
+    ) -> Dict:
+        """Create a new constant."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            row = await conn.fetchrow(
+                """
+                INSERT INTO constant (constant_id, study_id, user_id, name, description, constant_type, value, display_order)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING constant_id, study_id, user_id, name, description, constant_type, value, display_order, created_at, updated_at
+                """,
+                constant_id,
+                study_id,
+                user_id,
+                name,
+                description,
+                constant_type,
+                json.dumps(value),
+                display_order,
+            )
+            return {
+                "id": row["constant_id"],
+                "study_id": row["study_id"],
+                "user_id": str(row["user_id"]),
+                "name": row["name"],
+                "description": row["description"],
+                "type": row["constant_type"],
+                "value": row["value"],
+                "display_order": row["display_order"],
+                "created_at": row["created_at"].isoformat(),
+                "updated_at": row["updated_at"].isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to create constant: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_constant(
+        self,
+        constant_id: str,
+        user_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        value: Optional[dict] = None,
+        display_order: Optional[int] = None,
+    ) -> Dict:
+        """Update an existing constant."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Build dynamic update query
+            updates = []
+            params = []
+            param_idx = 1
+
+            if name is not None:
+                updates.append(f"name = ${param_idx}")
+                params.append(name)
+                param_idx += 1
+
+            if description is not None:
+                updates.append(f"description = ${param_idx}")
+                params.append(description)
+                param_idx += 1
+
+            if value is not None:
+                updates.append(f"value = ${param_idx}")
+                params.append(json.dumps(value))
+                param_idx += 1
+
+            if display_order is not None:
+                updates.append(f"display_order = ${param_idx}")
+                params.append(display_order)
+                param_idx += 1
+
+            updates.append(f"updated_at = CURRENT_TIMESTAMP")
+            params.extend([constant_id, user_id])
+
+            query = f"""
+                UPDATE constant
+                SET {', '.join(updates)}
+                WHERE constant_id = ${param_idx} AND user_id = ${param_idx + 1}
+                RETURNING constant_id, study_id, user_id, name, description, constant_type, value, display_order, created_at, updated_at
+            """
+
+            row = await conn.fetchrow(query, *params)
+            if not row:
+                raise ValueError(f"Constant {constant_id} not found or access denied")
+
+            return {
+                "id": row["constant_id"],
+                "study_id": row["study_id"],
+                "user_id": str(row["user_id"]),
+                "name": row["name"],
+                "description": row["description"],
+                "type": row["constant_type"],
+                "value": row["value"],
+                "display_order": row["display_order"],
+                "created_at": row["created_at"].isoformat(),
+                "updated_at": row["updated_at"].isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to update constant {constant_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def delete_constant(self, constant_id: str, user_id: str) -> bool:
+        """Delete a constant."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            result = await conn.execute(
+                """
+                DELETE FROM constant
+                WHERE constant_id = $1 AND user_id = $2
+                """,
+                constant_id,
+                user_id,
+            )
+            return result == "DELETE 1"
+        except Exception as e:
+            logger.error(f"Failed to delete constant {constant_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def check_constant_in_use(
+        self, study_id: str, constant_name: str, user_id: str
+    ) -> bool:
+        """Check if a constant is referenced in any cohort."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            # Check if constant name appears in any cohort_data
+            row = await conn.fetchrow(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM cohort
+                    WHERE study_id = $1 
+                      AND user_id = $2
+                      AND cohort_data::text LIKE $3
+                ) AS in_use
+                """,
+                study_id,
+                user_id,
+                f'%"constant": "{constant_name}"%',
+            )
+            return row["in_use"] if row else False
+        except Exception as e:
+            logger.error(f"Failed to check constant usage: {e}")
             raise
         finally:
             if conn:

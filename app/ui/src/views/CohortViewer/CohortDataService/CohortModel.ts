@@ -101,6 +101,11 @@ export class CohortModel {
     this._cohort_data = value;
   }
 
+  public getStudyIdForCohort(): string | null {
+    // First try _study_data.id, then fall back to _cohort_data.study_id
+    return this._study_data?.id || this._cohort_data?.study_id || null;
+  }
+
   public getStudyNameForCohort(): string {
     return this._study_data?.name || 'Unknown Study';
   }
@@ -459,7 +464,16 @@ export class CohortModel {
     
     // Strip legacy structured keys before sending to backend
     const cohortForBackend = this.stripLegacyStructuredKeys(this._cohort_data);
-    await updateCohort(this._cohort_data.study_id, this._cohort_data.id, cohortForBackend);
+    
+    // Only send to backend if we have valid IDs, otherwise we get 422 errors
+    if (this._cohort_data.study_id && this._cohort_data.id) {
+      await updateCohort(this._cohort_data.study_id, this._cohort_data.id, cohortForBackend);
+    } else {
+      console.warn("Skipping backend save: Missing study_id or cohort_id", { 
+        study_id: this._cohort_data.study_id, 
+        cohort_id: this._cohort_data.id 
+      });
+    }
 
     // Always notify data change listeners (for PhenotypeDataService sync)
     this.notifyDataChangeListeners();

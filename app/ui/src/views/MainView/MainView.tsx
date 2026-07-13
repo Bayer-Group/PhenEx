@@ -18,10 +18,12 @@ import {
 } from '../../contexts/ThreePanelCollapseContext';
 import { CohortRightPanel } from '../CohortViewer/CohortRightPanel/CohortRightPanel';
 import { StudyExecutePanel } from '../SlideoverPanels/StudyExecutePanel/StudyExecutePanel';
+import { StudyIssuesPanel } from '../SlideoverPanels/StudyIssuesPanel/StudyIssuesPanel';
 import { MainBreadcrumb } from './MainBreadcrumb';
 import leftPanelIcon from '../../assets/icons/left_panel.svg';
 import { UserLogin } from '../LeftPanel/UserLogin/UserLogin';
 import { ExportButton } from '../../components/ExportButton/ExportButton';
+import { mainViewLayoutService } from './MainViewLayoutService';
 
 export enum ViewType {
   FullPage = 'fullPage',
@@ -288,6 +290,11 @@ const MainViewInner = () => {
     setBorderOpen(innerModelRef.current, DockLocation.RIGHT, isRightPanelShown);
   }, [isRightPanelShown, setBorderOpen]);
 
+  // Set up the layout service with the inner model (which has the right border)
+  useEffect(() => {
+    mainViewLayoutService.setModel(innerModelRef.current);
+  }, []);
+
   // Hide right panel when on studies grid or empty view, show it for cohort/study views
   useEffect(() => {
     if (currentView.viewType === ViewType.StudiesGrid || currentView.viewType === ViewType.Empty) {
@@ -307,6 +314,10 @@ const MainViewInner = () => {
 
   const handleInnerModelChange = useCallback((model: Model) => {
     if (syncingRef.current) return;
+    
+    // Update the service with the latest model
+    mainViewLayoutService.setModel(model);
+    
     const right = model.getBorderSet().getBorderMap().get(DockLocation.RIGHT);
     if (right && (right.getSelected() !== -1) !== isRightPanelShown) {
       setRightPanelShown(right.getSelected() !== -1);
@@ -424,7 +435,15 @@ const MainViewInner = () => {
             </div>
           );
         case 'issues':
-          return <div className={styles.emptyPane} />;
+          return (
+            <div className={styles.rightPanelTab}>
+              {COHORT_STUDY_VIEWS.has(currentView.viewType) ? (
+                <StudyIssuesPanel />
+              ) : (
+                <div className={styles.emptyPane}>No issues for this view.</div>
+              )}
+            </div>
+          );
         default:
           return null;
       }

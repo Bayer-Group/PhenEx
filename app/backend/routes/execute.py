@@ -14,7 +14,7 @@ except ImportError:
 # Import database manager, authentication utilities, and codelist functions
 from ..database import db_manager
 from ..utils.auth import get_authenticated_user_id
-from ..routes.codelist import get_codelist_file_for_cohort
+from ..routes.codelist import get_codelist_file_for_study
 from ..utils.validation import validate_cohort_data_format
 
 # Create router for cohort execution endpoint
@@ -599,7 +599,7 @@ def resolve_phenexui_codelist_file(phenexui_codelist, user_id):
             raise ValueError(
                 f"Missing required file_id or cohort_id in codelist: {phenexui_codelist}"
             )
-        codelist_file = await get_codelist_file_for_cohort(
+        codelist_file = await get_codelist_file_for_study(
             db_manager, actual_cohort_id, actual_file_id, user_id
         )
 

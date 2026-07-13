@@ -36,7 +36,7 @@ export const ConstantTypeSelectorEditor: React.FC<ConstantTypeSelectorEditorProp
   };
 
   return (
-    <div style={{ padding: '8px', minWidth: '250px' , backgroundColor: 'red'}}>
+    <div style={{ padding: '8px', minWidth: '250px', backgroundColor: 'var(--color-background-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
       <ItemList
         items={constantTypes}
         selectedName={selectedType || undefined}
