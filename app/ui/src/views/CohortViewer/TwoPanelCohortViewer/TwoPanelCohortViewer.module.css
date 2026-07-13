@@ -103,11 +103,14 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.711);
   z-index: 9999;
   display: flex;
   opacity: 0;
   animation: popoverFadeIn 0.2s ease-in forwards;
+  background: hsla(25, 35%, 90%, 0.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
 }
 
 .popoverContent {
