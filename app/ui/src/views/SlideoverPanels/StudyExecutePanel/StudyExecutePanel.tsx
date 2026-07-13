@@ -44,26 +44,36 @@ export const StudyExecutePanel: React.FC = () => {
     }
   };
 
-  const checkValidation = async () => {
+  const checkValidation = async (): Promise<{ hasErrors: boolean; errorCount: number }> => {
     const studyId = getStudyId();
-    if (!studyId) return;
+    if (!studyId) return { hasErrors: false, errorCount: 0 };
     try {
       const validation = await getStudyIssues(studyId);
-      setHasValidationErrors(!validation.valid);
-      setValidationErrorCount(validation.errors.length);
+      const hasErrors = !validation.valid;
+      const errorCount = validation.errors.length;
+      setHasValidationErrors(hasErrors);
+      setValidationErrorCount(errorCount);
+      return { hasErrors, errorCount };
     } catch {
       // silently ignore
+      return { hasErrors: false, errorCount: 0 };
     }
   };
 
-  // Poll until the StudyDataService has a study loaded, then fetch executions once.
+  // Poll until the StudyDataService has a study loaded, then fetch executions and start polling validation.
   useEffect(() => {
     let cancelled = false;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+
     const tryFetch = async () => {
       const studyId = getStudyId();
       if (studyId) {
         await fetchExecutions();
         await checkValidation();
+        // Poll validation every 5 seconds to stay in sync with the Issues tab
+        pollInterval = setInterval(() => {
+          if (!cancelled) checkValidation();
+        }, 5000);
         return;
       }
       // Retry until study is available
@@ -73,7 +83,10 @@ export const StudyExecutePanel: React.FC = () => {
       return () => clearTimeout(timer);
     };
     tryFetch();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      if (pollInterval) clearInterval(pollInterval);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -98,11 +111,11 @@ export const StudyExecutePanel: React.FC = () => {
     const studyId = getStudyId();
     if (!studyId || isExecuting) return;
 
-    // Check validation before executing
-    await checkValidation();
-    if (hasValidationErrors) {
+    // Check validation before executing — use returned value to avoid stale React state
+    const { hasErrors, errorCount } = await checkValidation();
+    if (hasErrors) {
       setLogs([{
-        message: `Cannot execute: Study has ${validationErrorCount} validation error${validationErrorCount !== 1 ? 's' : ''}. Please check the Issues tab.`,
+        message: `Cannot execute: Study has ${errorCount} validation error${errorCount !== 1 ? 's' : ''}. Please check the Issues tab.`,
         type: 'error',
         timestamp: new Date()
       }]);
