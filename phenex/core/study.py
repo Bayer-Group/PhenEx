@@ -1,4 +1,4 @@
-import os, datetime, json, sys
+import os, datetime, json, logging, sys
 from typing import List, Dict, Optional
 
 from phenex.node import Node, NodeGroup
@@ -25,6 +25,7 @@ class Study:
         name: Name of the study. Used for directory naming and identification.
         cohorts: List of Cohort objects to execute. Each cohort must have a unique name and an assigned database.
         custom_reporters: Additional reporters to run on each cohort. A Waterfall and Table1 reporter is always included by default.
+        description: A plain text description of the study.
         database: Optional database to use for all cohorts that do not have a database already defined. If a cohort already has a database, a warning is issued and the cohort-level database is used. If this is not provided, every cohort must have a database defined or an error is raised.
 
     Example:
@@ -115,6 +116,17 @@ class Study:
             previous_executions
         )
 
+        # Add a file handler to the root phenex logger so all phenex.* loggers
+        # write to analysis.log for this execution run.
+        log_path = os.path.join(path_exec_dir_study, "analysis.log")
+        file_handler = logging.FileHandler(log_path)
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        )
+        phenex_root_logger = logging.getLogger("phenex")
+        phenex_root_logger.addHandler(file_handler)
+
         status = "success"
         error_message = None
         try:
@@ -160,6 +172,8 @@ class Study:
             error_message = str(e)
             raise
         finally:
+            phenex_root_logger.removeHandler(file_handler)
+            file_handler.close()
             self._write_manifest(
                 path_exec_dir_study, status=status, error_message=error_message
             )
