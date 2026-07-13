@@ -7,8 +7,63 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  margin: 0;
+  overflow: hidden;
+}
+
+.header {
+  flex-shrink: 0;
+  width: 100%;
+  border-bottom: 1px solid var(--line-color);
+}
+
+.panelTitle {
+  font-size: 11px;
+  font-family: 'IBMPlexSans-semibold';
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 12px 16px 8px;
+  color: var(--color-accent-bright);
+  opacity: 0.55;
+  user-select: none;
+}
+
+.scrollableWrapper {
+  flex: 1;
   min-height: 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.scrollableContent {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 16px;
+  box-sizing: border-box;
+}
+
+.scrollbarRegion {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  z-index: 10;
+}
+
+.scrollBarTrack {
+  background: transparent;
+}
+
+.scrollBarThumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.scrollBarThumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 /* ── Controls area (toolbar + execute button) ── */
@@ -55,7 +110,7 @@
 .content {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -111,11 +166,8 @@
 .copyIconBtn.copied { opacity: 1; color: #27ae60; }
 
 
-.logsContainer {
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 8px 16px;
+.logsContent {
+  padding: 8px 0;
   font-family: 'IBMPlexMono', monospace;
   font-size: 11px;
   color: var(--color-accent-bright);
@@ -283,3 +335,5 @@
   font-family: 'IBMPlexSans-regular';
   line-height: 1.4;
 }
+
+

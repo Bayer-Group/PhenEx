@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './StudyExecutePanel.module.css';
-import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
 import { StudyDataService } from '../../StudyViewer/StudyDataService';
+import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import {
   executeStudy,
   getStudyExecutions,
@@ -27,6 +27,7 @@ export const StudyExecutePanel: React.FC = () => {
   const [logFileContent, setLogFileContent] = useState<string | null>(null);
   const [hasValidationErrors, setHasValidationErrors] = useState(false);
   const [validationErrorCount, setValidationErrorCount] = useState(0);
+  const contentScrollRef = useRef<HTMLDivElement>(null);
   const logsContainerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -77,8 +78,8 @@ export const StudyExecutePanel: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (logsContainerRef.current) {
-      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+    if (contentScrollRef.current) {
+      contentScrollRef.current.scrollTop = contentScrollRef.current.scrollHeight;
     }
   }, [logs, logFileContent]);
 
@@ -328,19 +329,19 @@ export const StudyExecutePanel: React.FC = () => {
 
     if (viewMode === 'log-file' && logFileContent !== null) {
       return (
-        <div className={styles.logsWrapper}>
+        <>
           {logHeader}
-          <div className={styles.logsContainer} ref={logsContainerRef}>
+          <div className={styles.logsContent} ref={logsContainerRef}>
             <pre className={styles.logFileContent}>{logFileContent}</pre>
           </div>
-        </div>
+        </>
       );
     }
     if (viewMode === 'logs' || hasLogs) {
       return (
-        <div className={styles.logsWrapper}>
+        <>
           {logHeader}
-          <div className={styles.logsContainer} ref={logsContainerRef}>
+          <div className={styles.logsContent} ref={logsContainerRef}>
             {logs.length === 0 ? <div className={styles.emptyState} /> : logs.filter(log => shouldShowLog(log.message)).map((log, i) => (
               <div key={i} className={`${styles.logEntry} ${getLogClassName(log.type, log.message)}`}>
                 <span className={styles.timestamp}>[{log.timestamp.toLocaleTimeString()}]</span>
@@ -348,33 +349,36 @@ export const StudyExecutePanel: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </>
       );
     }
-    return <div className={styles.logsContainer} ref={logsContainerRef}><div className={styles.emptyState} /></div>;
+    return <div className={styles.logsContent} ref={logsContainerRef}><div className={styles.emptyState} /></div>;
   };
 
-  const infoContent = () => (
-    <span>
-      <i>Execute the study.</i>
-      <ol>
-        <li>Click <code>Execute Study</code> to run all cohorts and generate the report.</li>
-        <li>Use the <strong>Past Runs</strong> dropdown to browse previous executions.</li>
-        <li>For each run you can view the report, inspect the log file, or delete the run.</li>
-      </ol>
-    </span>
-  );
-
   return (
-    <SlideoverPanel title="Execute Study" info={infoContent()}>
-      <div className={styles.container}>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <div className={styles.panelTitle}>Execute Study</div>
         {renderControls()}
         {renderRunsBar()}
-        <div className={styles.content}>
+      </div>
+      <div className={styles.scrollableWrapper}>
+        <div ref={contentScrollRef} className={styles.scrollableContent}>
           {renderContent()}
         </div>
+        <div className={styles.scrollbarRegion}>
+          <SimpleCustomScrollbar
+            targetRef={contentScrollRef}
+            orientation="vertical"
+            marginTop={10}
+            marginBottom={10}
+            marginToEnd={10}
+            classNameTrack={styles.scrollBarTrack}
+            classNameThumb={styles.scrollBarThumb}
+            showOnHover={true}
+          />
+        </div>
       </div>
-    </SlideoverPanel>
+    </div>
   );
 };
-
