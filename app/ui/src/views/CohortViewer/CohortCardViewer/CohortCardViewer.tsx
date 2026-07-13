@@ -440,32 +440,70 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       }
     }, []);
 
-    // Attach a non-passive wheel listener so e.preventDefault() actually suppresses
-    // the browser's native vertical scroll when we convert it to horizontal scroll.
-    // React's synthetic onWheel can be passive in React 17+, making preventDefault a no-op.
+    // Shared vertical sync: set scrollTop on both panels simultaneously so they
+    // never drift apart (the same technique used by SimpleCustomScrollbar drag).
+    const syncVerticalScroll = useCallback((delta: number) => {
+      const scrollEl = scrollRef.current;
+      const pinnedEl = pinnedContentRef.current;
+      if (!scrollEl) return;
+      const maxScroll = scrollEl.scrollHeight - scrollEl.clientHeight;
+      const newTop = Math.max(0, Math.min(scrollEl.scrollTop + delta, maxScroll));
+      scrollEl.scrollTop = newTop;
+      if (pinnedEl) pinnedEl.scrollTop = newTop;
+      prevScrollTopRef.current = newTop;
+    }, []);
+
+    // Attach a single non-passive wheel listener on the root container via event delegation.
+    // This avoids a race where pinnedContentRef/scrollRef are null at effect-setup time
+    // (e.g. when rows starts empty and mounts later). Reading the refs at dispatch time
+    // ensures we always have the current elements.
+    //
+    // — Vertical wheel over pinned panel: sync both panels together (no jitter).
+    // — Vertical wheel over scroll panel: sync both panels (or remap when flipScrollDirection).
+    // — Horizontal wheel over pinned panel: suppressed (pinned cols don't scroll horizontally).
+    // — Horizontal wheel over scroll panel in normal mode: native scroll.
     useEffect(() => {
-      const el = scrollRef.current;
-      if (!el) return;
+      const root = rootRef.current;
+      if (!root) return;
+
       const handler = (e: WheelEvent) => {
-        if (!flipScrollDirection) return;
-        e.preventDefault();
-        if (e.shiftKey) {
-          // Shift+scroll → vertical scroll.
-          // On macOS the OS converts shift+vertical gesture to deltaX, so fall back to it.
+        const scrollEl = scrollRef.current;
+        const pinnedEl = pinnedContentRef.current;
+        if (!scrollEl) return;
+
+        const isVertical = Math.abs(e.deltaY) > Math.abs(e.deltaX);
+        const overPinned = pinnedEl && pinnedEl.contains(e.target as Node);
+        const overScroll = scrollEl.contains(e.target as Node);
+
+        if (overPinned) {
+          // Pinned panel — always intercept: redirect vertical, suppress horizontal
           e.preventDefault();
-          const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-          el.scrollTop += delta;
-        } else if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-          // Plain vertical wheel → horizontal scroll (flipped)
-          el.scrollLeft += e.deltaY;
-        } else {
-          // Predominantly horizontal gesture → horizontal scroll
-          el.scrollLeft += e.deltaX;
+          if (isVertical) syncVerticalScroll(e.deltaY);
+          // horizontal: no-op (pinned cols have no horizontal scroll)
+        } else if (overScroll) {
+          if (flipScrollDirection) {
+            e.preventDefault();
+            if (e.shiftKey) {
+              const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+              syncVerticalScroll(delta);
+            } else if (isVertical) {
+              // Plain vertical wheel → horizontal scroll (flipped)
+              scrollEl.scrollLeft += e.deltaY;
+            } else {
+              scrollEl.scrollLeft += e.deltaX;
+            }
+          } else if (isVertical) {
+            // Vertical wheel → sync both panels together (no jitter)
+            e.preventDefault();
+            syncVerticalScroll(e.deltaY);
+          }
+          // Horizontal wheel in normal mode: let native scroll handle it
         }
       };
-      el.addEventListener('wheel', handler, { passive: false });
-      return () => el.removeEventListener('wheel', handler);
-    }, [flipScrollDirection]);
+
+      root.addEventListener('wheel', handler, { passive: false });
+      return () => root.removeEventListener('wheel', handler);
+    }, [flipScrollDirection, syncVerticalScroll]);
 
     useImperativeHandle(
       ref,
