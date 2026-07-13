@@ -51,7 +51,9 @@ class DeathPhenotype(Phenotype):
 
     def _execute(self, tables: Dict[str, Table]) -> PhenotypeTable:
         person_table = tables[self.domain]
-        person_table = person_table.mutate(EVENT_DATE=person_table.DATE_OF_DEATH)
+        person_table = person_table.mutate(
+            EVENT_DATE=person_table.DATE_OF_DEATH.cast("date")
+        )
         assert is_phenex_person_table(person_table)
 
         death_table = person_table.filter(person_table.DATE_OF_DEATH.notnull())
@@ -82,7 +84,9 @@ class DeathPhenotype(Phenotype):
         else:
             death_table = death_table.mutate(VALUE=ibis.null("float64"))
 
-        death_table = death_table.mutate(EVENT_DATE=death_table.DATE_OF_DEATH.cast("date"))
+        death_table = death_table.mutate(
+            EVENT_DATE=death_table.DATE_OF_DEATH.cast("date")
+        )
         death_table = death_table.mutate(BOOLEAN=True)
 
         cols = ["PERSON_ID", "EVENT_DATE", "VALUE", "BOOLEAN"]

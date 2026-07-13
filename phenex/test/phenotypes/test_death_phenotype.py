@@ -270,7 +270,9 @@ class DeathPhenotypeMonthOfDeathOnlyTestGenerator(PhenotypeTestGenerator):
             }
             DATE_FORMAT = {"MONTH_OF_DEATH": ["%Y%m", "middle"]}
 
-        return [{"name": "PERSON", "df": self.input_table, "type": PersonTableMonthOfDeath}]
+        return [
+            {"name": "PERSON", "df": self.input_table, "type": PersonTableMonthOfDeath}
+        ]
 
     def define_phenotype_tests(self):
         t1 = {
@@ -346,7 +348,9 @@ class DeathPhenotypeBothDateColumnsTestGenerator(PhenotypeTestGenerator):
             }
             DATE_FORMAT = {"MONTH_OF_DEATH": ["%Y%m", "middle"]}
 
-        return [{"name": "PERSON", "df": self.input_table, "type": PersonTableBothDates}]
+        return [
+            {"name": "PERSON", "df": self.input_table, "type": PersonTableBothDates}
+        ]
 
     def define_phenotype_tests(self):
         t1 = {
