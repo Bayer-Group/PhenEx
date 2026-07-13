@@ -29,6 +29,54 @@ class PhenexTable:
       Example: {"EVENT_DATE": ["STARTDATETIME", "RECORDEDDATETIME"]} creates EVENT_DATE using
       STARTDATETIME if available, falling back to RECORDEDDATETIME if STARTDATETIME is null
 
+    DATE_FORMAT is a dictionary mapping source (original) column names to date format strings.
+    When a source column appears in DATE_FORMAT, its string values are parsed into timestamps
+    using the specified format before any further processing (coalescing, casting, etc.).
+    This is useful when date columns are stored as strings in the source data.
+
+    IMPORTANT: The format string must use the syntax of your database backend, not Python strftime.
+    Common formats by backend:
+    - Snowflake: "YYYYMMDD", "YYYYMM", "YYYY", "YYYY-MM-DD"
+    - DuckDB:    "%Y%m%d",  "%Y%m",  "%Y",  "%Y-%m-%d"
+    - BigQuery:  "%Y%m%d",  "%Y%m",  "%Y",  "%Y-%m-%d"
+
+    Each DATE_FORMAT value can be either a plain format string or a two-element list
+    [format, position]. The list form is meaningful for year-only (YYYY / %Y) and
+    year-month (YYYYMM / %Y%m) formats, which do not encode a specific day. position
+    resolves the ambiguity:
+
+    - 'first'  — first day of the year (Jan 1) or month (the 1st)
+    - 'middle' — mid-year (Jul 2) or mid-month (the 15th)
+    - 'last'   — last day of the year (Dec 31) or last day of the month
+
+    Examples:
+    ```python
+    class MyCodeTable(CodeTable):
+        DATE_FORMAT = {"EVENTDATE": "YYYYMMDD"}  # parse "20240115" -> 2024-01-15
+        DEFAULT_MAPPING = {
+            "EVENT_DATE": "EVENTDATE",
+        }
+
+    class MyCodeTableCoalesce(CodeTable):
+        DATE_FORMAT = {
+            "STARTDATE": "YYYYMMDD",       # parse "20240115" -> 2024-01-15
+            "RECORDEDDATE": "DD/MM/YYYY",  # parse "15/01/2024" -> 2024-01-15
+        }
+        DEFAULT_MAPPING = {
+            "EVENT_DATE": ["STARTDATE", "RECORDEDDATE"],  # coalesce after formatting
+        }
+
+    class MyYearMonthTable(CodeTable):  # Snowflake, year-month columns
+        DATE_FORMAT = {
+            "STUDY_MONTH": ["YYYYMM", "first"],   # "202401" -> 2024-01-01
+            "BIRTH_YEAR":  ["YYYY",   "middle"],  # "1990"   -> 1990-07-02
+            "ENROL_MONTH": ["YYYYMM", "last"],    # "202401" -> 2024-01-31
+        }
+        DEFAULT_MAPPING = {
+            "EVENT_DATE": "STUDY_MONTH",
+        }
+    ```
+
     JOIN_KEYS and PATHS Documentation:
 
     JOIN_KEYS defines direct relationships between tables. The key is the CLASS NAME of the target table,
@@ -132,6 +180,7 @@ class PhenexTable:
     KNOWN_FIELDS = []  # List[phenex column names]
     DEFAULT_MAPPING = {}  # dict: input column name -> phenex column name
     PATHS = {}  # dict: table class name -> List[other table class names]
+    DATE_FORMAT = {}  # dict: source column name -> backend-native date format string
     REQUIRED_FIELDS = list(DEFAULT_MAPPING.keys())
 
     def __init__(self, table, name=None, column_mapping={}):
@@ -177,6 +226,70 @@ class PhenexTable:
         default_mapping.update(column_mapping)
         return default_mapping
 
+    def _format_column(self, col_ref, col_name):
+        """
+        Apply date formatting if the source column has a DATE_FORMAT entry.
+
+        DATE_FORMAT values can be:
+        - A format string: the column is parsed directly via to_timestamp, then cast to date.
+        - A [format, position] list: for year-only (YYYY / %Y) or year-month
+          (YYYYMM / %Y%m) formats, position resolves the ambiguous day:
+            'first'  — Jan 1 or the 1st of the month
+            'middle' — Jul 2 or the 15th of the month
+            'last'   — Dec 31 or the last day of the month
+
+        All paths return a date (not timestamp) so that downstream date arithmetic
+        (e.g. DateDelta) works consistently across backends.
+        Blank/empty strings are nullified before parsing to avoid format errors.
+        Columns already typed as date are returned as-is; timestamp columns (e.g.
+        timestamp('UTC') from Snowflake on re-instantiation) are cast to date.
+        """
+        if col_name not in self.DATE_FORMAT:
+            return col_ref
+
+        # If the column is already a date, no further processing is needed.
+        # If it's a timestamp (e.g. timestamp('UTC') from Snowflake after a prior
+        # instantiation), cast down to date so downstream date arithmetic stays consistent.
+        col_type = str(col_ref.type())
+        if col_type.startswith("date") and not col_type.startswith("timestamp"):
+            return col_ref
+        if col_type.startswith("timestamp"):
+            return col_ref.cast("date")
+
+        fmt_spec = self.DATE_FORMAT[col_name]
+        fmt, position = (
+            (fmt_spec[0], fmt_spec[1])
+            if isinstance(fmt_spec, list)
+            else (fmt_spec, None)
+        )
+
+        col_ref = col_ref.nullif("")
+
+        if position is None:
+            return col_ref.to_timestamp(fmt).cast("date")
+
+        # Detect backend style: Snowflake has no '%'; DuckDB/BigQuery use '%' prefixes.
+        full_date_fmt = "YYYYMMDD" if "%" not in fmt else "%Y%m%d"
+
+        if fmt in ("YYYY", "%Y"):  # year-only
+            suffix = {"first": "0101", "middle": "0702", "last": "1231"}[position]
+            return col_ref.concat(suffix).to_timestamp(full_date_fmt).cast("date")
+
+        if fmt in ("YYYYMM", "%Y%m"):  # year-month
+            if position == "last":
+                # Parse as 1st of month, then advance to the true last day.
+                first_of_month = col_ref.concat("01").to_timestamp(full_date_fmt)
+                return (
+                    first_of_month + ibis.interval(months=1) - ibis.interval(days=1)
+                ).cast("date")
+            suffix = {"first": "01", "middle": "15"}[position]
+            return col_ref.concat(suffix).to_timestamp(full_date_fmt).cast("date")
+
+        raise ValueError(
+            f"DATE_FORMAT position '{position}' is only supported for year-only "
+            f"(YYYY / %Y) or year-month (YYYYMM / %Y%m) formats, got '{fmt}'."
+        )
+
     def _resolve_column_mapping(self, table, column_mapping):
         """
         Convert raw column mapping (strings/lists) to ibis expressions for use in mutate().
@@ -184,15 +297,16 @@ class PhenexTable:
         String values become direct column references: table[col].
         List values become coalesce expressions over the listed columns.
         Date columns in a coalesce list are cast to timestamp for consistent typing.
+        Date formatting via DATE_FORMAT is applied before coalescing.
         """
         processed_mapping = {}
         for key, value in column_mapping.items():
             if isinstance(value, list):
                 # Coalesce multiple columns - first non-null value wins
-                # Cast date columns to timestamp for consistent typing
+                # Apply date formatting, then cast dates to timestamp for consistent typing
                 cols = []
                 for col in value:
-                    col_ref = table[col]
+                    col_ref = self._format_column(table[col], col)
                     col_type = str(col_ref.type())
                     if col_type.startswith("date") and not col_type.startswith(
                         "timestamp"
@@ -201,8 +315,8 @@ class PhenexTable:
                     cols.append(col_ref)
                 processed_mapping[key] = ibis.coalesce(*cols)
             else:
-                # Single column mapping - create column reference
-                processed_mapping[key] = table[value]
+                # Single column mapping - apply date formatting if specified
+                processed_mapping[key] = self._format_column(table[value], value)
         return processed_mapping
 
     def __getattr__(self, name):
@@ -371,6 +485,7 @@ class PhenexTable:
             "KNOWN_FIELDS": cls.KNOWN_FIELDS,
             "DEFAULT_MAPPING": cls.DEFAULT_MAPPING,
             "PATHS": cls.PATHS,
+            "DATE_FORMAT": cls.DATE_FORMAT,
             "REQUIRED_FIELDS": cls.REQUIRED_FIELDS,
         }
 
@@ -473,6 +588,8 @@ class PhenexVisitOccurrenceTable(PhenexTable):
         "VISIT_OCCURRENCE_SOURCE_VALUE": "VISIT_DETAIL_SOURCE_VALUE",
     }
 
+    DATE_FORMAT = {}  # e.g. Snowflake: {"VISIT_DETAIL_ID": "YYYYMMDD"}
+
 
 class PhenexIndexTable(PhenexTable):
     NAME_TABLE = "INDEX"
@@ -571,3 +688,10 @@ def is_phenex_index_table(table: PhenexTable) -> bool:
 
 
 PHENOTYPE_TABLE_COLUMNS = ["PERSON_ID", "BOOLEAN", "EVENT_DATE", "VALUE"]
+PHENOTYPE_TABLE_COLUMNS_WITH_INDEX = [
+    "PERSON_ID",
+    "INDEX_DATE",
+    "BOOLEAN",
+    "EVENT_DATE",
+    "VALUE",
+]

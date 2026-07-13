@@ -2,7 +2,8 @@ from typing import Optional
 from phenex.phenotypes import MeasurementPhenotype, Phenotype
 from phenex.filters.value import Value, GreaterThanOrEqualTo
 from phenex.filters.value_filter import ValueFilter
-from phenex.tables import PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
+from phenex.tables import PhenotypeTable
+from phenex.phenotypes.functions import select_phenotype_columns
 from phenex.aggregators.aggregator import First, Last, ValueAggregator, DailyMedian
 
 from ibis import _
@@ -81,13 +82,18 @@ class MeasurementChangePhenotype(Phenotype):
         phenotype_table_1 = self.phenotype.table
         phenotype_table_2 = self.phenotype.table.view()
         # Create a self-join to compare each measurement with every other measurement
+        join_predicates = [
+            phenotype_table_1.PERSON_ID == phenotype_table_2.PERSON_ID,
+            (phenotype_table_1.EVENT_DATE != phenotype_table_2.EVENT_DATE)
+            | (phenotype_table_1.VALUE != phenotype_table_2.VALUE),
+        ]
+        if "INDEX_DATE" in phenotype_table_1.columns:
+            join_predicates.append(
+                phenotype_table_1.INDEX_DATE == phenotype_table_2.INDEX_DATE
+            )
         joined_table = phenotype_table_1.join(
             phenotype_table_2,
-            [
-                phenotype_table_1.PERSON_ID == phenotype_table_2.PERSON_ID,
-                (phenotype_table_1.EVENT_DATE != phenotype_table_2.EVENT_DATE)
-                | (phenotype_table_1.VALUE != phenotype_table_2.VALUE),
-            ],
+            join_predicates,
             lname="{name}_1",
             rname="{name}_2",
         ).filter(_.EVENT_DATE_1 < _.EVENT_DATE_2)
@@ -140,9 +146,12 @@ class MeasurementChangePhenotype(Phenotype):
             )
 
         # Select the required columns
-        filtered_table = filtered_table.mutate(
+        mutate_kwargs = dict(
             PERSON_ID="PERSON_ID_1", VALUE="VALUE_CHANGE", BOOLEAN=True
         )
+        if "INDEX_DATE_1" in filtered_table.columns:
+            mutate_kwargs["INDEX_DATE"] = "INDEX_DATE_1"
+        filtered_table = filtered_table.mutate(**mutate_kwargs)
 
         # Handle the return_date attribute for each PERSON_ID using window functions
         if self.return_date == "first":
@@ -153,10 +162,6 @@ class MeasurementChangePhenotype(Phenotype):
         if self.return_value is not None:
             filtered_table = self.return_value.aggregate(filtered_table)
 
-        filtered_table = (
-            filtered_table.mutate(BOOLEAN=True)
-            .select(PHENOTYPE_TABLE_COLUMNS)
-            .distinct()
-        )
-
-        return filtered_table
+        filtered_table = filtered_table.mutate(BOOLEAN=True)
+        filtered_table = select_phenotype_columns(filtered_table)
+        return filtered_table.distinct()

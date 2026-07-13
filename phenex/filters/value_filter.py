@@ -85,6 +85,11 @@ class ValueFilter(Filter):
     def _filter(self, table: PhenexTable) -> PhenexTable:
         conditions = []
         value_column = getattr(table, self.column_name)
+        # Cast string columns to float when comparing against numeric filter values
+        if value_column.type().is_string():
+            value_column = value_column.try_cast("float64")
+            table = table.filter(value_column.notnull())
+            value_column = getattr(table, self.column_name).try_cast("float64")
         if self.min_value is not None:
             if self.min_value.operator == ">":
                 conditions.append(value_column > self.min_value.value)

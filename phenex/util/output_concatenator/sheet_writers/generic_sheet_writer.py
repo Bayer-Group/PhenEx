@@ -31,6 +31,10 @@ class GenericSheetWriter(_BaseSheetWriter):
         "Delta",
         "Pct_N",
         "N",
+        "Pct_N_events",
+        "N_events",
+        "Pct_events_remaining",
+        "N_events_remaining",
     ]
     _COLUMN_HEADERS: Dict[str, str] = {
         "Type": "",
@@ -42,10 +46,14 @@ class GenericSheetWriter(_BaseSheetWriter):
         "Delta": "\u0394",
         "Pct_N": "%",
         "N": "N",
+        "Pct_N_events": "%",
+        "N_events": "N events",
+        "Pct_events_remaining": "%",
+        "N_events_remaining": "remaining events",
     }
 
     # Columns that should be sized for large numbers (2-digit millions).
-    _WIDE_COLUMNS = {"N", "Remaining", "Delta"}
+    _WIDE_COLUMNS = {"N", "Remaining", "Delta", "N_events", "N_events_remaining"}
 
     def write(
         self,
@@ -161,19 +169,38 @@ class GenericSheetWriter(_BaseSheetWriter):
                 display,
                 bold=True,
                 size=14,
-                horizontal="center",
+                horizontal="left" if col_name == "Name" else "right",
+                indent=1 if col_name == "Name" else 0,
             )
 
     def _write_data_rows(self, sheet, rows: list, columns: List[str], start_col: int):
         display_rows = self._sparsify_type(rows) if "Type" in columns else rows
+        # Track the most recent non-component (parent) row colour so that
+        # component rows inherit their parent's hue (inclusion=green,
+        # exclusion=red) and are lightened by nesting level rather than all
+        # sharing a single fixed "component" colour.
+        last_parent_color = None
         for row_idx, (orig_row, disp_row) in enumerate(
             zip(rows, display_rows),
             start=self._DATA_START_ROW,
         ):
             row_type = str(orig_row.get("Type", "")).lower()
-            fill_color = (
-                None if row_type == "info" else self._WATERFALL_COLORS.get(row_type)
-            )
+            if row_type == "info":
+                fill_color = None
+            elif row_type == "component":
+                # Nesting depth is encoded by the number of dots in Index
+                # (e.g. "2.1" -> 1, "2.1.3" -> 2). Lighten the parent colour
+                # progressively so deeper components appear lighter.
+                index_val = str(orig_row.get("Index", "") or "")
+                level = index_val.count(".")
+                fill_color = (
+                    self._lighten_hex(last_parent_color, level)
+                    if last_parent_color
+                    else self._WATERFALL_COLORS.get("component")
+                )
+            else:
+                fill_color = self._WATERFALL_COLORS.get(row_type)
+                last_parent_color = fill_color
             for offset, col_name in enumerate(columns):
                 value = self._clean_numeric(disp_row.get(col_name))
                 fmt = self._number_format_for_value(value)
@@ -183,7 +210,8 @@ class GenericSheetWriter(_BaseSheetWriter):
                     start_col + offset,
                     value,
                     size=14,
-                    horizontal="center",
+                    horizontal="left" if col_name == "Name" else "right",
+                    indent=1 if col_name == "Name" else 0,
                     fill_color=fill_color,
                     number_format=fmt,
                 )
