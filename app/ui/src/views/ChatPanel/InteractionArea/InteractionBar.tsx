@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react';
+import { FC } from 'react';
 import { ButtonsBar } from '../../../components/ButtonsAndTabs/ButtonsBar/ButtonsBar';
 import styles from './InteractionBar.module.css';
 import { chatPanelDataService } from '../ChatPanelDataService';
@@ -30,37 +30,7 @@ export const InteractionBar: FC<InteractionBarProps> = ({
   onStop,
   isAIThinking = false
 }) => {
-  const [dots, setDots] = useState('');
-
   console.log('🔘 InteractionBar render - state:', state, 'isProvisional:', isProvisional, 'isAIThinking:', isAIThinking);
-
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null;
-
-    if (isAIThinking) {
-      intervalId = setInterval(() => {
-        setDots(prev => {
-          switch (prev) {
-            case '':
-              return '.';
-            case '.':
-              return '..';
-            case '..':
-              return '...';
-
-            default:
-              return '';
-          }
-        });
-      }, 500);
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [isAIThinking]);
 
   // For all states, show appropriate buttons
   let buttons: string[] = [];
@@ -73,7 +43,6 @@ export const InteractionBar: FC<InteractionBarProps> = ({
     console.log('🔘 Rendering STOP button with dots:', dots);
     return (
       <div className={styles.buttonContainer}>
-        <span style={{ color: 'black', fontSize: '50px', lineHeight: 1, marginRight: 'auto' }}>{dots}</span>
         <ButtonsBar
           width="auto"
           height={30}
