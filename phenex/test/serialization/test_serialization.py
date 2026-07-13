@@ -273,6 +273,33 @@ def create_three_phenotypes():
     return c1, c2, c3
 
 
+# ── to_dict()
+
+
+def _cat_to_dict(values):
+    """to_dict() of a CategoricalFilter whose allowed_values is the given list."""
+    return CategoricalFilter(column_name="x", allowed_values=values).to_dict()
+
+
+def test_to_dict_sorts_scalar_list_deterministically():
+    """Same scalars in different order → identical, sorted to_dict."""
+    assert _cat_to_dict(["b", "a", "c"]) == _cat_to_dict(["a", "b", "c"])
+    assert _cat_to_dict(["b", "a", "c"])["allowed_values"] == ["a", "b", "c"]
+
+
+def test_to_dict_sorts_dict_list_deterministically():
+    """Lists of dicts are ordered by their JSON form, so order-in == order-out."""
+    assert _cat_to_dict([{"b": 2}, {"a": 1}]) == _cat_to_dict([{"a": 1}, {"b": 2}])
+    assert _cat_to_dict([{"b": 2}, {"a": 1}])["allowed_values"] == [{"a": 1}, {"b": 2}]
+
+
+def test_to_dict_unsortable_list_falls_back_without_crashing():
+    """A non-JSON-serializable item (a set inside a dict) hits the
+    except (TypeError, ValueError) branch and preserves the original order."""
+    result = _cat_to_dict([{"a": {1, 2}}, {"b": 3}])
+    assert result["allowed_values"] == [{"a": {1, 2}}, {"b": 3}]  # preserved, no crash
+
+
 if __name__ == "__main__":
     test_cohort_serialization()
     test_CodelistPhenotype()
@@ -286,3 +313,6 @@ if __name__ == "__main__":
     test_ScorePhenotype()
     test_ArithmeticPhenotype()
     test_LogicPhenotype()
+    test_to_dict_sorts_dict_list_deterministically()
+    test_to_dict_sorts_scalar_list_deterministically()
+    test_to_dict_unsortable_list_falls_back_without_crashing()

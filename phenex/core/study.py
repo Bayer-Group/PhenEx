@@ -2,12 +2,14 @@ import os, datetime, json, sys
 from typing import List, Dict, Optional
 
 from phenex.node import Node, NodeGroup
+from phenex.core.database import Database
 import ibis
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 from phenex.util.output_concatenator import OutputConcatenator
 from phenex.core.cohort import Cohort
 from phenex.reporting import Waterfall
+from phenex.reporting.static_report_builder import build_static_report
 
 logger = create_logger(__name__)
 
@@ -23,6 +25,7 @@ class Study:
         name: Name of the study. Used for directory naming and identification.
         cohorts: List of Cohort objects to execute. Each cohort must have a unique name and an assigned database.
         custom_reporters: Additional reporters to run on each cohort. A Waterfall and Table1 reporter is always included by default.
+        database: Optional database to use for all cohorts that do not have a database already defined. If a cohort already has a database, a warning is issued and the cohort-level database is used. If this is not provided, every cohort must have a database defined or an error is raised.
 
     Example:
     ```python
@@ -48,16 +51,18 @@ class Study:
         cohorts: List[Cohort],
         custom_reporters: List["Reporter"] = None,
         description: Optional[str] = None,
+        database: Optional[Database] = None,
     ):
         self.path = path
         self.name = name
         self.cohorts = cohorts
         self.custom_reporters = custom_reporters
         self.description = description
+        self.database = database
 
         self._create_study_output_path()
         self._check_cohort_names_unique()
-        self._check_cohorts_have_databases()
+        self._assign_and_check_databases()
 
     def _create_study_output_path(self):
         # ensure that the output path directory is the name of the study
@@ -75,11 +80,20 @@ class Study:
                 f"Ensure that cohort names are unique; found cohort names {sorted(all_names)}"
             )
 
-    def _check_cohorts_have_databases(self):
+    def _assign_and_check_databases(self):
         missing_database = []
         for cohort in self.cohorts:
-            if cohort.database is None:
-                missing_database.append(cohort)
+            if cohort.database is not None:
+                if self.database is not None:
+                    logger.warning(
+                        f"Cohort '{cohort.name}' has its own database defined; "
+                        f"it overrides the study-level database and will be used instead."
+                    )
+            else:
+                if self.database is not None:
+                    cohort.database = self.database
+                else:
+                    missing_database.append(cohort)
         if len(missing_database) > 0:
             raise ValueError(
                 f"Cohorts must have databases defined in order for use in a Study. Cohorts missing database : {[x.name for x in missing_database]}"
@@ -101,38 +115,86 @@ class Study:
             previous_executions
         )
 
-        for _cohort in self.cohorts:
-            path_exec_dir_cohort = self._prepare_cohort_execution_directory(
-                _cohort, path_exec_dir_study
-            )
+        status = "success"
+        error_message = None
+        try:
+            for _cohort in self.cohorts:
+                path_exec_dir_cohort = self._prepare_cohort_execution_directory(
+                    _cohort, path_exec_dir_study
+                )
 
-            if self._should_use_previous_execution(
-                _cohort, previous_executions, parents_requiring_execution
-            ):
-                if self._copy_previous_execution(
-                    _cohort, previous_executions[_cohort.name], path_exec_dir_cohort
+                if self._should_use_previous_execution(
+                    _cohort, previous_executions, parents_requiring_execution
                 ):
-                    continue
+                    if self._copy_previous_execution(
+                        _cohort, previous_executions[_cohort.name], path_exec_dir_cohort
+                    ):
+                        continue
 
-            self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
+                self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
 
-            # Merge study-level custom reporters into the cohort before execution.
-            # Save and restore so repeated calls to study.execute() don't accumulate duplicates.
-            _original_custom_reporters = _cohort.custom_reporters
-            _cohort.custom_reporters = (
-                _original_custom_reporters or []
-            ) + self.custom_reporters
+                # Merge study-level custom reporters into the cohort before execution.
+                # Save and restore so repeated calls to study.execute() don't accumulate duplicates.
+                _original_custom_reporters = _cohort.custom_reporters
+                _cohort.custom_reporters = (
+                    _original_custom_reporters or []
+                ) + self.custom_reporters
 
-            _cohort.execute(
-                overwrite=overwrite, lazy_execution=lazy_execution, n_threads=n_threads
+                _cohort.execute(
+                    overwrite=overwrite,
+                    lazy_execution=lazy_execution,
+                    n_threads=n_threads,
+                )
+
+                _cohort.custom_reporters = _original_custom_reporters
+
+                _cohort.write_reports_to_json(path_exec_dir_cohort)
+                _cohort.write_reports_to_html(path_exec_dir_cohort)
+
+            self._concatenate_reports(path_exec_dir_study)
+        except KeyboardInterrupt:
+            status = "interrupted"
+            raise
+        except Exception as e:
+            status = "failed"
+            error_message = str(e)
+            raise
+        finally:
+            self._write_manifest(
+                path_exec_dir_study, status=status, error_message=error_message
             )
 
-            _cohort.custom_reporters = _original_custom_reporters
+    def _write_manifest(
+        self, path_exec_dir_study, status="success", error_message=None
+    ):
+        """Write manifest.json with execution metadata and a list of all generated files."""
+        from phenex import __version__ as phenex_version
 
-            _cohort.write_reports_to_json(path_exec_dir_cohort)
-            _cohort.write_reports_to_html(path_exec_dir_cohort)
+        files = []
+        for dirpath, _, filenames in os.walk(path_exec_dir_study):
+            for fname in sorted(filenames):
+                abs_path = os.path.join(dirpath, fname)
+                rel_path = os.path.relpath(abs_path, path_exec_dir_study)
+                files.append(rel_path)
 
-        self._concatenate_reports(path_exec_dir_study)
+        manifest = {
+            "study_name": self.name,
+            "execution_timestamp": datetime.datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+            "status": status,
+            "error_message": error_message,
+            "phenex_version": phenex_version,
+            "python_version": sys.version,
+            "cohorts": [c.name for c in self.cohorts],
+            "files": sorted(files),
+        }
+
+        manifest_path = os.path.join(path_exec_dir_study, "manifest.json")
+        with open(manifest_path, "w") as f:
+            json.dump(manifest, f, indent=4)
+
+        logger.info(f"Manifest written to {manifest_path}")
 
     def _should_use_previous_execution(
         self, cohort, previous_executions, parents_requiring_execution
@@ -245,7 +307,7 @@ class Study:
             dump(cohort, f, indent=4)
 
     def _concatenate_reports(self, path_exec_dir_study):
-        """Concatenate all cohort reports into a single Excel file."""
+        """Concatenate all cohort reports into Excel, combined JSON, and index.html."""
         cohort_names = [c.name for c in self.cohorts]
         concatenator = OutputConcatenator(
             path_exec_dir_study,
@@ -254,3 +316,4 @@ class Study:
             description=self.description,
         )
         concatenator.concatenate_all_reports()
+        build_static_report(path_exec_dir_study)

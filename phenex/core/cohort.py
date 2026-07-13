@@ -11,6 +11,7 @@ from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 from phenex.filters import DateFilter
 from phenex.core.data_period_filter_node import DataPeriodFilterNode
+from phenex.core.database_sampler_node import DatabaseSamplerNode
 from phenex.core.hstack_node import HStackNode
 from phenex.core.subset_table import SubsetTable
 from phenex.core.inclusions_table_node import InclusionsTableNode
@@ -163,6 +164,7 @@ class Cohort:
         self.subset_index_stage = None
         self.derived_tables_post_entry_stage = None
         self.reporting_stage = None
+        self.sampler_stage = self._build_sampler_stage(self._get_domains())
 
         # special Nodes that Cohort builds (later, in build_stages())
         # need to be able to refer to later to get outputs
@@ -187,6 +189,35 @@ class Cohort:
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
         )
 
+    def _build_sampler_stage(self, domains: List[str]) -> Optional["NodeGroup"]:
+        """Create the sampler NodeGroup. Returns None when no sampler is configured."""
+        if not (self.database and self.database.sampler):
+            return None
+        _frac = self.database.sampler.fraction
+        _seed = self.database.sampler.seed
+        _frac_tag = f"f{int(_frac * 100)}_s{_seed}"
+        sampler_nodes = [
+            DatabaseSamplerNode(
+                name=f"{self.name}__sampler_{domain}__{_frac_tag}".upper(),
+                domain=domain,
+                sampler=self.database.sampler,
+            )
+            for domain in domains
+        ]
+        return NodeGroup(
+            name=f"{self.name}__sampler_stage__{_frac_tag}".upper(),
+            nodes=sampler_nodes,
+        )
+
+    @property
+    def _table_prefix(self) -> str:
+        """Table name prefix for dest DB — appends frac+seed when a sampler is present so same-name cohorts with different sampler params don't collide."""
+        if self.database is not None and self.database.sampler is not None:
+            frac = int(self.database.sampler.fraction * 100)
+            seed = self.database.sampler.seed
+            return f"{self.name}_frac{frac}_seed{seed}"
+        return self.name
+
     @staticmethod
     def _flatten(items: Optional[List]) -> List:
         """Flatten one level of nesting, so both [p1, p2] and [[p1, p2]] work."""
@@ -200,9 +231,9 @@ class Cohort:
                 result.append(item)
         return result
 
-    def _apply_table_name_prefix(self, phenotypes):
-        """Set _table_name_prefix on phenotypes and their dependencies so get_table_name() works before execute()."""
-        prefix = re.sub(r"[^A-Za-z0-9_]", "_", self.name).upper()
+    def _apply_table_name_prefix(self, phenotypes) -> None:
+        """Set _table_name_prefix on phenotypes and their dependencies."""
+        prefix = re.sub(r"[^A-Za-z0-9_]", "_", self._table_prefix).upper()
         if not isinstance(phenotypes, list):
             phenotypes = [phenotypes]
         for p in phenotypes:
@@ -302,6 +333,11 @@ class Cohort:
                 f"Some required domains are not present in input tables: {missing_domains}. "
                 f"Phenotypes requiring these domains may fail during execution."
             )
+
+        #
+        # Sampler stage: OPTIONAL
+        #
+        self.sampler_stage = self._build_sampler_stage(domains)
 
         #
         # Data period filter stage: OPTIONAL
@@ -628,13 +664,53 @@ class Cohort:
         """
 
         con = self._prepare_database_connector_for_execution(con)
-        tables = self._prepare_tables_for_execution(con, tables)
+        tables = dict(self._prepare_tables_for_execution(con, tables))
 
         self.n_persons_in_source_database = (
             tables["PERSON"].distinct().count().execute()
         )
 
         self.build_stages(tables)
+
+        if self.sampler_stage:
+            logger.info(f"Cohort '{self.name}': executing sampler stage ...")
+            self.sampler_stage.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+                table_name_prefix=self._table_prefix,
+            )
+            # If the tables were already cached, we reuse them and skip sample(),
+            # list never gets saved.
+            # Build it again here so fetch_person_ids() always works.
+            sampler = self.database.sampler
+            if sampler._person_ids_expr is None:
+                person_tbl = tables.get("PERSON")
+                if person_tbl is not None:
+                    person_ibis = (
+                        person_tbl.table
+                        if isinstance(person_tbl, PhenexTable)
+                        else person_tbl
+                    )
+                    sampler._person_ids_expr = sampler._sampled_person_ids(person_ibis)
+
+            # Swap in the sampled table for each domain, so the later steps use the smaller
+            # sampled data instead of the full tables.
+            for node in self.sampler_stage.children:
+                if node.table is not None:
+                    original = tables.get(node.domain)
+                    sampled = node.table
+                    if isinstance(original, PhenexTable) and not isinstance(
+                        sampled, PhenexTable
+                    ):
+                        sampled = type(original)(
+                            sampled, name=original.NAME_TABLE, column_mapping={}
+                        )
+                    node.table = sampled
+                    tables[node.domain] = sampled
+            logger.info(f"Cohort '{self.name}': completed sampler stage.")
 
         # Apply data period filter first if specified
         if self.data_period_filter_stage:
@@ -645,13 +721,22 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
             )
             # Update tables with filtered versions (only when the node actually modified the table;
             # nodes with no relevant date columns return None and the original table is kept)
             for node in self.data_period_filter_stage.children:
                 if node.table is not None:
-                    tables[node.domain] = node.table
+                    original = tables.get(node.domain)
+                    filtered = node.table
+                    if isinstance(original, PhenexTable) and not isinstance(
+                        filtered, PhenexTable
+                    ):
+                        filtered = type(original)(
+                            filtered, name=original.NAME_TABLE, column_mapping={}
+                        )
+                    node.table = filtered
+                    tables[node.domain] = filtered
             logger.info(f"Cohort '{self.name}': completed data period filter stage.")
 
         if self.derived_tables_stage:
@@ -664,7 +749,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
             )
             logger.info(
                 f"Cohort '{self.name}': completed derived tables pre-entry stage."
@@ -727,7 +812,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
             )
             logger.info(
                 f"Cohort '{self.name}': completed derived tables post-entry stage."
@@ -749,7 +834,7 @@ class Cohort:
             overwrite=overwrite,
             n_threads=n_threads,
             lazy_execution=lazy_execution,
-            table_name_prefix=self.name,
+            table_name_prefix=self._table_prefix,
         )
         self.table = self.index_table_node.table
 
@@ -799,7 +884,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
             )
 
         return self.index_table

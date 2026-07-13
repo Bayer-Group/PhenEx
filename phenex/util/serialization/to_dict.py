@@ -1,4 +1,5 @@
 import inspect
+import json
 from datetime import date, datetime
 
 
@@ -19,7 +20,7 @@ def to_dict(obj) -> dict:
         if param != "self":
             value = getattr(obj, param, None)
             if isinstance(value, list):
-                _dict[param] = [
+                items = [
                     (
                         item.to_dict()
                         if hasattr(item, "to_dict") and callable(item.to_dict)
@@ -27,6 +28,19 @@ def to_dict(obj) -> dict:
                     )
                     for item in value
                 ]
+                # Sort for deterministic ordering, hash stability
+                try:
+                    items = sorted(
+                        items,
+                        key=lambda x: (
+                            json.dumps(x, sort_keys=True)
+                            if isinstance(x, dict)
+                            else str(x)
+                        ),
+                    )
+                except (TypeError, ValueError):
+                    pass
+                _dict[param] = items
             elif isinstance(value, dict):
                 # Handle dictionaries that might contain Codelist objects
                 _dict[param] = {}
