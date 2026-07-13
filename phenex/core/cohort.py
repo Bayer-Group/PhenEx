@@ -73,6 +73,8 @@ class Cohort:
         max_index_dates: Optional[int] = None,
         write_subset_tables_entry: bool = True,
         write_subset_tables_index: bool = True,
+        write_characteristics_table: bool = True,
+        write_outcomes_table: bool = True,
     ):
         self.name = name
         self.description = description
@@ -104,6 +106,8 @@ class Cohort:
 
         self.write_subset_tables_entry = write_subset_tables_entry
         self.write_subset_tables_index = write_subset_tables_index
+        self.write_characteristics_table = write_characteristics_table
+        self.write_outcomes_table = write_outcomes_table
         self.table = None  # Will be set during execution to index table
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
@@ -425,14 +429,14 @@ class Cohort:
         #
         reporting_nodes = []
 
-        if self.characteristics:
+        if self.characteristics and self.write_characteristics_table:
             self.characteristics_table_node = HStackNode(
                 name=f"{self.name}__characteristics".upper(),
                 phenotypes=self.characteristics,
                 join_table=self.index_table_node,
             )
             reporting_nodes.append(self.characteristics_table_node)
-        if self.outcomes:
+        if self.outcomes and self.write_outcomes_table:
             self.outcomes_table_node = HStackNode(
                 name=f"{self.name}__outcomes".upper(),
                 phenotypes=self.outcomes,
