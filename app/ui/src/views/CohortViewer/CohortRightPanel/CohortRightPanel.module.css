@@ -3,7 +3,6 @@
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background-color: blue;
 }
 
 .container {
@@ -14,7 +13,6 @@
   padding-bottom: 400px;
   padding-top: 10px;
   height:100%;
-  background-color: red;
 }
 
 .container::-webkit-scrollbar { display: none; }
