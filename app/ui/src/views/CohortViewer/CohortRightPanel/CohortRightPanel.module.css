@@ -3,19 +3,18 @@
   height: 100%;
   width: 100%;
   overflow: hidden;
+  background-color: blue;
 }
 
 .container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+
   overflow-y: scroll;
   overflow-x: hidden;
   background-color: var(--background-color);
   padding-bottom: 400px;
   padding-top: 10px;
+  height:100%;
+  background-color: red;
 }
 
 .container::-webkit-scrollbar { display: none; }

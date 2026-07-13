@@ -134,6 +134,7 @@
   height: 100%;
   width: 100%;
   overflow: hidden;
+  background-color: green;
 }
 
 /* Placeholder shown in tabs that are intentionally empty for now */
