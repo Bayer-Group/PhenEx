@@ -22,6 +22,7 @@ import {
   makeNode,
 } from './gridApiShim';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
+import { resolveHeaderCellRenderer } from './CohortCardHeaderCell';
 
 interface CohortCardViewerProps {
   data: TableData;
@@ -451,6 +452,15 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     // ---------------------------------------------------------------------------
     // Render helpers
     // ---------------------------------------------------------------------------
+    const renderHeaderRow = (cols: any[]) => (
+      <div className={styles.headerRow} data-header-row>
+        {cols.map(colDef => {
+          const HeaderCell = resolveHeaderCellRenderer(colDef.field);
+          return <HeaderCell key={colDef.field} colDef={colDef} />;
+        })}
+      </div>
+    );
+
     const renderRows = (panel: 'pinned' | 'scroll', cols: any[]) =>
       rows.map((rowData, rowIndex) => {
         const id = rowData?.id ?? String(rowIndex);
@@ -492,7 +502,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           <div className={styles.emptyState}>No phenotypes defined</div>
         ) : (
           <>
-            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth}>
+            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)}>
               {renderRows('pinned', pinnedColumns)}
             </CohortCardViewerPinnedCols>
             <CohortCardViewerScrollCols
@@ -502,6 +512,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
               onScroll={handleScrollPanelScroll}
               onWheel={handleScrollPanelWheel}
             >
+              {renderHeaderRow(scrollColumns)}
               {renderRows('scroll', scrollColumns)}
             </CohortCardViewerScrollCols>
           </>

@@ -15,13 +15,21 @@
 
 /* ---- Pinned (left) panel ---- */
 .pinnedPanel {
-  position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 0 0 auto;
   height: 100%;
   overflow: hidden;
   border-right: 1px solid var(--line-color-grid);
   z-index: 2;
   background-color: var(--background_color_light);
+}
+
+/* Scrollable area inside the pinned panel — sits below the sticky header. */
+.pinnedScrollArea {
+  position: relative;
+  flex: 1 1 0;
+  overflow: hidden;
 }
 
 .pinnedContent {
@@ -98,4 +106,20 @@
   font-size: 18px;
   font-family: 'IBMPlexSans-regular';
   color: black;
+}
+
+/* ---- Header row ---- */
+.headerRow {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 28px;
+  background-color: var(--background_color_light);
+  border-bottom: 1px solid var(--line-color-grid);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  flex-shrink: 0;
 }

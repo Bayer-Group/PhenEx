@@ -1,0 +1,189 @@
+.headerCell {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 4px 10px;
+  position: relative;
+  flex-shrink: 0;
+  cursor: default;
+  background-color: transparent;
+
+}
+
+.title {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'IBMPlexSans-regular';
+  color: var(--text-color-secondary, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Info indicator (shown on header row hover) ---- */
+.infoButton {
+  margin-left: 5px;
+  flex-shrink: 0;
+  font-family: 'IBMPlexSans-regular';
+  font-size: 10px;
+  color: var(--text-color-secondary, #888);
+  border: 1px solid var(--text-color-secondary, #aaa);
+  border-radius: 50%;
+  width: 13px;
+  height: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  user-select: none;
+}
+
+:global([data-header-row]:hover) .infoButton,
+.showInfo .infoButton {
+  opacity: 1;
+}
+
+/* ---- Info portal popover ---- */
+.infoPortal {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+  line-height: 1.5;
+  pointer-events: auto;
+  transition: opacity 0.2s ease;
+
+
+  background: hsl(30, 60%, 94%, 0.8);
+  border: 1px solid var(--line-color);
+  border-radius:15px;
+  box-shadow: 0 8px 30px hsl(30, 3%, 61%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.infoTitle {
+  display: block;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
+  color: var(--text-color-secondary, #666);
+}
+
+.infoPortal :global(p) {
+  margin: 0 0 5px;
+  padding: 0;
+}
+
+.infoPortal :global(p:last-child) {
+  margin-bottom: 0;
+}
+
+.infoPortal :global(ul),
+.infoPortal :global(ol) {
+  margin: 3px 0 5px;
+  padding-left: 16px;
+}
+
+.infoPortal :global(li) {
+  margin-bottom: 2px;
+}
+
+.infoPortal :global(strong) {
+  font-weight: 600;
+}
+
+
+.title {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'IBMPlexSans-regular';
+  color: var(--text-color-secondary, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Info button ---- */
+.infoButton {
+  background: transparent;
+  border: var(--border);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin-left: 6px;
+  flex-shrink: 0;
+  cursor: pointer;
+  font-family: 'IBMPlexSans-regular';
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-color-secondary, #666);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+.infoButton:hover {
+  background: var(--button-color-hover);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.infoButton:focus {
+  outline: none;
+}
+
+.infoButton:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+/* Show button when the whole header row is hovered */
+:global([data-header-row]:hover) .infoButton,
+.showInfo .infoButton {
+  opacity: 1;
+}
+
+.infoTitle {
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  color: var(--text-color-secondary, #666);
+}
+
+.infoPortal :global(p) {
+  margin: 0 0 6px;
+  padding: 0;
+}
+
+.infoPortal :global(p:last-child) {
+  margin-bottom: 0;
+}
+
+.infoPortal :global(ul),
+.infoPortal :global(ol) {
+  margin: 4px 0 6px;
+  padding-left: 18px;
+}
+
+.infoPortal :global(li) {
+  margin-bottom: 2px;
+}
+
+.infoPortal :global(strong) {
+  font-weight: 600;
+}
