@@ -548,6 +548,19 @@ export class HierarchicalLeftPanelDataService {
   }
 
   /**
+   * Synchronise the in-memory tree display name for a cohort without persisting
+   * to the backend. Call this when the cohort has already been saved elsewhere
+   * (e.g. via CohortDataService) to keep the left-panel tree in sync.
+   */
+  public syncCohortDisplayName(cohortId: string, name: string) {
+    const node = this.findNodeById(cohortId);
+    if (node) {
+      node.displayName = name;
+      this.notifyListeners();
+    }
+  }
+
+  /**
    * Update cohort name
    * @param cohortId The ID of the cohort to rename
    * @param newName The new name for the cohort

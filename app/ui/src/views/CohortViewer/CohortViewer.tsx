@@ -2,6 +2,7 @@ import { FC, useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './CohortViewer.module.css';
 import { CohortDataService } from './CohortDataService/CohortDataService';
+import { HierarchicalLeftPanelDataService } from '../LeftPanel/HierarchicalLeftPanelDataService';
 import { getUserCohort, getStudy } from '../../api/text_to_cohort/route';
 import { PopoverHeader } from '../../components/PopoverHeader/PopoverHeader';
 import { CohortCardViewer } from './CohortCardViewer/CohortCardViewer';
@@ -121,7 +122,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
   useEffect(() => {
     // Update cohort name and study name when data service changes
     const updateCohortData = () => {
-      setCohortName(dataService._cohort_name);
+      setCohortName(dataService.cohort_name);
       setStudyName(dataService.getStudyNameForCohort());
     };
 
@@ -319,6 +320,19 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
   };
 
   const renderTable = () => {
+    const handleCohortNameChange = (name: string) => {
+      dataService.cohort_name = name;
+      if (dataService.cohort_data) dataService.cohort_data.name = name;
+      dataService.saveChangesToCohort(false, false);
+      const cohortId = dataService.cohort_data?.id;
+      if (cohortId) HierarchicalLeftPanelDataService.getInstance().syncCohortDisplayName(cohortId, name);
+    };
+
+    const handleCohortDescriptionChange = (description: string) => {
+      if (dataService.cohort_data) dataService.cohort_data.description = description;
+      dataService.saveChangesToCohort(false, false);
+    };
+
     return (
       <CohortCardViewer
         data={dataService.table_data}
@@ -328,6 +342,8 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
         description={dataService.cohort_data?.description}
         onCellValueChanged={onCellValueChanged}
         onRowDragEnd={onRowDragEnd}
+        onNameChange={handleCohortNameChange}
+        onDescriptionChange={handleCohortDescriptionChange}
         hideScrollbars={showIssuesPopover}
         hideVerticalScrollbar={isRightPanelOpen}
         ref={gridRef}

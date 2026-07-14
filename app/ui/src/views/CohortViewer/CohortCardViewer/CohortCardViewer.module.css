@@ -34,6 +34,7 @@
   border-radius: 15px;
   overflow: hidden;
   margin-top: 100px;
+  border: 1px solid hsl(0, 1%, 71%);
   /* border-left: 1px solid var(--line-color-grid, #e0dede);
   border-right: 1px solid var(--line-color-grid, #e0dede); */
 }
@@ -45,8 +46,7 @@
    ResizeObserver measurement (offsetHeight) includes it — keeping the
    matching spacer in the scroll panel in perfect vertical sync. */
 .pinnedCohortMeta {
-  margin-top: 40px;
-  padding: 20px 12px 10px 10px;
+  padding: 10px 12px 10px 20px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -57,7 +57,7 @@
 }
 
 .pinnedCohortName {
-  font-size: 14px;
+  font-size: var(--font_size_pagetitle);
   font-weight: 700;
   font-family: 'IBMPlexSans-regular', sans-serif;
   color: var(--text-color-primary, #222);
@@ -68,6 +68,27 @@
 
 }
 
+.pinnedCohortNameInput {
+  font-size: var(--font_size_pagetitle);
+  font-weight: 700;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text-color-primary, #222);
+  line-height: 1.3;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  border-radius: 4px;
+  cursor: text;
+}
+
+.pinnedCohortNameInput:hover,
+.pinnedCohortNameInput:focus {
+  background: var(--background_color_dark, rgba(0,0,0,0.05));
+}
+
 .pinnedCohortDescription {
   font-size: 11px;
   font-family: 'IBMPlexSans-regular', sans-serif;
@@ -76,6 +97,37 @@
   /* Allow wrapping for longer descriptions */
   white-space: normal;
   word-break: break-word;
+}
+
+.pinnedCohortDescriptionInput {
+  font-size: 11px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text-color-secondary, #666);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  resize: none;
+  border-radius: 4px;
+  cursor: text;
+  overflow: hidden;
+  display: block;
+  min-height: 1.4em;
+}
+
+.pinnedCohortDescriptionInput:hover,
+.pinnedCohortDescriptionInput:focus {
+  background: var(--background_color_dark, rgba(0,0,0,0.05));
+}
+
+.pinnedCohortDescriptionInput::placeholder {
+  color: var(--text-color-secondary, #aaa);
+  opacity: 0.6;
 }
 
 /* Scrollable body of the pinned panel — synced to the right panel via scrollTop. */

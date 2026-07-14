@@ -35,6 +35,10 @@ interface CohortCardViewerProps {
   cohortName?: string;
   /** Cohort description displayed below the name in the pinned card. */
   description?: string;
+  /** Called when the user renames the cohort via the inline name input. */
+  onNameChange?: (name: string) => void;
+  /** Called when the user edits the cohort description via the inline input. */
+  onDescriptionChange?: (description: string) => void;
   onCellValueChanged?: (event: any, selectedRows?: any[]) => void;
   onRowDragEnd?: (newRowData: any[]) => void;
   hideScrollbars?: boolean;
@@ -56,6 +60,8 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       cohortId,
       cohortName,
       description,
+      onNameChange,
+      onDescriptionChange,
       onCellValueChanged,
       onRowDragEnd,
       gridBottomPadding = 0,
@@ -80,6 +86,16 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     const [displayDescription, setDisplayDescription] = useState(description ?? '');
     useEffect(() => { if (cohortName) setDisplayCohortName(cohortName); }, [cohortName]);
     useEffect(() => { if (description !== undefined) setDisplayDescription(description); }, [description]);
+
+    const handleNameChange = useCallback((name: string) => {
+      setDisplayCohortName(name);
+      onNameChange?.(name);
+    }, [onNameChange]);
+
+    const handleDescriptionChange = useCallback((desc: string) => {
+      setDisplayDescription(desc);
+      onDescriptionChange?.(desc);
+    }, [onDescriptionChange]);
 
     // --- Drag state ---
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -631,7 +647,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           <div className={styles.emptyState}>No phenotypes defined</div>
         ) : (
           <>
-            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)} cohortName={displayCohortName} description={displayDescription} bottomPadding={gridBottomPadding} chinColor={getHierarchicalBackgroundColor(rows[rows.length - 1]?.effective_type, rows[rows.length - 1]?.hierarchical_index) ?? undefined} onMetaHeightChange={setCohortMetaHeight} onScroll={handlePinnedBodyScroll}>
+            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)} cohortName={displayCohortName} description={displayDescription} bottomPadding={gridBottomPadding} chinColor={getHierarchicalBackgroundColor(rows[rows.length - 1]?.effective_type, rows[rows.length - 1]?.hierarchical_index) ?? undefined} onMetaHeightChange={setCohortMetaHeight} onScroll={handlePinnedBodyScroll} onNameChange={handleNameChange} onDescriptionChange={handleDescriptionChange}>
               {renderRows('pinned', pinnedColumns)}
             </CohortCardViewerPinnedCols>
             <CohortCardViewerScrollCols

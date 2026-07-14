@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useEffect, useRef } from 'react';
+import React, { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import styles from './CohortCardViewer.module.css';
 
 interface CohortCardViewerPinnedColsProps {
@@ -24,6 +24,10 @@ interface CohortCardViewerPinnedColsProps {
    */
   onMetaHeightChange?: (height: number) => void;
   onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
+  /** Called when the user commits a new cohort name (on blur or Enter). */
+  onNameChange?: (name: string) => void;
+  /** Called when the user commits a new cohort description (on blur). */
+  onDescriptionChange?: (description: string) => void;
   children: React.ReactNode;
 }
 
@@ -37,8 +41,23 @@ interface CohortCardViewerPinnedColsProps {
  * cohort-meta section scrolls out of view and the header row pins at the top.
  */
 export const CohortCardViewerPinnedCols = forwardRef<HTMLDivElement, CohortCardViewerPinnedColsProps>(
-  ({ width, header, cohortName, description, bottomPadding = 0, chinColor, onMetaHeightChange, onScroll, children }, ref) => {
+  ({ width, header, cohortName, description, bottomPadding = 0, chinColor, onMetaHeightChange, onScroll, onNameChange, onDescriptionChange, children }, ref) => {
     const metaRef = useRef<HTMLDivElement>(null);
+    const descriptionRef = useRef<HTMLTextAreaElement>(null);
+    const [localName, setLocalName] = useState(cohortName ?? '');
+    const [localDescription, setLocalDescription] = useState(description ?? '');
+
+    // Sync local state when props change externally (e.g. cohort switch)
+    useEffect(() => { setLocalName(cohortName ?? ''); }, [cohortName]);
+    useEffect(() => { setLocalDescription(description ?? ''); }, [description]);
+
+    // Auto-resize the textarea to fit its content
+    useEffect(() => {
+      const el = descriptionRef.current;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }, [localDescription]);
 
     // Measure the full offset from the card top to the bottom edge of the meta
     // section (offsetTop accounts for margin-top; offsetHeight is the element
@@ -66,10 +85,23 @@ export const CohortCardViewerPinnedCols = forwardRef<HTMLDivElement, CohortCardV
           style={bottomPadding ? { paddingBottom: `${bottomPadding}px` } : undefined}
         >
           <div className={styles.pinnedCard}>
-            {(cohortName || description) && (
+            {cohortName && (
               <div ref={metaRef} className={styles.pinnedCohortMeta}>
-                {cohortName && <div className={styles.pinnedCohortName}>{cohortName}</div>}
-                {description && <div className={styles.pinnedCohortDescription}>{description}</div>}
+                <input
+                  className={styles.pinnedCohortNameInput}
+                  value={localName}
+                  onChange={e => setLocalName(e.target.value)}
+                  onBlur={() => onNameChange?.(localName)}
+                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                />
+                <textarea
+                  ref={descriptionRef}
+                  className={styles.pinnedCohortDescriptionInput}
+                  value={localDescription}
+                  placeholder="add a description"
+                  onChange={e => setLocalDescription(e.target.value)}
+                  onBlur={() => onDescriptionChange?.(localDescription)}
+                />
               </div>
             )}
             {header}

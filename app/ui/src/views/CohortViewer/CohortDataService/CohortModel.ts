@@ -475,13 +475,14 @@ export class CohortModel {
       });
     }
 
-    // Always notify data change listeners (for PhenotypeDataService sync)
+    // Always notify listeners so name/state consumers (breadcrumb, card header) stay in sync.
+    // notifyDataChangeListeners is also called for PhenotypeDataService sync.
+    this.notifyListeners();
     this.notifyDataChangeListeners();
     
-    // Only notify grid listeners if visual refresh is needed
+    // Only refresh the grid data if the row/column content changed.
     if (refreshGrid) {
       console.log("REFRESHING GRID");
-      this.notifyListeners();
     }
   }
 
