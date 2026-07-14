@@ -165,6 +165,7 @@ class CohortContext(BaseModel):
     cohort_snapshots: Dict = {}  # cohort_id → deep copy before agent runs
     cohort_diffs: Dict = {}  # cohort_id → diff summary (for visualization)
     db_manager: Any = None
+    database_config: Optional[Dict] = None  # study's configured database (connector + config)
 
     class Config:
         arbitrary_types_allowed = True
@@ -633,6 +634,7 @@ Both value and date can be NULL for some phenotypes. The filters you configure h
 
 **Utility tools:**
 - lookup_documentation: Search for parameter examples and guidance
+- introspect_database: Inspect the study's live database to discover available domains, CODE_TYPE values (e.g. ICD10CM, SNOMED, RxNorm), and sample code formats. **Call this before adding a CodelistPhenotype if you are unsure which code type the database uses.**
 
 🕐 **CRITICAL: RECOGNIZING TIME-BASED REQUIREMENTS:**
 When the user's request includes ANY of these phrases, you MUST add a relative_time_range:
@@ -2893,6 +2895,49 @@ async def get_latest_execution(ctx: RunContext[CohortContext]) -> str:
 
 
 @agent.tool
+async def introspect_database(ctx: RunContext[CohortContext]) -> str:
+    """Inspect the study's configured database to discover which domains exist and what
+    code types and code formats are actually present.
+
+    Call this BEFORE choosing codes or code_type for a CodelistPhenotype so you use
+    the correct format (e.g. ICD10CM vs SNOMED, RxNorm vs NDC). Returns a structured
+    summary of available domains, their columns, distinct CODE_TYPE values, and sample
+    CODE values.
+    """
+    if not ctx.deps.database_config:
+        return "❌ No database configured for this study. Configure database settings first."
+    try:
+        try:
+            from ...utils.study_database import introspect_database as _introspect
+        except ImportError:
+            from utils.study_database import introspect_database as _introspect
+
+        summary = _introspect(ctx.deps.database_config)
+        connector = summary.get("connector", "unknown")
+        mapper = summary.get("mapper", "OMOP")
+        available = summary.get("available_domains", [])
+        lines = [
+            f"🔌 **Database introspection** (connector={connector}, mapper={mapper})",
+            f"Available domains: {', '.join(available)}",
+            "",
+        ]
+        for domain, info in summary.get("domains", {}).items():
+            lines.append(f"**{domain}**")
+            code_types = info.get("code_types")
+            if code_types:
+                lines.append(f"  CODE_TYPE values: {', '.join(code_types)}")
+            sample_codes = info.get("sample_codes")
+            if sample_codes:
+                lines.append(f"  Sample CODEs: {', '.join(str(c) for c in sample_codes[:10])}")
+            if not code_types and not sample_codes:
+                lines.append("  (no CODE/CODE_TYPE columns or no data sampled)")
+        return "\n".join(lines)
+    except Exception as e:
+        logger.error(f"Database introspection failed: {e}")
+        return f"❌ Could not introspect database: {str(e)}"
+
+
+@agent.tool
 async def lookup_documentation(ctx: RunContext[CohortContext], query: str) -> str:
     """Look up PhenEx documentation for parameter guidance."""
     try:
@@ -3275,6 +3320,10 @@ async def suggest_changes_v2(
 
     user_id = get_authenticated_user_id(request)
 
+    # Load study to get database config
+    study = await db_manager.get_study_for_user(user_id, study_id)
+    database_config = study.get("database") if study else None
+
     # Load all cohorts for this study
     cohort_records = await db_manager.get_cohorts_for_study(study_id, user_id)
     if not cohort_records:
@@ -3324,6 +3373,7 @@ async def suggest_changes_v2(
         active_cohort_id=active_cohort_id,
         modified_cohort_ids=[],
         db_manager=db_manager,
+        database_config=database_config,
     )
 
     global _last_operation_was_state_check
@@ -3365,6 +3415,15 @@ async def suggest_changes_v2(
         )
     except Exception:
         domain_info = ""
+
+    if database_config:
+        connector = database_config.get("connector", "snowflake")
+        mapper = database_config.get("mapper", "OMOP")
+        domain_info += (
+            f"\n🔌 **CONFIGURED DATABASE:** connector={connector}, mapper={mapper}\n"
+            f"Call `introspect_database()` to discover actual code types and code formats "
+            f"present in this database before choosing codes for phenotypes.\n"
+        )
 
     conversation_context = ""
     if req_body.conversation_history:
