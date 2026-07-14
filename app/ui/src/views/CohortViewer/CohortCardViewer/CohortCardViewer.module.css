@@ -32,6 +32,47 @@
 .pinnedCard {
   background-color: var(--background_color_light);
   border-radius: 8px;
+  border-left: 1px solid var(--line-color-grid, #e0dede);
+  border-right: 1px solid var(--line-color-grid, #e0dede);
+}
+
+/* Cohort name + description block at the very top of the pinned card.
+   Scrolls away with the body content; once out of view the header row
+   pins at the top of the scroll container.
+   The 20px top padding is intentionally part of this block so that the
+   ResizeObserver measurement (offsetHeight) includes it — keeping the
+   matching spacer in the scroll panel in perfect vertical sync. */
+.pinnedCohortMeta {
+  margin-top: 40px;
+  padding: 20px 12px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background-color: transparent;
+  border-radius:20px;
+  border: var(--border);
+  border-bottom: none;
+}
+
+.pinnedCohortName {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text-color-primary, #222);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.pinnedCohortDescription {
+  font-size: 11px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text-color-secondary, #666);
+  line-height: 1.4;
+  /* Allow wrapping for longer descriptions */
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* Scrollable body of the pinned panel — synced to the right panel via scrollTop. */
@@ -60,6 +101,10 @@
   height: 100%;
   overflow-x: auto;
   overflow-y: auto;
+  /* z-index: 1 creates a stacking context below pinnedPanel (z-index: 2).
+     This keeps the scroll panel's sticky header row (z-index: 3 within its
+     own context) from rendering above the pinned panel's drop shadow. */
+  z-index: 1;
 }
 
 .scrollContent {

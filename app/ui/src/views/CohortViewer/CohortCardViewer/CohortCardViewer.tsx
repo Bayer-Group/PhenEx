@@ -29,6 +29,10 @@ import { getHierarchicalBackgroundColor } from '../CohortTable/CellRenderers/Phe
 interface CohortCardViewerProps {
   data: TableData;
   currentlyViewing: string;
+  /** Cohort name displayed at the top of the pinned card, above the header row. */
+  cohortName?: string;
+  /** Cohort description displayed below the name in the pinned card. */
+  description?: string;
   onCellValueChanged?: (event: any, selectedRows?: any[]) => void;
   onRowDragEnd?: (newRowData: any[]) => void;
   hideScrollbars?: boolean;
@@ -47,6 +51,8 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
   (
     {
       data,
+      cohortName,
+      description,
       onCellValueChanged,
       onRowDragEnd,
       gridBottomPadding = 0,
@@ -60,6 +66,9 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [editing, setEditing] = useState<EditingState | null>(null);
     const [, forceTick] = useState(0);
+    // Height of the pinned-panel cohort-meta section; kept in sync so the scroll
+    // panel can insert an equal-height spacer before its header row.
+    const [cohortMetaHeight, setCohortMetaHeight] = useState(0);
 
     // --- Drag state ---
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -92,6 +101,14 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       if (data?.rows) setRows(data.rows);
       if (data?.columns) setColumns(data.columns);
     }, [data]);
+
+    // Reset both panels to the top whenever a new cohort is loaded so the
+    // cohort-meta section (name + description) is always visible on entry.
+    useEffect(() => {
+      if (pinnedContentRef.current) pinnedContentRef.current.scrollTop = 0;
+      if (scrollRef.current) scrollRef.current.scrollTop = 0;
+      prevScrollTopRef.current = 0;
+    }, [cohortName]);
 
     // --- Column split: pinned (left) vs scrollable (right) ---
     const pinnedColumns = useMemo(() => columns.filter(c => c.pinned === 'left' || c.pinned === true), [columns]);
@@ -591,7 +608,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           <div className={styles.emptyState}>No phenotypes defined</div>
         ) : (
           <>
-            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)} bottomPadding={gridBottomPadding} chinColor={getHierarchicalBackgroundColor(rows[rows.length - 1]?.effective_type, rows[rows.length - 1]?.hierarchical_index) ?? undefined} onScroll={handlePinnedBodyScroll}>
+            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)} cohortName={cohortName} description={description} bottomPadding={gridBottomPadding} chinColor={getHierarchicalBackgroundColor(rows[rows.length - 1]?.effective_type, rows[rows.length - 1]?.hierarchical_index) ?? undefined} onMetaHeightChange={setCohortMetaHeight} onScroll={handlePinnedBodyScroll}>
               {renderRows('pinned', pinnedColumns)}
             </CohortCardViewerPinnedCols>
             <CohortCardViewerScrollCols
@@ -600,6 +617,12 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
               bottomPadding={gridBottomPadding}
               onScroll={handleScrollPanelScroll}
             >
+              {/* Spacer matching the pinned panel's cohort-meta height so the
+                  header rows in both panels start at the same vertical position
+                  and scroll/stick in perfect sync. */}
+              {cohortMetaHeight > 0 && (
+                <div style={{ height: cohortMetaHeight }} aria-hidden />
+              )}
               {renderHeaderRow(scrollColumns)}
               {renderRows('scroll', scrollColumns)}
             </CohortCardViewerScrollCols>
