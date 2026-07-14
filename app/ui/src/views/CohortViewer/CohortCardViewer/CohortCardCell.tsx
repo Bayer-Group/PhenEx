@@ -7,6 +7,7 @@ import {
   makeRendererParams,
   resolveEditor,
 } from './gridApiShim';
+import { columnNameToApplicablePhenotypeMapping } from '../../../assets/phenotype_applicable_parameters';
 
 /**
  * Simple inline text editor emulating AG Grid's built-in 'agTextCellEditor'.
@@ -85,9 +86,17 @@ export const CohortCardCell: React.FC<CohortCardCellProps> = ({
   }, [isEditing, registerEditor]);
 
   const width = colDef.flex ? undefined : colDef.width ?? 150;
+
+  const field = colDef.field as string | undefined;
+  const isNA =
+    field &&
+    Object.keys(columnNameToApplicablePhenotypeMapping).includes(field) &&
+    !(columnNameToApplicablePhenotypeMapping as any)[field]?.includes(rowData?.class_name);
+
   const cellStyle: React.CSSProperties = {
     width: width !== undefined ? `${width}px` : undefined,
     flex: colDef.flex ? `${colDef.flex} 1 0` : '0 0 auto',
+    ...(isNA ? { backgroundColor: 'var(--background_color_light)' } : {}),
     ...(colDef.cellStyle && typeof colDef.cellStyle !== 'function' ? colDef.cellStyle : {}),
   };
 
