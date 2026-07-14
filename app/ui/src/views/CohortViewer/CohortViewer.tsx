@@ -323,6 +323,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
       <CohortCardViewer
         data={dataService.table_data}
         currentlyViewing={currentView}
+        cohortId={dataService.cohort_data?.id}
         cohortName={cohortName}
         description={dataService.cohort_data?.description}
         onCellValueChanged={onCellValueChanged}

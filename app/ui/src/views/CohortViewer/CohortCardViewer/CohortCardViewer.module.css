@@ -31,9 +31,11 @@
    for the drop-shadow trace on pinnedPanel. */
 .pinnedCard {
   background-color: var(--background_color_light);
-  border-radius: 8px;
-  border-left: 1px solid var(--line-color-grid, #e0dede);
-  border-right: 1px solid var(--line-color-grid, #e0dede);
+  border-radius: 15px;
+  overflow: hidden;
+  margin-top: 100px;
+  /* border-left: 1px solid var(--line-color-grid, #e0dede);
+  border-right: 1px solid var(--line-color-grid, #e0dede); */
 }
 
 /* Cohort name + description block at the very top of the pinned card.
@@ -49,8 +51,8 @@
   flex-direction: column;
   gap: 4px;
   background-color: transparent;
-  border-radius:20px;
-  border: var(--border);
+  /* border-radius:20px 20px 0px 0px;
+  border: var(--border); */
   border-bottom: none;
 }
 
@@ -63,6 +65,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 1.3;
+
 }
 
 .pinnedCohortDescription {

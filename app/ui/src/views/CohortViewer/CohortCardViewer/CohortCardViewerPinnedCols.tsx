@@ -74,7 +74,7 @@ export const CohortCardViewerPinnedCols = forwardRef<HTMLDivElement, CohortCardV
             )}
             {header}
             {children}
-            <div className={styles.pinnedChin} style={chinColor ? { backgroundColor: chinColor } : undefined} />
+            <div className={styles.pinnedChin} />
           </div>
         </div>
       </div>

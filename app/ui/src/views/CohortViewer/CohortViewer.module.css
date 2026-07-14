@@ -7,8 +7,7 @@
 .cohortTableContainer {
   display: flex;
   flex-direction: column;
-  padding-top:10px;
-  height: calc(100% - 10px);
+  height: 100%;
   width: 100%;
   position: relative;
   background-color: var(--background_color_light, #f0f0f0) !important;

@@ -29,6 +29,8 @@ import { getHierarchicalBackgroundColor } from '../CohortTable/CellRenderers/Phe
 interface CohortCardViewerProps {
   data: TableData;
   currentlyViewing: string;
+  /** Stable unique identifier for the current cohort — used to reset scroll on cohort change. */
+  cohortId?: string;
   /** Cohort name displayed at the top of the pinned card, above the header row. */
   cohortName?: string;
   /** Cohort description displayed below the name in the pinned card. */
@@ -51,6 +53,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
   (
     {
       data,
+      cohortId,
       cohortName,
       description,
       onCellValueChanged,
@@ -69,6 +72,14 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     // Height of the pinned-panel cohort-meta section; kept in sync so the scroll
     // panel can insert an equal-height spacer before its header row.
     const [cohortMetaHeight, setCohortMetaHeight] = useState(0);
+
+    // Stable display values: only update when the incoming prop is non-empty so
+    // that a transient undefined (e.g. caused by a data-listener firing during an
+    // async save) never unmounts the cohort-meta section or loses the last name.
+    const [displayCohortName, setDisplayCohortName] = useState(cohortName ?? '');
+    const [displayDescription, setDisplayDescription] = useState(description ?? '');
+    useEffect(() => { if (cohortName) setDisplayCohortName(cohortName); }, [cohortName]);
+    useEffect(() => { if (description !== undefined) setDisplayDescription(description); }, [description]);
 
     // --- Drag state ---
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -102,13 +113,16 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       if (data?.columns) setColumns(data.columns);
     }, [data]);
 
-    // Reset both panels to the top whenever a new cohort is loaded so the
-    // cohort-meta section (name + description) is always visible on entry.
+    // Reset both panels to the top whenever a NEW cohort is loaded (cohortId
+    // changes) so the cohort-meta section is always visible on entry.
+    // Using cohortId rather than cohortName avoids false resets caused by the
+    // name transiently becoming undefined during async data-listener callbacks.
     useEffect(() => {
+      if (!cohortId) return;
       if (pinnedContentRef.current) pinnedContentRef.current.scrollTop = 0;
       if (scrollRef.current) scrollRef.current.scrollTop = 0;
       prevScrollTopRef.current = 0;
-    }, [cohortName]);
+    }, [cohortId]);
 
     // --- Column split: pinned (left) vs scrollable (right) ---
     const pinnedColumns = useMemo(() => columns.filter(c => c.pinned === 'left' || c.pinned === true), [columns]);
@@ -259,6 +273,12 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     // ---------------------------------------------------------------------------
     const syncRowHeights = useCallback(() => {
       const currentRows = rowsRef.current;
+      // Use the last intentionally-set scrollTop rather than reading from the
+      // DOM: by the time this runs the browser may have already clamped the
+      // element's scrollTop to 0 because the content momentarily shrank when
+      // heights were cleared. prevScrollTopRef tracks every deliberate scroll
+      // and is unaffected by that automatic clamping.
+      const savedScrollTop = prevScrollTopRef.current;
       // 1. Clear applied heights so we can read each row's natural (tallest-cell) height.
       currentRows.forEach((r, i) => {
         const id = r?.id ?? String(i);
@@ -276,6 +296,9 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         if (p) p.style.height = `${h}px`;
         if (s) s.style.height = `${h}px`;
       });
+      // 3. Restore scroll position on both panels now that content is full height again.
+      if (scrollRef.current) scrollRef.current.scrollTop = savedScrollTop;
+      if (pinnedContentRef.current) pinnedContentRef.current.scrollTop = savedScrollTop;
     }, []);
 
     const scheduleRowHeightSync = useCallback(() => {
@@ -608,7 +631,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           <div className={styles.emptyState}>No phenotypes defined</div>
         ) : (
           <>
-            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)} cohortName={cohortName} description={description} bottomPadding={gridBottomPadding} chinColor={getHierarchicalBackgroundColor(rows[rows.length - 1]?.effective_type, rows[rows.length - 1]?.hierarchical_index) ?? undefined} onMetaHeightChange={setCohortMetaHeight} onScroll={handlePinnedBodyScroll}>
+            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)} cohortName={displayCohortName} description={displayDescription} bottomPadding={gridBottomPadding} chinColor={getHierarchicalBackgroundColor(rows[rows.length - 1]?.effective_type, rows[rows.length - 1]?.hierarchical_index) ?? undefined} onMetaHeightChange={setCohortMetaHeight} onScroll={handlePinnedBodyScroll}>
               {renderRows('pinned', pinnedColumns)}
             </CohortCardViewerPinnedCols>
             <CohortCardViewerScrollCols
