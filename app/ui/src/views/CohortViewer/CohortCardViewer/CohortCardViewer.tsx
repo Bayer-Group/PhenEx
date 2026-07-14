@@ -412,6 +412,11 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           return next;
         });
         setSelectionAnchorId(id);
+      } else if (selectedIdsRef.current.has(id) && selectedIdsRef.current.size > 1) {
+        // Plain click on an already-selected row within a multi-selection: keep
+        // all selected rows so that a subsequent double-click to edit a cell
+        // preserves the multi-selection and applies the edit to all selected rows.
+        setSelectionAnchorId(id);
       } else {
         // Plain click: select only this row and set anchor.
         setSelectedIds(new Set([id]));
