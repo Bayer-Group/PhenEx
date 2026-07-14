@@ -117,6 +117,9 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     editingRef.current = editing;
     const activeEditorRef = useRef<React.RefObject<any> | null>(null);
     const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
+    // Holds a selection to restore after the next rows update (e.g. after a
+    // committed edit causes new row data to flow in and re-trigger the service effect).
+    const pinnedSelectionRef = useRef<Set<string> | null>(null);
 
     const rootRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -200,6 +203,9 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           api: apiRef.current,
         };
         const selectedRows = apiRef.current.getSelectedRows();
+        // Persist the selection through the rows update that the parent will
+        // trigger in response to this callback.
+        pinnedSelectionRef.current = new Set(selectedIdsRef.current);
         onCellValueChanged?.(event, selectedRows);
       },
       [onCellValueChanged]
@@ -270,7 +276,14 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         }
       };
       service.addListener(handle);
-      handle(service.getCurrentViewType(), service.getExtraData());
+      // If a committed edit just triggered this re-run, restore the saved
+      // selection instead of resetting it via the service state.
+      if (pinnedSelectionRef.current) {
+        setSelectedIds(pinnedSelectionRef.current);
+        pinnedSelectionRef.current = null;
+      } else {
+        handle(service.getCurrentViewType(), service.getExtraData());
+      }
       return () => service.removeListener(handle);
     }, [rows]);
 
