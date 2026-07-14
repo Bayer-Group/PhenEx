@@ -16,6 +16,7 @@ from ..database import db_manager
 from ..utils.auth import get_authenticated_user_id
 from ..utils.constants import resolve_constants_in_cohort
 from ..routes.execute import prepare_cohort_for_phenex
+from ..utils import storage
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -210,13 +211,27 @@ async def execute_study(request: Request):
 
                 from phenex.core.study import Study
 
-                print(
-                    f"Creating Study object, artifacts will be saved to {artifacts_dir}"
-                )
-                os.makedirs(artifacts_dir, exist_ok=True)
+                use_s3 = storage.is_s3(artifacts_dir)
+
+                if use_s3:
+                    import tempfile
+                    _tmpdir_obj = tempfile.TemporaryDirectory()
+                    local_artifacts_dir = os.path.join(_tmpdir_obj.name, study_id)
+                    os.makedirs(local_artifacts_dir, exist_ok=True)
+                    print(
+                        f"S3 mode: running phenex locally in {local_artifacts_dir}, "
+                        f"will upload to {artifacts_dir}"
+                    )
+                else:
+                    _tmpdir_obj = None
+                    local_artifacts_dir = artifacts_dir
+                    print(
+                        f"Creating Study object, artifacts will be saved to {artifacts_dir}"
+                    )
+                    os.makedirs(local_artifacts_dir, exist_ok=True)
 
                 px_study = Study(
-                    path=artifacts_dir,
+                    path=local_artifacts_dir,
                     name=study.get("name", study_id),
                     cohorts=px_cohorts,
                     description=study.get("description", ""),
@@ -238,11 +253,25 @@ async def execute_study(request: Request):
                     ],
                     reverse=True,
                 )
-                exec_dir = (
+                local_exec_dir = (
                     os.path.join(px_study.path, exec_dirs[0])
                     if exec_dirs
                     else px_study.path
                 )
+
+                # Determine final (possibly S3) paths for exec dir and manifest
+                if use_s3:
+                    exec_dir_name = os.path.basename(local_exec_dir)
+                    exec_dir = storage.join(artifacts_dir, exec_dir_name)
+                else:
+                    exec_dir = local_exec_dir
+
+                # Build file list from local execution dir before potential upload
+                files_list = []
+                for root, dirs, files in os.walk(local_exec_dir):
+                    for fname in files:
+                        fpath = os.path.join(root, fname)
+                        files_list.append(os.path.relpath(fpath, local_exec_dir))
 
                 # Write manifest.json listing all generated artifacts
                 manifest = {
@@ -251,16 +280,22 @@ async def execute_study(request: Request):
                     "study_name": study.get("name"),
                     "executed_at": datetime.now(timezone.utc).isoformat(),
                     "artifacts_dir": exec_dir,
-                    "files": [],
+                    "files": files_list,
                 }
-                for root, dirs, files in os.walk(exec_dir):
-                    for fname in files:
-                        fpath = os.path.join(root, fname)
-                        manifest["files"].append(os.path.relpath(fpath, exec_dir))
 
-                manifest_path = os.path.join(exec_dir, "manifest.json")
-                with open(manifest_path, "w") as f:
-                    json.dump(manifest, f, indent=4)
+                manifest_path = storage.join(exec_dir, "manifest.json")
+
+                if use_s3:
+                    # Upload all artifacts to S3, then write manifest to S3
+                    print(f"Uploading artifacts to {exec_dir} ...")
+                    storage.upload_dir(local_exec_dir, exec_dir)
+                    storage.write_json(manifest_path, manifest)
+                    print("Upload complete.")
+                    # Clean up temp dir
+                    _tmpdir_obj.cleanup()
+                else:
+                    with open(manifest_path, "w") as f:
+                        json.dump(manifest, f, indent=4)
 
                 final_result["execution_id"] = execution_id
                 final_result["manifest_path"] = manifest_path
@@ -387,30 +422,25 @@ async def get_study_report(request: Request, study_id: str):
     - 404: If no artifacts or execution directories found for study
     """
     get_authenticated_user_id(request)
-    study_dir = os.path.join(STUDY_ARTIFACTS_DIR, study_id)
-    if not os.path.isdir(study_dir):
+    study_dir = storage.join(STUDY_ARTIFACTS_DIR, study_id)
+    if not storage.isdir(study_dir):
         raise HTTPException(status_code=404, detail="No artifacts found for study")
 
     # Find the most recent timestamped execution directory
     exec_dirs = sorted(
-        [
-            d
-            for d in os.listdir(study_dir)
-            if os.path.isdir(os.path.join(study_dir, d)) and d.startswith("D")
-        ],
+        [d for d in storage.listdir(study_dir) if d.startswith("D")],
         reverse=True,
     )
     if not exec_dirs:
         raise HTTPException(status_code=404, detail="No execution directories found")
 
-    report_path = os.path.join(study_dir, exec_dirs[0], "index.html")
-    if not os.path.isfile(report_path):
+    report_path = storage.join(study_dir, exec_dirs[0], "index.html")
+    if not storage.isfile(report_path):
         raise HTTPException(
             status_code=404, detail="index.html not found for this execution"
         )
 
-    with open(report_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    content = storage.read_text(report_path)
     return HTMLResponse(content=content)
 
 
@@ -443,15 +473,14 @@ async def get_execution_report(request: Request, study_id: str, execution_id: st
     if not exec_record or not exec_record.get("manifest_path"):
         raise HTTPException(status_code=404, detail="Execution not found")
 
-    exec_dir = os.path.dirname(exec_record["manifest_path"])
-    report_path = os.path.join(exec_dir, "index.html")
-    if not os.path.isfile(report_path):
+    exec_dir = storage.dirname(exec_record["manifest_path"])
+    report_path = storage.join(exec_dir, "index.html")
+    if not storage.isfile(report_path):
         raise HTTPException(
             status_code=404, detail="Report not found for this execution"
         )
 
-    with open(report_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    content = storage.read_text(report_path)
     return HTMLResponse(content=content)
 
 
@@ -482,13 +511,12 @@ async def get_execution_log(request: Request, study_id: str, execution_id: str):
     if not exec_record or not exec_record.get("manifest_path"):
         raise HTTPException(status_code=404, detail="Execution not found")
 
-    exec_dir = os.path.dirname(exec_record["manifest_path"])
-    log_path = os.path.join(exec_dir, "analysis.log")
-    if not os.path.isfile(log_path):
+    exec_dir = storage.dirname(exec_record["manifest_path"])
+    log_path = storage.join(exec_dir, "analysis.log")
+    if not storage.isfile(log_path):
         raise HTTPException(status_code=404, detail="Log not found for this execution")
 
-    with open(log_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    content = storage.read_text(log_path)
     from fastapi.responses import PlainTextResponse
 
     return PlainTextResponse(content=content)
@@ -517,11 +545,9 @@ async def delete_execution(request: Request, study_id: str, execution_id: str):
     result = await db_manager.delete_study_execution(execution_id, user_id)
     manifest_path = result.get("manifest_path")
     if manifest_path:
-        exec_dir = os.path.dirname(manifest_path)
-        if os.path.isdir(exec_dir):
-            import shutil
-
-            shutil.rmtree(exec_dir)
+        exec_dir = storage.dirname(manifest_path)
+        if storage.isdir(exec_dir):
+            storage.rmtree(exec_dir)
     return {"deleted": True}
 
 

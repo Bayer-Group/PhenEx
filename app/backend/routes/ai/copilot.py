@@ -20,6 +20,8 @@ import os
 import asyncio
 from pathlib import Path
 
+from ...utils import storage as _storage
+
 # Disable verbose SQLAlchemy logging
 logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 logging.getLogger("sqlalchemy.dialects").setLevel(logging.WARNING)
@@ -2641,10 +2643,9 @@ async def get_execution_manifest(
         if not record:
             return f"❌ Execution '{execution_id}' not found."
         manifest_path = record.get("manifest_path")
-        if not manifest_path or not os.path.isfile(manifest_path):
+        if not manifest_path or not _storage.isfile(manifest_path):
             return f"❌ No manifest file found for execution '{execution_id}'."
-        with open(manifest_path, "r") as f:
-            manifest = json.load(f)
+        manifest = _storage.read_json(manifest_path)
         files = manifest.get("files", [])
         lines = [
             f"📦 **Manifest for execution {execution_id}**",
@@ -2688,21 +2689,29 @@ async def read_execution_file(
         manifest_path = record.get("manifest_path")
         if not manifest_path:
             return f"❌ No manifest for execution '{execution_id}'."
-        artifacts_dir = os.path.dirname(manifest_path)
-        full_path = os.path.normpath(os.path.join(artifacts_dir, file_path))
-        # Security: ensure the resolved path stays inside the artifacts directory
-        if not full_path.startswith(os.path.normpath(artifacts_dir)):
-            return "❌ Path traversal detected — access denied."
-        if not os.path.isfile(full_path):
+        artifacts_dir = _storage.dirname(manifest_path)
+        # Build full path; for S3 use uri join, for local use normpath
+        if _storage.is_s3(artifacts_dir):
+            full_path = _storage.join(artifacts_dir, file_path)
+            # Security: ensure relative path has no traversal components
+            if ".." in file_path.replace("\\", "/").split("/"):
+                return "❌ Path traversal detected — access denied."
+        else:
+            full_path = os.path.normpath(os.path.join(artifacts_dir, file_path))
+            if not full_path.startswith(os.path.normpath(artifacts_dir)):
+                return "❌ Path traversal detected — access denied."
+        if not _storage.isfile(full_path):
             return f"❌ File not found: {file_path}"
 
         ext = os.path.splitext(full_path)[1].lower()
 
         if ext == ".parquet":
             try:
+                import io
                 import pandas as pd
 
-                df = pd.read_parquet(full_path)
+                raw = _storage.read_bytes(full_path)
+                df = pd.read_parquet(io.BytesIO(raw))
                 rows, cols = df.shape
                 summary_lines = [
                     f"📊 **{file_path}** — {rows:,} rows × {cols} columns\n",
@@ -2738,9 +2747,11 @@ async def read_execution_file(
 
         elif ext == ".csv":
             try:
+                import io
                 import pandas as pd
 
-                df = pd.read_csv(full_path)
+                raw = _storage.read_bytes(full_path)
+                df = pd.read_csv(io.BytesIO(raw))
                 rows, cols = df.shape
                 lines = [f"📄 **{file_path}** — {rows:,} rows × {cols} columns\n"]
                 if rows <= 50:
@@ -2750,23 +2761,20 @@ async def read_execution_file(
                     lines.append(df.head(20).to_string(index=False))
                 return "\n".join(lines)
             except ImportError:
-                with open(full_path, "r", encoding="utf-8", errors="replace") as fh:
-                    content = fh.read(8000)
+                content = _storage.read_text(full_path, errors="replace")[:8000]
                 return f"📄 **{file_path}** (CSV preview):\n{content}"
 
         elif ext == ".json":
-            with open(full_path, "r", encoding="utf-8") as fh:
-                data = json.load(fh)
+            data = _storage.read_json(full_path)
             text = json.dumps(data, indent=2)
             if len(text) > 6000:
                 text = text[:6000] + "\n… (truncated)"
             return f"📄 **{file_path}** (JSON):\n{text}"
 
         else:
-            with open(full_path, "r", encoding="utf-8", errors="replace") as fh:
-                content = fh.read(6000)
-            if len(content) == 6000:
-                content += "\n… (truncated)"
+            content = _storage.read_text(full_path, errors="replace")
+            if len(content) > 6000:
+                content = content[:6000] + "\n… (truncated)"
             return f"📄 **{file_path}**:\n{content}"
 
     except Exception as e:
