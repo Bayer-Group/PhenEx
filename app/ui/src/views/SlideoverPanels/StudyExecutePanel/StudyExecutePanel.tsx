@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import styles from './StudyExecutePanel.module.css';
 import { StudyDataService } from '../../StudyViewer/StudyDataService';
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import {
   executeStudy,
+  interruptStudyExecution,
   getStudyExecutions,
   getExecutionReport,
   getExecutionLog,
@@ -16,8 +18,10 @@ type LogEntry = { message: string; type: 'log' | 'error' | 'complete'; timestamp
 type Execution = { execution_id: string; started_at: string | null; status: string };
 
 export const StudyExecutePanel: React.FC = () => {
+  const { studyId: paramStudyId } = useParams<{ studyId: string }>();
   const [isExecuting, setIsExecuting] = useState(false);
-  const [executionState, setExecutionState] = useState<'idle' | 'running' | 'success' | 'failed'>('idle');
+  const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null);
+  const [executionState, setExecutionState] = useState<'idle' | 'running' | 'success' | 'failed' | 'interrupted'>('idle');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logSearch, setLogSearch] = useState<string>('');
   const [executions, setExecutions] = useState<Execution[]>([]);
@@ -31,7 +35,9 @@ export const StudyExecutePanel: React.FC = () => {
   const logsContainerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const getStudyId = (): string | null => StudyDataService.getInstance().study_data?.id ?? null;
+  // Prefer URL param (most reliable in cohort/study view), fall back to StudyDataService
+  const getStudyId = (): string | null =>
+    paramStudyId ?? StudyDataService.getInstance().study_data?.id ?? null;
 
   const fetchExecutions = async () => {
     const studyId = getStudyId();
@@ -60,7 +66,7 @@ export const StudyExecutePanel: React.FC = () => {
     }
   };
 
-  // Poll until the StudyDataService has a study loaded, then fetch executions and start polling validation.
+  // On mount (and when studyId changes), load executions and validation, then poll validation every 120s.
   useEffect(() => {
     let cancelled = false;
     let pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -70,13 +76,12 @@ export const StudyExecutePanel: React.FC = () => {
       if (studyId) {
         await fetchExecutions();
         await checkValidation();
-        // Poll validation every 5 seconds to stay in sync with the Issues tab
         pollInterval = setInterval(() => {
           if (!cancelled) checkValidation();
-        }, 5000);
+        }, 120000);
         return;
       }
-      // Retry until study is available
+      // Retry until study is available (handles async load)
       const timer = setTimeout(async () => {
         if (!cancelled) await tryFetch();
       }, 300);
@@ -88,7 +93,7 @@ export const StudyExecutePanel: React.FC = () => {
       if (pollInterval) clearInterval(pollInterval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [paramStudyId]);
 
   useEffect(() => {
     if (contentScrollRef.current) {
@@ -124,6 +129,7 @@ export const StudyExecutePanel: React.FC = () => {
     }
 
     setIsExecuting(true);
+    setCurrentExecutionId(null);
     setExecutionState('running');
     setLogs([]);
     setLogFileContent(null);
@@ -134,23 +140,40 @@ export const StudyExecutePanel: React.FC = () => {
       const execId = await executeStudy(
         studyId,
         (event) => {
+          if (event.type === 'started' && event.execution_id) {
+            setCurrentExecutionId(event.execution_id);
+          }
           if (event.type === 'log' && event.message)
             setLogs(prev => [...prev, { message: event.message!, type: 'log', timestamp: new Date() }]);
           if (event.type === 'error' && event.message)
             setLogs(prev => [...prev, { message: event.message!, type: 'error', timestamp: new Date() }]);
           if (event.type === 'complete')
             setLogs(prev => [...prev, { message: 'Execution complete.', type: 'complete', timestamp: new Date() }]);
+          if (event.type === 'interrupted')
+            setLogs(prev => [...prev, { message: 'Execution interrupted.', type: 'error', timestamp: new Date() }]);
         },
       );
       if (execId) setSelectedExecId(execId);
-      setExecutionState('success');
+      setExecutionState(prev => prev === 'interrupted' ? 'interrupted' : 'success');
     } catch (err: any) {
       setLogs(prev => [...prev, { message: `Error: ${err?.message ?? 'Execution failed'}`, type: 'error', timestamp: new Date() }]);
       setExecutionState('failed');
     } finally {
       setIsExecuting(false);
+      setCurrentExecutionId(null);
       await fetchExecutions();
       await checkValidation();
+    }
+  };
+
+  const handleInterrupt = async () => {
+    if (!currentExecutionId) return;
+    try {
+      await interruptStudyExecution(currentExecutionId);
+      setExecutionState('interrupted');
+      setLogs(prev => [...prev, { message: 'Interrupt requested...', type: 'error', timestamp: new Date() }]);
+    } catch (err: any) {
+      setLogs(prev => [...prev, { message: `Failed to interrupt: ${err?.message}`, type: 'error', timestamp: new Date() }]);
     }
   };
 
@@ -230,20 +253,40 @@ export const StudyExecutePanel: React.FC = () => {
       executionState === 'running' ? styles.executeRunning
       : executionState === 'success' ? styles.executeSuccess
       : executionState === 'failed' ? styles.executeFailed
+      : executionState === 'interrupted' ? styles.executeFailed
       : '';
     
     const isDisabled = isExecuting || hasValidationErrors;
     
     return (
       <div className={styles.controls}>
-        <button
-          className={`${styles.executeBtn} ${executeStateClass}`}
-          onClick={handleExecute}
-          disabled={isDisabled}
-          title={hasValidationErrors ? `Cannot execute: ${validationErrorCount} validation error${validationErrorCount !== 1 ? 's' : ''}. Check Issues tab.` : ''}
-        >
-          {isExecuting ? 'Running…' : 'Execute Study'}
-        </button>
+        {isExecuting ? (
+          <div className={styles.executeRow}>
+            <button
+              className={`${styles.executeBtn} ${executeStateClass} ${styles.executeBtnFlex}`}
+              disabled
+            >
+              Running…
+            </button>
+            <button
+              className={styles.interruptBtn}
+              onClick={handleInterrupt}
+              disabled={!currentExecutionId}
+              title="Interrupt execution"
+            >
+              Interrupt
+            </button>
+          </div>
+        ) : (
+          <button
+            className={`${styles.executeBtn} ${executeStateClass}`}
+            onClick={handleExecute}
+            disabled={isDisabled}
+            title={hasValidationErrors ? `Cannot execute: ${validationErrorCount} validation error${validationErrorCount !== 1 ? 's' : ''}. Check Issues tab.` : ''}
+          >
+            Execute Study
+          </button>
+        )}
         {hasValidationErrors && (
           <div className={styles.validationWarning}>
             {validationErrorCount} issue{validationErrorCount !== 1 ? 's' : ''} must be fixed before execution.{' '}

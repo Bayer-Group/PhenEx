@@ -290,7 +290,7 @@ export const parseStudyConcept = async (text: string, availableDatabases?: Array
 
 export const executeStudy = async (
   studyId: string,
-  onEvent?: (event: { type: 'log' | 'error' | 'complete'; message?: string; execution_id?: string }) => void,
+  onEvent?: (event: { type: 'log' | 'error' | 'complete' | 'started' | 'interrupted'; message?: string; execution_id?: string }) => void,
 ): Promise<string | null> => {
   const response = await authFetch(`${BACKEND_URL}/study/execute`, {
     method: 'POST',
@@ -347,6 +347,16 @@ export const generateStudyReport = async (
   } catch (error) {
     console.error('Error in generateStudyReport:', error);
     throw error;
+  }
+};
+
+export const interruptStudyExecution = async (executionId: string): Promise<void> => {
+  const response = await authFetch(`${BACKEND_URL}/study/execution/${executionId}/interrupt`, {
+    method: 'POST',
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Interrupt failed: ${response.status} ${text}`);
   }
 };
 

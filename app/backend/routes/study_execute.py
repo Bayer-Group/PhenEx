@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import uuid
+import threading
 from queue import Queue
 from threading import Thread
 from datetime import datetime, timezone
@@ -22,6 +23,9 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 STUDY_ARTIFACTS_DIR = os.environ.get("STUDY_ARTIFACTS_DIR", "/data/study_artifacts")
+
+# Maps execution_id -> threading.Event; set the event to signal an interrupt
+_stop_events: dict = {}
 
 _db_cache: dict = {}  # key: n_patients -> Database instance
 
@@ -106,6 +110,11 @@ async def execute_study(request: Request):
     async def stream_execution():
         output_queue = Queue()
         final_result = {}
+        stop_event = threading.Event()
+        _stop_events[execution_id] = stop_event
+
+        # Immediately tell the client which execution_id was assigned
+        yield f"data: {json.dumps({'type': 'started', 'execution_id': execution_id})}\n\n"
 
         def run_execution():
             old_stdout = sys.stdout
@@ -326,6 +335,9 @@ async def execute_study(request: Request):
         import asyncio
 
         while True:
+            if stop_event.is_set():
+                final_result["status"] = "interrupted"
+                break
             try:
                 msg = output_queue.get(timeout=0.1)
                 if msg is None:
@@ -336,7 +348,8 @@ async def execute_study(request: Request):
                     break
                 await asyncio.sleep(0.05)
 
-        thread.join()
+        _stop_events.pop(execution_id, None)
+        thread.join(timeout=2)
 
         # Persist execution result to DB
         try:
@@ -351,7 +364,10 @@ async def execute_study(request: Request):
         except Exception as db_err:
             logger.error(f"Failed to update study_execution record: {db_err}")
 
-        if final_result.get("status") == "failure":
+        status = final_result.get("status", "failure")
+        if status == "interrupted":
+            yield f"data: {json.dumps({'type': 'interrupted', 'execution_id': execution_id})}\n\n"
+        elif status == "failure":
             yield f"data: {json.dumps({'type': 'error', 'message': final_result.get('error', 'Unknown error')})}\n\n"
         else:
             yield f"data: {json.dumps({'type': 'complete', 'execution_id': execution_id})}\n\n"
@@ -401,6 +417,33 @@ async def get_study_executions(request: Request, study_id: str):
         raise HTTPException(
             status_code=500, detail="Failed to retrieve study executions"
         )
+
+
+@router.post("/study/execution/{execution_id}/interrupt", tags=["study execution"])
+async def interrupt_study_execution(request: Request, execution_id: str):
+    """
+    Interrupt a running study execution.
+
+    Path Parameters:
+    - execution_id (str): The unique identifier of the execution to interrupt
+
+    Returns:
+    - dict: {"interrupted": true}
+    """
+    get_authenticated_user_id(request)
+    stop_event = _stop_events.get(execution_id)
+    if stop_event:
+        stop_event.set()
+    try:
+        await db_manager.update_study_execution(
+            execution_id=execution_id,
+            status="interrupted",
+            manifest_path=None,
+            error_message="Interrupted by user",
+        )
+    except Exception as e:
+        logger.warning(f"Failed to update execution status on interrupt: {e}")
+    return {"interrupted": True}
 
 
 @router.get("/study/{study_id}/report", tags=["study execution"])

@@ -325,6 +325,52 @@
   background: var(--color-background-tertiary);
 }
 
+.executeRow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.executeBtnFlex {
+  flex: 1;
+}
+
+.interruptBtn {
+  flex-shrink: 0;
+  padding: 9px 14px;
+  background: transparent;
+  border: 1.5px solid rgb(239, 68, 68);
+  border-radius: 6px;
+  color: rgb(239, 68, 68);
+  font-size: 13px;
+  font-family: 'IBMPlexSans-semibold';
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.interruptBtn:hover:not(:disabled) { background: rgba(239, 68, 68, 0.08); }
+.interruptBtn:disabled { opacity: 0.4; cursor: default; }
+
+.footer {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-top: 1px solid var(--line-color);
+}
+
+.refreshButton {
+  width: 100%;
+  padding: 6px 0;
+  background: none;
+  border: 1px solid var(--line-color);
+  border-radius: 5px;
+  color: var(--color-accent-bright);
+  font-size: 11px;
+  font-family: 'IBMPlexSans-regular';
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s;
+}
+.refreshButton:hover { opacity: 1; background: var(--color-accent-hover); }
+
 .validationWarning {
   padding: 8px 12px;
   background-color: rgba(239, 68, 68, 0.1);

@@ -46,12 +46,10 @@ export const StudyIssuesPanel = () => {
   useEffect(() => {
     fetchIssues();
     
-    // Auto-refresh every 5 seconds when there are issues
+    // Auto-refresh every 120 seconds
     const interval = setInterval(() => {
-      if (errors.length > 0 || warnings.length > 0) {
-        fetchIssues();
-      }
-    }, 5000);
+      fetchIssues();
+    }, 120000);
     
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -303,13 +301,11 @@ export const StudyIssuesPanel = () => {
         </div>
       )}
       
-      {hasIssues && (
-        <div className={styles.footer}>
-          <button className={styles.refreshButton} onClick={fetchIssues}>
-            Refresh
-          </button>
-        </div>
-      )}
+      <div className={styles.footer}>
+        <button className={styles.refreshButton} onClick={fetchIssues}>
+          Refresh
+        </button>
+      </div>
     </div>
   );
 };
