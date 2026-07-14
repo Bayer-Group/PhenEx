@@ -11,6 +11,7 @@
   overflow: hidden;
   background-color: var(--background_color_light);
   position: relative;
+  user-select: none;
 }
 
 /* ---- Pinned (left) panel ---- */
@@ -218,6 +219,17 @@
   font-size: 18px;
   font-family: 'IBMPlexSans-regular';
   color: black;
+}
+
+/* ---- Editing overlay ---- */
+/* Covers the full viewer while a cell is in edit mode so that clicking
+   anywhere outside the editor commits the edit. Sits above the panels
+   (z-index 2) but well below PhenexCellEditor portals (z-index 100000). */
+.editingOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  cursor: default;
 }
 
 /* ---- Vertical scrollbar overlay ---- */

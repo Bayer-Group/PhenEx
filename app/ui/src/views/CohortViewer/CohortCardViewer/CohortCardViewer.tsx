@@ -701,6 +701,9 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         ref={rootRef}
         className={`${styles.viewerRoot} ag-root ${flipScrollDirection ? styles.flipScroll : ''}`}
       >
+        {editing && (
+          <div className={styles.editingOverlay} onClick={() => commitEdit()} />
+        )}
         {rows.length === 0 ? (
           <div className={styles.emptyState}>No phenotypes defined</div>
         ) : (
