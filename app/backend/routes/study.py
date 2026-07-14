@@ -521,6 +521,13 @@ async def update_study_database(
     """
     user_id = get_authenticated_user_id(request)
     database = body.get("database")
+    if database and database.get("connector", "").lower() == "snowflake":
+        dest_db = os.environ.get("SNOWFLAKE_DEST_DATABASE")
+        if dest_db:
+            safe_id = study_id.replace("-", "_")
+            study_version = 1 # TODO implement study versions
+            config = database.setdefault("config", {})
+            config["destination_database"] = f"{dest_db}.PHENEX_{safe_id}_V{study_version:04d}"
     try:
         success = await db_manager.update_study_database(user_id, study_id, database)
         if not success:
@@ -685,13 +692,6 @@ async def get_study_issues(request: Request, study_id: str):
                     errors.append(
                         {
                             "message": "Snowflake source_database is required",
-                            "severity": "error",
-                        }
-                    )
-                if not config.get("destination_database"):
-                    errors.append(
-                        {
-                            "message": "Snowflake destination_database is required",
                             "severity": "error",
                         }
                     )

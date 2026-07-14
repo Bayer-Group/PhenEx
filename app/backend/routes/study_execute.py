@@ -24,7 +24,6 @@ STUDY_ARTIFACTS_DIR = os.environ.get("STUDY_ARTIFACTS_DIR", "/data/study_artifac
 
 _db_cache: dict = {}  # key: n_patients -> Database instance
 
-
 def _get_mock_database(mapper, n_patients: int = 1000):
     """Return a cached Database backed by DatabaseMocker, built once per n_patients value."""
     if n_patients not in _db_cache:
@@ -176,7 +175,7 @@ async def execute_study(request: Request):
                     px_database = _get_mock_database(mapper, n_patients)
                 else:
                     try:
-                        from phenex.connectors.snowflake import SnowflakeConnector
+                        from phenex.ibis_connect import SnowflakeConnector
                         from phenex.core.database import Database
 
                         con = SnowflakeConnector(

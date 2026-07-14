@@ -6,7 +6,7 @@ from fastapi.responses import StreamingResponse
 from phenex.util.serialization.from_dict import from_dict
 
 try:
-    from phenex.connectors.snowflake import SnowflakeConnector
+    from phenex.ibis_connect import SnowflakeConnector
 except ImportError:
     # Snowflake connector may not be available in all environments
     SnowflakeConnector = None

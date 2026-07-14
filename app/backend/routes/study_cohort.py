@@ -1,6 +1,7 @@
 from typing import Dict
 from fastapi import APIRouter, Body, HTTPException, Request
 import logging
+import os
 
 router = APIRouter()
 
@@ -139,6 +140,13 @@ async def update_cohort_database(
     """
     user_id = get_authenticated_user_id(request)
     database = body.get("database")
+    if database and database.get("connector", "").lower() == "snowflake":
+        dest_db = os.environ.get("SNOWFLAKE_DEST_DATABASE")
+        if dest_db:
+            safe_id = study_id.replace("-", "_")
+            study_version = 1 # TODO implement study versions
+            config = database.setdefault("config", {})
+            config["destination_database"] = f"{dest_db}.PHENEX_{safe_id}_V{study_version:04d}"
     try:
         success = await db_manager.update_cohort_database(user_id, cohort_id, database)
         if not success:
