@@ -635,6 +635,7 @@ Both value and date can be NULL for some phenotypes. The filters you configure h
 **Utility tools:**
 - lookup_documentation: Search for parameter examples and guidance
 - introspect_database: Inspect the study's live database to discover available domains, CODE_TYPE values (e.g. ICD10CM, SNOMED, RxNorm), and sample code formats. **Call this before adding a CodelistPhenotype if you are unsure which code type the database uses.**
+- execute_sql: Run a read-only SELECT query against the study's source database. Use for patient counts, table row counts, schema exploration, or any data question. Only SELECT is allowed — DDL/DML is blocked.
 
 🕐 **CRITICAL: RECOGNIZING TIME-BASED REQUIREMENTS:**
 When the user's request includes ANY of these phrases, you MUST add a relative_time_range:
@@ -2904,7 +2905,13 @@ async def introspect_database(ctx: RunContext[CohortContext]) -> str:
     summary of available domains, their columns, distinct CODE_TYPE values, and sample
     CODE values.
     """
+    streaming_ctx = get_streaming_context()
+    if streaming_ctx:
+        streaming_ctx.stream_message("tool_call", "🔬 Introspecting database schema and code types…")
+
     if not ctx.deps.database_config:
+        if streaming_ctx:
+            streaming_ctx.stream_message("tool_error", "❌ No database configured for this study")
         return "❌ No database configured for this study. Configure database settings first."
     try:
         try:
@@ -2918,9 +2925,10 @@ async def introspect_database(ctx: RunContext[CohortContext]) -> str:
         available = summary.get("available_domains", [])
         lines = [
             f"🔌 **Database introspection** (connector={connector}, mapper={mapper})",
-            f"Available domains: {', '.join(available)}",
+            f"Available domains/tables: {', '.join(available) if available else 'none found'}",
             "",
         ]
+        # OMOP-style domain introspection
         for domain, info in summary.get("domains", {}).items():
             lines.append(f"**{domain}**")
             code_types = info.get("code_types")
@@ -2931,10 +2939,106 @@ async def introspect_database(ctx: RunContext[CohortContext]) -> str:
                 lines.append(f"  Sample CODEs: {', '.join(str(c) for c in sample_codes[:10])}")
             if not code_types and not sample_codes:
                 lines.append("  (no CODE/CODE_TYPE columns or no data sampled)")
-        return "\n".join(lines)
+        # Non-OMOP fallback: table listing with row counts
+        tables = summary.get("tables", [])
+        if tables and not summary.get("domains"):
+            lines.append("**Tables in source database:**")
+            for t in tables:
+                rc = t.get("row_count")
+                rc_str = f" — {rc:,} rows" if rc is not None else ""
+                lines.append(f"  - {t['table']}{rc_str}")
+        if summary.get("error"):
+            lines.append(f"⚠️ Schema query error: {summary['error']}")
+            lines.append("Use execute_sql() to run custom queries.")
+        result = "\n".join(lines)
+        if streaming_ctx:
+            n_domains = len(summary.get("available_domains", []))
+            streaming_ctx.stream_message("tool_result", f"✅ Found {n_domains} domains in {summary.get('connector', 'database')}")
+        return result
     except Exception as e:
         logger.error(f"Database introspection failed: {e}")
+        if streaming_ctx:
+            streaming_ctx.stream_message("tool_error", f"❌ Introspection failed: {str(e)}")
         return f"❌ Could not introspect database: {str(e)}"
+
+
+@agent.tool
+async def execute_sql(ctx: RunContext[CohortContext], sql: str) -> str:
+    """Execute a read-only SELECT query against the study's configured source database.
+
+    Use this to answer questions about:
+    - Patient counts (SELECT COUNT(DISTINCT person_id) FROM ...)
+    - Table row counts (SELECT COUNT(*) FROM ...)
+    - Available schemas and tables (SHOW TABLES / SELECT * FROM INFORMATION_SCHEMA.TABLES ...)
+    - Sample data to understand column formats or code values
+    - Any ad-hoc data question the user asks
+
+    Only SELECT statements are permitted. INSERT, UPDATE, DELETE, DROP, CREATE, ALTER,
+    TRUNCATE, MERGE, GRANT, REVOKE, EXECUTE, and CALL are blocked.
+
+    Results are returned as a formatted table (up to 200 rows).
+
+    Args:
+        sql: A read-only SQL SELECT statement.
+    """
+    streaming_ctx = get_streaming_context()
+    preview = sql.strip()[:80].replace("\n", " ")
+    if streaming_ctx:
+        streaming_ctx.stream_message("tool_call", f"🗄️ Running SQL: {preview}…")
+
+    if not ctx.deps.database_config:
+        if streaming_ctx:
+            streaming_ctx.stream_message("tool_error", "❌ No database configured for this study")
+        return "❌ No database configured for this study."
+    try:
+        try:
+            from ...utils.study_database import execute_readonly_sql
+        except ImportError:
+            from utils.study_database import execute_readonly_sql
+
+        result = execute_readonly_sql(ctx.deps.database_config, sql)
+        columns = result["columns"]
+        rows = result["rows"]
+        row_count = result["row_count"]
+        truncated = result["truncated"]
+
+        if not rows:
+            if streaming_ctx:
+                streaming_ctx.stream_message("tool_result", "✅ Query returned 0 rows")
+            return "Query returned no rows."
+
+        # Format as a readable markdown table
+        col_widths = {c: len(str(c)) for c in columns}
+        for row in rows:
+            for c in columns:
+                col_widths[c] = max(col_widths[c], len(str(row.get(c, ""))))
+
+        header = " | ".join(str(c).ljust(col_widths[c]) for c in columns)
+        separator = "-+-".join("-" * col_widths[c] for c in columns)
+        data_lines = [
+            " | ".join(str(row.get(c, "")).ljust(col_widths[c]) for c in columns)
+            for row in rows
+        ]
+        table = "\n".join([header, separator] + data_lines)
+
+        suffix = f"\n\n_(showing {row_count} rows{'— truncated at 200' if truncated else ''})_"
+
+        if streaming_ctx:
+            streaming_ctx.stream_message("tool_result", f"✅ Query returned {row_count} row{'s' if row_count != 1 else ''}{' (truncated)' if truncated else ''}")
+
+        return f"```\n{table}\n```{suffix}"
+
+    except ValueError as e:
+        # Security rejection or validation error — surface clearly
+        msg = str(e)
+        if streaming_ctx:
+            streaming_ctx.stream_message("tool_error", f"❌ {msg}")
+        return f"❌ {msg}"
+    except Exception as e:
+        logger.error(f"SQL execution failed: {e}")
+        if streaming_ctx:
+            streaming_ctx.stream_message("tool_error", f"❌ SQL error: {str(e)}")
+        return f"❌ SQL execution failed: {str(e)}"
 
 
 @agent.tool
