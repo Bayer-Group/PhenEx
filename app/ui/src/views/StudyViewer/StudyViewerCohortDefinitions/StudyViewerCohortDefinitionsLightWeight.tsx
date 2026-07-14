@@ -79,7 +79,7 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
   const transformRef = useRef<HTMLDivElement>(null);
   const cohortDefinitionsRef = useRef(cohortDefinitions);
   const navigate = useNavigate();
-  const { setLeftPanelShown } = useThreePanelCollapse();
+  const { setLeftPanelShown, setRightPanelShown } = useThreePanelCollapse();
   const lastZoomTime = useRef(0);
   
   // Current transform values (ref to avoid re-renders)
@@ -508,12 +508,13 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           setLeftPanelShown(false);
+          setRightPanelShown(false);
         });
       });
     } else {
       console.error('Missing study_id or cohort_id for navigation');
     }
-  }, [studyDataService.study_data?.id, navigate, setLeftPanelShown]);
+  }, [studyDataService.study_data?.id, navigate, setLeftPanelShown, setRightPanelShown]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsDragging(true);

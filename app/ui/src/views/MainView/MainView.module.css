@@ -154,15 +154,6 @@
   overflow: hidden;
 }
 
-/* Animate collapse/expand of the left border and the repositioning of the
-   main region + splitters. FlexLayout only commits sizes on drop (not during
-   drag), so these transitions animate the collapse without lagging splitters. */
-.page :global(.flexlayout__border_left),
-.page :global(.flexlayout__border_tab_contents),
-.page :global(.flexlayout__layout_main),
-.page :global(.flexlayout__splitter_border) {
-  transition: left 0.25s ease, right 0.25s ease, width 0.25s ease;
-}
 
 /* Left gutter — vertical tab bar is hidden (single panel, toggled via ⌘B) */
 .page :global(.flexlayout__border_left) {

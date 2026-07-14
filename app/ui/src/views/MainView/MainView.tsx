@@ -296,10 +296,16 @@ const MainViewInner = () => {
   }, []);
 
   // Hide right panel when on studies grid or empty view, show it for cohort/study views
+  // (but only when entering from a non-cohort/study view, so navigating within cohort/study
+  //  views — e.g. StudyViewer → CohortDefinition — doesn't force the panel open again)
+  const prevViewTypeRef = useRef<ViewType | null>(null);
   useEffect(() => {
+    const prev = prevViewTypeRef.current;
+    prevViewTypeRef.current = currentView.viewType;
+
     if (currentView.viewType === ViewType.StudiesGrid || currentView.viewType === ViewType.Empty) {
       setRightPanelShown(false);
-    } else if (COHORT_STUDY_VIEWS.has(currentView.viewType)) {
+    } else if (COHORT_STUDY_VIEWS.has(currentView.viewType) && (prev === null || !COHORT_STUDY_VIEWS.has(prev))) {
       setRightPanelShown(true);
     }
   }, [currentView.viewType, setRightPanelShown]);

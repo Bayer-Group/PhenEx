@@ -30,6 +30,7 @@
   display: flex;
   flex-direction: row;
   gap: 10px;
+  z-index: 30;
 }
 
 .bottomRight{

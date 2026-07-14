@@ -23,13 +23,15 @@
   z-index: 2;
   /* background is on pinnedCard so the transparent area below the card
      has no alpha — allowing filter: drop-shadow to trace the card shape. */
-  filter: drop-shadow(4px 0px 8px rgba(191, 182, 180, 0.9));
+  filter: drop-shadow(0px 8px 20px rgba(91, 87, 86, 0.3));
+  margin-left:15px;
 }
 
 /* Card wrapper: gives the rows their background and defines the card boundary
    for the drop-shadow trace on pinnedPanel. */
 .pinnedCard {
   background-color: var(--background_color_light);
+  border-radius: 8px;
 }
 
 /* Scrollable body of the pinned panel — synced to the right panel via scrollTop. */
