@@ -73,6 +73,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     const [rows, setRows] = useState<any[]>(data?.rows ?? []);
     const [columns, setColumns] = useState<any[]>(data?.columns ?? []);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [selectionAnchorId, setSelectionAnchorId] = useState<string | null>(null);
     const [editing, setEditing] = useState<EditingState | null>(null);
     const [, forceTick] = useState(0);
     // Height of the pinned-panel cohort-meta section; kept in sync so the scroll
@@ -378,7 +379,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       }
     }, []);
 
-    const handleRowClick = useCallback((e: React.MouseEvent, rowData: any, _rowIndex: number) => {
+    const handleRowClick = useCallback((e: React.MouseEvent, rowData: any, rowIndex: number) => {
       // Ignore clicks that were actually drags.
       if (mouseDownPosRef.current) {
         const dx = Math.abs(e.clientX - mouseDownPosRef.current.x);
@@ -388,14 +389,30 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       }
       const id = rowData?.id;
       if (!id) return;
-      const additive = e.metaKey || e.ctrlKey;
-      setSelectedIds(prev => {
-        const next = new Set(additive ? prev : []);
-        if (additive && prev.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-      });
-    }, []);
+
+      if (e.shiftKey && selectionAnchorId) {
+        // Range selection: select all rows between the anchor and clicked row.
+        const currentRows = rowsRef.current;
+        const anchorIndex = currentRows.findIndex(r => r?.id === selectionAnchorId);
+        const from = Math.min(anchorIndex, rowIndex);
+        const to = Math.max(anchorIndex, rowIndex);
+        const rangeIds = currentRows.slice(from, to + 1).map(r => r?.id).filter(Boolean);
+        setSelectedIds(new Set(rangeIds));
+      } else if (e.metaKey || e.ctrlKey) {
+        // Additive selection: toggle the clicked row and update anchor.
+        setSelectedIds(prev => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+        });
+        setSelectionAnchorId(id);
+      } else {
+        // Plain click: select only this row and set anchor.
+        setSelectedIds(new Set([id]));
+        setSelectionAnchorId(id);
+      }
+    }, [selectionAnchorId]);
 
     const handleContextMenu = useCallback((_e: React.MouseEvent, _rowIndex: number) => {
       // Context menu is owned by the surrounding view; no-op here for parity.

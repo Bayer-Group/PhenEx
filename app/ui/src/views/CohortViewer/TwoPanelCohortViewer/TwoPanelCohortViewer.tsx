@@ -170,6 +170,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
         <div className={styles.contentSection}>
           <div className={styles.leftContentWrapper}>
             <div className={styles.leftContentViewer}>{viewer}</div>
+            <div className={styles.navBarFloat}>
             <CallToActionNavBar
               height={44}
               mode={contentMode === 'study' ? 'studyviewer' : 'cohortviewer'}
@@ -179,6 +180,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
               showReport={isReportMode}
               onShowReportChange={setReportMode}
             />
+            </div>
           </div>
         </div>
 

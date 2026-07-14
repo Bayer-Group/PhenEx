@@ -33,7 +33,7 @@
   background-color: var(--background_color_light);
   border-radius: 15px;
   overflow: hidden;
-  margin-top: 100px;
+  margin-top: 20px;
   border: 1px solid hsl(0, 1%, 71%);
   /* border-left: 1px solid var(--line-color-grid, #e0dede);
   border-right: 1px solid var(--line-color-grid, #e0dede); */
