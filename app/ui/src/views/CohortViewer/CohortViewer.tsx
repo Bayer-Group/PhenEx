@@ -344,6 +344,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
         onRowDragEnd={onRowDragEnd}
         onNameChange={handleCohortNameChange}
         onDescriptionChange={handleCohortDescriptionChange}
+        onHorizontalScroll={updateScrollState}
         hideScrollbars={showIssuesPopover}
         hideVerticalScrollbar={isRightPanelOpen}
         ref={gridRef}
@@ -369,8 +370,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
   const handleViewNavigationArrowClicked = (direction: 'left' | 'right') => {
     if (gridRef.current?.scrollByColumn) {
       gridRef.current.scrollByColumn(direction);
-      // Update scroll state after scrolling
-      updateScrollState();
     }
   };
 
@@ -397,24 +396,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
 
   // Listen to grid scroll events to update navbar
   useEffect(() => {
-    const handleScroll = () => {
-      updateScrollState();
-    };
-
-    // Find the grid viewport and attach scroll listener
-    const gridElement = gridRef.current?.eGridDiv;
-    if (gridElement) {
-      const viewport = gridElement.querySelector('.ag-center-cols-viewport');
-      if (viewport) {
-        viewport.addEventListener('scroll', handleScroll);
-        // Initial state update
-        updateScrollState();
-        
-        return () => {
-          viewport.removeEventListener('scroll', handleScroll);
-        };
-      }
-    }
+    // Nothing to do here — scroll state is updated via the onHorizontalScroll
+    // callback passed to CohortCardViewer, which fires on every horizontal scroll
+    // event (including smooth-scroll animation frames from arrow buttons).
   }, [dataService.table_data]);
   
   return (

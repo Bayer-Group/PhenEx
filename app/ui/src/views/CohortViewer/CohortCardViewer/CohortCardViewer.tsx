@@ -39,6 +39,8 @@ interface CohortCardViewerProps {
   onNameChange?: (name: string) => void;
   /** Called when the user edits the cohort description via the inline input. */
   onDescriptionChange?: (description: string) => void;
+  /** Called whenever the scroll panel scrolls horizontally (e.g. arrow-button or scrubber). */
+  onHorizontalScroll?: () => void;
   onCellValueChanged?: (event: any, selectedRows?: any[]) => void;
   onRowDragEnd?: (newRowData: any[]) => void;
   hideScrollbars?: boolean;
@@ -62,6 +64,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       description,
       onNameChange,
       onDescriptionChange,
+      onHorizontalScroll,
       onCellValueChanged,
       onRowDragEnd,
       gridBottomPadding = 0,
@@ -123,6 +126,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     const scrollRowEls = useRef<Map<string, HTMLDivElement>>(new Map());
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
     const heightSyncRafRef = useRef<number>(0);
+    const hScrollRafRef = useRef<number>(0);
 
     // Keep internal state in sync when the data prop changes.
     useEffect(() => {
@@ -334,6 +338,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         ro.disconnect();
         resizeObserverRef.current = null;
         if (heightSyncRafRef.current) cancelAnimationFrame(heightSyncRafRef.current);
+        if (hScrollRafRef.current) cancelAnimationFrame(hScrollRafRef.current);
       };
     }, [scheduleRowHeightSync]);
 
@@ -495,7 +500,35 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           const candidates = boundaries.filter(b => b < current - 1);
           target = candidates.length > 0 ? candidates[candidates.length - 1] : 0;
         }
-        el.scrollTo({ left: target, behavior: 'smooth' });
+        // Clamp target to the actual scrollable range.
+        const maxScroll = el.scrollWidth - el.clientWidth;
+        target = Math.max(0, Math.min(target, maxScroll));
+
+        // Animate scrollLeft directly via rAF rather than using native
+        // `scrollTo({ behavior: 'smooth' })`. The native smooth scroll runs
+        // asynchronously and is cancelled/reset by the React re-renders that the
+        // intermediate scroll events trigger (each frame → onHorizontalScroll →
+        // setScrollPercentage → re-render), which made the view jiggle and snap
+        // back. A manual animation writes scrollLeft imperatively every frame and
+        // is immune to those re-renders.
+        if (hScrollRafRef.current) cancelAnimationFrame(hScrollRafRef.current);
+        const start = current;
+        const distance = target - start;
+        if (distance === 0) return;
+        const duration = 250;
+        const startTime = performance.now();
+        const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+        const step = (now: number) => {
+          const elapsed = now - startTime;
+          const t = Math.min(1, elapsed / duration);
+          el.scrollLeft = start + distance * easeOutCubic(t);
+          if (t < 1) {
+            hScrollRafRef.current = requestAnimationFrame(step);
+          } else {
+            hScrollRafRef.current = 0;
+          }
+        };
+        hScrollRafRef.current = requestAnimationFrame(step);
       },
       []
     );
@@ -512,6 +545,11 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       el.scrollLeft = (percentage / 100) * max;
     }, []);
 
+    // Keep a stable ref to onHorizontalScroll so the zero-dep useCallback below
+    // always calls the latest version without needing to be recreated.
+    const onHorizontalScrollRef = useRef(onHorizontalScroll);
+    onHorizontalScrollRef.current = onHorizontalScroll;
+
     // Sync vertical scroll between both panels via direct scrollTop assignment.
     // The equality guard prevents a ping-pong loop: by the time the programmatic
     // scroll event fires on the other panel, the source element already has the
@@ -519,8 +557,11 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     const handleScrollPanelScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
       const top = e.currentTarget.scrollTop;
       // If scrollTop didn't change, this event was fired by a scrollLeft update
-      // (e.g. the NavBar scrubber). Skip vertical sync to avoid glitches.
-      if (top === prevScrollTopRef.current) return;
+      // (e.g. the NavBar scrubber or arrow buttons). Notify parent and skip vertical sync.
+      if (top === prevScrollTopRef.current) {
+        onHorizontalScrollRef.current?.();
+        return;
+      }
       prevScrollTopRef.current = top;
       if (pinnedContentRef.current && pinnedContentRef.current.scrollTop !== top) {
         pinnedContentRef.current.scrollTop = top;
