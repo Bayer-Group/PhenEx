@@ -40,7 +40,6 @@ export const InteractionBar: FC<InteractionBarProps> = ({
 
   if (isAIThinking) {
     // Show thinking dots and Stop button
-    console.log('🔘 Rendering STOP button with dots:', dots);
     return (
       <div className={styles.buttonContainer}>
         <ButtonsBar
