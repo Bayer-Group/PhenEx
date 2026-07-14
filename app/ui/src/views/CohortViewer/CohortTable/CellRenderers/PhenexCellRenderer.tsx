@@ -157,7 +157,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   return (
     <div
-      className={`${styles.containerStyle} ${props.node.isSelected() ? styles.selected : ''}`}
+      className={`${styles.containerStyle} ${props.node.isSelected() ? styles.selected : ''} ${showRightBorder ? styles.rightBorder :''}`}
 
       style={combinedStyle}
     >

@@ -20,8 +20,15 @@
   flex: 0 0 auto;
   height: 100%;
   overflow: hidden;
-  border-right: 1px solid var(--line-color-grid);
   z-index: 2;
+  /* background is on pinnedCard so the transparent area below the card
+     has no alpha — allowing filter: drop-shadow to trace the card shape. */
+  filter: drop-shadow(4px 0px 8px rgba(191, 182, 180, 0.9));
+}
+
+/* Card wrapper: gives the rows their background and defines the card boundary
+   for the drop-shadow trace on pinnedPanel. */
+.pinnedCard {
   background-color: var(--background_color_light);
 }
 
@@ -36,6 +43,14 @@
   display: none; /* Chrome / Safari */
 }
 
+/* Chin: decorative bottom cap for the pinned panel card. */
+.pinnedChin {
+  height: 30px;
+  /* background-color: var(--background_color_dark); */
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
 /* ---- Scroll (right) panel ---- */
 .scrollPanel {
   position: relative;
@@ -47,7 +62,6 @@
 
 .scrollContent {
   position: relative;
-  min-height: 100%;
 }
 
 /* ---- Rows ---- */

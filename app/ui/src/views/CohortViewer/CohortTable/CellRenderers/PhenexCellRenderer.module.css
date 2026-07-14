@@ -159,3 +159,8 @@
   height: 14px;
   color: var(--text-color-normal);
 }
+
+
+.rightBorder {
+  border-right: 1px solid var(--line-color);
+}

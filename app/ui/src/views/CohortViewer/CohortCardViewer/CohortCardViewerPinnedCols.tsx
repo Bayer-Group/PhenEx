@@ -8,6 +8,8 @@ interface CohortCardViewerPinnedColsProps {
   header?: React.ReactNode;
   /** Bottom padding (px) to match the scroll panel's content padding. */
   bottomPadding?: number;
+  /** Background color of the chin strip — matches the last row's color. */
+  chinColor?: string;
   onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
   children: React.ReactNode;
 }
@@ -18,7 +20,7 @@ interface CohortCardViewerPinnedColsProps {
  * The forwarded ref points at the scrollable body div.
  */
 export const CohortCardViewerPinnedCols = forwardRef<HTMLDivElement, CohortCardViewerPinnedColsProps>(
-  ({ width, header, bottomPadding = 0, onScroll, children }, ref) => {
+  ({ width, header, bottomPadding = 0, chinColor, onScroll, children }, ref) => {
     return (
       <div className={styles.pinnedPanel} style={{ width: `${width}px`, minWidth: `${width}px` }}>
         {header}
@@ -28,7 +30,10 @@ export const CohortCardViewerPinnedCols = forwardRef<HTMLDivElement, CohortCardV
           onScroll={onScroll}
           style={bottomPadding ? { paddingBottom: `${bottomPadding}px` } : undefined}
         >
-          {children}
+          <div className={styles.pinnedCard}>
+            {children}
+            <div className={styles.pinnedChin} style={chinColor ? { backgroundColor: chinColor } : undefined} />
+          </div>
         </div>
       </div>
     );

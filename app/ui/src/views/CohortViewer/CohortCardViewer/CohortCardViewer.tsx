@@ -24,6 +24,7 @@ import {
 } from './gridApiShim';
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { resolveHeaderCellRenderer } from './CohortCardHeaderCell';
+import { getHierarchicalBackgroundColor } from '../CohortTable/CellRenderers/PhenexCellRenderer';
 
 interface CohortCardViewerProps {
   data: TableData;
@@ -553,8 +554,6 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       rows.map((rowData, rowIndex) => {
         const id = rowData?.id ?? String(rowIndex);
         const isEditingRow = editing != null && editing.rowId === id;
-        const isCardHead = panel === 'pinned' && rowIndex === 0;
-        const isCardTail = panel === 'pinned' && rowIndex === rows.length - 1;
         return (
           <div key={id} data-row-id={id} style={{ display: 'contents' }}>
             <CohortCardRow
@@ -578,8 +577,6 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               onDragEnd={handleDragEnd}
-              isCardHead={isCardHead}
-              isCardTail={isCardTail}
             />
           </div>
         );
@@ -594,7 +591,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           <div className={styles.emptyState}>No phenotypes defined</div>
         ) : (
           <>
-            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)} bottomPadding={gridBottomPadding} onScroll={handlePinnedBodyScroll}>
+            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)} bottomPadding={gridBottomPadding} chinColor={getHierarchicalBackgroundColor(rows[rows.length - 1]?.effective_type, rows[rows.length - 1]?.hierarchical_index) ?? undefined} onScroll={handlePinnedBodyScroll}>
               {renderRows('pinned', pinnedColumns)}
             </CohortCardViewerPinnedCols>
             <CohortCardViewerScrollCols
