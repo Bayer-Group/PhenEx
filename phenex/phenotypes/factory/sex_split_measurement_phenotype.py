@@ -1,15 +1,12 @@
 from typing import Optional, Union
 from dataclasses import dataclass
 
-from phenex import (
-    Codelist,
-    LogicPhenotype,
-    MeasurementPhenotype,
-    LogicPhenotype,
-    ValueFilter, 
-    RelativeTimeRangeFilter,
-    CategoricalFilter,
-)
+from phenex.codelists.codelists import Codelist
+from phenex.phenotypes.computation_graph_phenotypes import LogicPhenotype
+from phenex.phenotypes.measurement_phenotype import MeasurementPhenotype
+from phenex.filters.value_filter import ValueFilter
+from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
+from phenex.filters.categorical_filter import CategoricalFilter
 
 
 from phenex.util import create_logger
