@@ -29,7 +29,7 @@ const DomainCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   }
 
   return (
-    <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete}>
+    <PhenexCellRenderer {...props} onEdit={handleEdit} onDelete={handleDelete} showRightBorder={true}>
       <DomainRenderer
         value={props.value}
         data={props.data}

@@ -409,7 +409,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     // Re-sync whenever the rendered rows/columns or edit state change.
     useLayoutEffect(() => {
       scheduleRowHeightSync();
-    }, [rows, columns, editing, scheduleRowHeightSync]);
+    }, [rows, columns, editing, effectivePinnedWidth, scheduleRowHeightSync]);
 
     // ---------------------------------------------------------------------------
     // Row interaction handlers
