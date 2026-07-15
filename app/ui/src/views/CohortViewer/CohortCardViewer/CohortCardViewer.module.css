@@ -83,6 +83,9 @@
   width: 100%;
   border-radius: 4px;
   cursor: text;
+  resize: none;
+  overflow: hidden;
+  display: block;
 }
 
 .pinnedCohortNameInput:hover,
@@ -148,6 +151,34 @@
   /* background-color: var(--background_color_dark); */
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
+}
+
+/* ---- Pinned / scroll divider ---- */
+.pinnedDivider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  /* horizontally centred on the pinned panel's right edge */
+  transform: translateX(-50%);
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+}
+
+.pinnedDivider::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.pinnedDivider:hover::after {
+  background: var(--color_accent_blue, #3b82f6);
 }
 
 /* ---- Scroll (right) panel ---- */

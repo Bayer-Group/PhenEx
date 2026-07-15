@@ -47,6 +47,10 @@ interface CohortCardViewerProps {
   hideVerticalScrollbar?: boolean;
   gridBottomPadding?: number;
   flipScrollDirection?: boolean;
+  /** Minimum width (px) the pinned panel can be dragged to. Default 150. */
+  minPinnedWidth?: number;
+  /** Maximum width (px) the pinned panel can be dragged to. Default 700. */
+  maxPinnedWidth?: number;
 }
 
 interface EditingState {
@@ -69,6 +73,8 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       onRowDragEnd,
       gridBottomPadding = 0,
       flipScrollDirection = false,
+      minPinnedWidth = 150,
+      maxPinnedWidth = 700,
     },
     ref
   ) => {
@@ -82,6 +88,10 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     // Height of the pinned-panel cohort-meta section; kept in sync so the scroll
     // panel can insert an equal-height spacer before its header row.
     const [cohortMetaHeight, setCohortMetaHeight] = useState(0);
+
+    // User-adjusted pinned panel width (null = use computed pinnedWidth).
+    const [pinnedWidthOverride, setPinnedWidthOverride] = useState<number | null>(null);
+    const isDividerDraggingRef = useRef(false);
 
     // Stable display values: only update when the incoming prop is non-empty so
     // that a transient undefined (e.g. caused by a data-listener firing during an
@@ -158,6 +168,47 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       () => pinnedColumns.reduce((sum, c) => sum + (c.flex ? 250 : c.width ?? 150), 0),
       [pinnedColumns]
     );
+    const effectivePinnedWidth = pinnedWidthOverride ?? pinnedWidth;
+
+    // When the user has dragged to a new width, stretch the last pinned column
+    // to absorb the difference so content always fills the container exactly.
+    const adjustedPinnedColumns = useMemo(() => {
+      if (pinnedWidthOverride === null || pinnedColumns.length === 0) return pinnedColumns;
+      const delta = pinnedWidthOverride - pinnedWidth;
+      if (delta === 0) return pinnedColumns;
+      return pinnedColumns.map((col, i) => {
+        if (i < pinnedColumns.length - 1) return col;
+        const baseWidth = col.flex ? 250 : (col.width ?? 150);
+        return { ...col, flex: undefined, width: Math.max(50, baseWidth + delta) };
+      });
+    }, [pinnedColumns, pinnedWidthOverride, pinnedWidth]);
+
+    // ---------------------------------------------------------------------------
+    // Divider drag (resize pinned panel width)
+    // ---------------------------------------------------------------------------
+    const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      isDividerDraggingRef.current = true;
+
+      const onMouseMove = (ev: MouseEvent) => {
+        if (!isDividerDraggingRef.current) return;
+        const root = rootRef.current;
+        if (!root) return;
+        const left = root.getBoundingClientRect().left;
+        const desired = ev.clientX - left;
+        setPinnedWidthOverride(Math.max(minPinnedWidth, Math.min(maxPinnedWidth, desired)));
+      };
+
+      const onMouseUp = () => {
+        isDividerDraggingRef.current = false;
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+      };
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    }, [minPinnedWidth, maxPinnedWidth]);
+
     const scrollWidth = useMemo(
       () => scrollColumns.reduce((sum, c) => sum + (c.width ?? 150), 0),
       [scrollColumns]
@@ -726,9 +777,14 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           <div className={styles.emptyState}>No phenotypes defined</div>
         ) : (
           <>
-            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={pinnedWidth} header={renderHeaderRow(pinnedColumns)} cohortName={displayCohortName} description={displayDescription} bottomPadding={gridBottomPadding} chinColor={getHierarchicalBackgroundColor(rows[rows.length - 1]?.effective_type, rows[rows.length - 1]?.hierarchical_index) ?? undefined} onMetaHeightChange={setCohortMetaHeight} onScroll={handlePinnedBodyScroll} onNameChange={handleNameChange} onDescriptionChange={handleDescriptionChange}>
-              {renderRows('pinned', pinnedColumns)}
+            <CohortCardViewerPinnedCols ref={pinnedContentRef} width={effectivePinnedWidth} header={renderHeaderRow(adjustedPinnedColumns)} cohortName={displayCohortName} description={displayDescription} bottomPadding={gridBottomPadding} chinColor={getHierarchicalBackgroundColor(rows[rows.length - 1]?.effective_type, rows[rows.length - 1]?.hierarchical_index) ?? undefined} onMetaHeightChange={setCohortMetaHeight} onScroll={handlePinnedBodyScroll} onNameChange={handleNameChange} onDescriptionChange={handleDescriptionChange}>
+              {renderRows('pinned', adjustedPinnedColumns)}
             </CohortCardViewerPinnedCols>
+            <div
+              className={styles.pinnedDivider}
+              style={{ left: effectivePinnedWidth }}
+              onMouseDown={handleDividerMouseDown}
+            />
             <CohortCardViewerScrollCols
               ref={scrollRef}
               contentWidth={scrollWidth}

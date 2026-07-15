@@ -43,6 +43,7 @@ interface CohortCardViewerPinnedColsProps {
 export const CohortCardViewerPinnedCols = forwardRef<HTMLDivElement, CohortCardViewerPinnedColsProps>(
   ({ width, header, cohortName, description, bottomPadding = 0, chinColor, onMetaHeightChange, onScroll, onNameChange, onDescriptionChange, children }, ref) => {
     const metaRef = useRef<HTMLDivElement>(null);
+    const nameRef = useRef<HTMLTextAreaElement>(null);
     const descriptionRef = useRef<HTMLTextAreaElement>(null);
     const [localName, setLocalName] = useState(cohortName ?? '');
     const [localDescription, setLocalDescription] = useState(description ?? '');
@@ -51,7 +52,14 @@ export const CohortCardViewerPinnedCols = forwardRef<HTMLDivElement, CohortCardV
     useEffect(() => { setLocalName(cohortName ?? ''); }, [cohortName]);
     useEffect(() => { setLocalDescription(description ?? ''); }, [description]);
 
-    // Auto-resize the textarea to fit its content
+    // Auto-resize textareas to fit their content
+    useEffect(() => {
+      const el = nameRef.current;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }, [localName]);
+
     useEffect(() => {
       const el = descriptionRef.current;
       if (!el) return;
@@ -87,12 +95,14 @@ export const CohortCardViewerPinnedCols = forwardRef<HTMLDivElement, CohortCardV
           <div className={styles.pinnedCard}>
             {cohortName && (
               <div ref={metaRef} className={styles.pinnedCohortMeta}>
-                <input
+                <textarea
+                  ref={nameRef}
                   className={styles.pinnedCohortNameInput}
                   value={localName}
+                  rows={1}
                   onChange={e => setLocalName(e.target.value)}
                   onBlur={() => onNameChange?.(localName)}
-                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); } }}
                 />
                 <textarea
                   ref={descriptionRef}
