@@ -4,6 +4,7 @@
   --accent-color-hover: #bf1b1b;
   /* --line-color: hsl(0, 0%, 88%); */
   --line-color: hsl(24, 19%, 85%);
+  --line_color_dark:hsl(0, 1%, 71%);
 
   --color_scrollbar_thumb: #514655f3;
   --line-color-grid: hsl(0, 0%, 88%);

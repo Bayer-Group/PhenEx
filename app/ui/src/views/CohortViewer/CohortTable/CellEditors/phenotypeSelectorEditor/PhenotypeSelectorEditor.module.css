@@ -12,8 +12,8 @@
 }
 
 .phenotypeSection:hover {
-  background-color: var(--color-accent-hover);
   border-color: var(--line-color);
+  background-color: var(--background_color_light) !important;
 }
 
 .phenotypeSection.selected {
@@ -21,6 +21,7 @@
   border-color: var(--color-accent);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-accent);
+  font-family: "IBMPlexSans-bold";
 }
 
 .phenotypeSection.selected:hover {
@@ -41,7 +42,17 @@
 }
 
 .listItem{
-  color: white !important;
+  color: var(--text_color_notfocus) !important;
   font-size: var(--font_size_items) !important;
+  border-radius: 8px;
+}
 
+.listItem:hover{
+  color: var(--text_color_notfocus) !important;
+  background-color: transparent !important;
+}
+
+.listItemSelected{
+  background-color: var(--background_color_light) !important;
+  border-color: var(--button-border-color-hover);
 }

@@ -167,7 +167,7 @@ export const defaultColumns = [
     headerName: 'Phenotype',
     width: 130,
     editable: true,
-    pinned: 'left',
+    // pinned: 'left',
     cellRenderer: PhenotypeCellRenderer,
     cellEditor: PhenotypeSelectorCellEditor,
     cellEditorParams: {

@@ -20,7 +20,7 @@
   font-family: 'IBMPlexSans-Regular';
   background-color: transparent;
   outline: none;
-  color:white
+  color:var(--text_color_notfocus);
 }
 
 .filterInput::placeholder {
@@ -29,7 +29,7 @@
 }
 
 .filterInput:focus {
-  border-color: white;
+  border-color: var(--line-color);
 }
 
 .clearButton {
@@ -72,7 +72,7 @@
     box-shadow 0.2s;
   outline: none;
 
-  color: white;
+  color:var(--text_color_notfocus);
   background-color: var(--button-background-color-default);
   font-family: var(--button-font-family-default) !important;
   border: 1px solid var(--button-border-color-default);
@@ -107,7 +107,7 @@
 }
 
 .listItem.selected:hover {
-  background-color: white;
+  color:var(--text_color_notfocus);
   background-color: var(--color-accent-hover);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-accent);
@@ -153,7 +153,7 @@
 
 .listItem.selected:hover {
   background-color: var(--color_accent_blue);
-  color:white !important;
+  color:var(--text_color_notfocus);
 }
 
 .itemInfo {
@@ -162,7 +162,7 @@
   padding-left: 3px;
   font-size: 12px;
   font-family: 'IBMPlexSans-Regular';
-  color: white;
+  color:var(--text_color_notfocus);
 }
 
 /* .listItem:hover .itemInfo{

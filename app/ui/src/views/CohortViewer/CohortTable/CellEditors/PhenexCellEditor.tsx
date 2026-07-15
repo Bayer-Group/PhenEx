@@ -631,9 +631,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         className={`${styles.currentSelectionTopSection}`}
         style={{
           position: 'absolute',
-          left: 0,
+          left: -1,
           bottom: '100%',
-          width: '100%',
+          width: 'calc(100% + 2px)',
           zIndex: 9998,
         }}
         data-drag-handle="true"

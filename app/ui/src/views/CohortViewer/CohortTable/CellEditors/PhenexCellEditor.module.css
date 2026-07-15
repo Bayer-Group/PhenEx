@@ -81,7 +81,7 @@
 
 .selectedClassName{
   background-color: var(--color_accent_blue) !important;
-  color: white !important;
+  color: var(--text_color_notfocus) !important;
   border: 1px solid white !important;
 }
 
@@ -90,14 +90,20 @@
 
 .composerContainer {
   width:100%;
-  background-color: var(--background_color_focus);
   border-radius: 10px;
   position: relative;
-  color: white;
+  color: var(--text_color_notfocus);
   overflow: hidden;
   animation: fadeIn 0.05s ease-in-out;
-  border: none !important;
   padding: 0px;
+
+
+  background: hsl(30, 60%, 94%, 0.5);
+  border: 1px solid hsl(0, 1%, 71%);
+  border-radius:15px;
+  filter: drop-shadow(0px 8px 20px rgba(91, 87, 86, 0.3));
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
 }
 
 .composerHeader {
@@ -286,7 +292,7 @@
   font-size: var(--font_size_infotext) !important;
   line-height: var(--font_size_infotext);
   opacity: 1 !important;
-  color: white  !important;
+  color: var(--text_color_notfocus) !important;
   font-family: "IBMPlexSans-bold" !important;
 }
 
@@ -297,7 +303,7 @@
   font-size: var(--font_size_breadcrumb) !important;
   font-family: 'IBMPlexSans-bold' !important;
   line-height: 12px !important;
-  color: white  !important;
+  color: var(--text_color_notfocus) !important;
 }
 
 
@@ -380,12 +386,12 @@
 .currentSelectionContainer {
   display: flex;
   flex-direction: column;
-  background-color: var(--background_color_focus) !important;
+  background-color:var(--background_color_light) !important;
   padding: 5px;
   border-radius: 0 0 10px 10px;
-  /* border-left: var(--border);
+  border-left: var(--border);
   border-bottom: var(--border);
-  border-right: var(--border); */
+  border-right: var(--border);
 
 }
 .blocker{
@@ -419,12 +425,14 @@
   display: flex;
   flex-direction: column;
   gap: 0px;
-  width: 100%;
+  width: calc(100% - 2px);
   background-color: var(--background-color);
-  color: white !important;
+  color: var(--text_color_notfocus) !important;
   /* width:calc(100% + 8px); */
   border-radius: 10px 10px 0px 0px;
-  background-color: var(--background_color_focus)  !important; /* TEMPORARY - REMOVE LATER */
+  background-color: var(--background_color_light)  !important; /* TEMPORARY - REMOVE LATER */
+  border: 1px solid var(--line-color);
+  border-bottom: none;
 
 }
 
@@ -443,7 +451,6 @@
   transition: box-shadow 0.2s ease-in-out;
   background-color: var(--background-color);
   border-radius: var(--border_radius_currenselection);
-;
 
 }
 
