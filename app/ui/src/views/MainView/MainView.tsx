@@ -315,8 +315,8 @@ const MainViewInner = () => {
   const handleInnerModelChange = useCallback((model: Model) => {
     if (syncingRef.current) return;
     
-    // Update the service with the latest model
     mainViewLayoutService.setModel(model);
+    mainViewLayoutService.notifyModelChange(model);
     
     const right = model.getBorderSet().getBorderMap().get(DockLocation.RIGHT);
     if (right && (right.getSelected() !== -1) !== isRightPanelShown) {

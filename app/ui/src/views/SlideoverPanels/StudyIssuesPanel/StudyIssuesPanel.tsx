@@ -43,15 +43,11 @@ export const StudyIssuesPanel = () => {
     }
   };
 
+  // Fetch on mount and whenever the issues tab is activated.
   useEffect(() => {
     fetchIssues();
-    
-    // Auto-refresh every 120 seconds
-    const interval = setInterval(() => {
-      fetchIssues();
-    }, 120000);
-    
-    return () => clearInterval(interval);
+    const unsub = mainViewLayoutService.onTabActivated('issues', fetchIssues);
+    return () => unsub();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studyId]);
 

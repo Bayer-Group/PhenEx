@@ -6,6 +6,8 @@ import { Model, Actions, DockLocation } from 'flexlayout-react';
 class MainViewLayoutService {
   private static instance: MainViewLayoutService;
   private modelRef: Model | null = null;
+  private tabListeners: Map<string, Set<() => void>> = new Map();
+  private lastSelectedTab: string | null = null;
 
   private constructor() {}
 
@@ -18,6 +20,30 @@ class MainViewLayoutService {
 
   public setModel(model: Model): void {
     this.modelRef = model;
+  }
+
+  /** Subscribe to a right-panel tab becoming active. Returns an unsubscribe fn. */
+  public onTabActivated(tabComponent: string, callback: () => void): () => void {
+    if (!this.tabListeners.has(tabComponent)) {
+      this.tabListeners.set(tabComponent, new Set());
+    }
+    this.tabListeners.get(tabComponent)!.add(callback);
+    return () => this.tabListeners.get(tabComponent)?.delete(callback);
+  }
+
+  /** Called by MainView whenever the inner model changes to detect tab switches. */
+  public notifyModelChange(model: Model): void {
+    const right = model.getBorderSet().getBorderMap().get(DockLocation.RIGHT);
+    if (!right) return;
+    const selectedIdx = right.getSelected();
+    if (selectedIdx === -1) return;
+    const children = right.getChildren();
+    const selectedTab = children[selectedIdx];
+    if (!selectedTab) return;
+    const component = (selectedTab as any).getComponent?.() as string | undefined;
+    if (!component || component === this.lastSelectedTab) return;
+    this.lastSelectedTab = component;
+    this.tabListeners.get(component)?.forEach(cb => cb());
   }
 
   /**

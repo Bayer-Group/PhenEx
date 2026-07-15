@@ -66,32 +66,33 @@ export const StudyExecutePanel: React.FC = () => {
     }
   };
 
-  // On mount (and when studyId changes), load executions and validation, then poll validation every 120s.
+  const loadData = async () => {
+    const studyId = getStudyId();
+    if (studyId) {
+      await fetchExecutions();
+      await checkValidation();
+    }
+  };
+
+  // Fetch on mount and whenever the execute tab is activated.
   useEffect(() => {
     let cancelled = false;
-    let pollInterval: ReturnType<typeof setInterval> | null = null;
 
     const tryFetch = async () => {
       const studyId = getStudyId();
       if (studyId) {
         await fetchExecutions();
         await checkValidation();
-        pollInterval = setInterval(() => {
-          if (!cancelled) checkValidation();
-        }, 120000);
         return;
       }
-      // Retry until study is available (handles async load)
-      const timer = setTimeout(async () => {
+      setTimeout(async () => {
         if (!cancelled) await tryFetch();
       }, 300);
-      return () => clearTimeout(timer);
     };
     tryFetch();
-    return () => {
-      cancelled = true;
-      if (pollInterval) clearInterval(pollInterval);
-    };
+
+    const unsub = mainViewLayoutService.onTabActivated('execute', () => { if (!cancelled) loadData(); });
+    return () => { cancelled = true; unsub(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramStudyId]);
 
@@ -280,22 +281,17 @@ export const StudyExecutePanel: React.FC = () => {
         ) : (
           <button
             className={`${styles.executeBtn} ${executeStateClass}`}
-            onClick={handleExecute}
-            disabled={isDisabled}
-            title={hasValidationErrors ? `Cannot execute: ${validationErrorCount} validation error${validationErrorCount !== 1 ? 's' : ''}. Check Issues tab.` : ''}
+            onClick={hasValidationErrors ? checkValidation : handleExecute}
+            title={hasValidationErrors ? 'Re-check issues' : ''}
           >
-            Execute Study
+            {hasValidationErrors ? 'Re-check Issues' : 'Execute Study'}
           </button>
         )}
         {hasValidationErrors && (
           <div className={styles.validationWarning}>
             {validationErrorCount} issue{validationErrorCount !== 1 ? 's' : ''} must be fixed before execution.{' '}
             <span 
-              style={{ 
-                textDecoration: 'underline', 
-                cursor: 'pointer',
-                color: 'var(--color-accent-bright)'
-              }}
+              style={{ textDecoration: 'underline', cursor: 'pointer', color: 'var(--color-accent-bright)' }}
               onClick={() => mainViewLayoutService.openRightPanelTab(3)}
             >
               See Issues tab
