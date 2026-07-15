@@ -518,6 +518,21 @@ async def update_study_database(
 
     Request Body:
     - database (dict | null): The database configuration object, or null to clear it.
+    
+    Expected database config structure:
+    {
+        "mapper": "OMOP" | "Optum EHR",
+        "connector": "snowflake" | "mocker",
+        "config": {
+            "source_database": "DATABASE_NAME.SCHEMA_NAME",  // Required for Snowflake
+            "destination_database": "...",  // Auto-generated, not required from client
+            "n_patients": 25000  // Only for mocker connector
+        }
+    }
+    
+    Note: Authentication credentials (user, password, account, warehouse, role) are NOT 
+    stored in the database config. They are read from environment variables at execution time.
+    Any credential fields sent by the client will be stripped for security.
     """
     user_id = get_authenticated_user_id(request)
     database = body.get("database")
@@ -528,6 +543,10 @@ async def update_study_database(
             study_version = 1 # TODO implement study versions
             config = database.setdefault("config", {})
             config["destination_database"] = f"{dest_db}.PHENEX_{safe_id}_V{study_version:04d}"
+            
+            # Strip credential fields for security - these come from environment variables
+            for cred_field in ["user", "password", "account", "warehouse", "role"]:
+                config.pop(cred_field, None)
     try:
         success = await db_manager.update_study_database(user_id, study_id, database)
         if not success:

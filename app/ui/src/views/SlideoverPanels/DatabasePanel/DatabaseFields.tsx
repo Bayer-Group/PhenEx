@@ -9,14 +9,6 @@ interface DatabaseFieldsProps {
   contentMode?: 'cohort' | 'study';
 }
 
-const snowflakeDefaults = {
-  user: 'default_user',
-  account: 'default_account',
-  warehouse: 'default_warehouse',
-  role: 'default_role',
-  password: 'default_password',
-};
-
 export const DatabaseFields: FC<DatabaseFieldsProps> = ({ contentMode = 'study' }) => {
   const studyDataService = StudyDataService.getInstance();
   const cohortDataService = CohortDataService.getInstance();
@@ -32,29 +24,13 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ contentMode = 'study' 
       : studyDataService.setDatabaseConfig(config);
 
   const [selectedMapper, setSelectedMapper] = useState('');
-  const [selectedConnector, setSelectedConnector] = useState('');
   const [selectedDatabase, setSelectedDatabase] = useState('');
   const [selectedSchema, setSelectedSchema] = useState('');
   const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
-  const [snowflakeConfig, setSnowflakeConfig] = useState({
-    user: snowflakeDefaults.user,
-    account: snowflakeDefaults.account,
-    warehouse: snowflakeDefaults.warehouse,
-    role: snowflakeDefaults.role,
-    password: snowflakeDefaults.password,
-  });
 
   const updateConfig = () => {
     const cfg = getCurrentConfig();
     setSelectedMapper(cfg.mapper || '');
-    setSelectedConnector(cfg.connector || '');
-    setSnowflakeConfig({
-      user: cfg.config?.user || snowflakeDefaults.user,
-      account: cfg.config?.account || snowflakeDefaults.account,
-      warehouse: cfg.config?.warehouse || snowflakeDefaults.warehouse,
-      role: cfg.config?.role || snowflakeDefaults.role,
-      password: cfg.config?.password || snowflakeDefaults.password,
-    });
 
     // Restore Database/Schema selections from saved source_database
     const connector = cfg.connector;
@@ -98,12 +74,41 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ contentMode = 'study' 
 
   const handleDatabaseChange = (databaseName: string) => {
     setSelectedDatabase(databaseName);
-    setSelectedSchema('');
     const dbConfig = databasesData.find((db: any) => db.database === databaseName);
     if (dbConfig) {
       setAvailableSchemas(dbConfig.schemas);
       setSelectedMapper(dbConfig.mapper);
-      setSelectedConnector(dbConfig.connector || 'Snowflake');
+      
+      // Auto-select first schema and trigger save
+      const firstSchema = dbConfig.schemas[0];
+      if (firstSchema) {
+        setSelectedSchema(firstSchema);
+        
+        // Save config immediately with the current database/schema values
+        const mapper = dbConfig.mapper;
+        const connector = dbConfig.connector || 'Snowflake';
+        
+        if (connector === 'mocker') {
+          saveConfig({
+            mapper,
+            connector: 'mocker',
+            config: { n_patients: dbConfig?.n_patients || 25000 },
+          });
+        } else {
+          // For Snowflake: only store source_database
+          // Auth credentials come from environment variables at execution time
+          saveConfig({
+            mapper,
+            connector,
+            config: {
+              source_database: `${databaseName}.${firstSchema}`,
+            },
+          });
+        }
+      }
+    } else {
+      setSelectedSchema('');
+      setAvailableSchemas([]);
     }
   };
 
@@ -121,16 +126,13 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ contentMode = 'study' 
         config: { n_patients: dbConfig?.n_patients || 25000 },
       });
     } else {
+      // For Snowflake: only store source_database
+      // Auth credentials come from environment variables at execution time
       saveConfig({
         mapper: selectedMapper,
         connector,
         config: {
           source_database: `${selectedDatabase}.${schemaName}`,
-          user: snowflakeConfig.user,
-          account: snowflakeConfig.account,
-          warehouse: snowflakeConfig.warehouse,
-          role: snowflakeConfig.role,
-          password: snowflakeConfig.password,
         },
       });
     }
