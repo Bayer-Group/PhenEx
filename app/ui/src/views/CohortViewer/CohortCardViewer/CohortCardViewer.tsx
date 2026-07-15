@@ -195,7 +195,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         const root = rootRef.current;
         if (!root) return;
         const left = root.getBoundingClientRect().left;
-        const desired = ev.clientX - left;
+        const desired = ev.clientX - left - 15;
         setPinnedWidthOverride(Math.max(minPinnedWidth, Math.min(maxPinnedWidth, desired)));
       };
 
@@ -782,7 +782,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
             </CohortCardViewerPinnedCols>
             <div
               className={styles.pinnedDivider}
-              style={{ left: effectivePinnedWidth }}
+              style={{ left: effectivePinnedWidth + 15 }}
               onMouseDown={handleDividerMouseDown}
             />
             <CohortCardViewerScrollCols
