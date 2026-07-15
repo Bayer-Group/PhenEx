@@ -69,6 +69,7 @@
   font-size: var(--font_size_phenotypename);
   font-family: "IBMPlexSans-regular";
   padding-top:var(--item-margin-top);
+  padding-bottom:var(--item-margin-top);
   flex: 1;
 }
 

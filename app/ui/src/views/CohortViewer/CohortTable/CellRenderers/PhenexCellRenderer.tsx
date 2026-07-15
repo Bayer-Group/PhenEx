@@ -54,7 +54,7 @@ export interface PhenexCellRendererProps extends ICellRendererParams {
 export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const {
     showTopBorder = true,
-    showRightBorder = false,
+    showRightBorder = true,
     showBottomBorder = false,
     showLeftBorder = false,
     colorBackground = true,
