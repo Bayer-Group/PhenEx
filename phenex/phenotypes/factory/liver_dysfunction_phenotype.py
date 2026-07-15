@@ -3,12 +3,16 @@ from dataclasses import dataclass
 
 from phenex.codelists.codelists import Codelist
 from phenex.phenotypes.computation_graph_phenotypes import LogicPhenotype
-from phenex.phenotypes.factory.sex_split_measurement_phenotype import SexSplitMeasurementPhenotype, SexSplitMeasurementComponents
+from phenex.phenotypes.factory.sex_split_measurement_phenotype import (
+    SexSplitMeasurementPhenotype,
+    SexSplitMeasurementComponents,
+)
 from phenex.filters.value_filter import ValueFilter
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
 from phenex.filters.categorical_filter import CategoricalFilter
 
 from phenex.util import create_logger
+
 
 @dataclass
 class LiverDysfunctionComponents:
@@ -23,6 +27,7 @@ class LiverDysfunctionComponents:
     | value filters       | 4                          |
 
     """
+
     alt_codelist: Codelist
     ast_codelist: Codelist
     categorical_filter_male: CategoricalFilter
@@ -90,7 +95,4 @@ def LiverDysfunctionPhenotype(
         relative_time_range=relative_time_range,
     )
 
-    return LogicPhenotype(
-        name = f"{name}",
-        expression = pt_alt | pt_ast
-    )
+    return LogicPhenotype(name=f"{name}", expression=pt_alt | pt_ast)

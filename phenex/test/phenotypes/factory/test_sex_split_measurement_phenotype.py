@@ -71,23 +71,34 @@ def _make_components(codelist=None):
 def _build_base_lab_df():
     rows = [
         # (PERSON_ID, CODE,       CODE_TYPE, VALUE,  EVENT_DATE)
-        ("P1", LAB_CODE, LAB_CODE, 15.0,  datetime.date(2022, 6, 1)),  # male filter
-        ("P2", LAB_CODE, LAB_CODE, 3.0,   datetime.date(2022, 6, 1)),  # female filter
-        ("P3", LAB_CODE, LAB_CODE, 7.0,   datetime.date(2022, 6, 1)),  # neither
-        ("P4", LAB_CODE, LAB_CODE, None,  datetime.date(2022, 6, 1)),  # null value
-        ("P5", LAB_CODE, LAB_CODE, 10.0,  datetime.date(2022, 6, 1)),  # boundary male
-        ("P6", LAB_CODE, LAB_CODE, 5.0,   datetime.date(2022, 6, 1)),  # boundary female
+        ("P1", LAB_CODE, LAB_CODE, 15.0, datetime.date(2022, 6, 1)),  # male filter
+        ("P2", LAB_CODE, LAB_CODE, 3.0, datetime.date(2022, 6, 1)),  # female filter
+        ("P3", LAB_CODE, LAB_CODE, 7.0, datetime.date(2022, 6, 1)),  # neither
+        ("P4", LAB_CODE, LAB_CODE, None, datetime.date(2022, 6, 1)),  # null value
+        ("P5", LAB_CODE, LAB_CODE, 10.0, datetime.date(2022, 6, 1)),  # boundary male
+        ("P6", LAB_CODE, LAB_CODE, 5.0, datetime.date(2022, 6, 1)),  # boundary female
         # P7 has no row → excluded
         ("P8", OTHER_CODE, OTHER_CODE, 12.0, datetime.date(2022, 6, 1)),  # wrong code
     ]
-    df = pd.DataFrame(rows, columns=["PERSON_ID", "CODE", "CODE_TYPE", "VALUE", "EVENT_DATE"])
+    df = pd.DataFrame(
+        rows, columns=["PERSON_ID", "CODE", "CODE_TYPE", "VALUE", "EVENT_DATE"]
+    )
     return df
 
 
 def _build_person_df(ids=None):
     if ids is None:
         ids = [f"P{i}" for i in range(1, 9)]
-    sex_map = {"P1": "M", "P2": "F", "P3": "M", "P4": "F", "P5": "M", "P6": "F", "P7": "M", "P8": "F"}
+    sex_map = {
+        "P1": "M",
+        "P2": "F",
+        "P3": "M",
+        "P4": "F",
+        "P5": "M",
+        "P6": "F",
+        "P7": "M",
+        "P8": "F",
+    }
     return pd.DataFrame({"PERSON_ID": ids, "SEX": [sex_map.get(p, "M") for p in ids]})
 
 
@@ -144,13 +155,17 @@ class SexSplitMeasurementCleanPhysioTestGenerator(PhenotypeTestGenerator):
 
     def define_input_tables(self):
         df = _build_base_lab_df()
-        extra = pd.DataFrame([{
-            "PERSON_ID": "P9",
-            "CODE": LAB_CODE,
-            "CODE_TYPE": LAB_CODE,
-            "VALUE": 999.0,
-            "EVENT_DATE": datetime.date(2022, 6, 1),
-        }])
+        extra = pd.DataFrame(
+            [
+                {
+                    "PERSON_ID": "P9",
+                    "CODE": LAB_CODE,
+                    "CODE_TYPE": LAB_CODE,
+                    "VALUE": 999.0,
+                    "EVENT_DATE": datetime.date(2022, 6, 1),
+                }
+            ]
+        )
         df_all = pd.concat([df, extra], ignore_index=True)
 
         ids = [f"P{i}" for i in range(1, 9)] + ["P9"]
@@ -215,23 +230,46 @@ class SexSplitMeasurementRelativeTimeRangeTestGenerator(PhenotypeTestGenerator):
     def define_input_tables(self):
         rows = [
             # pre-index
-            ("P1", LAB_CODE, LAB_CODE, 15.0, datetime.date(2021, 6, 1), self.INDEX_DATE),
-            ("P2", LAB_CODE, LAB_CODE,  3.0, datetime.date(2021, 6, 1), self.INDEX_DATE),
+            (
+                "P1",
+                LAB_CODE,
+                LAB_CODE,
+                15.0,
+                datetime.date(2021, 6, 1),
+                self.INDEX_DATE,
+            ),
+            ("P2", LAB_CODE, LAB_CODE, 3.0, datetime.date(2021, 6, 1), self.INDEX_DATE),
             # post-index
-            ("P1", LAB_CODE, LAB_CODE, 15.0, datetime.date(2023, 6, 1), self.INDEX_DATE),
-            ("P3", LAB_CODE, LAB_CODE,  7.0, datetime.date(2023, 6, 1), self.INDEX_DATE),
+            (
+                "P1",
+                LAB_CODE,
+                LAB_CODE,
+                15.0,
+                datetime.date(2023, 6, 1),
+                self.INDEX_DATE,
+            ),
+            ("P3", LAB_CODE, LAB_CODE, 7.0, datetime.date(2023, 6, 1), self.INDEX_DATE),
         ]
         df = pd.DataFrame(
             rows,
-            columns=["PERSON_ID", "CODE", "CODE_TYPE", "VALUE", "EVENT_DATE", "INDEX_DATE"],
+            columns=[
+                "PERSON_ID",
+                "CODE",
+                "CODE_TYPE",
+                "VALUE",
+                "EVENT_DATE",
+                "INDEX_DATE",
+            ],
         )
 
         ids = ["P1", "P2", "P3"]
-        person_df = pd.DataFrame({
-            "PERSON_ID": ids,
-            "SEX": ["M", "F", "M"],
-            "INDEX_DATE": [self.INDEX_DATE] * 3,
-        })
+        person_df = pd.DataFrame(
+            {
+                "PERSON_ID": ids,
+                "SEX": ["M", "F", "M"],
+                "INDEX_DATE": [self.INDEX_DATE] * 3,
+            }
+        )
 
         return [
             {"name": "LAB", "df": df, "type": MeasurementTable},

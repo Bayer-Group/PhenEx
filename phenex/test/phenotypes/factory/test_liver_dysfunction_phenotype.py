@@ -81,24 +81,28 @@ def _make_components():
 def _build_lab_df(extra_rows=None):
     rows = [
         # (PERSON_ID, CODE,     CODE_TYPE, VALUE, EVENT_DATE)
-        ("P1", ALT_CODE, ALT_CODE, 60.0,  EVENT_DATE),  # ALT > 56 and > 45
-        ("P2", ALT_CODE, ALT_CODE, 50.0,  EVENT_DATE),  # ALT > 45 only
-        ("P3", ALT_CODE, ALT_CODE, 30.0,  EVENT_DATE),  # ALT not elevated
-        ("P3", AST_CODE, AST_CODE, 50.0,  EVENT_DATE),  # AST > 40 and > 32
-        ("P4", ALT_CODE, ALT_CODE, 30.0,  EVENT_DATE),  # ALT not elevated
-        ("P4", AST_CODE, AST_CODE, 35.0,  EVENT_DATE),  # AST > 32 only
-        ("P5", ALT_CODE, ALT_CODE, 46.0,  EVENT_DATE),  # ALT > 45 (female)
-        ("P5", AST_CODE, AST_CODE, 33.0,  EVENT_DATE),  # AST > 32 (female)
-        ("P6", ALT_CODE, ALT_CODE, 40.0,  EVENT_DATE),  # ALT not elevated
-        ("P6", AST_CODE, AST_CODE, 25.0,  EVENT_DATE),  # AST not elevated
+        ("P1", ALT_CODE, ALT_CODE, 60.0, EVENT_DATE),  # ALT > 56 and > 45
+        ("P2", ALT_CODE, ALT_CODE, 50.0, EVENT_DATE),  # ALT > 45 only
+        ("P3", ALT_CODE, ALT_CODE, 30.0, EVENT_DATE),  # ALT not elevated
+        ("P3", AST_CODE, AST_CODE, 50.0, EVENT_DATE),  # AST > 40 and > 32
+        ("P4", ALT_CODE, ALT_CODE, 30.0, EVENT_DATE),  # ALT not elevated
+        ("P4", AST_CODE, AST_CODE, 35.0, EVENT_DATE),  # AST > 32 only
+        ("P5", ALT_CODE, ALT_CODE, 46.0, EVENT_DATE),  # ALT > 45 (female)
+        ("P5", AST_CODE, AST_CODE, 33.0, EVENT_DATE),  # AST > 32 (female)
+        ("P6", ALT_CODE, ALT_CODE, 40.0, EVENT_DATE),  # ALT not elevated
+        ("P6", AST_CODE, AST_CODE, 25.0, EVENT_DATE),  # AST not elevated
         # P7: no rows → excluded
-        ("P8", ALT_CODE, ALT_CODE, None,  EVENT_DATE),  # null value
-        ("P9", ALT_CODE, ALT_CODE, 45.0,  EVENT_DATE),  # boundary (not > 45)
-        ("P9", AST_CODE, AST_CODE, 32.0,  EVENT_DATE),  # boundary (not > 32)
+        ("P8", ALT_CODE, ALT_CODE, None, EVENT_DATE),  # null value
+        ("P9", ALT_CODE, ALT_CODE, 45.0, EVENT_DATE),  # boundary (not > 45)
+        ("P9", AST_CODE, AST_CODE, 32.0, EVENT_DATE),  # boundary (not > 32)
     ]
-    df = pd.DataFrame(rows, columns=["PERSON_ID", "CODE", "CODE_TYPE", "VALUE", "EVENT_DATE"])
+    df = pd.DataFrame(
+        rows, columns=["PERSON_ID", "CODE", "CODE_TYPE", "VALUE", "EVENT_DATE"]
+    )
     if extra_rows:
-        df = pd.concat([df, pd.DataFrame(extra_rows, columns=df.columns)], ignore_index=True)
+        df = pd.concat(
+            [df, pd.DataFrame(extra_rows, columns=df.columns)], ignore_index=True
+        )
     return df
 
 
@@ -190,19 +194,57 @@ class LiverDysfunctionRelativeTimeRangeTestGenerator(PhenotypeTestGenerator):
 
     def define_input_tables(self):
         rows = [
-            ("P1", ALT_CODE, ALT_CODE, 60.0, datetime.date(2021, 6, 1), self.INDEX_DATE),
-            ("P2", ALT_CODE, ALT_CODE, 50.0, datetime.date(2023, 6, 1), self.INDEX_DATE),
-            ("P3", AST_CODE, AST_CODE, 50.0, datetime.date(2021, 6, 1), self.INDEX_DATE),
-            ("P4", AST_CODE, AST_CODE, 35.0, datetime.date(2023, 6, 1), self.INDEX_DATE),
+            (
+                "P1",
+                ALT_CODE,
+                ALT_CODE,
+                60.0,
+                datetime.date(2021, 6, 1),
+                self.INDEX_DATE,
+            ),
+            (
+                "P2",
+                ALT_CODE,
+                ALT_CODE,
+                50.0,
+                datetime.date(2023, 6, 1),
+                self.INDEX_DATE,
+            ),
+            (
+                "P3",
+                AST_CODE,
+                AST_CODE,
+                50.0,
+                datetime.date(2021, 6, 1),
+                self.INDEX_DATE,
+            ),
+            (
+                "P4",
+                AST_CODE,
+                AST_CODE,
+                35.0,
+                datetime.date(2023, 6, 1),
+                self.INDEX_DATE,
+            ),
         ]
         df = pd.DataFrame(
-            rows, columns=["PERSON_ID", "CODE", "CODE_TYPE", "VALUE", "EVENT_DATE", "INDEX_DATE"]
+            rows,
+            columns=[
+                "PERSON_ID",
+                "CODE",
+                "CODE_TYPE",
+                "VALUE",
+                "EVENT_DATE",
+                "INDEX_DATE",
+            ],
         )
-        person_df = pd.DataFrame({
-            "PERSON_ID": ["P1", "P2", "P3", "P4"],
-            "SEX": ["M", "F", "M", "F"],
-            "INDEX_DATE": [self.INDEX_DATE] * 4,
-        })
+        person_df = pd.DataFrame(
+            {
+                "PERSON_ID": ["P1", "P2", "P3", "P4"],
+                "SEX": ["M", "F", "M", "F"],
+                "INDEX_DATE": [self.INDEX_DATE] * 4,
+            }
+        )
         return [
             {"name": "LAB", "df": df, "type": MeasurementTable},
             {"name": "PERSON", "df": person_df, "type": PhenexPersonTable},
