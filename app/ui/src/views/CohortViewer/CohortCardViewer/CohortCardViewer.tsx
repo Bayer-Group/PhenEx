@@ -270,7 +270,13 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         if (!isColumnEditable(colDef, row, apiRef.current)) return;
         // Commit any in-flight edit before starting a new one.
         if (editingRef.current) commitEdit();
-        setEditing({ rowId: row.id ?? String(params.rowIndex), field: params.colKey, eventKey: params.key });
+        const rowId = row.id ?? String(params.rowIndex);
+        // If exactly one row is selected, move selection to the editing row.
+        // Multi-row selections are left unchanged.
+        if (selectedIdsRef.current.size === 1) {
+          setSelectedIds(new Set([rowId]));
+        }
+        setEditing({ rowId, field: params.colKey, eventKey: params.key });
       },
       [commitEdit]
     );
@@ -737,6 +743,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       rows.map((rowData, rowIndex) => {
         const id = rowData?.id ?? String(rowIndex);
         const isEditingRow = editing != null && editing.rowId === id;
+        const isBlurred = editing != null && !isEditingRow;
         return (
           <div key={id} data-row-id={id} style={{ display: 'contents' }}>
             <CohortCardRow
@@ -748,6 +755,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
               isSelected={selectedIds.has(id)}
               isDragging={draggedIndex === rowIndex}
               isDragOver={dragOverIndex === rowIndex}
+              isBlurred={isBlurred}
               editingField={isEditingRow ? editing!.field : null}
               editingEventKey={isEditingRow ? editing!.eventKey : undefined}
               enableDrag={armedRowId === id}

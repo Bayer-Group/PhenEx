@@ -13,6 +13,7 @@ interface CohortCardRowProps {
   isSelected: boolean;
   isDragging: boolean;
   isDragOver: boolean;
+  isBlurred: boolean;
   /** The column field currently being edited in this row (if any). */
   editingField: string | null;
   editingEventKey?: string;
@@ -37,6 +38,7 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
   isSelected,
   isDragging,
   isDragOver,
+  isBlurred,
   editingField,
   editingEventKey,
   enableDrag,
@@ -65,7 +67,7 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
       ref={el => registerRowRef(id, el)}
       className={`${styles.row} ${isSelected ? styles.rowSelected : ''} ${
         isDragging ? styles.rowDragging : ''
-      } ${isDragOver ? styles.rowDragOver : ''}`}
+      } ${isDragOver ? styles.rowDragOver : ''} ${isBlurred ? styles.rowDimmed : ''}`}
       style={rowStyle}
       draggable={enableDrag}
       onMouseDown={e => onRowMouseDown(e, rowIndex)}
