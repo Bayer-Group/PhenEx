@@ -98,6 +98,25 @@ export const CohortCardCell: React.FC<CohortCardCellProps> = ({
     flex: colDef.flex ? `${colDef.flex} 1 0` : '0 0 auto',
     ...(isNA ? { backgroundColor: 'var(--background_color_light)' } : {}),
     ...(colDef.cellStyle && typeof colDef.cellStyle !== 'function' ? colDef.cellStyle : {}),
+    ...(isEditing ? { position: 'relative' } : {}),
+  };
+
+  const renderBackgroundContent = () => {
+    const Renderer = colDef.cellRenderer;
+    if (!Renderer) {
+      const value = rowData?.[colDef.field];
+      return <span className={styles.plainValue}>{value ?? ''}</span>;
+    }
+    const rendererParams = makeRendererParams({
+      rowData,
+      rowIndex,
+      colDef,
+      api,
+      backing,
+      eGridCell: cellRef.current,
+    });
+    const RendererComponent = Renderer as React.ComponentType<any>;
+    return <RendererComponent {...rendererParams} />;
   };
 
   const renderContent = () => {
@@ -116,28 +135,25 @@ export const CohortCardCell: React.FC<CohortCardCellProps> = ({
       });
       const { component } = resolveEditor(colDef, editorParams);
 
-      if (!component || component === 'agTextCellEditor') {
-        return <AgTextCellEditor ref={editorRef} {...editorParams} />;
-      }
-      const EditorComponent = component as React.ComponentType<any>;
-      return <EditorComponent ref={editorRef} {...editorParams} />;
+      const editorElement =
+        !component || component === 'agTextCellEditor' ? (
+          <AgTextCellEditor ref={editorRef} {...editorParams} />
+        ) : (
+          (() => {
+            const EditorComponent = component as React.ComponentType<any>;
+            return <EditorComponent ref={editorRef} {...editorParams} />;
+          })()
+        );
+
+      return (
+        <>
+          {renderBackgroundContent()}
+          <div style={{ position: 'absolute', inset: 0 }}>{editorElement}</div>
+        </>
+      );
     }
 
-    const Renderer = colDef.cellRenderer;
-    if (!Renderer) {
-      const value = rowData?.[colDef.field];
-      return <span className={styles.plainValue}>{value ?? ''}</span>;
-    }
-    const rendererParams = makeRendererParams({
-      rowData,
-      rowIndex,
-      colDef,
-      api,
-      backing,
-      eGridCell: cellRef.current,
-    });
-    const RendererComponent = Renderer as React.ComponentType<any>;
-    return <RendererComponent {...rendererParams} />;
+    return renderBackgroundContent();
   };
 
   return (
