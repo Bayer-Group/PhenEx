@@ -61,21 +61,18 @@ export const RelativeTimeRangeRenderer: React.FC<RelativeTimeRangeRendererProps>
     const reference = filter.useIndexDate
       ? 'index date'
       : filter.anchor_phenotype || 'unknown phenotype';
+
+    const minValue = filter.min_days?.value ?? 0;
+    const minOpen = filter.min_days?.operator === '>' ? '(' : '[';
+    const maxValue = filter.max_days?.value ?? '∞';
+    const maxClose = filter.max_days?.operator === '<=' ? ']' : ')';
+
     return (
       <span className={styles.filterRowSpan}>
-        {filter.min_days && (
-          <span className={`${styles.timeValue} ${styles.min}`}>
-            <span className={`${styles.operator} ${styles.min}`}>{filter.min_days.operator.replace('>=', '≥').replace('<=', '≤')}</span>
-            {filter.min_days.value}
-          </span>
-        )}
-        {filter.max_days && (
-          <span className={`${styles.timeValue} ${styles.max}`}>
-            <span className={`${styles.operator} ${styles.max}`}>{filter.max_days.operator.replace('>=', '≥').replace('<=', '≤')}</span>
-            {filter.max_days.value}
-          </span>
-        )}
-         days <span className={styles.when}>{filter.when}</span>
+        <span className={`${styles.timeValue}`}>
+          {minOpen}{minValue}, {maxValue}{maxClose}
+        </span>
+        <span className={styles.when}>{filter.when}</span>
         <span className={styles.reference}> {reference} </span>
       </span>
     );

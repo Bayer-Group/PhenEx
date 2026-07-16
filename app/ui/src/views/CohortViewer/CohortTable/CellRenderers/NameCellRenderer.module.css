@@ -82,6 +82,7 @@
   gap: 8px;
   width: 100%;
   position: relative;
+  text-align: left;
 }
 
 .verticalLine {

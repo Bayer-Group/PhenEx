@@ -18,6 +18,7 @@ import { CategoricalFilterRenderer } from '../CellRenderers/actualRendering/Cate
 import { RelativeTimeRangeRenderer } from '../CellRenderers/actualRendering/RelativeTimeRangeRenderer';
 import { TypeRenderer } from '../CellRenderers/actualRendering/TypeRenderer';
 import { ValueFilterRenderer } from '../CellRenderers/actualRendering/ValueFilterRenderer';
+import { CohortDataService } from '../../CohortDataService/CohortDataService';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value: any;
@@ -558,6 +559,12 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         // Use the custom renderer component for field-based rendering
         // Always render, even if value is empty (for complex item editors)
         const selectedClassName = typeStyles[`${props.data.effective_type || ''}_color_block`] || '';
+
+        // Respect global showFullCodelists setting; row-level override takes precedence
+        const rowOverride: boolean | undefined = props.data?.show_full_codelist;
+        const showFullCodelist = rowOverride !== undefined
+          ? rowOverride
+          : CohortDataService.getInstance().getShowFullCodelists();
         
         return (
           <div className={styles.cellMirrorContents}>
@@ -567,6 +574,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
               onItemClick={handleItemClick}
               selectedIndex={props.selectedItemIndex}
               selectedClassName={selectedClassName}
+              showFullCodelist={showFullCodelist}
               {...(props.rendererProps || {})}
             />
           </div>

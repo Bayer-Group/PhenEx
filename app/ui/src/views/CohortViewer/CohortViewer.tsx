@@ -143,6 +143,8 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
       // Update grid data - AG Grid will maintain scroll position automatically with getRowId
       api.setGridOption('rowData', dataService.table_data['rows']);
       api.setGridOption('columnDefs', dataService.table_data['columns']);
+      // Force cell renderers to re-run (needed when display settings like showFullCodelists change)
+      api.refreshCells({ force: true });
     }
   };
   useEffect(() => {

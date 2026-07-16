@@ -43,10 +43,16 @@ const VisibilityMenu: React.FC<{
   const dataService = CohortDataService.getInstance();
   const [showDescriptions, setShowDescriptions] = useState(true);
   const [showChildren, setShowChildren] = useState(() => dataService.getShowComponents());
+  const [showFullCodelists, setShowFullCodelists] = useState(() => dataService.getShowFullCodelists());
 
   const handleShowChildrenChange = (value: boolean) => {
     setShowChildren(value);
     dataService.toggleComponentPhenotypes(value);
+  };
+
+  const handleShowFullCodelistsChange = (value: boolean) => {
+    setShowFullCodelists(value);
+    dataService.toggleShowFullCodelists(value);
   };
 
   return (
@@ -73,6 +79,12 @@ const VisibilityMenu: React.FC<{
           label="Show Children"
           value={showChildren}
           onValueChange={handleShowChildrenChange}
+        />
+
+        <SwitchButton
+          label="Show Full Codelists"
+          value={showFullCodelists}
+          onValueChange={handleShowFullCodelistsChange}
         />
 
         <SwitchButton

@@ -130,6 +130,8 @@ export class CohortDataService {
   public filterType(type: string | string[]): void { return this._activeCohort.filterType(type); }
   public toggleComponentPhenotypes(show: boolean): void { return this._activeCohort.toggleComponentPhenotypes(show); }
   public getShowComponents(): boolean { return this._activeCohort.getShowComponents(); }
+  public toggleShowFullCodelists(show: boolean): void { return this._activeCohort.toggleShowFullCodelists(show); }
+  public getShowFullCodelists(): boolean { return this._activeCohort.getShowFullCodelists(); }
   public updateColumns(newColumns: ColumnDefinition[]): void { return this._activeCohort.updateColumns(newColumns); }
   public tableDataForComponentPhenotype(parentPhenotype: any): TableData { return this._activeCohort.tableDataForComponentPhenotype(parentPhenotype); }
 

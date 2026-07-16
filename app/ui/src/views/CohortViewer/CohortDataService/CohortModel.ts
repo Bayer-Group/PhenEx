@@ -116,6 +116,7 @@ export class CohortModel {
 
   private _currentFilter: string[] = ['entry', 'inclusion', 'exclusion'];
   private _showComponents: boolean = true;
+  private _showFullCodelists: boolean = false;
   private _diff_map: Map<string, 'added' | 'modified' | 'deleted'> = new Map();
   private _deleted_phenotypes: any[] = [];
 
@@ -1271,6 +1272,16 @@ export class CohortModel {
 
   public getShowComponents(): boolean {
     return this._showComponents;
+  }
+
+  public toggleShowFullCodelists(show: boolean): void {
+    this._showFullCodelists = show;
+    this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners();
+  }
+
+  public getShowFullCodelists(): boolean {
+    return this._showFullCodelists;
   }
 
   public updateColumns(newColumns: ColumnDefinition[]): void {
