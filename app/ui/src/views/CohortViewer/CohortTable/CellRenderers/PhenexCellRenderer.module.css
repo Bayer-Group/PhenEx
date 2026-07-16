@@ -72,6 +72,7 @@
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;
+  justify-content: flex-end;
   border-top: 1px solid transparent;
   border-right: 1px solid transparent;
   border-bottom: 1px solid transparent;

@@ -123,10 +123,12 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
             <path d="M9 6V4h6v2" />
           </svg>
         </button>
-        {renderExpandArrow((e) => {
-          e.stopPropagation();
-          handleEdit();
-        }, isSelected ? styles.selected : undefined)}
+        <div className={styles.expandArrowContainer}>
+          {renderExpandArrow((e) => {
+            e.stopPropagation();
+            handleEdit();
+          }, isSelected ? styles.selected : undefined)}
+        </div>
       </div>
     );
   }

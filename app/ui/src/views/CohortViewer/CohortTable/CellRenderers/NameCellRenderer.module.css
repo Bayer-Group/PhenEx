@@ -68,8 +68,9 @@
   line-height: 1 !important;
   font-size: var(--font_size_phenotypename);
   font-family: "IBMPlexSans-regular";
-  padding-top:var(--item-margin-top);
-  padding-bottom:var(--item-margin-top);
+  padding-top: var(--item-margin-top);
+  padding-bottom: var(--item-margin-top);
+  padding-right: calc(28px + var(--item-margin-horizontal) + 4px);
   flex: 1;
 }
 
@@ -93,7 +94,6 @@
 }
 
 .expandArrow {
-  margin: calc(var(--item-margin-top) - 3) var(--item-margin-horizontal) 0 0;
   flex-shrink: 0;
   cursor: pointer;
   width: 28px;
@@ -176,4 +176,11 @@
 .infotext{
       font-size: var(--font_size_infotext);
   font-family:"IBMPlexSans-regular";
+}
+
+.expandArrowContainer {
+  position: absolute;
+  top: var(--item-margin-top);
+  right: var(--item-margin-horizontal);
+  z-index: 1;
 }

@@ -8,6 +8,7 @@ interface InfoPortalProps {
   offsetY?: number;
   position?: 'below' | 'above' | 'right' | 'left';
   alignment?: 'left' | 'center' | 'right';
+  textAlign?: 'left' | 'center' | 'right';
   debug?: boolean;
   onHideRequest?: () => void; // Callback when portal wants to hide itself
 }
@@ -19,6 +20,7 @@ export const InfoPortal: React.FC<InfoPortalProps> = ({
   offsetY = 0,
   position = 'below',
   alignment = 'left',
+  textAlign,
   debug = false,
   onHideRequest,
 }) => {
@@ -255,7 +257,7 @@ export const InfoPortal: React.FC<InfoPortalProps> = ({
 
   // Re-enable pointer events on the portal content
   const portalContent = (
-    <div ref={contentRef} style={{ pointerEvents: 'auto' }}>
+    <div ref={contentRef} style={{ pointerEvents: 'auto', textAlign }}>
       {children}
       {/* Debug display */}
       {debugInfo && (

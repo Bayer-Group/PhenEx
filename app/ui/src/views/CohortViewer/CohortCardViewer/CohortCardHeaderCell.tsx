@@ -70,11 +70,11 @@ export const CohortCardHeaderCell: React.FC<HeaderCellProps> = ({ colDef, showIn
     >
       <span className={styles.title}>{title}</span>
 
-      {paramInfo?.description && (
+      {/* {paramInfo?.description && (
         <span className={styles.infoButton}>i</span>
-      )}
+      )} */}
 
-      {infoVisible && (
+      { infoVisible && (
         <InfoPortal
           triggerRef={cellRef}
           position="below"
