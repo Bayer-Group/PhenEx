@@ -668,7 +668,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           position: 'relative',
           width: '100%',
           minWidth: '300px',
-          minHeight: portalPosition.currentSelection.bottomHeight,
           zIndex: 9999,
         }}
         data-drag-handle="true"
@@ -685,9 +684,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }
         }}
       >
-{/* ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''} */}
         <div 
           className={`${styles.cellMirror} ${colorBlock} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}
+          style={{ minHeight: portalPosition.currentSelection.bottomHeight }}
           onClick={(e) => {
             e.stopPropagation();
             e.nativeEvent.stopImmediatePropagation();
@@ -700,7 +699,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }}
         >
           {renderCellMirrorContents()}
-          {props.showAddButton && (
+        
+        </div>
+
+        {props.showAddButton && (
             <button
               className={`${styles.addButton}`}
               onClick={(e) => {
@@ -717,7 +719,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
               </svg>
             </button>
           )}
-        </div>
       </div>
     );
   }
@@ -735,6 +736,17 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       >
         {renderCurrentSelectionPanel_top()}
         {renderCurrentSelectionPanel_bottom()}
+        {showComposer && (
+          <div
+            className={styles.composerChin}
+            onClick={e => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
+            onMouseDown={e => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
+          >
+            <div className={styles.composerContent}>
+              {renderMainContent()}
+            </div>
+          </div>
+        )}
         <div className={styles.blocker}></div>
       </div>
     );
@@ -866,9 +878,19 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     );
   }
 
-  // Complex item editors show both cell mirror and composer panel
+  // Complex item editors show cell mirror with composer as an attached chin below
   return (
     <>
+      {showComposer && (
+        <div
+          className={styles.composerBackdrop}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            handleCloseComposer();
+          }}
+        />
+      )}
       <DraggablePortal
         initialPosition={{
           left: '0px',
@@ -887,11 +909,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }
         }}
       >
-        <div onKeyDown={handleKeyDown} tabIndex={0}>
+        <div onKeyDown={handleKeyDown} tabIndex={0} ref={containerRef}>
           {renderCurrentSelectionPanel()}
         </div>
       </DraggablePortal>
-      {showComposer && renderComposerPanel()}
     </>
   );
 });
