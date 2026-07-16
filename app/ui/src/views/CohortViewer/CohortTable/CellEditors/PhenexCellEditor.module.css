@@ -18,19 +18,7 @@
   background-color: transparent;
 }
 
-:global(.ag-popup-editor) {
-  background-color: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  /* border-radius: 0px 0px 0px 0px !important; */
-  box-shadow: none !important;
-  /* transform: translateY(calc(-100% + 40px)); */
-  overflow: hidden;
-}
 
-:global(.ag-popup-child) {
-  border-radius: 4px 10px 10px 10px;
-}
 
 .header {
   user-select: none !important;
@@ -85,9 +73,6 @@
   border: 1px solid white !important;
 }
 
-.composerContainer > * {
-}
-
 .composerContainer {
   width:100%;
   border-radius: 10px;
@@ -101,7 +86,7 @@
   background: hsl(30, 60%, 94%, 0.5);
   border: 1px solid hsl(0, 1%, 71%);
   border-radius:15px;
-  filter: drop-shadow(0px 8px 20px rgba(91, 87, 86, 0.3));
+  box-shadow: 0px 8px 20px rgba(91, 87, 86, 0.3);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
 }
@@ -392,6 +377,7 @@
   border-left: var(--border);
   border-bottom: var(--border);
   border-right: var(--border);
+  box-shadow: 0px 8px 20px rgba(91, 87, 86, 0.3);
 
 }
 .blocker{
@@ -451,6 +437,7 @@
   cursor: grab;
   transition: box-shadow 0.2s ease-in-out;
   background-color: var(--background-color);
+
   border-radius: var(--border_radius_currenselection);
 
 }
@@ -476,6 +463,7 @@
 }
 
 .cellMirrorContents{
+
   padding: 5px var(--item-margin-horizontal);
   /* flex: 1; */
   /* display: flex;

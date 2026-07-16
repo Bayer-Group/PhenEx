@@ -73,6 +73,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
+  text-align: right;
   border-top: 1px solid transparent;
   border-right: 1px solid transparent;
   border-bottom: 1px solid transparent;
@@ -100,7 +101,7 @@
 /* Button styles for cells */
 .buttonContainer {
   position: absolute;
-  right: 5px;
+  left: 5px;
   bottom: 2px;
   display: flex;
   gap: 4px;

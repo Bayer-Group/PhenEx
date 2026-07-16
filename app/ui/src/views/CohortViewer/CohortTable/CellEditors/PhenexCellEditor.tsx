@@ -81,6 +81,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const [showComposer, setShowComposer] = useState(() => props.showComposerPanel ?? false);
   const [clickedItemPosition, setClickedItemPosition] = useState<{ x: number; y: number } | null>(null);
   const [verticalShift, setVerticalShift] = useState(0);
+  const [listViewVerticalShift, setListViewVerticalShift] = useState(0);
   const currentSelectionContainerRef = React.useRef<HTMLDivElement>(null);
   
   // Callback for children to update the current value
@@ -192,6 +193,23 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     console.log("=== Closing composer panel only ===");
     setShowComposer(false);
   };
+
+  // Shift the list-view editor upward if it overflows the viewport bottom
+  useEffect(() => {
+    if (!props.autoCloseOnChange) return;
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const margin = 10;
+        const overflow = rect.bottom - (window.innerHeight - margin);
+        if (overflow > 0) {
+          setListViewVerticalShift(overflow);
+        }
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [props.autoCloseOnChange]);
 
   // Shift the panel upward if opening the chin pushes it below the viewport
   useEffect(() => {
@@ -775,83 +793,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     );
   };
 
-  const renderComposerPanel = () => {
-    return (
-      <>
-        {/* Backdrop for clicking outside to close */}
-        <div
-          className={styles.composerBackdrop}
-          onClick={(e) => {
-            e.stopPropagation();
-            e.nativeEvent.stopImmediatePropagation();
-            handleCloseComposer();
-          }}
-        />
-        <DraggablePortal
-          initialPosition={{
-            left: portalPosition.composer.left,
-            top: portalPosition.composer.top,
-          }}
-          dragHandleSelector="[data-drag-handle='true']"
-          onDragStart={() => {
-            setRecentlyDragged(false);
-          }}
-          onDragEnd={wasDragged => {
-            if (wasDragged) {
-              setRecentlyDragged(true);
-              setTimeout(() => {
-                setRecentlyDragged(false);
-              }, 200);
-            }
-          }}
-        >
-          <div
-            style={{
-              width: 'fit-content',
-              minWidth: '100px',
-              maxWidth: '600px',
-              maxHeight: portalPosition.composer.maxHeight,
-              zIndex: 100001,
-            }}
-            ref={containerRef}
-            className={`${styles.composerContainer}`}
-            onClick={e => {
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-          onKeyDown={handleKeyDown}
-          tabIndex={0}
-        >
-          <div className={`${styles.composerContent}`}>
-            {renderMainContent()}
-            {props.onEditingDone && showComposer && (
-              <div className={styles.doneButtonContainer}>
-                <button 
-                  className={`${styles.doneButton}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.nativeEvent.stopImmediatePropagation();
-                    handleCloseComposer();
-                  }}
-                >
-                  <svg width="16" height="4" viewBox="0 0 16 4" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="16" height="4" rx="2"/>
-                  </svg>
-
-                </button>
-              </div>
-            )}
-          </div>
-            <div className={`${styles.composerHeader}`} data-drag-handle="true">
-            {/* <span className={styles.composerTitle}>Edit {titleText}</span> */}
-          </div>
-
-        </div>
-      </DraggablePortal>
-      </>
-    );
-
-  }
 
   // List-view editors (autoCloseOnChange) only show composer at cell position
   if (props.autoCloseOnChange) {
@@ -859,7 +800,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       <DraggablePortal
         initialPosition={{
           left: portalPosition.currentSelection.bottomLeft,
-          top: portalPosition.currentSelection.bottomTop - 35,
+          top: portalPosition.currentSelection.bottomTop - 35 - listViewVerticalShift,
         }}
         dragHandleSelector="[data-drag-handle='true']"
         onDragStart={() => {

@@ -743,7 +743,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       rows.map((rowData, rowIndex) => {
         const id = rowData?.id ?? String(rowIndex);
         const isEditingRow = editing != null && editing.rowId === id;
-        const isBlurred = editing != null && !isEditingRow;
+        const isBlurred = editing != null && !isEditingRow && !selectedIds.has(id);
         return (
           <div key={id} data-row-id={id} style={{ display: 'contents' }}>
             <CohortCardRow

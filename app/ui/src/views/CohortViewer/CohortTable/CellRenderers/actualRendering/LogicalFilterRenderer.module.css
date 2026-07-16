@@ -1,9 +1,10 @@
 /* LogicalFilterRenderer.module.css - Styles for logical filter tree rendering */
 
 .container {
-  display: inline-flex;
+  display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: flex-end;
   gap: 2px; /*var(--item-padding-horizontal, 8px);*/
   flex-wrap: wrap;
   max-width: 100%;
@@ -20,16 +21,17 @@
   align-items: flex-start;
   width: fit-content;
   max-width: 100%;
+  text-align: right;
   cursor: pointer;
   transition: opacity 0.2s;
   background-color: var(--item-color-default);
   border-radius: var(--item-radius);
-  border-width: var(--border_width_item) !important;
+  border-width: 1px !important;
   transition: var(--item-transition);
   font-family: var(--item-font-family);
   font-size: var(--item-font-size);
   line-height: calc(var(--item-font-size) * .9);
-  padding: var(--padding_vertical_item) 5px !important;
+  padding: var(--padding_vertical_item) 4px !important;
   /* transform: scale(.95); */
   border-color: transparent !important;
 
@@ -44,7 +46,7 @@
 .filterItem:hover {
   opacity: 0.8;
   /* transform: scale(1); */
-  background-color: white;
+  border-color: var(--line-color) !important;
 }
 
 
