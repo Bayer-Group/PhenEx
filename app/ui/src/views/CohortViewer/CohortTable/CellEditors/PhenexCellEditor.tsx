@@ -78,7 +78,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const [currentValue, setCurrentValue] = useState(() => props.value);
   const [recentlyDragged, setRecentlyDragged] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(getInfoBoxState);
-  const [showComposer, setShowComposer] = useState(false); // Always start hidden - only show on explicit user interaction
+  const [showComposer, setShowComposer] = useState(() => props.showComposerPanel ?? false);
   const [clickedItemPosition, setClickedItemPosition] = useState<{ x: number; y: number } | null>(null);
   
   // Callback for children to update the current value
