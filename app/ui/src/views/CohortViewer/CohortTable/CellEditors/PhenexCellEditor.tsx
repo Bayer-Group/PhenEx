@@ -80,6 +80,8 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const [isInfoOpen, setIsInfoOpen] = useState(getInfoBoxState);
   const [showComposer, setShowComposer] = useState(() => props.showComposerPanel ?? false);
   const [clickedItemPosition, setClickedItemPosition] = useState<{ x: number; y: number } | null>(null);
+  const [verticalShift, setVerticalShift] = useState(0);
+  const currentSelectionContainerRef = React.useRef<HTMLDivElement>(null);
   
   // Callback for children to update the current value
   // Used by list-view editors to update value and trigger auto-close
@@ -190,6 +192,26 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     console.log("=== Closing composer panel only ===");
     setShowComposer(false);
   };
+
+  // Shift the panel upward if opening the chin pushes it below the viewport
+  useEffect(() => {
+    if (!showComposer) {
+      setVerticalShift(0);
+      return;
+    }
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!currentSelectionContainerRef.current) return;
+        const rect = currentSelectionContainerRef.current.getBoundingClientRect();
+        const margin = 10;
+        const overflow = rect.bottom - (window.innerHeight - margin);
+        if (overflow > 0) {
+          setVerticalShift(overflow);
+        }
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showComposer]);
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const contentScrollableRef = React.useRef<HTMLDivElement>(null);
@@ -726,11 +748,12 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const renderCurrentSelectionPanel = () => {
     return (
       <div 
+        ref={currentSelectionContainerRef}
         className={styles.currentSelectionContainer}
         style={{
           position: 'absolute',
           left: portalPosition.currentSelection.bottomLeft,
-          top: portalPosition.currentSelection.bottomTop,
+          top: (portalPosition.currentSelection.bottomTop as number) - verticalShift,
           minWidth: portalPosition.currentSelection.width,
         }}
       >
