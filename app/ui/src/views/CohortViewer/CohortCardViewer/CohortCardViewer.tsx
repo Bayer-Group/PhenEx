@@ -26,6 +26,16 @@ import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCoh
 import { resolveHeaderCellRenderer } from './CohortCardHeaderCell';
 import { getHierarchicalBackgroundColor } from '../CohortTable/CellRenderers/PhenexCellRenderer';
 
+// Section title labels keyed by phenotype `type`. Rendered as all-caps title
+// rows before the first row of each section (styled like the header cells).
+const SECTION_TITLES: Record<string, string> = {
+  entry: 'Entry criterion',
+  inclusion: 'Inclusion criteria',
+  exclusion: 'Exclusion criteria',
+  baseline: 'Baseline characteristics',
+  outcome: 'Outcomes',
+};
+
 interface CohortCardViewerProps {
   data: TableData;
   currentlyViewing: string;
@@ -739,12 +749,31 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       </div>
     );
 
-    const renderRows = (panel: 'pinned' | 'scroll', cols: any[]) =>
-      rows.map((rowData, rowIndex) => {
+    const renderRows = (panel: 'pinned' | 'scroll', cols: any[]) => {
+      let prevType: string | null = null;
+      const out: React.ReactNode[] = [];
+      rows.forEach((rowData, rowIndex) => {
         const id = rowData?.id ?? String(rowIndex);
+        const type = rowData?.effective_type ?? rowData?.type ?? null;
+        // Insert a section title row before the first row of each type.
+        if (type !== prevType) {
+          const label = SECTION_TITLES[type as string];
+          if (label) {
+            out.push(
+              <div
+                key={`__title_${type}`}
+                className={styles.titleRow}
+                aria-hidden={panel === 'scroll'}
+              >
+                {panel === 'pinned' && <span className={styles.titleLabel}>{label}</span>}
+              </div>
+            );
+          }
+          prevType = type;
+        }
         const isEditingRow = editing != null && editing.rowId === id;
         const isBlurred = editing != null && !isEditingRow && !selectedIds.has(id);
-        return (
+        out.push(
           <div key={id} data-row-id={id} style={{ display: 'contents' }}>
             <CohortCardRow
               rowData={rowData}
@@ -772,6 +801,8 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           </div>
         );
       });
+      return out;
+    };
 
     return (
       <div

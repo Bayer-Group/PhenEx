@@ -8,6 +8,7 @@
   box-sizing: border-box;
   display: flex;
   border-top: 1px solid;
+  border-right: 1px solid;
   font-size:16px;
   font-family : "IBMPlexSans-bolditalic";
 }

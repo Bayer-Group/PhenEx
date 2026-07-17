@@ -13,7 +13,7 @@ export const NARenderer: React.FC<NARendererProps> = ({ data }) => {
     : undefined;
 
   const containerStyle: React.CSSProperties = borderColorVar 
-    ? { borderTopColor: borderColorVar } 
+    ? { borderTopColor: borderColorVar, borderRightColor: borderColorVar } 
     : {};
 
   return (
