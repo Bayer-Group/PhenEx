@@ -1,11 +1,10 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import typeStyles from '../../../../styles/study_types.module.css';
 import styles from './PhenotypeViewerHorizontalCell.module.css';
 import { Phenotype, PhenotypeDataService } from '../PhenotypeDataService';
 import { PhenotypeViewer } from '../PhenotypeViewer';
 import { PhenotypeComponents } from '../PhenotypeComponents/PhenotypeComponents';
 import { SmartBreadcrumbs } from '../../../../components/SmartBreadcrumbs';
-import { SmartTextField } from '../../../../components/SmartTextField';
 import { DeleteConfirmModal } from '../../../../components/DeleteConfirmModal/DeleteConfirmModal';
 import { TwoPanelCohortViewerService } from '../../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { CohortViewType } from '../../../CohortViewer/CohortViewer';
@@ -30,9 +29,29 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
 }) => {
   const dataService = PhenotypeDataService.getInstance();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [localName, setLocalName] = useState(data.name ?? '');
+  const [localDescription, setLocalDescription] = useState(data.description ?? '');
+  const nameRef = useRef<HTMLTextAreaElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => { setLocalName(data.name ?? ''); }, [data.name]);
+  useEffect(() => { setLocalDescription(data.description ?? ''); }, [data.description]);
+
+  useEffect(() => {
+    const el = nameRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [localName]);
+
+  useEffect(() => {
+    const el = descriptionRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [localDescription]);
 
   const typeColor = typeStyles[`${data.effective_type}_text_color`];
-  const backgroundColor = typeStyles[`${data.effective_type}_color_block_dim`];
 
   const onClickAncestor = (ancestor: Phenotype) => {
     TwoPanelCohortViewerService.getInstance().displayExtraContent(
@@ -73,10 +92,7 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
         displayName: ancestor.name || ancestor.id || 'Unnamed',
         onClick: () => onClickAncestor(ancestor as Phenotype),
       })),
-      {
-        displayName: data.name || 'Unnamed Phenotype',
-        onClick: () => {},
-      },
+
     ];
 
     return (
@@ -88,7 +104,7 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
           classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
           classNameBreadcrumbItem={`${styles.breadcrumbItem} ${typeColor}`}
           classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} ${typeColor}`}
-          compact={false}
+          compact={true}
         />
       </>
     );
@@ -102,10 +118,11 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
 
   return (
     <div className={styles.cell} onClick={onClose}>
+                {renderBreadcrumbs()}
+
       <div className={`${styles.card}`} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.headerTopRow}>
-            {renderBreadcrumbs()}
             <button
               className={styles.deleteButton}
               onClick={() => setShowDeleteModal(true)}
@@ -130,11 +147,26 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
             </button>
           </div>
           <div className={styles.descriptionContainer}>
-            <SmartTextField
-              value={data.description || ''}
-              onSave={newValue => dataService.valueChanged('description', newValue)}
+            <textarea
+              ref={nameRef}
+              className={styles.nameInput}
+              value={localName}
+              rows={1}
+              onChange={e => setLocalName(e.target.value)}
+              onBlur={() => dataService.valueChanged('name', localName)}
+              onKeyDown={e => {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.stopPropagation();
+                if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLTextAreaElement).blur(); }
+              }}
+            />
+            <textarea
+              ref={descriptionRef}
+              className={styles.descriptionInput}
+              value={localDescription}
               placeholder="Add description..."
-              className={`${styles.description} ${typeColor}`}
+              onChange={e => setLocalDescription(e.target.value)}
+              onBlur={() => dataService.valueChanged('description', localDescription)}
+              onKeyDown={e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.stopPropagation(); }}
             />
           </div>
         </div>

@@ -87,7 +87,7 @@ const getFullParameterDescription = (parameter: string): string => {
           triggerRef={containerRef}
           position="below"
           offsetX={0}
-          offsetY={-40}
+          offsetY={-30}
           alignment="left"
           textAlign="left"
           onHideRequest={handleInfoPortalHide}

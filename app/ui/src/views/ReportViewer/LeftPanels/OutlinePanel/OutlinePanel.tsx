@@ -105,6 +105,7 @@ const InlineEdit: FC<{ value: string; onCommit: (v: string) => void; onCancel: (
       defaultValue={value}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.stopPropagation();
         if (e.key === 'Enter') {
           e.preventDefault();
           commit();

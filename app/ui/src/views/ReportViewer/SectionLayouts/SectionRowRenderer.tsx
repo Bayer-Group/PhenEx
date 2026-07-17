@@ -160,6 +160,7 @@ export const SectionRowTitle = memo<SectionRowTitleProps>(({ row, className, onR
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.stopPropagation();
           if (e.key === 'Enter') { e.preventDefault(); commit(); }
           else if (e.key === 'Escape') { e.preventDefault(); setEditing(false); }
         }}
