@@ -254,7 +254,7 @@ export const defaultColumns = [
   {
     field: 'relative_time_range',
     headerName: 'Relative time ranges',
-    width: 220,
+    width: 160,
     editable: (params: any) => {
       return (
         params.data.type !== 'entry' &&
@@ -296,7 +296,7 @@ export const defaultColumns = [
   {
     field: 'categorical_filter',
     headerName: 'Categorical filters',
-    width: 400,
+    width: 180,
     editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.categorical_filter.includes(
         params.data.class_name
@@ -315,7 +315,7 @@ export const defaultColumns = [
   {
     field: 'return_date',
     headerName: 'Return Date',
-    width: 150,
+    width: 100,
     editable: true,
     cellEditor: ReturnDateCellEditor,
     cellEditorPopup: true,

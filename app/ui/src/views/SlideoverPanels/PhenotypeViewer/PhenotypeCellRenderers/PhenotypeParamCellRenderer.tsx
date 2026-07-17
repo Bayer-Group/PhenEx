@@ -88,7 +88,7 @@ const getFullParameterDescription = (parameter: string): string => {
           position="below"
           offsetX={0}
           offsetY={-30}
-          alignment="left"
+          alignment="right"
           textAlign="left"
           onHideRequest={handleInfoPortalHide}
         >

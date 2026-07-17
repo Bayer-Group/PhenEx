@@ -160,6 +160,9 @@
 .viewerSection {
   flex-shrink: 0;
   margin-top: 8px;
+  border-top: 1px solid var(--line-color);
+  border-bottom: 1px solid var(--line-color);
+
 }
 
 .componentsSection {
