@@ -60,7 +60,7 @@ export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererPr
     const description = getParameterDescription(props.data.parameter);
 
     return (
-    <PhenexCellRenderer {...props} colorBackground={false} colorBorder={false} showButtons={false}>
+    <PhenexCellRenderer {...props} colorBackground={false} colorBorder={false} showButtons={false} justify="left">
       <div 
         style={{ 
           fontSize: '18px', 
@@ -99,7 +99,7 @@ export const PhenexPhenotypeCellRenderer: React.FC<PhenexPhenotypeCellRendererPr
 
   if (props.data?.parameter in classNameToRendererMapping) {
     const Renderer = classNameToRendererMapping[props.data?.parameter];
-    return <Renderer {...props} fontSize={'18px'} colorBackground={false} colorBorder={false} showButtons={false}/>;
+    return <Renderer {...props} fontSize={'18px'} colorBackground={false} colorBorder={false} showButtons={false} justify="left"/>;
   }
   
   return <div>{props.data?.value}</div>;

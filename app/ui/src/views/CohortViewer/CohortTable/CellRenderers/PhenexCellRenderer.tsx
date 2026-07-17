@@ -47,6 +47,7 @@ export interface PhenexCellRendererProps extends ICellRendererParams {
   colorBackground?: boolean;
   colorBorder?: boolean;
   showButtons?: boolean;
+  justify?: 'left' | 'right';
   onEdit?: () => void;
   onDelete?: () => void;
 }
@@ -60,6 +61,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     colorBackground = true,
     colorBorder = true,
     showButtons = true,
+    justify = 'right',
     onEdit: onEditProp,
     onDelete: onDeleteProp,
   } = props;
@@ -133,10 +135,15 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     if (showLeftBorder) borderColors.borderLeftColor = borderColorVar;
   }
 
+  const justifyStyle: React.CSSProperties = justify === 'left'
+    ? { justifyContent: 'flex-start', textAlign: 'left' }
+    : {};
+
   const combinedStyle: React.CSSProperties = {
     ...containerStyle,
     ...borderColors,
     ...(backgroundColor ? { backgroundColor } : {}),
+    ...justifyStyle,
   };
 
   const renderButtons = () =>{
