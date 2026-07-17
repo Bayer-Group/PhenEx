@@ -171,7 +171,12 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
       }}>required</span>
       ) : (
         props.children ? props.children : (
-          props.value ? <span className={styles.itemChip}>{props.value}</span> : null
+          props.value ? <span className={styles.itemChip} onClick={() => {
+            props.api?.startEditingCell({
+              rowIndex: props.node?.rowIndex ?? 0,
+              colKey: props.column?.getColId() ?? '',
+            });
+          }}>{props.value}</span> : null
         )
       )}
       

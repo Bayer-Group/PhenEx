@@ -102,6 +102,7 @@
   width: fit-content;
   max-width: 100%;
   text-wrap: wrap;
+  cursor: pointer;
 }
 
 .itemChip:hover {
