@@ -43,6 +43,7 @@
   --color_inactive: lightgray;
 
   --border: 1px solid var(--line-color);
+  --border_dark: 1px solid var(--line_color_dark);
   --border-radius: 8px;
   --height-table-header: 100px;
   --table-margin: 0px;

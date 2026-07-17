@@ -19,12 +19,12 @@
 .card {
   position: relative;
   width: 100%;
-  max-width: 760px;
+  max-width: 400px;
   height: fit-content;
   display: flex;
   flex-direction: column;
   box-shadow: 0px 8px 20px rgba(91, 87, 86, 0.3);
-  border: var(--border);
+  border: var(--border_dark);
     border-radius: 15px;
     background-color: var(--background_color_light, #fff);
 

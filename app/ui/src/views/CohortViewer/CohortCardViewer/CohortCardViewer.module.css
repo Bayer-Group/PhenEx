@@ -35,7 +35,7 @@
   border-radius: 15px;
   overflow: clip;
   margin-top: 20px;
-  border: 1px solid hsl(0, 1%, 71%);
+  border: var(--border_dark);
   /* border-left: 1px solid var(--line-color-grid, #e0dede);
   border-right: 1px solid var(--line-color-grid, #e0dede); */
 }

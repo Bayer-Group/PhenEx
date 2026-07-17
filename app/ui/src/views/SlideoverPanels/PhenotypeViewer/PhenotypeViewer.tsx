@@ -126,12 +126,12 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     if (data) dataService.setData(data);
     setEditing(null);
 
-    // Type-based background tint on the grid container.
-    if (data?.effective_type && typeStyles[`${data.effective_type}_color_block_dim`]) {
-      setTypeColorDim(typeStyles[`${data.effective_type}_color_block_dim`]);
-    } else {
-      setTypeColorDim('');
-    }
+    // // Type-based background tint on the grid container.
+    // if (data?.effective_type && typeStyles[`${data.effective_type}_color_block_dim`]) {
+    //   setTypeColorDim(typeStyles[`${data.effective_type}_color_block_dim`]);
+    // } else {
+    //   setTypeColorDim('');
+    // }
 
     return () => dataService.removeListener(listener);
   }, [data, dataService]);
