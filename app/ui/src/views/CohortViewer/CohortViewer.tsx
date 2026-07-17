@@ -244,7 +244,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
           'exclusion',
           'baseline',
           'outcome',
-          'component',
         ]);
         break;
     }

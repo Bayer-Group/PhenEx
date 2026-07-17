@@ -304,7 +304,7 @@ export class CohortModel {
         effective_type: 'entry',
         codelist: "missing",
         domain: "missing",
-        hierarchical_index: "1",
+        hierarchical_index: CohortModel.ENTRY_INDEX_LABEL,
         class_name:'CodelistPhenotype',
         return_date: "first"
       }
@@ -610,39 +610,53 @@ export class CohortModel {
     this.calculateHierarchicalIndices();
   }
 
+  // Label used for entry criterion phenotypes (change here to affect all displays)
+  private static readonly ENTRY_INDEX_LABEL = 'e';
+
   private calculateHierarchicalIndices(): void {
-    // Group 1: entry, inclusion, exclusion share indices
-    const sharedGroup = ['entry', 'inclusion', 'exclusion'];
-    let sharedIndex = 1;
-    
-    sharedGroup.forEach(type => {
-      const phenotypesOfType = this._cohort_data.phenotypes.filter((p: any) => p.type === type);
-      
-      phenotypesOfType.forEach((phenotype: any) => {
-        phenotype.hierarchical_index = sharedIndex.toString();
-        
-        // Calculate hierarchical indices for all component descendants
-        this.calculateComponentHierarchicalIndices(phenotype.id, sharedIndex.toString());
-        
-        sharedIndex++; // Increment for next phenotype in the shared group
+    // Entry: fixed label
+    this._cohort_data.phenotypes
+      .filter((p: any) => p.type === 'entry')
+      .forEach((phenotype: any) => {
+        phenotype.hierarchical_index = CohortModel.ENTRY_INDEX_LABEL;
+        this.calculateComponentHierarchicalIndices(phenotype.id, CohortModel.ENTRY_INDEX_LABEL);
       });
-    });
-    
-    // Group 2: baseline has its own indexing
-    const baselinePhenotypes = this._cohort_data.phenotypes.filter((p: any) => p.type === 'baseline');
-    baselinePhenotypes.forEach((phenotype: any, index: number) => {
-      const baseIndex = index + 1;
-      phenotype.hierarchical_index = baseIndex.toString();
-      this.calculateComponentHierarchicalIndices(phenotype.id, baseIndex.toString());
-    });
-    
-    // Group 3: outcome has its own indexing
-    const outcomePhenotypes = this._cohort_data.phenotypes.filter((p: any) => p.type === 'outcome');
-    outcomePhenotypes.forEach((phenotype: any, index: number) => {
-      const baseIndex = index + 1;
-      phenotype.hierarchical_index = baseIndex.toString();
-      this.calculateComponentHierarchicalIndices(phenotype.id, baseIndex.toString());
-    });
+
+    // Inclusion: own indexing starting at 1
+    this._cohort_data.phenotypes
+      .filter((p: any) => p.type === 'inclusion')
+      .forEach((phenotype: any, index: number) => {
+        const idx = (index + 1).toString();
+        phenotype.hierarchical_index = idx;
+        this.calculateComponentHierarchicalIndices(phenotype.id, idx);
+      });
+
+    // Exclusion: own indexing starting at 1
+    this._cohort_data.phenotypes
+      .filter((p: any) => p.type === 'exclusion')
+      .forEach((phenotype: any, index: number) => {
+        const idx = (index + 1).toString();
+        phenotype.hierarchical_index = idx;
+        this.calculateComponentHierarchicalIndices(phenotype.id, idx);
+      });
+
+    // Baseline: own indexing starting at 1
+    this._cohort_data.phenotypes
+      .filter((p: any) => p.type === 'baseline')
+      .forEach((phenotype: any, index: number) => {
+        const idx = (index + 1).toString();
+        phenotype.hierarchical_index = idx;
+        this.calculateComponentHierarchicalIndices(phenotype.id, idx);
+      });
+
+    // Outcome: own indexing starting at 1
+    this._cohort_data.phenotypes
+      .filter((p: any) => p.type === 'outcome')
+      .forEach((phenotype: any, index: number) => {
+        const idx = (index + 1).toString();
+        phenotype.hierarchical_index = idx;
+        this.calculateComponentHierarchicalIndices(phenotype.id, idx);
+      });
   }
 
   private calculateComponentHierarchicalIndices(parentId: string, parentHierarchicalIndex: string): void {
