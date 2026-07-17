@@ -1,4 +1,3 @@
-import { themeQuartz } from 'ag-grid-community';
 import classDefinitionsRaw from '/assets/class_definitions.json?raw';
 let classDefinitions = JSON.parse(classDefinitionsRaw);
 import { defaultColumns } from './PhenotypeColumnDefinitions';
@@ -51,28 +50,6 @@ export class PhenotypeDataService {
 
   public getColumnDefs() {
     return defaultColumns;
-  }
-
-  public getTheme() {
-    return themeQuartz.withParams({
-      accentColor: '#DDDDDD',
-      borderColor: 'transparent',
-      browserColorScheme: 'light',
-      columnBorder: true,
-      headerFontSize: 14,
-      headerFontWeight: 'bold',
-      headerRowBorder: true,
-      fontSize: '20px',
-      cellHorizontalPadding: 10,
-      // headerBackgroundColor: `var(--color_${this.currentPhenotype?.effective_type || ''}_dim)` || '',
-      // backgroundColor: `var(--color_${this.currentPhenotype?.effective_type || ''}_dim)` || '',
-      headerBackgroundColor: 'transparent',
-      backgroundColor: 'transparent',
-      rowBorder: true,
-      spacing: 8,
-      wrapperBorder: false,
-      wrapperBorderRadius: 0,
-    });
   }
 
   public setData(data: Phenotype | undefined) {

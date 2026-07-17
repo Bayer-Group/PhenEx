@@ -52,16 +52,32 @@ export const PhenotypeHorizontalRowViewer: FC<PhenotypeHorizontalRowViewerProps>
   }, [data.id]);
 
   // ── Horizontal scroll positioning ──────────────────────────────────────
-  const centerOnCard = useCallback((idx: number, behavior: ScrollBehavior) => {
+  const centerOnCard = useCallback((idx: number, mode: 'instant' | 'fast') => {
     const scroller = scrollRef.current;
     if (!scroller) return;
     const width = cellWidthRef.current || scroller.clientWidth;
     if (!width) return;
-    scroller.scrollTo({ left: idx * width, behavior });
+    const target = idx * width;
+    if (mode === 'instant') {
+      scroller.scrollLeft = target;
+    } else {
+      // Fast ease-out animation (~150ms)
+      const start = scroller.scrollLeft;
+      const dist = target - start;
+      if (Math.abs(dist) < 1) { scroller.scrollLeft = target; return; }
+      const duration = 150;
+      const t0 = performance.now();
+      const step = (now: number) => {
+        const p = Math.min((now - t0) / duration, 1);
+        scroller.scrollLeft = start + dist * (1 - (1 - p) * (1 - p));
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
   }, []);
 
   useLayoutEffect(() => {
-    centerOnCard(currentIndex, 'smooth');
+    centerOnCard(currentIndex, 'fast');
   }, [currentIndex, centerOnCard]);
 
   // Track scroller width and re-center on resize (no forced reflow on nav).
@@ -69,11 +85,11 @@ export const PhenotypeHorizontalRowViewer: FC<PhenotypeHorizontalRowViewerProps>
     const scroller = scrollRef.current;
     if (!scroller) return;
     cellWidthRef.current = scroller.clientWidth;
-    centerOnCard(currentIndex, 'auto');
+    centerOnCard(currentIndex, 'instant');
     const ro = new ResizeObserver(entries => {
       const entry = entries[0];
       if (entry) cellWidthRef.current = entry.contentRect.width;
-      centerOnCard(currentIndex, 'auto');
+      centerOnCard(currentIndex, 'instant');
     });
     ro.observe(scroller);
     return () => ro.disconnect();
@@ -121,12 +137,23 @@ export const PhenotypeHorizontalRowViewer: FC<PhenotypeHorizontalRowViewerProps>
   for (let i = windowStart; i <= windowEnd; i++) {
     const phenotype = phenotypes[i];
     cells.push(
-      <PhenotypeViewerHorizontalCell
+      <div
         key={phenotype.id ?? i}
-        data={phenotype}
-        isFocused={i === currentIndex}
-        onClose={startClose}
-      />
+        style={{
+          flexShrink: 0,
+          width: '100%',
+          minWidth: '100%',
+          height: '100%',
+          opacity: i === currentIndex ? 1 : 0.45,
+          transition: 'opacity 0.15s ease',
+        }}
+      >
+        <PhenotypeViewerHorizontalCell
+          data={phenotype}
+          isFocused={i === currentIndex}
+          onClose={startClose}
+        />
+      </div>
     );
   }
 

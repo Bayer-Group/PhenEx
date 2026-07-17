@@ -32,6 +32,7 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const typeColor = typeStyles[`${data.effective_type}_text_color`];
+  const backgroundColor = typeStyles[`${data.effective_type}_color_block_dim`];
 
   const onClickAncestor = (ancestor: Phenotype) => {
     TwoPanelCohortViewerService.getInstance().displayExtraContent(
@@ -100,8 +101,8 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
   };
 
   return (
-    <div className={styles.cell}>
-      <div className={styles.card}>
+    <div className={styles.cell} onClick={onClose}>
+      <div className={`${styles.card}`} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <div className={styles.headerTopRow}>
             {renderBreadcrumbs()}

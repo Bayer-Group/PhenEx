@@ -17,13 +17,27 @@
 }
 
 .card {
+  position: relative;
   width: 100%;
   max-width: 760px;
   height: fit-content;
   display: flex;
   flex-direction: column;
-  background-color: transparent;
+  box-shadow: 0px 8px 20px rgba(91, 87, 86, 0.3);
+  border: var(--border);
+    border-radius: 15px;
+    background-color: var(--background_color_light, #fff);
+
 }
+
+/* .card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: white;
+  z-index: -1;
+  border-radius: inherit;
+} */
 
 .header {
   flex-shrink: 0;
