@@ -19,7 +19,9 @@
 }
 
 .deleteButton {
-  flex-shrink: 0;
+  position: absolute;
+  top: var(--item-margin-top);
+  right: calc(var(--item-margin-horizontal) + 28px + 8px);
   opacity: 0;
   color: currentColor;
   background: none;
@@ -28,6 +30,7 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+  z-index: 1;
 }
 
 .editButton:hover,
@@ -70,8 +73,10 @@
   font-family: "IBMPlexSans-regular";
   padding-top: var(--item-margin-top);
   padding-bottom: var(--item-margin-top);
-  padding-right: calc(28px + var(--item-margin-horizontal) + 4px);
   flex: 1;
+  hyphens: auto;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 
@@ -144,7 +149,6 @@
   align-items: flex-start;
   position: relative;
   border-top: 1px solid;
-  background-color: red !important;
 }
 
 .ancestorLabel{

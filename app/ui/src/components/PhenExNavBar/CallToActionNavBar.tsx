@@ -159,7 +159,7 @@ export const CallToActionNavBar: React.FC<CallToActionNavBarProps> = ({
   onAddButtonClick
 }) => {
   // CohortNavBar section state
-  const sections = ['Definition', 'Characteristics', 'Outcomes'];
+  const sections = ['Definition', 'Characteristics', 'Outcomes', 'All'];
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   
   // Menu states

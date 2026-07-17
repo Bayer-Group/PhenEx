@@ -1,0 +1,102 @@
+.cell {
+  flex-shrink: 0;
+  width: 100%;
+  min-width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding: 60px 24px 40px;
+}
+
+.cell::-webkit-scrollbar {
+  display: none;
+}
+
+.card {
+  width: 100%;
+  max-width: 760px;
+  height: fit-content;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+}
+
+.header {
+  flex-shrink: 0;
+  font-family: 'IBMPlexSans-bold';
+}
+
+.headerTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.index {
+  font-size: var(--font_size_breadcrumb) !important;
+  margin-left: 5px;
+  margin-top: 5px;
+  font-family: 'IBMPlexSans-regular' !important;
+  line-height: var(--font_size_breadcrumb) !important;
+}
+
+.breadcrumbsContainer {
+  margin-top: 5px;
+  margin-left: 5px;
+}
+
+.breadcrumbItem {
+  font-size: var(--font_size_infotext) !important;
+  line-height: 5px !important;
+  font-family: 'IBMPlexSans-regular' !important;
+}
+
+.breadcrumbLastItem {
+  font-size: var(--font_size_breadcrumb) !important;
+  font-family: 'IBMPlexSans-bold' !important;
+  line-height: var(--font_size_breadcrumb) !important;
+  margin-left: -2px;
+}
+
+.descriptionContainer {
+  margin-left: 5px;
+  margin-top: 4px;
+}
+
+.description {
+  font-family: 'IBMPlexSans-regular';
+  font-size: 16px;
+}
+
+.deleteButton {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--color-danger, #e53e3e);
+  border-radius: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  margin-top: 5px;
+  margin-right: 4px;
+  display: flex;
+  align-items: center;
+  opacity: 0.6;
+}
+
+.deleteButton:hover {
+  opacity: 1;
+}
+
+.viewerSection {
+  flex-shrink: 0;
+  margin-top: 8px;
+}
+
+.componentsSection {
+  flex-shrink: 0;
+  margin-top: 8px;
+}

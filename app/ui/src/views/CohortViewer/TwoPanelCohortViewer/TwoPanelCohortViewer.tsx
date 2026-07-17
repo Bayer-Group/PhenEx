@@ -1,7 +1,6 @@
 import { FC, useState, useEffect } from 'react';
-import { Portal } from '../../../components/Portal/Portal';
 import { CohortViewer } from '../CohortViewer';
-import { PhenotypePanel } from '../../SlideoverPanels/PhenotypeViewer/PhenotypePanel';
+import { PhenotypeHorizontalRowViewer } from '../../SlideoverPanels/PhenotypeViewer/PhenotypeHorizontalRowViewer/PhenotypeHorizontalRowViewer';
 import { StudyViewer } from '../../StudyViewer/StudyViewer';
 import { MainViewService, ViewType } from '../../MainView/MainView';
 import { StudyDataService } from '../../StudyViewer/StudyDataService';
@@ -185,13 +184,7 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
         </div>
 
         {isPhenotypeOpen && extraData && (
-          <Portal>
-            <div className={styles.popoverOverlay} onClick={() => service.hidePopover()}>
-              <div className={styles.popoverContent} onClick={e => e.stopPropagation()}>
-                <PhenotypePanel data={extraData} />
-              </div>
-            </div>
-          </Portal>
+          <PhenotypeHorizontalRowViewer data={extraData} onClose={() => service.hidePopover()} />
         )}
       </div>
     </NavBarMenuProvider>

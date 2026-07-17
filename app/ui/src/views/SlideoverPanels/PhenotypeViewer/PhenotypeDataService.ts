@@ -198,6 +198,19 @@ export class PhenotypeDataService {
     return this.cohortDataService.cohort_name;
   }
 
+  /**
+   * Ordered list of phenotypes the user can page through in the phenotype
+   * viewer. Uses the cohort table's visible order and excludes rows that are
+   * only present as deleted (struck-through) entries.
+   */
+  public getNavigablePhenotypes(): Phenotype[] {
+    const rows = this.cohortDataService.table_data?.rows ?? [];
+    const validIds = new Set(
+      (this.cohortDataService.cohort_data?.phenotypes ?? []).map((p: any) => p.id)
+    );
+    return rows.filter((row: any) => validIds.has(row.id)) as Phenotype[];
+  }
+
   public updateComponentPhenotypeData() {
     this.componentPhenotypeTableData = this.cohortDataService.tableDataForComponentPhenotype(
       this.currentPhenotype
