@@ -165,7 +165,7 @@ export const defaultColumns = [
   {
     field: 'class_name',
     headerName: 'Phenotype',
-    width: 100,
+    width: 110,
     editable: true,
     // pinned: 'left',
     cellRenderer: PhenotypeCellRenderer,
@@ -187,7 +187,7 @@ export const defaultColumns = [
   {
     field: 'domain',
     headerName: 'Domain',
-    width: 200,
+    width: 180,
     editable: true,
     cellRenderer: DomainCellRenderer,
     cellEditor: DomainSelectorCellEditor,
@@ -207,7 +207,7 @@ export const defaultColumns = [
   {
     field: 'codelist',
     headerName: 'Codelists',
-    width: 200,
+    width: 180,
     editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name);
     },

@@ -85,6 +85,29 @@
   
 }
 
+.itemChip {
+  margin-top: var(--item-margin-top);
+  background-color: var(--item-color-default);
+  line-height: var(--item-font-size);
+  border-radius: var(--item-radius);
+  border: var(--item-border-default);
+  transition: var(--item-transition);
+  font-family: var(--item-font-family);
+  font-size: var(--item-font-size);
+  color: var(--item-font-color);
+  border-width: var(--border_width_item) !important;
+  padding: var(--padding_vertical_item) var(--padding_horizontal_item);
+  display: inline-flex;
+  align-items: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  text-wrap: wrap;
+}
+
+.itemChip:hover {
+  background-color: var(--background_color_hover_over_grid);
+}
+
 .missingLabel {
   color: white;
   font-family: "IBMPlexSans-bolditalic";
@@ -95,7 +118,8 @@
 }
 
 .missingLabel:hover{
-  background-color: white;
+  background-color: var(--background_color_hover_over_grid);
+
 }
 
 /* Button styles for cells */

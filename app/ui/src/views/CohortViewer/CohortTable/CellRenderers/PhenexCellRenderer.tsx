@@ -170,10 +170,12 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
           });
       }}>required</span>
       ) : (
-        props.children ? props.children : props.value
+        props.children ? props.children : (
+          props.value ? <span className={styles.itemChip}>{props.value}</span> : null
+        )
       )}
       
-      {showButtons && renderButtons()}
+      {/* {showButtons && renderButtons()} */}
     </div>
   );
 };

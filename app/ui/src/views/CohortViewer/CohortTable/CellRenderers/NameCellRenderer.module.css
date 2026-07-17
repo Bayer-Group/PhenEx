@@ -102,13 +102,15 @@
 .expandArrow {
   flex-shrink: 0;
   cursor: pointer;
-  width: 28px;
-  height: 28px;
-  transition: opacity 0.15s ease, color 0.15s ease;
+  width: 20px;
+  height: 20px;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
   
-  /* Default state */
-  opacity: 0.3;
-  color: var(--text-color-secondary);
+  /* Default state — overridden by effective_type color class */
+  opacity: 1;
+  color: var(--line-color);
+  border-radius: 8px;
+
 
 }
 
@@ -121,21 +123,23 @@
 .expandArrow.selected {
   opacity: 1;
   transform: scale(1.2);
-  /* Filter to make the SVG blue (hsl(204, 98%, 50%)) */
-  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(102%) contrast(97%);
+  color: var(--color_accent_blue);
+  /* transition: scale 0.15s ease, color 0.15s ease; */
 }
 
 /* Arrow self-hovered state */
 .expandArrow:hover {
   opacity: 1 !important;
   color: var(--color_accent_blue);
-  transform: scale(1.1);
+  /* transform: scale(1.1); */
+  stroke: 3px;
+  background-color: var(--background_color_hover_over_grid);
 }
 
 /* Active/clicked state */
-.expandArrow:active {
-  transform: scale(0.95);
-}
+/* .expandArrow:active {
+  transform: scale(0.3);
+} */
 
 .container {
   padding: 10px;

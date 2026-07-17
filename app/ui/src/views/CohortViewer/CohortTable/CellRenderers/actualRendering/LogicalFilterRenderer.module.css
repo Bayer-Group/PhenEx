@@ -47,6 +47,7 @@
   opacity: 0.8;
   /* transform: scale(1); */
   border-color: var(--line-color) !important;
+  background-color: var(--background_color_hover_over_grid);
 }
 
 
@@ -68,7 +69,7 @@
 }
 
 .operator:hover {
-  background-color: var(--color-operator-bg-hover, #e0e0e0);
+  background-color: var(--background_color_hover_over_grid);
   transform: scale(1.05);
 }
 

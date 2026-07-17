@@ -17,6 +17,7 @@
 }
 
 .card {
+    margin-top:100px;
   position: relative;
   width: 100%;
   max-width: 400px;
@@ -25,9 +26,9 @@
   flex-direction: column;
   box-shadow: 0px 8px 20px rgba(91, 87, 86, 0.3);
   border: var(--border_dark);
-    border-radius: 15px;
+    border-radius: 5px;
     background-color: var(--background_color_light, #fff);
-
+    overflow:visible;
 }
 
 /* .card::before {
@@ -51,11 +52,11 @@
 }
 
 .index {
-  font-size: var(--font_size_breadcrumb) !important;
+  font-size: var(--font_size_pagetitle) !important;
   margin-left: 5px;
-  margin-top: 5px;
+  margin-top: -45px;
   font-family: 'IBMPlexSans-regular' !important;
-  line-height: var(--font_size_breadcrumb) !important;
+  /* line-height: var(--font_size_breadcrumb) !important; */
 }
 
 .breadcrumbsContainer {
@@ -148,6 +149,8 @@
   display: flex;
   align-items: center;
   opacity: 0.6;
+
+  position:absolute;
 }
 
 .deleteButton:hover {

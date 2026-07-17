@@ -2,27 +2,19 @@ import React, { useState } from 'react';
 import styles from './NameCellRenderer.module.css';
 import { PhenexCellRendererProps, PhenexCellRenderer } from './PhenexCellRenderer';
 import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
-import ArrowIcon from '../../../../assets/icons/arrow-up-right.svg';
+import ArrowUpRightIcon from '../../../../components/icons/ArrowUpRightIcon';
 import { CohortDataService } from "../../CohortDataService/CohortDataService";
 import { DeleteConfirmModal } from '../../../../components/DeleteConfirmModal/DeleteConfirmModal';
 
 import typeStyles from '../../../../styles/study_types.module.css'
 import ReactMarkdown from 'react-markdown';
 
-/**
- * Render the expand arrow icon with proper CSS states
- * States: default, row hovered, self hovered
- */
-const renderExpandArrow = (onClick?: (e: React.MouseEvent) => void, className?: string) => {
-  return (
-    <img
-      src={ArrowIcon}
-      alt="Expand"
-      className={`${styles.expandArrow} ${className || ''}`}
-      onClick={onClick}
-    />
-  );
-};
+const renderExpandArrow = (onClick?: (e: React.MouseEvent<SVGSVGElement>) => void, className?: string) => (
+  <ArrowUpRightIcon
+    className={`${styles.expandArrow} ${className || ''}`}
+    onClick={onClick}
+  />
+);
 const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const {
     colorBackground = true,
@@ -127,7 +119,7 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
           {renderExpandArrow((e) => {
             e.stopPropagation();
             handleEdit();
-          }, isSelected ? styles.selected : undefined)}
+          }, `${isSelected ? styles.selected : ''} ${fontColor}`)}
         </div>
       </div>
     );

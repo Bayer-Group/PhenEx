@@ -63,31 +63,8 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
   const renderBreadcrumbs = () => {
     const ancestors =
       data.type === 'component' ? dataService.cohortDataService.getAllAncestors(data) : [];
-    const cohortName = dataService.getCohortName();
-    const studyName = dataService.cohortDataService.getStudyNameForCohort();
 
     const breadcrumbItems = [
-      {
-        displayName: 'My Studies',
-        onClick: () => {
-          window.location.href = '/studies';
-        },
-      },
-      ...(studyName
-        ? [
-            {
-              displayName: studyName,
-              onClick: () => {
-                const studyId = dataService.cohortDataService.cohort_data?.study_id;
-                if (studyId) window.location.href = `/studies/${studyId}`;
-              },
-            },
-          ]
-        : []),
-      {
-        displayName: cohortName || 'Unnamed Cohort',
-        onClick: onClose,
-      },
       ...ancestors.map(ancestor => ({
         displayName: ancestor.name || ancestor.id || 'Unnamed',
         onClick: () => onClickAncestor(ancestor as Phenotype),
@@ -100,7 +77,7 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
         <div className={`${styles.index} ${typeColor}`}>{data.hierarchical_index}</div>
         <SmartBreadcrumbs
           items={breadcrumbItems}
-          onEditLastItem={newValue => dataService.valueChanged('name', newValue)}
+        //   onEditLastItem={newValue => dataService.valueChanged('name', newValue)}
           classNameSmartBreadcrumbsContainer={styles.breadcrumbsContainer}
           classNameBreadcrumbItem={`${styles.breadcrumbItem} ${typeColor}`}
           classNameBreadcrumbLastItem={`${styles.breadcrumbLastItem} ${typeColor}`}
@@ -118,11 +95,13 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
 
   return (
     <div className={styles.cell} onClick={onClose}>
-                {renderBreadcrumbs()}
 
       <div className={`${styles.card}`} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
+
           <div className={styles.headerTopRow}>
+                            {renderBreadcrumbs()}
+
             <button
               className={styles.deleteButton}
               onClick={() => setShowDeleteModal(true)}
