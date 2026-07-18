@@ -4,6 +4,8 @@ import { CohortCardCell } from './CohortCardCell';
 import { ShimApi, ShimBacking } from './gridApiShim';
 import { getHierarchicalBackgroundColor } from '../CohortTable/CellRenderers/PhenexCellRenderer';
 
+type DropOperation = 'reorder' | 'section' | 'component' | 'forbidden';
+
 interface CohortCardRowProps {
   rowData: any;
   rowIndex: number;
@@ -12,7 +14,12 @@ interface CohortCardRowProps {
   backing: ShimBacking;
   isSelected: boolean;
   isDragging: boolean;
-  isDragOver: boolean;
+  /** The drop operation this row would resolve to when hovered during a drag, or null. */
+  dropOperation: DropOperation | null;
+  /** Whether a reorder/section drop inserts before (top line) or after (bottom line) this row. */
+  dropPosition: 'before' | 'after' | null;
+  /** Descriptive label for the pending drop operation (rendered on the pinned panel only). */
+  dropLabel: string | null;
   isBlurred: boolean;
   /** The column field currently being edited in this row (if any). */
   editingField: string | null;
@@ -37,7 +44,9 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
   backing,
   isSelected,
   isDragging,
-  isDragOver,
+  dropOperation,
+  dropPosition,
+  dropLabel,
   isBlurred,
   editingField,
   editingEventKey,
@@ -62,12 +71,24 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
     ...(backgroundColor ? { backgroundColor } : {}),
   };
 
+  const after = dropPosition === 'after';
+  const dropClass =
+    dropOperation === 'section'
+      ? after ? styles.rowDropSectionBottom : styles.rowDropSection
+      : dropOperation === 'component'
+        ? styles.rowDropComponent
+        : dropOperation === 'forbidden'
+          ? styles.rowDropForbidden
+          : dropOperation === 'reorder'
+            ? after ? styles.rowDragOverBottom : styles.rowDragOver
+            : '';
+
   return (
     <div
       ref={el => registerRowRef(id, el)}
       className={`${styles.row} ${isSelected ? styles.rowSelected : ''} ${
         isDragging ? styles.rowDragging : ''
-      } ${isDragOver ? styles.rowDragOver : ''} ${isBlurred ? styles.rowDimmed : ''}`}
+      } ${dropClass} ${isBlurred ? styles.rowDimmed : ''}`}
       style={rowStyle}
       draggable={enableDrag}
       onMouseDown={e => onRowMouseDown(e, rowIndex)}
@@ -78,6 +99,7 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
       onDrop={e => onDrop(e, rowIndex)}
       onDragEnd={onDragEnd}
     >
+      {dropLabel && <span className={styles.dropLabel}>{dropLabel}</span>}
       {columns.map(colDef => (
         <CohortCardCell
           key={colDef.field}

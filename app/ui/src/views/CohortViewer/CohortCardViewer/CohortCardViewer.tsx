@@ -37,6 +37,35 @@ const SECTION_TITLES: Record<string, string> = {
   outcome: 'Outcomes',
 };
 
+// Drag-and-drop operations that a drop can resolve to.
+// - 'reorder':  reposition within the same section
+// - 'section':  move the phenotype into a different section (changes its type)
+// - 'component': make the phenotype a component of the drop-target phenotype
+// - 'forbidden': invalid target (e.g. dropping a parent onto itself/its subtree)
+type DropOperation = 'reorder' | 'section' | 'component' | 'forbidden';
+
+interface DropTarget {
+  index: number;
+  operation: DropOperation;
+  /** Whether a reorder/section drop inserts before or after the target row. */
+  position: 'before' | 'after';
+  label: string | null;
+}
+
+/** Whether `row` is `ancestorId` itself or a descendant of it, by walking parentIds. */
+function isWithinSubtree(row: any, ancestorId: string, allRows: any[]): boolean {
+  const seen = new Set<string>();
+  let current: any = row;
+  while (current) {
+    if (current.id === ancestorId) return true;
+    const pid = Array.isArray(current.parentIds) ? current.parentIds[0] : undefined;
+    if (!pid || seen.has(pid)) break;
+    seen.add(pid);
+    current = allRows.find(r => r?.id === pid);
+  }
+  return false;
+}
+
 interface CohortCardViewerProps {
   data: TableData;
   currentlyViewing: string;
@@ -54,6 +83,12 @@ interface CohortCardViewerProps {
   onHorizontalScroll?: () => void;
   onCellValueChanged?: (event: any, selectedRows?: any[]) => void;
   onRowDragEnd?: (newRowData: any[]) => void;
+  /** Move a phenotype into a different section (changes its type). */
+  onSectionDrop?: (draggedId: string, newType: string, newRowData: any[]) => void;
+  /** Make a dragged phenotype a component of the drop-target phenotype. */
+  onComponentDrop?: (draggedId: string, targetParentId: string) => void;
+  /** Whether `draggedId` may be made a component of `targetId`. */
+  canMakeComponent?: (draggedId: string, targetId: string) => boolean;
   hideScrollbars?: boolean;
   hideVerticalScrollbar?: boolean;
   gridBottomPadding?: number;
@@ -82,6 +117,9 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       onHorizontalScroll,
       onCellValueChanged,
       onRowDragEnd,
+      onSectionDrop,
+      onComponentDrop,
+      canMakeComponent,
       gridBottomPadding = 0,
       flipScrollDirection = false,
       minPinnedWidth = 150,
@@ -124,7 +162,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
 
     // --- Drag state ---
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
     const [armedRowId, setArmedRowId] = useState<string | null>(null);
 
     // --- Live refs so shim callbacks read current values ---
@@ -519,25 +557,128 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       setDraggedIndex(rowIndex);
     }, []);
 
+    // Resolve what a drop on `rowIndex` would do, based on the dragged row, the
+    // target row, and the cursor position within the target row. The middle band
+    // of a row is the "make component" zone; the top/bottom halves insert
+    // before/after the target (the "after" zone lets you drop at a section's end).
+    const resolveDropTarget = useCallback(
+      (e: React.DragEvent, rowIndex: number): DropTarget => {
+        const from = draggedIndex;
+        const currentRows = rowsRef.current;
+        const dragged = from != null ? currentRows[from] : null;
+        const target = currentRows[rowIndex];
+        if (!dragged || !target) {
+          return { index: rowIndex, operation: 'reorder', position: 'before', label: null };
+        }
+
+        // Hovering the dragged row itself: no-op, show no indicator.
+        if (from === rowIndex || target.id === dragged.id) {
+          return { index: rowIndex, operation: 'reorder', position: 'before', label: null };
+        }
+
+        // A phenotype can never be dropped into its own subtree (that would nest
+        // a parent inside its own descendant). Flag it visually.
+        if (isWithinSubtree(target, dragged.id, currentRows)) {
+          return { index: rowIndex, operation: 'forbidden', position: 'before', label: 'Not allowed' };
+        }
+
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const ratio = rect.height > 0 ? (e.clientY - rect.top) / rect.height : 0;
+        const inComponentZone = ratio > 0.3 && ratio < 0.7;
+        const position: 'before' | 'after' = ratio < 0.5 ? 'before' : 'after';
+
+        const draggedType = dragged.effective_type ?? dragged.type;
+        const targetType = target.effective_type ?? target.type;
+
+        const canBeComponent = canMakeComponent
+          ? canMakeComponent(dragged.id, target.id)
+          : dragged.id !== target.id;
+
+        // The entry section holds exactly one criterion — a different phenotype
+        // dropped there can only become a component of the entry criterion.
+        if (targetType === 'entry' && draggedType !== 'entry') {
+          return canBeComponent
+            ? {
+                index: rowIndex,
+                operation: 'component',
+                position,
+                label: `Make component of ${target.name ?? 'phenotype'}`,
+              }
+            : { index: rowIndex, operation: 'reorder', position, label: null };
+        }
+
+        if (inComponentZone && canBeComponent) {
+          return {
+            index: rowIndex,
+            operation: 'component',
+            position,
+            label: `Make component of ${target.name ?? 'phenotype'}`,
+          };
+        }
+        if (targetType !== draggedType) {
+          return {
+            index: rowIndex,
+            operation: 'section',
+            position,
+            label: `Move to ${SECTION_TITLES[targetType as string] ?? targetType}`,
+          };
+        }
+        return { index: rowIndex, operation: 'reorder', position, label: null };
+      },
+      [draggedIndex, canMakeComponent]
+    );
+
     const handleDragOver = useCallback((e: React.DragEvent, rowIndex: number) => {
       e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      setDragOverIndex(rowIndex);
-    }, []);
+      const target = resolveDropTarget(e, rowIndex);
+      e.dataTransfer.dropEffect = target.operation === 'forbidden' ? 'none' : 'move';
+      setDropTarget(target);
+    }, [resolveDropTarget]);
 
     const handleDrop = useCallback(
       (e: React.DragEvent, rowIndex: number) => {
         e.preventDefault();
         const from = draggedIndex;
-        const to = rowIndex;
+        const resolved = resolveDropTarget(e, rowIndex);
         setDraggedIndex(null);
-        setDragOverIndex(null);
+        setDropTarget(null);
         setArmedRowId(null);
-        if (from === null || from === to) return;
+        if (from === null) return;
 
-        const newRowData = [...rowsRef.current];
-        const [moved] = newRowData.splice(from, 1);
-        newRowData.splice(to, 0, moved);
+        const currentRows = rowsRef.current;
+        const dragged = currentRows[from];
+        const target = currentRows[rowIndex];
+        if (!dragged || !target) return;
+
+        // Invalid target (self / own subtree): do nothing.
+        if (resolved.operation === 'forbidden') return;
+
+        // Make the dragged phenotype a component of the target phenotype.
+        if (resolved.operation === 'component') {
+          onComponentDrop?.(dragged.id, target.id);
+          return;
+        }
+
+        if (from === rowIndex) return;
+
+        // Build the new flat order (reorder / section move share this). Insert the
+        // moved row before or after the target so drops at a section's end work.
+        const moved = dragged;
+        const newRowData = currentRows.filter((_, i) => i !== from);
+        const targetPos = newRowData.findIndex(r => r.id === target.id);
+        const insertPos = resolved.position === 'after' ? targetPos + 1 : targetPos;
+        newRowData.splice(insertPos, 0, moved);
+
+        const isSectionMove = resolved.operation === 'section';
+        const targetType = target.effective_type ?? target.type;
+        if (isSectionMove) {
+          // Reflect the destination section on the moved row so the optimistic
+          // render places it correctly (no spurious section title) and the
+          // service groups it into the new section.
+          moved.type = targetType;
+          moved.effective_type = targetType;
+          moved.parentIds = [];
+        }
 
         // Validate and re-index within each type, like CohortTable.
         const invalid = newRowData.filter(r => !r.id || !r.type);
@@ -553,14 +694,18 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         });
 
         setRows(newRowData);
-        onRowDragEnd?.(newRowData);
+        if (isSectionMove) {
+          onSectionDrop?.(moved.id, targetType, newRowData);
+        } else {
+          onRowDragEnd?.(newRowData);
+        }
       },
-      [draggedIndex, onRowDragEnd]
+      [draggedIndex, resolveDropTarget, onRowDragEnd, onSectionDrop, onComponentDrop]
     );
 
     const handleDragEnd = useCallback(() => {
       setDraggedIndex(null);
-      setDragOverIndex(null);
+      setDropTarget(null);
       setArmedRowId(null);
     }, []);
 
@@ -763,6 +908,27 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       </div>
     );
 
+    // Descendant rows (component subtree) of the row currently being dragged.
+    // Used to dim the whole subtree while its parent is dragged.
+    const draggingDescendantIds = useMemo(() => {
+      const ids = new Set<string>();
+      if (draggedIndex == null) return ids;
+      const draggedId = rows[draggedIndex]?.id;
+      if (!draggedId) return ids;
+      const frontier = [draggedId];
+      while (frontier.length) {
+        const parentId = frontier.pop()!;
+        for (const r of rows) {
+          const pid = Array.isArray(r?.parentIds) ? r.parentIds[0] : undefined;
+          if (pid === parentId && r?.id && !ids.has(r.id)) {
+            ids.add(r.id);
+            frontier.push(r.id);
+          }
+        }
+      }
+      return ids;
+    }, [rows, draggedIndex]);
+
     const renderRows = (panel: 'pinned' | 'scroll', cols: any[]) => {
       let prevType: string | null = null;
       const out: React.ReactNode[] = [];
@@ -787,6 +953,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         }
         const isEditingRow = editing != null && editing.rowId === id;
         const isBlurred = editing != null && !isEditingRow && !selectedIds.has(id);
+        const isDropTarget = dropTarget?.index === rowIndex;
         out.push(
           <div key={id} data-row-id={id} style={{ display: 'contents' }}>
             <CohortCardRow
@@ -796,8 +963,10 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
               api={api}
               backing={backing}
               isSelected={selectedIds.has(id)}
-              isDragging={draggedIndex === rowIndex}
-              isDragOver={dragOverIndex === rowIndex}
+              isDragging={draggedIndex === rowIndex || draggingDescendantIds.has(id)}
+              dropOperation={isDropTarget ? dropTarget!.operation : null}
+              dropPosition={isDropTarget ? dropTarget!.position : null}
+              dropLabel={isDropTarget && panel === 'pinned' ? dropTarget!.label : null}
               isBlurred={isBlurred}
               editingField={isEditingRow ? editing!.field : null}
               editingEventKey={isEditingRow ? editing!.eventKey : undefined}

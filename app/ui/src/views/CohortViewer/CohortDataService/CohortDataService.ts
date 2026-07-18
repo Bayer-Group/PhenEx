@@ -86,6 +86,9 @@ export class CohortDataService {
   public deletePhenotype(id: string) { return this._activeCohort.deletePhenotype(id); }
   public updateComponentOrder(parentId: string, reorderedComponents: TableRow[]) { return this._activeCohort.updateComponentOrder(parentId, reorderedComponents); }
   public updateRowOrder(newRowData: TableRow[]) { return this._activeCohort.updateRowOrder(newRowData); }
+  public movePhenotypeToSection(draggedId: string, newType: string, newRowData: TableRow[]) { return this._activeCohort.movePhenotypeToSection(draggedId, newType, newRowData); }
+  public makePhenotypeComponentOf(draggedId: string, targetParentId: string) { return this._activeCohort.makePhenotypeComponentOf(draggedId, targetParentId); }
+  public canMakePhenotypeComponentOf(draggedId: string, targetId: string): boolean { return this._activeCohort.canMakePhenotypeComponentOf(draggedId, targetId); }
   public canDropPhenotype(draggedPhenotype: TableRow, targetPhenotype: TableRow, position: 'before' | 'after' | 'inside'): boolean { return this._activeCohort.canDropPhenotype(draggedPhenotype, targetPhenotype, position); }
   public isNewCohortCreation(): boolean { return this._activeCohort.isNewCohortCreation(); }
   public createNewCohort(studyId?: string) { return this._activeCohort.createNewCohort(studyId); }

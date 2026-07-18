@@ -218,6 +218,22 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
     refreshGrid();
     console.log('=== CohortViewer onRowDragEnd END ===');
   };
+
+  // Move a phenotype into a different section (changes its type and position).
+  const onSectionDrop = async (draggedId: string, newType: string, newRowData: any[]) => {
+    await dataService.movePhenotypeToSection(draggedId, newType, newRowData);
+    refreshGrid();
+  };
+
+  // Make a dragged phenotype a component of the drop-target phenotype.
+  const onComponentDrop = async (draggedId: string, targetParentId: string) => {
+    await dataService.makePhenotypeComponentOf(draggedId, targetParentId);
+    refreshGrid();
+  };
+
+  const canMakeComponent = (draggedId: string, targetId: string) =>
+    dataService.canMakePhenotypeComponentOf(draggedId, targetId);
+
   const tabs = Object.values(CohortDefinitionViewType).map(value => {
     return sectionDisplayNames[value];
   });
@@ -343,6 +359,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
         description={dataService.cohort_data?.description}
         onCellValueChanged={onCellValueChanged}
         onRowDragEnd={onRowDragEnd}
+        onSectionDrop={onSectionDrop}
+        onComponentDrop={onComponentDrop}
+        canMakeComponent={canMakeComponent}
         onNameChange={handleCohortNameChange}
         onDescriptionChange={handleCohortDescriptionChange}
         onHorizontalScroll={updateScrollState}
