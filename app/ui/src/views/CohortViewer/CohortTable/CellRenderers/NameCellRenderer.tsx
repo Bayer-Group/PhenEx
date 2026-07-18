@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import styles from './NameCellRenderer.module.css';
 import { PhenexCellRendererProps, PhenexCellRenderer } from './PhenexCellRenderer';
 import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
@@ -21,6 +21,28 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     colorBorder = true,
   } = props;
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const labelContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleDragStart = (e: React.DragEvent) => {
+    // Hide button on original row synchronously
+    if (deleteButtonRef.current) deleteButtonRef.current.style.opacity = '0';
+    setIsDragging(true);
+    // Provide a custom ghost image with the button hidden
+    if (labelContainerRef.current) {
+      const clone = labelContainerRef.current.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('button').forEach(btn => (btn as HTMLElement).style.opacity = '0');
+      clone.style.position = 'fixed';
+      clone.style.top = '-9999px';
+      clone.style.left = '-9999px';
+      clone.style.width = `${labelContainerRef.current.offsetWidth}px`;
+      document.body.appendChild(clone);
+      e.dataTransfer.setDragImage(clone, 20, 10);
+      requestAnimationFrame(() => document.body.removeChild(clone));
+    }
+  };
   
   // Use shared handlers to avoid lazy loading delay
   const handleEdit = createEditHandler(props);
@@ -80,7 +102,18 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     };
 
     return (
-      <div className={styles.labelContainer} style={getIndentationStyle()}>
+      <div
+        ref={labelContainerRef}
+        className={styles.labelContainer}
+        style={getIndentationStyle()}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onDragStart={handleDragStart}
+        onDragEnd={() => {
+          if (deleteButtonRef.current) deleteButtonRef.current.style.opacity = '';
+          setIsDragging(false);
+        }}
+      >
         {/* <div className={`${styles.label} ${isSelected ? styles.selected : ''} ${isViewing ? styles.viewing : (!isSelected ? fontColor : '')}`}> */}
         <div className={`${styles.label}`}>
 
@@ -102,20 +135,22 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
               </ReactMarkdown>
           </span>
         </div>
-        <button
-          className={styles.deleteButton}
-          onClick={handleDirectDelete}
-          title="Delete phenotype"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="3 6 5 6 21 6" />
-            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-            <path d="M10 11v6" />
-            <path d="M14 11v6" />
-            <path d="M9 6V4h6v2" />
-          </svg>
-        </button>
         <div className={styles.expandArrowContainer}>
+          <button
+            ref={deleteButtonRef}
+            className={`${styles.deleteButton} ${fontColor}`}
+            onClick={handleDirectDelete}
+            title="Delete phenotype"
+            style={{ opacity: isHovered && !isDragging ? 1 : 0, pointerEvents: isHovered && !isDragging ? 'auto' : 'none' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+              <path d="M9 6V4h6v2" />
+            </svg>
+          </button>
           {renderExpandArrow((e) => {
             e.stopPropagation();
             handleEdit();

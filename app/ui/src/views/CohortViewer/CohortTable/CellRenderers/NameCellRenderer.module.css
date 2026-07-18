@@ -19,26 +19,31 @@
 }
 
 .deleteButton {
-  position: absolute;
-  top: var(--item-margin-top);
-  right: calc(var(--item-margin-horizontal) + 28px + 8px);
-  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
   color: currentColor;
   background: none;
   border: none;
-  padding: 2px 4px;
+  padding: 3px 3px;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
   z-index: 1;
+  height: 20px;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
-.editButton:hover,
-.deleteButton:hover {
+.editButton:hover {
   background: var(--button-color-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: var(--border-accent);
+}
+
+.deleteButton:hover {
+  background-color: var(--background_color_hover_over_grid);
+  color: var(--color_accent_blue);
 }
 
 .editButton:focus,
@@ -60,10 +65,6 @@
 :global(.ag-row:hover) .editButton {
   opacity: 1;
   border: var(--border-accent);
-}
-
-:global(.ag-row:hover) .deleteButton {
-  opacity: 1;
 }
 
 .label {
@@ -192,4 +193,7 @@
   top: var(--item-margin-top);
   right: var(--item-margin-horizontal);
   z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }

@@ -496,7 +496,13 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     const handleRowMouseDown = useCallback((e: React.MouseEvent, _rowIndex: number) => {
       mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
       const target = e.target as HTMLElement;
-      if (target.closest('[data-field="type"]') || target.closest('[data-field="rowDrag"]')) {
+      // Interactive controls in the name cell (delete/expand) must not arm a drag.
+      const onInteractiveControl = !!target.closest('button, a, svg, input, textarea');
+      const onDragField =
+        target.closest('[data-field="type"]') ||
+        target.closest('[data-field="rowDrag"]') ||
+        (target.closest('[data-field="name"]') && !onInteractiveControl);
+      if (onDragField) {
         const rowEl = target.closest('[data-row-id]') as HTMLElement | null;
         const id = rowEl?.getAttribute('data-row-id');
         if (id) {
