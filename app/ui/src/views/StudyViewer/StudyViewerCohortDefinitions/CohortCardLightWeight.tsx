@@ -4,19 +4,14 @@ import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
 import { CohortCardActions } from './CohortCardActions';
 import { TwoPanelCohortViewerService } from '../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { CohortViewType } from '../../CohortViewer/CohortViewer';
-import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
 import { RightClickMenuItem } from '../../../components/RightClickMenu/RightClickMenu';
 import { ScaledRightClickMenu } from '../../../components/RightClickMenu/ScaledRightClickMenu';
 import { useReportMode } from '../../../contexts/ReportModeContext';
+import { DeleteConfirmModal } from '../../../components/DeleteConfirmModal/DeleteConfirmModal';
 import { CohortDefinitionReportD3, CohortDefinitionReportD3Ref } from './CohortDefinitionReportD3';
 import { CohortCardViewer } from '../../CohortViewer/CohortCardViewer/CohortCardViewer';
 import { defaultColumns } from '../../CohortViewer/CohortDataService/CohortColumnDefinitions';
 import { TableData } from '../../CohortViewer/tableTypes';
-
-// Vertical bounds (unscaled card px) for the hover actions overlay so it stays
-// within the data-row band — below the name/description + header, above the chin.
-const ROW_AREA_TOP = 90;
-const ROW_AREA_BOTTOM_INSET = 30;
 
 interface CohortCardLightWeightProps {
   cohortDef: CohortWithTableData;
@@ -38,20 +33,17 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   cohortId,
   studyDataService,
   onCardClick,
-  isDragging,
-  isScrolling,
+  isDragging: _isDragging,
+  isScrolling: _isScrolling,
   isShiftPressed,
   isCommandPressed,
   onDeleteCohort,
 }) => {
   const { isReportMode } = useReportMode();
-  const [isHovered, setIsHovered] = useState(false);
-  const [isHoveringActions, setIsHoveringActions] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const d3ReportRef = useRef<CohortDefinitionReportD3Ref>(null);
-  const actionsRef = useRef<HTMLDivElement>(null);
-  const initialPositionSetRef = useRef(false);
   const [rightClickMenu, setRightClickMenu] = useState<{ position: { x: number; y: number }; rowIndex: number | null } | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const definitionService = studyDataService.cohort_definitions_service;
   const rows = cohortDef.table_data.rows;
@@ -59,64 +51,6 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   // The card renders the same columns as the two-panel viewer's pinned card.
   const cardData = useMemo<TableData>(() => ({ rows, columns: defaultColumns } as TableData), [rows]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging || isScrolling || isShiftPressed || isCommandPressed || isHoveringActions) return;
-
-    if (cardRef.current && actionsRef.current) {
-      const rect = cardRef.current.getBoundingClientRect();
-      const relativeY = e.clientY - rect.top;
-
-      const computedStyle = getComputedStyle(cardRef.current);
-      const zoomScale = parseFloat(computedStyle.getPropertyValue('--zoom-scale')) || 1;
-      const localY = relativeY / zoomScale;
-
-      // Keep the actions within the data-row band using fixed thresholds
-      // (no per-move DOM measurement): below the name/description + header,
-      // above the chin at the card's bottom.
-      const cardHeight = rect.height / zoomScale;
-      const min = ROW_AREA_TOP;
-      const max = cardHeight - ROW_AREA_BOTTOM_INSET;
-      const adjustedY = min <= max ? Math.max(min, Math.min(localY, max)) : (min + max) / 2;
-
-      if (!initialPositionSetRef.current) {
-        actionsRef.current.style.transition = 'none';
-        actionsRef.current.style.top = `${adjustedY}px`;
-        actionsRef.current.style.opacity = '0';
-        requestAnimationFrame(() => {
-          if (actionsRef.current) {
-            actionsRef.current.style.transition = 'opacity 0.2s ease-out';
-            actionsRef.current.style.opacity = '1';
-          }
-        });
-        initialPositionSetRef.current = true;
-        return;
-      }
-
-      actionsRef.current.style.top = `${adjustedY}px`;
-    }
-  };
-
-  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging || isScrolling || isShiftPressed || isCommandPressed) return;
-    setIsHovered(true);
-    initialPositionSetRef.current = false;
-    handleMouseMove(e);
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    setIsHoveringActions(false);
-    initialPositionSetRef.current = false;
-  };
-
-  const handleActionsMouseEnter = () => {
-    setIsHoveringActions(true);
-    setIsHovered(true);
-  };
-
-  const handleActionsMouseLeave = () => {
-    setIsHoveringActions(false);
-  };
 
   const handleRowEdit = (row: any) => {
     const cohortViewer = TwoPanelCohortViewerService.getInstance();
@@ -136,10 +70,11 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   };
 
   const handleDeleteCohort = async () => {
-    if (!window.confirm(`Are you sure you want to delete "${cohortDef.cohort.name || 'Unnamed Cohort'}"? This action cannot be undone.`)) {
-      return;
-    }
+    setShowDeleteModal(true);
+  };
 
+  const confirmDeleteCohort = async () => {
+    setShowDeleteModal(false);
     try {
       const cohortModel = definitionService._cohortModels.get(cohortId);
       if (cohortModel) {
@@ -291,11 +226,8 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
       <div>
         <div
           ref={cardRef}
-          className={`${styles.cohortCard} ${isReportMode ? styles.cohortCardReport : ''} ${(isHoveringActions || rightClickMenu !== null) ? styles.forceHover : ''} ${(isShiftPressed || isCommandPressed) ? styles.noHover : ''}`}
+          className={`${styles.cohortCard} ${isReportMode ? styles.cohortCardReport : ''} ${rightClickMenu !== null ? styles.forceHover : ''} ${(isShiftPressed || isCommandPressed) ? styles.noHover : ''}`}
           onMouseDown={e => e.stopPropagation()}
-          onMouseMove={handleMouseMove}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
           onContextMenu={(e) => handleContextMenu(e, null)}
           style={{
             cursor: 'pointer',
@@ -331,26 +263,19 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                 onComponentDrop={handleComponentDrop}
                 canMakeComponent={handleCanMakeComponent}
               />
-              <button
-                className={styles.expandButton}
-                onClick={openCohort}
-                aria-label="Open cohort"
-              >
-                <img src={ArrowIcon} alt="Expand" className={styles.expandArrow} />
-              </button>
             </>
           )}
 
-          {/* Actions Container */}
-          {(isHovered || rightClickMenu !== null) && (
-            <CohortCardActions
-              ref={actionsRef}
-              cohortId={cohortId}
-              studyDataService={studyDataService}
-              onMouseEnter={handleActionsMouseEnter}
-              onMouseLeave={handleActionsMouseLeave}
-              onDeleteCohort={onDeleteCohort ? () => onDeleteCohort(cohortDef) : undefined}
-            />
+          {/* Controls: top-right corner, visible on hover */}
+          {!isReportMode && (
+            <div className={styles.cardControls}>
+              <CohortCardActions
+                cohortId={cohortId}
+                studyDataService={studyDataService}
+                onDeleteCohort={onDeleteCohort ? () => onDeleteCohort(cohortDef) : undefined}
+                onOpen={openCohort}
+              />
+            </div>
           )}
         </div>
 
@@ -364,6 +289,15 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
           />
         )}
       </div>
+
+      {showDeleteModal && (
+        <DeleteConfirmModal
+          name={cohortDef.cohort.name || 'Unnamed Cohort'}
+          entityName="Cohort"
+          onConfirm={confirmDeleteCohort}
+          onCancel={() => setShowDeleteModal(false)}
+        />
+      )}
     </div>
   );
 });
