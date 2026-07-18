@@ -292,6 +292,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
         <div
           ref={cardRef}
           className={`${styles.cohortCard} ${isReportMode ? styles.cohortCardReport : ''} ${(isHoveringActions || rightClickMenu !== null) ? styles.forceHover : ''} ${(isShiftPressed || isCommandPressed) ? styles.noHover : ''}`}
+          onMouseDown={e => e.stopPropagation()}
           onMouseMove={handleMouseMove}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
