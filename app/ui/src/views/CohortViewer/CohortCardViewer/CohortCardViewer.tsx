@@ -657,6 +657,20 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
             label: `Make component of ${target.name ?? 'phenotype'}`,
           };
         }
+
+        // Two components sharing the same parent: a before/after drop just
+        // reorders them within that level (rather than promoting to a section).
+        const draggedParent = Array.isArray(dragged.parentIds) ? dragged.parentIds[0] : undefined;
+        const targetParent = Array.isArray(target.parentIds) ? target.parentIds[0] : undefined;
+        const sameLevelComponents =
+          dragged.type === 'component' &&
+          target.type === 'component' &&
+          draggedParent != null &&
+          draggedParent === targetParent;
+        if (sameLevelComponents) {
+          return { index: rowIndex, operation: 'reorder', position, label: null };
+        }
+
         if (targetType !== draggedType) {
           return {
             index: rowIndex,
