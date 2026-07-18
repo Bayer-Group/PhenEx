@@ -11,6 +11,12 @@ import { useReportMode } from '../../../contexts/ReportModeContext';
 import { CohortDefinitionReportD3, CohortDefinitionReportD3Ref } from './CohortDefinitionReportD3';
 import { CohortCardViewer } from '../../CohortViewer/CohortCardViewer/CohortCardViewer';
 import { defaultColumns } from '../../CohortViewer/CohortDataService/CohortColumnDefinitions';
+import { TableData } from '../../CohortViewer/tableTypes';
+
+// Vertical bounds (unscaled card px) for the hover actions overlay so it stays
+// within the data-row band — below the name/description + header, above the chin.
+const ROW_AREA_TOP = 90;
+const ROW_AREA_BOTTOM_INSET = 30;
 
 interface CohortCardLightWeightProps {
   cohortDef: CohortWithTableData;
@@ -51,7 +57,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
   const rows = cohortDef.table_data.rows;
 
   // The card renders the same columns as the two-panel viewer's pinned card.
-  const cardData = useMemo(() => ({ rows, columns: defaultColumns }), [rows]);
+  const cardData = useMemo<TableData>(() => ({ rows, columns: defaultColumns } as TableData), [rows]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isDragging || isScrolling || isShiftPressed || isCommandPressed || isHoveringActions) return;
@@ -62,7 +68,15 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
 
       const computedStyle = getComputedStyle(cardRef.current);
       const zoomScale = parseFloat(computedStyle.getPropertyValue('--zoom-scale')) || 1;
-      const adjustedY = relativeY / zoomScale;
+      const localY = relativeY / zoomScale;
+
+      // Keep the actions within the data-row band using fixed thresholds
+      // (no per-move DOM measurement): below the name/description + header,
+      // above the chin at the card's bottom.
+      const cardHeight = rect.height / zoomScale;
+      const min = ROW_AREA_TOP;
+      const max = cardHeight - ROW_AREA_BOTTOM_INSET;
+      const adjustedY = min <= max ? Math.max(min, Math.min(localY, max)) : (min + max) / 2;
 
       if (!initialPositionSetRef.current) {
         actionsRef.current.style.transition = 'none';
@@ -286,6 +300,8 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
             cursor: 'pointer',
             pointerEvents: 'auto',
             '--dynamic-arrow-size': 'min(75px, calc(30px / var(--zoom-scale)))',
+            '--dynamic-button-size': 'min(34px, calc(26px / var(--zoom-scale)))',
+            '--dynamic-font-size': 'min(16px, calc(12px / var(--zoom-scale)))',
           } as React.CSSProperties}
         >
           {isReportMode ? (
