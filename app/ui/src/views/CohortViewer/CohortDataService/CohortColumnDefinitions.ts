@@ -54,6 +54,7 @@ export const componentPhenotypeColumns: any[] = [
     field: 'name',
     headerName: '',
     flex: 1,
+    pinned: 'left',
     resizable: false,
     editable: true,
     cellRenderer: NameCellRenderer,

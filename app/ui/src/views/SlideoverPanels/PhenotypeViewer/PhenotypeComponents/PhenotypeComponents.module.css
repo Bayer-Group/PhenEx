@@ -20,6 +20,14 @@
   height: 40px;
 }
 
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 12px 0 12px;
+}
+
 .addButton {
   padding: 8px 12px;
   border: 2px dashed var(--line-color);

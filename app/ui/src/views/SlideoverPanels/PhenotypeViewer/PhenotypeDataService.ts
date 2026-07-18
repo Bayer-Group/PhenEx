@@ -32,6 +32,13 @@ export class PhenotypeDataService {
 
   private listeners: ((refreshGrid: boolean) => void)[] = [];
   private componentPhenotypeListeners: ((refreshGrid: boolean) => void)[] = [];
+  // Panel-local visibility state, independent from the main cohort table.
+  // Direct children are always shown; this toggle additionally reveals deeper
+  // generations (subchildren) up to `_componentLevel`.
+  private _showSubchildren: boolean = false;
+  // Max component depth shown when subchildren are enabled. Level 1 = direct
+  // children, level 2 = grandchildren; `Infinity` shows the full subtree.
+  private _componentLevel: number = Number.POSITIVE_INFINITY;
   public cohortDataService = CohortDataService.getInstance(); // Assuming CohortDataService is a singleton class
 
   private constructor() {
@@ -189,9 +196,41 @@ export class PhenotypeDataService {
   }
 
   public updateComponentPhenotypeData() {
+    // Always show direct children (level 1); the toggle extends the depth to
+    // include subchildren (level 2+) up to the selected level.
+    const maxLevel = this._showSubchildren ? this._componentLevel : 1;
     this.componentPhenotypeTableData = this.cohortDataService.tableDataForComponentPhenotype(
-      this.currentPhenotype
+      this.currentPhenotype,
+      true,
+      maxLevel
     );
+  }
+
+  public getShowSubchildren(): boolean {
+    return this._showSubchildren;
+  }
+
+  public setShowSubchildren(show: boolean) {
+    this._showSubchildren = show;
+    this.updateComponentPhenotypeData();
+    this.notifyComponentPhenotypeListeners(true);
+  }
+
+  public getComponentLevel(): number {
+    return this._componentLevel;
+  }
+
+  public setComponentLevel(level: number) {
+    this._componentLevel = level;
+    this.updateComponentPhenotypeData();
+    this.notifyComponentPhenotypeListeners(true);
+  }
+
+  // Deepest component level available under the selected phenotype (direct
+  // children = level 1). Drives the level dropdown's dynamic range.
+  public getMaxComponentLevel(): number {
+    if (!this.currentPhenotype?.id) return 0;
+    return this.cohortDataService.getMaxComponentLevelForPhenotype(this.currentPhenotype.id);
   }
 
   public addNewComponentPhenotype() {

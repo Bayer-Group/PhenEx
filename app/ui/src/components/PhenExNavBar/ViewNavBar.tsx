@@ -3,6 +3,7 @@ import styles from './NavBar.module.css';
 import { PhenExNavBarMenu } from './PhenExNavBarMenu';
 import { PhenExNavBarTooltip } from './PhenExNavBarTooltip';
 import { SwitchButton } from '../ButtonsAndTabs/SwitchButton/SwitchButton';
+import { LevelSelect } from '../ButtonsAndTabs/LevelSelect/LevelSelect';
 import { CohortDataService } from '../../views/CohortViewer/CohortDataService/CohortDataService';
 
 interface ViewNavBarProps {
@@ -43,11 +44,17 @@ const VisibilityMenu: React.FC<{
   const dataService = CohortDataService.getInstance();
   const [showDescriptions, setShowDescriptions] = useState(true);
   const [showChildren, setShowChildren] = useState(() => dataService.getShowComponents());
+  const [componentLevel, setComponentLevel] = useState(() => dataService.getComponentLevel());
   const [showFullCodelists, setShowFullCodelists] = useState(() => dataService.getShowFullCodelists());
 
   const handleShowChildrenChange = (value: boolean) => {
     setShowChildren(value);
     dataService.toggleComponentPhenotypes(value);
+  };
+
+  const handleComponentLevelChange = (value: number) => {
+    setComponentLevel(value);
+    dataService.setComponentLevel(value);
   };
 
   const handleShowFullCodelistsChange = (value: boolean) => {
@@ -75,11 +82,20 @@ const VisibilityMenu: React.FC<{
           onValueChange={setShowDescriptions}
         />
         
-        <SwitchButton
-          label="Show Children"
-          value={showChildren}
-          onValueChange={handleShowChildrenChange}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <SwitchButton
+            label="Show Children"
+            value={showChildren}
+            onValueChange={handleShowChildrenChange}
+          />
+          <LevelSelect
+            value={componentLevel}
+            onChange={handleComponentLevelChange}
+            maxLevel={dataService.getMaxComponentLevel()}
+            disabled={!showChildren}
+            title="Show components up to this depth"
+          />
+        </div>
 
         <SwitchButton
           label="Show Full Codelists"

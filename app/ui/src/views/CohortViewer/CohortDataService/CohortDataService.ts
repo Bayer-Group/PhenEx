@@ -133,10 +133,14 @@ export class CohortDataService {
   public filterType(type: string | string[]): void { return this._activeCohort.filterType(type); }
   public toggleComponentPhenotypes(show: boolean): void { return this._activeCohort.toggleComponentPhenotypes(show); }
   public getShowComponents(): boolean { return this._activeCohort.getShowComponents(); }
+  public setComponentLevel(level: number): void { return this._activeCohort.setComponentLevel(level); }
+  public getComponentLevel(): number { return this._activeCohort.getComponentLevel(); }
+  public getMaxComponentLevel(): number { return this._activeCohort.getMaxComponentLevel(); }
+  public getMaxComponentLevelForPhenotype(parentId: string): number { return this._activeCohort.getMaxComponentLevelForPhenotype(parentId); }
   public toggleShowFullCodelists(show: boolean): void { return this._activeCohort.toggleShowFullCodelists(show); }
   public getShowFullCodelists(): boolean { return this._activeCohort.getShowFullCodelists(); }
   public updateColumns(newColumns: ColumnDefinition[]): void { return this._activeCohort.updateColumns(newColumns); }
-  public tableDataForComponentPhenotype(parentPhenotype: any): TableData { return this._activeCohort.tableDataForComponentPhenotype(parentPhenotype); }
+  public tableDataForComponentPhenotype(parentPhenotype: any, showChildren: boolean = true, maxLevel: number = Number.POSITIVE_INFINITY): TableData { return this._activeCohort.tableDataForComponentPhenotype(parentPhenotype, showChildren, maxLevel); }
 
   public _setNewPhenotypeDefaultValues(newPhenotype: any) { return this._activeCohort._setNewPhenotypeDefaultValues(newPhenotype); }
 }

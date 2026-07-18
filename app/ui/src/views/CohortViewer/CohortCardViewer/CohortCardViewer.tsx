@@ -89,6 +89,20 @@ interface CohortCardViewerProps {
   onComponentDrop?: (draggedId: string, targetParentId: string) => void;
   /** Whether `draggedId` may be made a component of `targetId`. */
   canMakeComponent?: (draggedId: string, targetId: string) => boolean;
+  /**
+   * Override/extend the section title labels keyed by phenotype `type`.
+   * Merged over the defaults, e.g. `{ component: 'Components' }` to title the
+   * component subtable in the phenotype viewer.
+   */
+  sectionTitles?: Record<string, string>;
+  /**
+   * Which field decides how rows are grouped into titled sections. Defaults to
+   * `effective_type` (a component inherits its parent's section). Set to `type`
+   * to group by the raw phenotype type — used by the component subtable so every
+   * component falls under a single "Components" section while individual cells
+   * keep their own (effective_type-based) coloring.
+   */
+  sectionGroupBy?: 'type' | 'effective_type';
   hideScrollbars?: boolean;
   hideVerticalScrollbar?: boolean;
   gridBottomPadding?: number;
@@ -128,6 +142,8 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       onSectionDrop,
       onComponentDrop,
       canMakeComponent,
+      sectionTitles,
+      sectionGroupBy = 'effective_type',
       gridBottomPadding = 0,
       flipScrollDirection = false,
       minPinnedWidth = 150,
@@ -927,6 +943,11 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     // ---------------------------------------------------------------------------
     // Render helpers
     // ---------------------------------------------------------------------------
+    const effectiveSectionTitles = useMemo(
+      () => ({ ...SECTION_TITLES, ...sectionTitles }),
+      [sectionTitles]
+    );
+
     const renderHeaderRow = (cols: any[]) => (
       <div className={styles.headerRow} data-header-row>
         {cols.map(colDef => {
@@ -962,10 +983,13 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       const out: React.ReactNode[] = [];
       rows.forEach((rowData, rowIndex) => {
         const id = rowData?.id ?? String(rowIndex);
-        const type = rowData?.effective_type ?? rowData?.type ?? null;
+        const type =
+          (sectionGroupBy === 'type'
+            ? rowData?.type
+            : rowData?.effective_type ?? rowData?.type) ?? null;
         // Insert a section title row before the first row of each type.
         if (type !== prevType) {
-          const label = SECTION_TITLES[type as string];
+          const label = effectiveSectionTitles[type as string];
           if (label) {
             out.push(
               <div
