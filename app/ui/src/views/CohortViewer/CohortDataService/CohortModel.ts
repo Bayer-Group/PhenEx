@@ -657,6 +657,13 @@ export class CohortModel {
         phenotype.hierarchical_index = idx;
         this.calculateComponentHierarchicalIndices(phenotype.id, idx);
       });
+
+    // Recalculate each phenotype's level from its current position in the
+    // hierarchy. Level drives display styling (e.g. font size / indentation),
+    // and can go stale when phenotypes are re-parented via drag & drop.
+    this._cohort_data.phenotypes.forEach((phenotype: TableRow) => {
+      phenotype.level = this.getAllAncestors(phenotype).length;
+    });
   }
 
   private calculateComponentHierarchicalIndices(parentId: string, parentHierarchicalIndex: string): void {
@@ -1012,13 +1019,14 @@ export class CohortModel {
     
     // Update the cohort data
     this._cohort_data.phenotypes = newCompleteOrder;
-    this._table_data = this.tableDataFromCohortData();
     
     // No longer split phenotypes by type - backend expects phenotypes array only
     this._cohort_data.name = this._cohort_name;
     
-    // Recalculate hierarchical indices after hierarchical reordering
+    // Recalculate hierarchical indices (and levels) before building table data
+    // so the grid reflects any re-parenting from the drag operation.
     this.calculateHierarchicalIndices();
+    this._table_data = this.tableDataFromCohortData();
     
     await updateCohort(this._cohort_data.study_id, this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();

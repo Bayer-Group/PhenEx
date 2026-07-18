@@ -54,17 +54,17 @@
 }
 
 .level_3{
-  font-size: var(--font_size_infotext);
+  font-size: 10px;
 }
 
 .level_4{
-  font-size: var(--font_size_infotext);
+  font-size: 8px;
 }
 
 .level_5{
-  font-size: var(--font_size_infotext);
+  font-size: 8px;
 }
 
 .level_6{
-  font-size: var(--font_size_infotext);
+  font-size: 8px;
 }
