@@ -587,7 +587,10 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         const inComponentZone = ratio > 0.3 && ratio < 0.7;
         const position: 'before' | 'after' = ratio < 0.5 ? 'before' : 'after';
 
-        const draggedType = dragged.effective_type ?? dragged.type;
+        // Use the actual `type` (a component's type is 'component', never a
+        // section) so a component dropped at top level is promoted into the
+        // target's section rather than treated as a same-section reorder.
+        const draggedType = dragged.type;
         const targetType = target.effective_type ?? target.type;
 
         const canBeComponent = canMakeComponent
