@@ -8,6 +8,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { flushSync } from 'react-dom';
 import styles from './CohortCardViewer.module.css';
 import { TableData } from '../tableTypes';
 import { CohortCardViewerPinnedCols } from './CohortCardViewerPinnedCols';
@@ -457,10 +458,14 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     const handleRowMouseDown = useCallback((e: React.MouseEvent, _rowIndex: number) => {
       mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
       const target = e.target as HTMLElement;
-      if (target.closest('[data-field="rowDrag"]')) {
+      if (target.closest('[data-field="type"]') || target.closest('[data-field="rowDrag"]')) {
         const rowEl = target.closest('[data-row-id]') as HTMLElement | null;
         const id = rowEl?.getAttribute('data-row-id');
-        if (id) setArmedRowId(id);
+        if (id) {
+          // flushSync ensures draggable={true} is applied to the DOM
+          // before the browser can detect a dragstart gesture.
+          flushSync(() => setArmedRowId(id));
+        }
       }
     }, []);
 
@@ -557,6 +562,15 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       setDraggedIndex(null);
       setDragOverIndex(null);
       setArmedRowId(null);
+    }, []);
+
+    // Clear armed row on mouseup so a plain click doesn't leave the row
+    // permanently draggable. dragstart fires before mouseup, so this never
+    // races with an in-progress drag.
+    useEffect(() => {
+      const onMouseUp = () => setArmedRowId(null);
+      document.addEventListener('mouseup', onMouseUp);
+      return () => document.removeEventListener('mouseup', onMouseUp);
     }, []);
 
     // ---------------------------------------------------------------------------

@@ -52,3 +52,19 @@
 .level_2{
   font-size: var(--font_size_infotext);
 }
+
+.level_3{
+  font-size: var(--font_size_infotext);
+}
+
+.level_4{
+  font-size: var(--font_size_infotext);
+}
+
+.level_5{
+  font-size: var(--font_size_infotext);
+}
+
+.level_6{
+  font-size: var(--font_size_infotext);
+}
