@@ -97,6 +97,14 @@ interface CohortCardViewerProps {
   minPinnedWidth?: number;
   /** Maximum width (px) the pinned panel can be dragged to. Default 700. */
   maxPinnedWidth?: number;
+  /**
+   * Render as a single, natural-height card (only the pinned card: cohort meta,
+   * header, section titles and rows) with no scroll panel, divider or scrollbar.
+   * Used to embed the same card in the study overview. All interaction —
+   * inline editing, drag reorder, section moves and component nesting — behaves
+   * identically to the two-panel viewer.
+   */
+  cardMode?: boolean;
 }
 
 interface EditingState {
@@ -124,6 +132,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       flipScrollDirection = false,
       minPinnedWidth = 150,
       maxPinnedWidth = 700,
+      cardMode = false,
     },
     ref
   ) => {
@@ -221,8 +230,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
 
     // When the user has dragged to a new width, stretch the last pinned column
     // to absorb the difference so content always fills the container exactly.
-    const adjustedPinnedColumns = useMemo(() => {
-      if (pinnedWidthOverride === null || pinnedColumns.length === 0) return pinnedColumns;
+    const adjustedPinnedColumns = useMemo(() => {      if (pinnedWidthOverride === null || pinnedColumns.length === 0) return pinnedColumns;
       const delta = pinnedWidthOverride - pinnedWidth;
       if (delta === 0) return pinnedColumns;
       return pinnedColumns.map((col, i) => {
@@ -231,6 +239,15 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         return { ...col, flex: undefined, width: Math.max(50, baseWidth + delta) };
       });
     }, [pinnedColumns, pinnedWidthOverride, pinnedWidth]);
+
+    // In card mode the single card renders only the pinned columns; stretch the
+    // last one (the name) to flex so it fills the card's full width.
+    const cardColumns = useMemo(() => {
+      if (!cardMode || pinnedColumns.length === 0) return pinnedColumns;
+      return pinnedColumns.map((col, i) =>
+        i === pinnedColumns.length - 1 ? { ...col, width: undefined, flex: 1 } : col
+      );
+    }, [cardMode, pinnedColumns]);
 
     // ---------------------------------------------------------------------------
     // Divider drag (resize pinned panel width)
@@ -853,6 +870,9 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     useEffect(() => {
       const root = rootRef.current;
       if (!root) return;
+      // Card mode lives inside the zoomable study-overview canvas, which owns
+      // wheel handling for pan/zoom — never intercept wheel events there.
+      if (cardMode) return;
 
       const handler = (e: WheelEvent) => {
         const scrollEl = scrollRef.current;
@@ -891,8 +911,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
 
       root.addEventListener('wheel', handler, { passive: false });
       return () => root.removeEventListener('wheel', handler);
-    }, [flipScrollDirection, syncVerticalScroll]);
-
+    }, [flipScrollDirection, syncVerticalScroll, cardMode]);
     useImperativeHandle(
       ref,
       () => ({
@@ -999,13 +1018,28 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     return (
       <div
         ref={rootRef}
-        className={`${styles.viewerRoot} ag-root ${flipScrollDirection ? styles.flipScroll : ''}`}
+        className={`${styles.viewerRoot} ag-root ${cardMode ? styles.cardMode : ''} ${flipScrollDirection ? styles.flipScroll : ''}`}
       >
         {editing && (
           <div className={styles.editingOverlay} onClick={() => commitEdit()} />
         )}
         {rows.length === 0 ? (
           <div className={styles.emptyState}>No phenotypes defined</div>
+        ) : cardMode ? (
+          <CohortCardViewerPinnedCols
+            ref={pinnedContentRef}
+            cardMode
+            width={effectivePinnedWidth}
+            header={renderHeaderRow(cardColumns)}
+            cohortName={displayCohortName}
+            description={displayDescription}
+            chinColor={getHierarchicalBackgroundColor(rows[rows.length - 1]?.effective_type, rows[rows.length - 1]?.hierarchical_index) ?? undefined}
+            onMetaHeightChange={setCohortMetaHeight}
+            onNameChange={handleNameChange}
+            onDescriptionChange={handleDescriptionChange}
+          >
+            {renderRows('pinned', cardColumns)}
+          </CohortCardViewerPinnedCols>
         ) : (
           <>
             <CohortCardViewerPinnedCols ref={pinnedContentRef} width={effectivePinnedWidth} header={renderHeaderRow(adjustedPinnedColumns)} cohortName={displayCohortName} description={displayDescription} bottomPadding={gridBottomPadding} chinColor={getHierarchicalBackgroundColor(rows[rows.length - 1]?.effective_type, rows[rows.length - 1]?.hierarchical_index) ?? undefined} onMetaHeightChange={setCohortMetaHeight} onScroll={handlePinnedBodyScroll} onNameChange={handleNameChange} onDescriptionChange={handleDescriptionChange}>

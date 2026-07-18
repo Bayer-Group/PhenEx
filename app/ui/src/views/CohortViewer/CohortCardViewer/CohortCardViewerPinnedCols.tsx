@@ -28,6 +28,12 @@ interface CohortCardViewerPinnedColsProps {
   onNameChange?: (name: string) => void;
   /** Called when the user commits a new cohort description (on blur). */
   onDescriptionChange?: (description: string) => void;
+  /**
+   * Render as a standalone, natural-height card: the panel fills its container
+   * width and the body grows to fit its content (no internal vertical scroll).
+   * Used by CohortCardViewer's card mode in the study overview.
+   */
+  cardMode?: boolean;
   children: React.ReactNode;
 }
 
@@ -41,7 +47,7 @@ interface CohortCardViewerPinnedColsProps {
  * cohort-meta section scrolls out of view and the header row pins at the top.
  */
 export const CohortCardViewerPinnedCols = forwardRef<HTMLDivElement, CohortCardViewerPinnedColsProps>(
-  ({ width, header, cohortName, description, bottomPadding = 0, chinColor, onMetaHeightChange, onScroll, onNameChange, onDescriptionChange, children }, ref) => {
+  ({ width, header, cohortName, description, bottomPadding = 0, chinColor, onMetaHeightChange, onScroll, onNameChange, onDescriptionChange, cardMode = false, children }, ref) => {
     const metaRef = useRef<HTMLDivElement>(null);
     const nameRef = useRef<HTMLTextAreaElement>(null);
     const descriptionRef = useRef<HTMLTextAreaElement>(null);
@@ -85,7 +91,7 @@ export const CohortCardViewerPinnedCols = forwardRef<HTMLDivElement, CohortCardV
     }, [notifyHeight, cohortName, description]);
 
     return (
-      <div className={styles.pinnedPanel} style={{ width: `${width}px`, minWidth: `${width}px` }}>
+      <div className={`${styles.pinnedPanel} ${cardMode ? styles.pinnedPanelCard : ''}`} style={cardMode ? undefined : { width: `${width}px`, minWidth: `${width}px` }}>
         <div
           ref={ref}
           className={styles.pinnedBody}

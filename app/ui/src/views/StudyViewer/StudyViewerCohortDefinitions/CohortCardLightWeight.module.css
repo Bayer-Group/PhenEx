@@ -210,3 +210,42 @@
   background: transparent !important;
 
 }
+
+/* Open-cohort expand button — overlaid on the card's top-right corner.
+   The card body is now rendered by CohortCardViewer (cardMode), so this floats
+   above it and reveals on hover. */
+.expandButton {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.cohortCard:hover:not(.noHover) .expandButton,
+.cohortCard.forceHover .expandButton {
+  opacity: 1;
+}
+
+.expandButton:hover {
+  background: var(--hover-background, #f0f0f0);
+}
+
+.expandArrow {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.expandButton:hover .expandArrow {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(102%) contrast(97%);
+}

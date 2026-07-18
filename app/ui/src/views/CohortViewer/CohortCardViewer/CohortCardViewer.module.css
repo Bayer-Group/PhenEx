@@ -387,3 +387,31 @@
   z-index: 3;
   flex-shrink: 0;
 }
+
+/* ---------------------------------------------------------------------------
+   Card mode: a single, natural-height card (only the pinned card) embedded in
+   the study-overview canvas. No scroll panel, divider or scrollbar; the card
+   fills its container width and grows to fit its content.
+   --------------------------------------------------------------------------- */
+.viewerRoot.cardMode {
+  display: block;
+  height: auto;
+  width: 100%;
+  overflow: visible;
+}
+
+.cardMode .pinnedPanelCard {
+  width: 100%;
+  height: auto;
+  margin-left: 0;
+}
+
+/* Body no longer scrolls internally — it grows with its content. */
+.cardMode .pinnedPanelCard .pinnedBody {
+  overflow: visible;
+  height: auto;
+}
+
+.cardMode .pinnedPanelCard .pinnedCard {
+  margin-top: 0;
+}
