@@ -17,6 +17,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
   const [showSubchildren, setShowSubchildren] = useState(() => dataService.getShowSubchildren());
   const [componentLevel, setComponentLevel] = useState(() => dataService.getComponentLevel());
   const [maxLevel, setMaxLevel] = useState(() => dataService.getMaxComponentLevel());
+  const [minLevel, setMinLevel] = useState(() => dataService.currentPhenotype?.level ?? 1);
 
   const handleShowSubchildrenChange = (value: boolean) => {
     setShowSubchildren(value);
@@ -32,6 +33,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
     const listener = () => {
       setTableData(dataService.componentPhenotypeTableData);
       setMaxLevel(dataService.getMaxComponentLevel());
+      setMinLevel(dataService.currentPhenotype?.level ?? 1);
     };
     dataService.addComponentPhenotypeListener(listener);
 
@@ -46,6 +48,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
     }
     setTableData(dataService.componentPhenotypeTableData);
     setMaxLevel(dataService.getMaxComponentLevel());
+    setMinLevel(dataService.currentPhenotype?.level ?? 1);
   }, [data]);
 
   const onCellValueChanged = async (event: any) => {
@@ -71,30 +74,27 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
     dataService.addNewComponentPhenotype();
   };
 
+  if (!tableData || !tableData.rows || tableData.rows.length === 0) {
+    return null;
+  }
+
   return (
     <div className={styles.phenotypeContainer}>
       <div className={styles.controls}>
-        <SwitchButton
-          label="Show Subchildren"
+        {/* <SwitchButton
+          label=""
           value={showSubchildren}
           onValueChange={handleShowSubchildrenChange}
-        />
+          dark
+        /> */}
         <LevelSelect
           value={componentLevel}
           onChange={handleComponentLevelChange}
-          minLevel={2}
+          minLevel={minLevel+1}
           maxLevel={maxLevel}
           disabled={!showSubchildren}
           title="Show subchildren up to this depth"
         />
-      </div>
-      <div className={styles.header}>
-        <button
-          className={`${styles.addButton} ${typeStyles[`${data?.type}_color_text_and_border_on_hover`]}`}
-          onClick={clickedOnAddButton}
-        >
-          Add Component
-        </button>
       </div>
       <div className={styles.tableBox}>
         <CohortCardViewer

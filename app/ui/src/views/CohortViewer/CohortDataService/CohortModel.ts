@@ -116,9 +116,6 @@ export class CohortModel {
 
   private _currentFilter: string[] = ['entry', 'inclusion', 'exclusion'];
   private _showComponents: boolean = true;
-  // Max component depth to show in the main cohort table. Level 0 = no
-  // children (root phenotypes only), level 1 = direct children, level 2 = their
-  // children, etc. `Infinity` shows every generation.
   private _componentLevel: number = Number.POSITIVE_INFINITY;
   private _showFullCodelists: boolean = false;
   private _diff_map: Map<string, 'added' | 'modified' | 'deleted'> = new Map();
@@ -184,7 +181,7 @@ export class CohortModel {
         row.type === 'component' && 
         row.effective_type && 
         this._currentFilter.includes(row.effective_type) &&
-        this.getComponentDepth(row) < this._componentLevel
+        ((row.level ?? 1) <= this._componentLevel)
       );
       if (componentPhenotypes.length > 0) {
         filteredPhenotypes = this.getHierarchicallyOrderedPhenotypes([...filteredPhenotypes, ...componentPhenotypes]);
@@ -295,6 +292,7 @@ export class CohortModel {
 
   public async setCohortDatabaseConfig(config: Record<string, any> | null): Promise<void> {
     this._database = config;
+    this.notifyListeners();
     await updateCohortDatabaseConfig(this._cohort_data.study_id, this._cohort_data.id, config);
   }
 
@@ -1421,70 +1419,39 @@ export class CohortModel {
     return this._showComponents;
   }
 
+  public getComponentLevel(): number {
+    return this._componentLevel;
+  }
+
   public setComponentLevel(level: number): void {
     this._componentLevel = level;
     this._table_data = this.tableDataFromCohortData();
     this.notifyListeners();
   }
 
-  public getComponentLevel(): number {
-    return this._componentLevel;
-  }
-
-  /**
-   * Highest selectable level for the whole cohort, matching the level numbering
-   * (level 0 = no children, level 1 = direct children, ...). Equals the deepest
-   * component depth + 1, or 0 when there are no components.
-   */
+  // Deepest component depth across the whole cohort. Top-level phenotypes are
+  // level 0, their direct component children are level 1, and so on.
   public getMaxComponentLevel(): number {
-    const components = (this._cohort_data.phenotypes || []).filter(
-      (p: TableRow) => p.type === 'component'
+    const phenotypes = this._cohort_data?.phenotypes || [];
+    return phenotypes.reduce(
+      (max: number, p: TableRow) =>
+        p.type === 'component' ? Math.max(max, p.level ?? 1) : max,
+      0
     );
-    let max = 0;
-    for (const component of components) {
-      max = Math.max(max, this.getComponentDepth(component) + 1);
-    }
-    return max;
   }
 
-  /**
-   * Highest selectable level for the subtree under `parentId`, relative to that
-   * phenotype (direct children = level 1). Returns 0 when the phenotype has no
-   * component children.
-   */
-  public getMaxComponentLevelForPhenotype(parentId: string): number {
-    const components = (this._cohort_data.phenotypes || []).filter(
-      (p: TableRow) => p.type === 'component'
+  // Deepest component depth relative to a given phenotype (its direct component
+  // children = level 1). Drives the level dropdown's dynamic range.
+  public getMaxComponentLevelForPhenotype(phenotypeId: string): number {
+    const phenotype = this.getPhenotypeById(phenotypeId);
+    if (!phenotype) return 0;
+    const baseLevel = phenotype.level ?? 0;
+    const descendants = this.getAllDescendants(phenotypeId);
+    return descendants.reduce(
+      (max: number, p: TableRow) =>
+        p.type === 'component' ? Math.max(max, (p.level ?? 0) - baseLevel) : max,
+      0
     );
-    const subtreeDepth = (id: string, level: number): number => {
-      const children = components.filter(
-        (c: TableRow) => Array.isArray(c.parentIds) && c.parentIds.includes(id)
-      );
-      if (children.length === 0) return level;
-      return Math.max(...children.map(child => subtreeDepth(child.id, level + 1)));
-    };
-    return subtreeDepth(parentId, 0);
-  }
-
-  /**
-   * Depth of a component within the component hierarchy. A component whose
-   * parent is a top-level (non-component) phenotype has depth 0; each nested
-   * component generation increments the depth by one.
-   */
-  private getComponentDepth(component: TableRow): number {
-    let depth = 0;
-    let current: any = component;
-    const seen = new Set<string>();
-    while (current) {
-      const parentId = Array.isArray(current.parentIds) ? current.parentIds[0] : undefined;
-      if (!parentId || seen.has(parentId)) break;
-      seen.add(parentId);
-      const parent = (this._cohort_data.phenotypes || []).find((p: any) => p.id === parentId);
-      if (!parent || parent.type !== 'component') break;
-      depth += 1;
-      current = parent;
-    }
-    return depth;
   }
 
   public toggleShowFullCodelists(show: boolean): void {
@@ -1503,67 +1470,27 @@ export class CohortModel {
     this.notifyListeners();
   }
 
-  public tableDataForComponentPhenotype(
-    parentPhenotype: any,
-    showChildren: boolean = true,
-    maxLevel: number = Number.POSITIVE_INFINITY
-  ): TableData {
-    if (!parentPhenotype || !showChildren) {
-      return { rows: [], columns: componentPhenotypeColumns };
+  public tableDataForComponentPhenotype(parentPhenotype: any): TableData {
+    let filteredPhenotypes = this._cohort_data.phenotypes || [];
+    if (this._currentFilter.length > 0) {
+      filteredPhenotypes = filteredPhenotypes.filter(
+        (phenotype: TableRow) =>
+          phenotype.type === 'component' &&
+          phenotype.parentIds && // Check if parentIds exists
+          Array.isArray(phenotype.parentIds) && // Check if it's an array
+          phenotype.parentIds.includes(parentPhenotype.id)
+      );
     }
-
-    const allComponents = (this._cohort_data.phenotypes || []).filter(
-      (phenotype: TableRow) => phenotype.type === 'component'
-    );
-
-    const descendants = this.getComponentDescendantsUpToLevel(
-      parentPhenotype.id,
-      allComponents,
-      maxLevel
-    );
-
+    
     // Add colorCellBackground property to hide background colors
-    const phenotypesWithColorSettings = descendants.map((phenotype: any) => ({
+    const phenotypesWithColorSettings = filteredPhenotypes.map((phenotype: any) => ({
       ...phenotype,
       colorCellBackground: false,
     }));
-
+    
     return {
       rows: phenotypesWithColorSettings,
       columns: componentPhenotypeColumns,
     };
-  }
-
-  /**
-   * Hierarchically ordered descendants of `parentId` limited by depth.
-   * `maxLevel` 0 returns nothing, 1 returns direct children, 2 adds
-   * grandchildren, etc. Pass `Infinity` to return the full subtree.
-   */
-  private getComponentDescendantsUpToLevel(
-    parentId: string,
-    components: TableRow[],
-    maxLevel: number,
-    currentLevel: number = 1
-  ): TableRow[] {
-    if (currentLevel > maxLevel) {
-      return [];
-    }
-
-    const result: TableRow[] = [];
-
-    const directChildren = components.filter(
-      (phenotype: TableRow) =>
-        Array.isArray(phenotype.parentIds) && phenotype.parentIds.includes(parentId)
-    );
-    directChildren.sort((a, b) => (a.index || 0) - (b.index || 0));
-
-    for (const child of directChildren) {
-      result.push(child);
-      result.push(
-        ...this.getComponentDescendantsUpToLevel(child.id, components, maxLevel, currentLevel + 1)
-      );
-    }
-
-    return result;
   }
 }

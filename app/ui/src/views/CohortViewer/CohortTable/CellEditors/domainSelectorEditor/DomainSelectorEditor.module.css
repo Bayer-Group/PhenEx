@@ -9,9 +9,9 @@
 
 .header {
   font-size: 12px;
-  padding: 0px 0px 0px 10px;
+  padding: 0px 10px 0px 10px;
   margin: 0px;
-  border-bottom: var(--border);
+  color: hsla(0, 0%, 100%, 0.5);
 }
 
 .content {
@@ -24,47 +24,4 @@
   padding: 0px;
   overflow-y: auto;
   height: calc(100% - 50px);
-}
-
-.domainSection {
-  position: relative;
-  margin-bottom: 4px;
-  padding: 4px 30px 8px 8px;
-  background-color: transparent;
-  border-radius: var(--border-radius);
-  border: transparent solid 1px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.domainSection:hover {
-  border-color: var(--line-color);
-  background-color: var(--color-accent-hover);
-}
-
-.domainSection.selected {
-  background-color: var(--color-accent-hover);
-  border-color: var(--color-accent);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--color-accent);
-}
-
-.domainSection.selected:hover {
-  color: black;
-}
-
-.domainInfo {
-  font-family: 'IBMPlexSans-regular';
-  font-size: 10px;
-  margin: 0px;
-}
-
-.listItem{
-  color: white !important;
-  font-size: var(--font_size_items) !important;
-
-}
-
-.listItemSelected{
-  border-color: white;
 }

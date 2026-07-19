@@ -8,6 +8,7 @@ import { SmartBreadcrumbs } from '../../../../components/SmartBreadcrumbs';
 import { DeleteConfirmModal } from '../../../../components/DeleteConfirmModal/DeleteConfirmModal';
 import { TwoPanelCohortViewerService } from '../../../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { CohortViewType } from '../../../CohortViewer/CohortViewer';
+import { PhenotypeCardActions } from './PhenotypeCardActions';
 
 interface PhenotypeViewerHorizontalCellProps {
   data: Phenotype;
@@ -74,7 +75,12 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
 
     return (
       <>
-        <div className={`${styles.index} ${typeColor}`}>{data.hierarchical_index}</div>
+        <div className={styles.indexLabel}>
+          {data.effective_type && (
+            <div className={`${styles.typeLabel} ${typeColor}`}>{data.effective_type}</div>
+          )}
+          <div className={`${styles.index} ${typeColor}`}>{data.hierarchical_index}</div>
+        </div>
         <SmartBreadcrumbs
           items={breadcrumbItems}
         //   onEditLastItem={newValue => dataService.valueChanged('name', newValue)}
@@ -97,33 +103,14 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
     <div className={styles.cell} onClick={onClose}>
 
       <div className={`${styles.card}`} onClick={e => e.stopPropagation()}>
+        <PhenotypeCardActions
+          phenotypeId={data.id ?? ''}
+          onDelete={() => setShowDeleteModal(true)}
+          onClose={onClose}
+        />
         <div className={styles.header}>
-
           <div className={styles.headerTopRow}>
-                            {renderBreadcrumbs()}
-
-            <button
-              className={styles.deleteButton}
-              onClick={() => setShowDeleteModal(true)}
-              title="Delete this phenotype"
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                <path d="M10 11v6" />
-                <path d="M14 11v6" />
-                <path d="M9 6V4h6v2" />
-              </svg>
-            </button>
+            {renderBreadcrumbs()}
           </div>
           <div className={styles.descriptionContainer}>
             <textarea

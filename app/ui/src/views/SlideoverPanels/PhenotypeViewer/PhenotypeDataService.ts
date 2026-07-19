@@ -35,7 +35,7 @@ export class PhenotypeDataService {
   // Panel-local visibility state, independent from the main cohort table.
   // Direct children are always shown; this toggle additionally reveals deeper
   // generations (subchildren) up to `_componentLevel`.
-  private _showSubchildren: boolean = false;
+  private _showSubchildren: boolean = true;
   // Max component depth shown when subchildren are enabled. Level 1 = direct
   // children, level 2 = grandchildren; `Infinity` shows the full subtree.
   private _componentLevel: number = Number.POSITIVE_INFINITY;

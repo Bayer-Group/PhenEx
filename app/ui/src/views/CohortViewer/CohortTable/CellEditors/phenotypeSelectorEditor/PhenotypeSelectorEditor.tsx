@@ -56,56 +56,26 @@ export interface PhenotypeSelectorEditorProps {
 //     info: 'For identifying changes in a numerical value e.g. drop of Hb of 2 g/dL over 2 days',
 //   },
 // ];
-const phenotypes = [
-  {
-    name: 'CodelistPhenotype',
-    info: '',
-  },
-  {
-    name: 'MeasurementPhenotype',
-    info: '',
-  },
-  {
-    name: 'CategoricalPhenotype',
-    info: '',
-  },
-  {
-    name: 'TimeRangePhenotype',
-    info: '',
-  },
-  {
-    name: 'AgePhenotype',
-    info: '',
-  },
-  { name: 'DeathPhenotype', 
-    info: '',
-  },
-
-  {
-    name: 'LogicPhenotype',
-    info: '',
-  },
-  {
-    name: 'ScorePhenotype',
-    info: '',
-  },
-  {
-    name: 'ArithmeticPhenotype',
-    info: '',
-  },
-  {
-    name: 'EventCountPhenotype',
-    info: '',
-  },
-  {
-    name: 'BinPhenotype',
-    info: '',
-  },
-  {
-    name: 'MeasurementChange',
-    info: '',
-  },
+const phenotypeNames = [
+  'CodelistPhenotype',
+  'MeasurementPhenotype',
+  'CategoricalPhenotype',
+  'TimeRangePhenotype',
+  'AgePhenotype',
+  'DeathPhenotype',
+  'LogicPhenotype',
+  'ScorePhenotype',
+  'ArithmeticPhenotype',
+  'EventCountPhenotype',
+  'BinPhenotype',
+  'MeasurementChange',
 ];
+
+const phenotypes = phenotypeNames.map(name => ({
+  name,
+  label: name.replace('Phenotype', ''),
+  info: '',
+}));
 
 
 export const PhenotypeSelectorEditor: React.FC<PhenotypeSelectorEditorProps> = props => {

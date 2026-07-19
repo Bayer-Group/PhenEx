@@ -1062,7 +1062,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           <div className={styles.editingOverlay} onClick={() => commitEdit()} />
         )}
         {rows.length === 0 ? (
-          <div className={styles.emptyState}>No phenotypes defined</div>
+          <div className={styles.emptyState}></div>
         ) : cardMode ? (
           <CohortCardViewerPinnedCols
             ref={pinnedContentRef}

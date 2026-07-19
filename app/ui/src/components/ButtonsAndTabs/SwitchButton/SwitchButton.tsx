@@ -7,6 +7,8 @@ export interface SwitchButtonProps {
   value: boolean;
   onValueChange?: (value: boolean) => void;
   tooltip?: string;
+  light?: boolean;
+  dark?: boolean;
   classNameSwitchContainer?: string;
   classNameLabel?: string;
   classNameSwitchBackground?: string;
@@ -22,6 +24,8 @@ export const SwitchButton: React.FC<SwitchButtonProps> = ({
   value,
   onValueChange,
   tooltip,
+  light,
+  dark,
   classNameSwitchContainer,
   classNameLabel,
   classNameSwitchBackground,
@@ -46,11 +50,13 @@ export const SwitchButton: React.FC<SwitchButtonProps> = ({
     ? `${styles.switchSelected} ${classNameSwitchSelected || ''}`
     : `${styles.switch} ${classNameSwitch || ''}`;
 
+  const variantClass = dark ? styles.dark : light ? styles.light : '';
+
   return (
     <>
       <div 
         ref={containerRef}
-        className={`${styles.container} ${classNameSwitchContainer || ''}`}
+        className={`${styles.container} ${variantClass} ${classNameSwitchContainer || ''}`}
         onMouseEnter={() => tooltip && setShowTooltip(true)}
         onMouseLeave={() => tooltip && setShowTooltip(false)}
       >

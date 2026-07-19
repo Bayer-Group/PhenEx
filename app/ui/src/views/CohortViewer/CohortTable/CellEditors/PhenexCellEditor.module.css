@@ -15,7 +15,6 @@
   right: 0;
   bottom: 0;
   z-index: 100000;
-  background-color: transparent;
 }
 
 
@@ -73,36 +72,23 @@
   border: 1px solid white !important;
 }
 
-.composerContainer {
+.composerContainer { /* container for listview editors */
   width:100%;
   border-radius: 10px;
   position: relative;
-  color: var(--text_color_notfocus);
   overflow: hidden;
   animation: fadeIn 0.05s ease-in-out;
   padding: 0px;
 
 
-  background: hsl(30, 60%, 94%, 0.5);
+  background: var(--color-accent-bright);
+  color: var(--background_color_light);
   border: 1px solid hsl(0, 1%, 71%);
-  border-radius:15px;
+  border-radius:10px;
   box-shadow: 0px 8px 20px rgba(91, 87, 86, 0.3);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-}
-
-.composerHeader {
-  padding: 8px 12px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  cursor: grab;
-  user-select: none;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.composerHeader:active {
-  cursor: grabbing;
+  padding-bottom:10px;
+  /* backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px); */
 }
 
 .composerTitle {
@@ -368,15 +354,15 @@
   height: 100%;
 }
 
-.currentSelectionContainer {
+.currentSelectionContainer { /* A : the bottom of the two halves that make up the phenex editor. contains the content */
   display: flex;
   flex-direction: column;
   background-color:var(--background_color_light) !important;
   padding: 5px;
   border-radius: 0 0 10px 10px;
-  border-left: var(--border);
-  border-bottom: var(--border);
-  border-right: var(--border);
+  border-left: var(--border_dark);
+  border-bottom: var(--border_dark);
+  border-right: var(--border_dark);
   box-shadow: 0px 8px 20px rgba(91, 87, 86, 0.3);
 
 }
@@ -407,7 +393,7 @@
   cursor: grabbing;
 }
 
-.currentSelectionInfo {
+.currentSelectionInfo { /* B : the top of the two halves that make up the phenex editor. contains the content */
   display: flex;
   flex-direction: column;
   gap: 0px;
@@ -417,7 +403,9 @@
   /* width:calc(100% + 8px); */
   border-radius: 10px 10px 0px 0px;
   background-color: var(--background_color_light)  !important; /* TEMPORARY - REMOVE LATER */
-  border: 1px solid var(--line-color);
+  /* border: 1px solid var(--line-color); */
+    border: var(--border_dark);
+
   border-bottom: none;
 
 }
@@ -513,7 +501,6 @@
 
 .composerChin {
   background: hsla(30, 60%, 94%, 0.5);
-  border: 1px solid hsl(0, 1%, 71%);
   border-top: none;
   border-radius: 0 0 15px 15px;
   backdrop-filter: blur(30px);

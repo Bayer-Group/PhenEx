@@ -163,7 +163,7 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   return (
     <div className={styles.gridWrapper}>
       <div className={`${styles.gridContainer} ag-root ${typeColorDim}`}>
-        {editing && <div className={styles.editingOverlay} onClick={() => commitEdit()} />}
+        {editing && <div className={styles.editingOverlay} onClick={e => { e.stopPropagation(); commitEdit(); }} />}
         {rows.map((rowData, rowIndex) => (
           <div key={rowData?.parameter ?? rowIndex} className={styles.row}>
             {columns.map(colDef => (

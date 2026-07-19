@@ -415,7 +415,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     
     return {
       currentSelection: {
-        bottomLeft: `${bottomSectionLeft}px`,
+        bottomLeft: `${bottomSectionLeft + 20}px`,
         bottomTop: bottomSectionTop,
         width: `${cellWidth}px`,
         bottomHeight: `${cellHeight}px`,
@@ -826,7 +826,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         <div
           style={{
             width: 'fit-content',
-            minWidth: '100px',
+            minWidth: '70px',
             maxWidth: '600px',
             maxHeight: portalPosition.composer.maxHeight,
             zIndex: 100001,
@@ -842,8 +842,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         >
           <div className={`${styles.composerContent}`}>
             {renderMainContent()}
-          </div>
-          <div className={`${styles.composerHeader}`} data-drag-handle="true">
           </div>
         </div>
       </DraggablePortal>

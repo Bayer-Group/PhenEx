@@ -2,57 +2,9 @@
   color:white !important;
   /* background-color: var(--background-color); */
 }
-.phenotypeSection {
-  position: relative;
-  margin-bottom: 4px;
-  padding: 4px 30px 8px 8px;
-  background-color: transparent;
-  border-radius: var(--border-radius);
-  border: transparent solid 1px;
-}
-
-.phenotypeSection:hover {
-  border-color: var(--line-color);
-  background-color: var(--background_color_light) !important;
-}
-
-.phenotypeSection.selected {
-  background-color: var(--color-accent-hover);
-  border-color: var(--color-accent);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--color-accent);
-  font-family: "IBMPlexSans-bold";
-}
-
-.phenotypeSection.selected:hover {
-  color: black;
-}
-
-.phenotypeName {
-  font-family: 'IBMPlexSans-bold';
-  /* line-height: 1.2; */
-}
-
-.phenotypeInfo {
-  margin: 0;
-  margin-top: 0px;
-  padding-left: 3px;
-  /* width: calc(100% - 50px); */
-  font-size: 10px;
-}
 
 .listItem{
-  color: var(--text_color_notfocus) !important;
+  /* color: var(--text_color_notfocus) !important; */
   font-size: var(--font_size_items) !important;
-  border-radius: 8px;
-}
-
-.listItem:hover{
-  color: var(--text_color_notfocus) !important;
-  background-color: transparent !important;
-}
-
-.listItemSelected{
-  background-color: var(--background_color_light) !important;
-  border-color: var(--button-border-color-hover);
+  /* border-radius: 8px; */
 }

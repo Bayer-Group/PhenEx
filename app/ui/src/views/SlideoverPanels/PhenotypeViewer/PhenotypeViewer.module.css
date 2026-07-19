@@ -52,7 +52,7 @@
 .gridWrapper {
   background-color: transparent;
   border-radius: 20px;
-  min-height: 200px;
+  /* min-height: 200px; */
 }
 
 /* One parameter row: parameter cell (pinned width) + value cell (flex). Both
@@ -72,10 +72,11 @@
   border-bottom: none;
 }
 
-/* Covers the grid while a cell is being edited so clicking anywhere outside the
-   editor commits the edit. Sits below the editor portals. */
+/* Covers the full viewport while a cell is being edited so clicking anywhere
+   outside the editor commits the edit without closing the PhenotypeViewer.
+   Sits below the editor portals (DraggablePortal z-index 9999 wins by DOM order). */
 .editingOverlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 3;
   cursor: default;
