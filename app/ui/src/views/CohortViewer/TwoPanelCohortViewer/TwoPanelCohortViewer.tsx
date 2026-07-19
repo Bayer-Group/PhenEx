@@ -158,9 +158,37 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
 
   const viewer =
     contentMode === 'study' ? (
-      <StudyViewer data={data} embeddedMode={true} activeTabIndex={currentTabIndex} />
+      <StudyViewer
+        data={data}
+        embeddedMode={true}
+        activeTabIndex={currentTabIndex}
+        rightBottomNavContent={
+          <CallToActionNavBar
+            height={44}
+            mode={'studyviewer'}
+            onSectionTabChange={setCurrentTabIndex}
+            onAddButtonClick={handleAddNewCohort}
+            shadow={true}
+            showReport={isReportMode}
+            onShowReportChange={setReportMode}
+          />
+        }
+      />
     ) : (
-      <CohortViewer data={service.getData()} activeTabIndex={currentTabIndex} />
+      <CohortViewer
+        data={service.getData()}
+        activeTabIndex={currentTabIndex}
+        rightBottomNavContent={
+          <CallToActionNavBar
+            height={44}
+            mode={'cohortviewer'}
+            onSectionTabChange={setCurrentTabIndex}
+            shadow={true}
+            showReport={isReportMode}
+            onShowReportChange={setReportMode}
+          />
+        }
+      />
     );
 
   return (
@@ -169,17 +197,6 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
         <div className={styles.contentSection}>
           <div className={styles.leftContentWrapper}>
             <div className={styles.leftContentViewer}>{viewer}</div>
-            <div className={styles.navBarFloat}>
-            <CallToActionNavBar
-              height={44}
-              mode={contentMode === 'study' ? 'studyviewer' : 'cohortviewer'}
-              onSectionTabChange={setCurrentTabIndex}
-              onAddButtonClick={contentMode === 'study' ? handleAddNewCohort : undefined}
-              shadow={true}
-              showReport={isReportMode}
-              onShowReportChange={setReportMode}
-            />
-            </div>
           </div>
         </div>
 

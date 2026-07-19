@@ -41,3 +41,14 @@
   flex-direction: row;
   gap: 10px;
 }
+
+.bottomRightUnified {
+  position: absolute;
+  bottom: 100px;
+  right: 50px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 10px;
+  z-index: 30;
+}

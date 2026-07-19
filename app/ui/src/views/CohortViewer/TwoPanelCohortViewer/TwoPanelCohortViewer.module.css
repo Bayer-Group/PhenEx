@@ -55,14 +55,6 @@
   overflow: hidden;
 }
 
-.navBarFloat {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-}
-
 /* Study mode: floating top section - now same as default */
 .studyMode .topSection {
   /* No additional styles needed - uses default absolute positioning */

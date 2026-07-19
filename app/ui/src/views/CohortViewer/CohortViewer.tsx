@@ -1,4 +1,4 @@
-import { FC, useState, useRef, useEffect } from 'react';
+import { FC, ReactNode, useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './CohortViewer.module.css';
 import { CohortDataService } from './CohortDataService/CohortDataService';
@@ -34,6 +34,7 @@ interface CohortViewerProps {
   data?: string;
   onAddPhenotype?: () => void;
   activeTabIndex?: number;
+  rightBottomNavContent?: ReactNode;
 }
 
 export enum CohortViewType {
@@ -42,7 +43,12 @@ export enum CohortViewType {
   Report = 'report',
 }
 
-export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, activeTabIndex }) => {
+export const CohortViewer: FC<CohortViewerProps> = ({
+  data,
+  onAddPhenotype,
+  activeTabIndex,
+  rightBottomNavContent,
+}) => {
   const navigate = useNavigate();
   const { studyId: urlStudyId } = useParams<{ studyId: string }>();
   const [cohortName, setCohortName] = useState('');
@@ -427,7 +433,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
           {renderTable()}
           <div className={styles.bottomGradient} />
         </div>
-        <div className={navBarStyles.topRight}>
+        <div className={navBarStyles.bottomRightUnified}>
           <ViewNavBar
             height={44}
             scrollPercentage={scrollPercentage}
@@ -439,6 +445,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
             flipScrollDirection={flipScrollDirection}
             onFlipScrollDirectionChange={setFlipScrollDirection}
           />
+          {rightBottomNavContent}
         </div>
       </div>
   );

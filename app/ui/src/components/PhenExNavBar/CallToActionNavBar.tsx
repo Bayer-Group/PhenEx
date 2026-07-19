@@ -196,7 +196,7 @@ export const CallToActionNavBar: React.FC<CallToActionNavBarProps> = ({
   };
 
   return (
-    <div className={`${styles.navBar} ${styles.CallToActionNavBar} ${shadow ? '' : styles.noshadow}`} style={{ height: `${height}px`, display: 'flex', alignItems: 'center', gap: '0px' }}>
+    <div className={`${styles.navBar} ${shadow ? '' : styles.noshadow}`} style={{ height: `${height}px`, display: 'flex', alignItems: 'center', gap: '0px' }}>
       {/* Left: CohortNavBar section */}
       <div>
         <div ref={dragHandleRef} data-drag-handle style={{ cursor: 'grab', userSelect: 'none', padding: '0 0' }}>
