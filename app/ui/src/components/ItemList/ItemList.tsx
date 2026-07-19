@@ -20,7 +20,7 @@ export const ItemList: React.FC<ItemListProps> = ({
   showFilter = false,
 }) => {
   const [filterText, setFilterText] = useState('');
-  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const filterInputRef = useRef<HTMLInputElement>(null);
 
   // Filter items based on search text
@@ -44,7 +44,7 @@ export const ItemList: React.FC<ItemListProps> = ({
 
   // Reset highlighted index when filter changes
   useEffect(() => {
-    setHighlightedIndex(0);
+    setHighlightedIndex(-1);
   }, [filterText]);
 
   // Handle keyboard navigation
@@ -58,13 +58,13 @@ export const ItemList: React.FC<ItemListProps> = ({
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setHighlightedIndex(prev => Math.min(prev + 1, filteredItems.length - 1));
+        setHighlightedIndex(prev => Math.min(prev + 1 < 0 ? 0 : prev + 1, filteredItems.length - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setHighlightedIndex(prev => Math.max(prev - 1, 0));
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        if (filteredItems[highlightedIndex]) {
+        if (highlightedIndex >= 0 && filteredItems[highlightedIndex]) {
           onSelect?.(filteredItems[highlightedIndex].name);
         }
       } else if (!isFilterInput && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
