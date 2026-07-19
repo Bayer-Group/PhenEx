@@ -53,6 +53,11 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
   }, [localDescription]);
 
   const typeColor = typeStyles[`${data.effective_type}_text_color`];
+  const cardBorderStyle = data.effective_type
+    ? ({
+        ['--phenotype-frame-border-color' as any]: `color-mix(in srgb, var(--color_${data.effective_type}_dim) 82%, black)`,
+      } as React.CSSProperties)
+    : undefined;
 
   const onClickAncestor = (ancestor: Phenotype) => {
     TwoPanelCohortViewerService.getInstance().displayExtraContent(
@@ -102,7 +107,7 @@ export const PhenotypeViewerHorizontalCell: FC<PhenotypeViewerHorizontalCellProp
   return (
     <div className={styles.cell} onClick={onClose}>
 
-      <div className={`${styles.card}`} onClick={e => e.stopPropagation()}>
+      <div className={styles.card} style={cardBorderStyle} onClick={e => e.stopPropagation()}>
         <PhenotypeCardActions
           phenotypeId={data.id ?? ''}
           onDelete={() => setShowDeleteModal(true)}

@@ -23,7 +23,7 @@
   box-sizing: border-box;
   position: relative;
   gap: 6px;
-  border-right: 1px solid var(--line-color);
+  border-right: 1px solid var(--grid-border-color, var(--line-color));
 }
 
 

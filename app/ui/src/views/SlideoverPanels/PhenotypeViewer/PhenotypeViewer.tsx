@@ -8,7 +8,6 @@ import {
   createShimApi,
   isColumnEditable,
 } from '../../CohortViewer/CohortCardViewer/gridApiShim';
-import typeStyles from '../../../styles/study_types.module.css';
 
 interface PhenotypeViewerProps {
   data?: Phenotype;
@@ -33,7 +32,6 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const [rows, setRows] = useState<any[]>(dataService.rowData);
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [, forceTick] = useState(0);
-  const [typeColorDim, setTypeColorDim] = useState('');
 
   // Live refs so shim callbacks always read the current values.
   const rowsRef = useRef(rows);
@@ -126,13 +124,6 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     if (data) dataService.setData(data);
     setEditing(null);
 
-    // // Type-based background tint on the grid container.
-    // if (data?.effective_type && typeStyles[`${data.effective_type}_color_block_dim`]) {
-    //   setTypeColorDim(typeStyles[`${data.effective_type}_color_block_dim`]);
-    // } else {
-    //   setTypeColorDim('');
-    // }
-
     return () => dataService.removeListener(listener);
   }, [data, dataService]);
 
@@ -160,12 +151,29 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     );
   }
 
+  const getBorderColorVar = (rowLike: any): string => {
+    const shouldColorBorder = rowLike?.colorCellBorder !== undefined ? rowLike.colorCellBorder : true;
+    return shouldColorBorder && rowLike?.effective_type
+      ? `color-mix(in srgb, var(--color_${rowLike.effective_type}_dim) 82%, black)`
+      : 'transparent';
+  };
+
+  const gridBorderStyle = ({
+    ['--grid-border-color' as any]: getBorderColorVar(data?.effective_type ? data : rows[0]),
+  } as React.CSSProperties);
+
   return (
     <div className={styles.gridWrapper}>
-      <div className={`${styles.gridContainer} ag-root ${typeColorDim}`}>
+      <div className={styles.gridContainer} style={gridBorderStyle}>
         {editing && <div className={styles.editingOverlay} onClick={e => { e.stopPropagation(); commitEdit(); }} />}
         {rows.map((rowData, rowIndex) => (
-          <div key={rowData?.parameter ?? rowIndex} className={styles.row}>
+          <div
+            key={rowData?.parameter ?? rowIndex}
+            className={styles.row}
+            style={{
+              ['--grid-border-color' as any]: getBorderColorVar(rowData),
+            }}
+          >
             {columns.map(colDef => (
               <CohortCardCell
                 key={colDef.field}
