@@ -62,19 +62,6 @@ const getViewportDimensions = () => ({
   height: window.innerHeight,
 });
 
-const getGridDimensions = (gridElement: HTMLElement | null) => {
-  if (!gridElement) return null;
-  const rect = gridElement.getBoundingClientRect();
-  return {
-    top: rect.top,
-    left: rect.left,
-    width: rect.width,
-    height: rect.height,
-    bottom: rect.bottom,
-    right: rect.right,
-  };
-};
-
 export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) => {
   const [currentValue, setCurrentValue] = useState(() => props.value);
   const [recentlyDragged, setRecentlyDragged] = useState(false);
@@ -324,12 +311,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const calculatePosition = () => {
     const viewport = getViewportDimensions();
     const cellElement = props.eGridCell as HTMLElement;
-    const gridContainer = cellElement?.closest('.ag-root') as HTMLElement;
-    const gridDimensions = getGridDimensions(gridContainer);
     const cellRect = cellElement?.getBoundingClientRect();
 
-    if (!cellRect || !gridDimensions) {
-      console.warn('Could not find necessary elements for positioning');
+      if (!cellRect) {
+        console.warn('Could not find grid cell for positioning');
       return {
         currentSelection: { 
           bottomLeft: 0, 
