@@ -3,41 +3,42 @@ import { MessagesDisplay } from './MessagesDisplay/MessagesDisplay';
 import { HeightAdjustableContainer } from '../../components/HeightAdjustableContainer/HeightAdjustableContainer';
 import styles from './ChatPanel.module.css'
 import { InteractionArea, InteractionAreaRef } from './InteractionArea/InteractionArea';
-import { chatPanelDataService } from './ChatPanelDataService';
 import { ChatHistoryPanel } from './ChatHistoryPanel/ChatHistoryPanel';
+import { useChatService } from './ChatServiceContext';
 
 interface ChatPanelProps {
   onTextEnter?: (text: string) => void;
 }
 
 export const ChatPanel: React.FC<ChatPanelProps> = () => {
+  const chatService = useChatService();
   const [userHasInteracted, setUserHasInteracted] = useState(false);
   const [bottomContainerHeight, setBottomContainerHeight] = useState(200);
   const [showHistory, setShowHistory] = useState(false);
   const interactionAreaRef = useRef<InteractionAreaRef>(null);
 
-  const studyId = chatPanelDataService['_studyId'] || undefined;
+  const studyId = chatService.getStudyId();
 
   const handleHeightChange = (height: number) => {
     setBottomContainerHeight(height);
   };
 
   useEffect(() => {
-    const userMessageCount = chatPanelDataService.getUserMessageCount();
+    const userMessageCount = chatService.getUserMessageCount();
     setUserHasInteracted(userMessageCount > 0);
 
     const handleMessagesUpdated = () => {
-      const currentUserMessageCount = chatPanelDataService.getUserMessageCount();
+      const currentUserMessageCount = chatService.getUserMessageCount();
       if (currentUserMessageCount > 0) setUserHasInteracted(true);
     };
 
-    chatPanelDataService.onMessagesUpdated(handleMessagesUpdated);
-    return () => chatPanelDataService.removeMessagesUpdatedListener(handleMessagesUpdated);
-  }, []);
+    chatService.onMessagesUpdated(handleMessagesUpdated);
+    return () => chatService.removeMessagesUpdatedListener(handleMessagesUpdated);
+  }, [chatService]);
 
   const handleResumeSession = () => {
     setShowHistory(false);
-    setUserHasInteracted(chatPanelDataService.getUserMessageCount() > 0);
+    setUserHasInteracted(chatService.getUserMessageCount() > 0);
   };
 
   return (

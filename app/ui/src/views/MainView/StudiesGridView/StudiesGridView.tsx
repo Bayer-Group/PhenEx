@@ -1,19 +1,46 @@
 import { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './StudiesGridView.module.css';
-import { CohortsDataService, StudyData } from '../../LeftPanel/CohortsDataService';
+import { CohortsDataService } from '../../LeftPanel/CohortsDataService';
 import { AuthContext } from '@/auth/AuthProvider';
-import { deleteStudy, createDemoStudy } from '@/api/text_to_cohort/route';
+import {
+  deleteStudy,
+  createDemoStudy,
+  getStudiesWithModuleStatus,
+  StudyWithModuleStatus,
+  ModuleStatus,
+} from '@/api/text_to_cohort/route';
 import { LoginModal } from '../../../components/Form';
 import { StudyIntakeWizard } from '../../StudyViewer/NewStudyWizard/StudyIntakeWizard';
 import type { StudyIntake } from '../../StudyViewer/NewStudyWizard/StudyIntakeWizard';
 
-export const StudiesGridView = () => {
-  const [userStudies, setUserStudies] = useState<StudyData[]>([]);
-  const [publicStudies, setPublicStudies] = useState<StudyData[]>([]);
+// ── Module pill config (extend here as new modules ship) ──────────────────────
+
+interface ModuleDef {
+  key: string;
+  label: string;
+  route: (studyId: string) => string;
+  color: string;       // active colour
+}
+
+const MODULE_DEFS: ModuleDef[] = [
+  { key: 'cohorts', label: 'Cohorts',    route: (id) => `/studies/${id}`, color: '#1a6fbf' },
+  { key: 'tlf',     label: 'TLF Review', route: (id) => `/tlfs/${id}`,    color: '#1a8a5e' },
+];
+
+// ── Props ─────────────────────────────────────────────────────────────────────
+
+interface StudiesGridViewProps {
+  hideTitle?: boolean;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export const StudiesGridView = ({ hideTitle = false }: StudiesGridViewProps) => {
+  const [studies, setStudies] = useState<StudyWithModuleStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [deleteConfirmStudy, setDeleteConfirmStudy] = useState<StudyData | null>(null);
+  const [deleteConfirmStudy, setDeleteConfirmStudy] = useState<StudyWithModuleStatus | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [showIntakeWizard, setShowIntakeWizard] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -23,41 +50,25 @@ export const StudiesGridView = () => {
 
   const isAnonymous = user?.isAnonymous ?? true;
 
+  const loadStudies = async () => {
+    setLoading(true);
+    try {
+      const data = await getStudiesWithModuleStatus();
+      setStudies(data);
+    } catch (error) {
+      console.error('Failed to load studies:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadStudies = async () => {
-      setLoading(true);
-      try {
-
-        // Force fresh data by clearing cache in the data service
-        // @ts-ignore - accessing private properties to force refresh
-        dataService._userStudies = null;
-        // @ts-ignore
-        dataService._publicStudies = null;
-
-        const [user, publicStuds] = await Promise.all([
-          dataService.getUserStudies(),
-          dataService.getPublicStudies()
-        ]);
-        
-        setUserStudies(user);
-        setPublicStudies(publicStuds);
-      } catch (error) {
-        console.error('Failed to load studies:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    if (isAnonymous) { setLoading(false); return; }
     loadStudies();
-
-    // Listen for changes
-    const listener = () => {
-      loadStudies();
-    };
+    const listener = () => loadStudies();
     dataService.addListener(listener);
-
     return () => dataService.removeListener(listener);
-  }, [user]); // Re-load studies when user changes
+  }, [user]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -66,20 +77,25 @@ export const StudiesGridView = () => {
         setOpenMenuId(null);
       }
     };
-
     if (openMenuId) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [openMenuId]);
 
-  const handleStudyClick = (studyId: string) => {
-    navigate(`/studies/${studyId}`);
+  // Navigate to the primary module for a study:
+  // If cohorts module has activity → cohort editor; else if TLF → TLF viewer
+  const handleStudyClick = (study: StudyWithModuleStatus) => {
+    if ((study.modules.cohorts?.status ?? 'none') !== 'none') {
+      navigate(`/studies/${study.id}`);
+    } else if ((study.modules.tlf?.status ?? 'none') !== 'none') {
+      navigate(`/tlfs/${study.id}`);
+    } else {
+      navigate(`/studies/${study.id}`);
+    }
   };
 
-  const handleCreateFirstStudy = async () => {
-    setShowIntakeWizard(true);
-  };
+  const handleCreateFirstStudy = () => setShowIntakeWizard(true);
 
   const handleIntakeFinish = async (intake: StudyIntake, action: 'shell' | 'ai') => {
     setShowIntakeWizard(false);
@@ -111,48 +127,25 @@ export const StudiesGridView = () => {
     }
   };
 
-  const handleSignIn = () => {
-    setIsLoginModalOpen(true);
-  };
-
-  const handleLoginSuccess = () => {
-    setIsLoginModalOpen(false);
-    // The useEffect hook will automatically reload studies when the user context changes
-  };
-
   const handleMenuClick = (e: React.MouseEvent, studyId: string) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation();
     setOpenMenuId(openMenuId === studyId ? null : studyId);
   };
 
-  const handleDeleteClick = (e: React.MouseEvent, study: StudyData) => {
-    e.stopPropagation(); // Prevent card click
+  const handleDeleteClick = (e: React.MouseEvent, study: StudyWithModuleStatus) => {
+    e.stopPropagation();
     setDeleteConfirmStudy(study);
     setOpenMenuId(null);
   };
 
   const handleConfirmDelete = async () => {
     if (!deleteConfirmStudy) return;
-    
     try {
       await deleteStudy(deleteConfirmStudy.id);
-      
-      console.log('🗑️ Study deleted, clearing all caches and notifying listeners');
-      
-      // Force cache refresh by invalidating the cache
       dataService.invalidateCache();
-      
-      // Notify listeners to trigger left panel update
-      // @ts-ignore - accessing private method to force notification
+      // @ts-ignore
       dataService.notifyListeners();
-      
-      // Refresh the studies list with fresh data
-      const [user, publicStuds] = await Promise.all([
-        dataService.getUserStudies(),
-        dataService.getPublicStudies()
-      ]);
-      setUserStudies(user);
-      setPublicStudies(publicStuds);
+      await loadStudies();
       setDeleteConfirmStudy(null);
     } catch (error) {
       console.error('Failed to delete study:', error);
@@ -160,22 +153,21 @@ export const StudiesGridView = () => {
     }
   };
 
-  const handleCancelDelete = () => {
-    setDeleteConfirmStudy(null);
-  };
+  // ── Study card ─────────────────────────────────────────────────────────────
 
-  const renderStudyCard = (study: StudyData, isUserStudy: boolean = false) => {
+  const renderStudyCard = (study: StudyWithModuleStatus) => {
     const isMenuOpen = openMenuId === study.id;
-    
+
     return (
       <div
         key={study.id}
         className={styles.studyCard}
-        onClick={() => handleStudyClick(study.id)}
+        onClick={() => handleStudyClick(study)}
       >
+        {/* Header row */}
         <div className={styles.studyCardHeader}>
           <h3 className={styles.studyCardTitle}>{study.name}</h3>
-          {isUserStudy && !study.is_public && (
+          {!study.is_public && (
             <div className={styles.menuContainer} ref={isMenuOpen ? menuRef : null}>
               <button
                 className={styles.menuButton}
@@ -190,10 +182,7 @@ export const StudiesGridView = () => {
               </button>
               {isMenuOpen && (
                 <div className={styles.menuDropdown}>
-                  <button
-                    className={styles.menuItem}
-                    onClick={(e) => handleDeleteClick(e, study)}
-                  >
+                  <button className={styles.menuItem} onClick={(e) => handleDeleteClick(e, study)}>
                     Delete Study
                   </button>
                 </div>
@@ -201,25 +190,51 @@ export const StudiesGridView = () => {
             </div>
           )}
         </div>
+
+        {/* Description */}
         {study.description && (
           <div className={styles.studyCardDescription}>
             {(() => {
               try {
                 const delta = JSON.parse(study.description);
-                if (delta?.ops) return delta.ops.map((op: { insert?: unknown }) => typeof op.insert === 'string' ? op.insert : '').join('');
+                if (delta?.ops) return delta.ops.map((op: { insert?: unknown }) =>
+                  typeof op.insert === 'string' ? op.insert : '').join('');
               } catch {}
               return study.description;
             })()}
           </div>
         )}
-        <div className={styles.studyCardFooter}>
-          <span className={styles.studyCardType}>
-            {study.is_public ? 'Public' : 'Private'}
-          </span>
+
+        {/* Module pills */}
+        <div className={styles.modulePills}>
+          {MODULE_DEFS.map((def) => {
+            const mod: ModuleStatus = study.modules[def.key] ?? { status: 'none', detail: null };
+            const isActive = mod.status !== 'none';
+            return (
+              <button
+                key={def.key}
+                className={`${styles.modulePill} ${isActive ? styles.modulePillActive : styles.modulePillNone}`}
+                style={isActive ? { '--pill-color': def.color } as React.CSSProperties : undefined}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isActive) navigate(def.route(study.id));
+                }}
+                title={mod.detail ?? `${def.label} — not started`}
+              >
+                <span className={`${styles.pillDot} ${isActive ? styles.pillDotActive : ''}`}
+                  style={isActive ? { background: def.color } : undefined}
+                />
+                <span className={styles.pillLabel}>{def.label}</span>
+                {mod.detail && <span className={styles.pillDetail}>{mod.detail}</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
     );
   };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
@@ -232,17 +247,17 @@ export const StudiesGridView = () => {
   return (
     <div className={styles.container}>
       <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>My Studies</h2>
-          {!isAnonymous && userStudies.length > 0 && (
-            <button 
-              className={styles.newStudyButton}
-              onClick={handleCreateFirstStudy}
-            >
-              + New Study
-            </button>
-          )}
-        </div>
+        {!hideTitle && (
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>My Studies</h2>
+            {!isAnonymous && studies.length > 0 && (
+              <button className={styles.newStudyButton} onClick={handleCreateFirstStudy}>
+                + New Study
+              </button>
+            )}
+          </div>
+        )}
+
         {isAnonymous ? (
           <div className={styles.emptyStateWithCta}>
             <div className={styles.ctaContent}>
@@ -250,49 +265,32 @@ export const StudiesGridView = () => {
               <p className={styles.ctaDescription}>
                 Sign in to create and manage your own studies, save your work, and access your personal cohort definitions.
               </p>
-              <button 
-                className={styles.ctaButton}
-                onClick={handleSignIn}
-              >
+              <button className={styles.ctaButton} onClick={() => setIsLoginModalOpen(true)}>
                 Sign In
               </button>
             </div>
           </div>
-        ) : userStudies.length > 0 ? (
+        ) : studies.length > 0 ? (
           <div className={styles.studiesGrid}>
-            {userStudies.map(study => renderStudyCard(study, true))}
+            {studies.map((study) => renderStudyCard(study))}
           </div>
         ) : (
           <div className={styles.emptyStateWithCta}>
             <div className={styles.ctaContent}>
-              <h3 className={styles.ctaTitle}>Let's get started!</h3>
               <p className={styles.ctaDescription}>
-                Create your first study to begin defining cohorts and analyzing patient data.
+                To get started, choose an option above. Or explore a demo study to see PhenEx in action.
               </p>
-              <div className={styles.ctaButtons}>
-                <button 
-                  className={styles.ctaButton}
-                  onClick={handleCreateFirstStudy}
-                >
-                  Create Your First Study
-                </button>
-                <button 
-                  className={styles.ctaButtonSecondary}
-                  onClick={handleSeeDemo}
-                >
-                  See Demo Study
-                </button>
-              </div>
+              <button className={styles.ctaButtonSecondary} onClick={handleSeeDemo}>
+                Load demo study
+              </button>
             </div>
           </div>
         )}
       </div>
 
-
-
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation */}
       {deleteConfirmStudy && (
-        <div className={styles.modalOverlay} onClick={handleCancelDelete}>
+        <div className={styles.modalOverlay} onClick={() => setDeleteConfirmStudy(null)}>
           <div className={styles.alertModal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.alertIcon}>
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -309,7 +307,7 @@ export const StudiesGridView = () => {
               This action cannot be undone. All cohorts in this study will be permanently deleted.
             </p>
             <div className={styles.alertActions}>
-              <button className={styles.alertCancelButton} onClick={handleCancelDelete}>
+              <button className={styles.alertCancelButton} onClick={() => setDeleteConfirmStudy(null)}>
                 Cancel
               </button>
               <button className={styles.alertDeleteButton} onClick={handleConfirmDelete}>
@@ -320,7 +318,6 @@ export const StudiesGridView = () => {
         </div>
       )}
 
-      {/* Study Intake Wizard */}
       <StudyIntakeWizard
         isVisible={showIntakeWizard}
         onClose={() => setShowIntakeWizard(false)}
@@ -328,11 +325,10 @@ export const StudiesGridView = () => {
         onSkip={handleSkipIntake}
       />
 
-      {/* Login Modal */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        onLoginSuccess={handleLoginSuccess}
+        onLoginSuccess={() => setIsLoginModalOpen(false)}
       />
     </div>
   );

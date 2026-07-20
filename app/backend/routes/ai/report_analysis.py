@@ -172,7 +172,7 @@ async def analyze_report(request: AnalyzeRequest):
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message},
             ],
-            max_tokens=4000,
+            max_completion_tokens=4000,
             temperature=0.3,
             response_format={"type": "json_object"},
         )

@@ -10,13 +10,42 @@
   background-color: var(--background_color_dark, #f0f0f0);
 }
 
+.homeButton {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: calc(100% - 16px);
+  margin: 8px 8px 4px;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  color: #666;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.homeButton:hover {
+  background: var(--background_color_light);
+  color: #222;
+}
+
+.homeButtonActive {
+  background: var(--background_color_light);
+  color: #222;
+}
+
 .scrollContent {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: none;
-  padding: 12px 8px 100px;
+  padding: 4px 8px 100px;
   box-sizing: border-box;
 }
 

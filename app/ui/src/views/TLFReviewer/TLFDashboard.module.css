@@ -1,0 +1,285 @@
+.container {
+  height: 100%;
+  overflow-y: auto;
+  padding: 32px 40px;
+  background: var(--background_color_light, hsl(30,60%,94%));
+}
+
+/* ── Loading State ──────────────────────────────────────────── */
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(26,75,191,0.1);
+  border-top-color: #1a4bbf;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loadingText {
+  font-size: 16px;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  color: var(--text-color, #222);
+  margin: 0;
+}
+
+.loadingHint {
+  font-size: 13px;
+  color: var(--text-color-secondary, #888);
+  margin: 0;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+/* ── Error State ────────────────────────────────────────────── */
+
+.errorState {
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.errorTitle {
+  font-size: 18px;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  color: #b91c1c;
+  margin: 0 0 12px;
+}
+
+.errorMessage {
+  font-size: 14px;
+  color: var(--text-color-secondary, #666);
+  margin: 0;
+}
+
+/* ── Analyzing Badge ────────────────────────────────────────── */
+
+.analyzingBadge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-top: 24px;
+  background: rgba(26,75,191,0.06);
+  border: 1px solid rgba(26,75,191,0.15);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1a4bbf;
+}
+
+.analyzingBadge .spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+/* ── Sections ───────────────────────────────────────────────── */
+
+.section {
+  margin-bottom: 40px;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  color: var(--text-color, #222);
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Executive Summary ──────────────────────────────────────── */
+
+.summaryContent {
+  background: var(--background_color_dark, hsl(25,35%,90%));
+  border: 1px solid rgba(26,75,191,0.12);
+  border-radius: 12px;
+  padding: 24px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text-color, #222);
+}
+
+/* ── Main Insights ──────────────────────────────────────────── */
+
+.insightsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.insightCard {
+  display: flex;
+  gap: 16px;
+  background: var(--background_color_dark, hsl(25,35%,90%));
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  padding: 20px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+}
+
+.insightCard:hover {
+  border-color: rgba(26,75,191,0.25);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.insightNumber {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1a6fbf 0%, #1a4bbf 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBMPlexSans-Bold', sans-serif;
+  font-size: 16px;
+}
+
+.insightContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.insightText {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-color, #222);
+}
+
+.supportingData {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(0,0,0,0.03);
+  border-radius: 6px;
+}
+
+.dataPoint {
+  font-size: 13px;
+  font-family: 'IBMPlexMono', monospace;
+}
+
+.dataKey {
+  color: var(--text-color-secondary, #666);
+}
+
+.dataValue {
+  color: var(--text-color, #222);
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+}
+
+/* ── Potential Issues ───────────────────────────────────────── */
+
+.issuesDetails {
+  background: var(--background_color_dark, hsl(25,35%,90%));
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  padding: 0;
+}
+
+.issuesDetails summary {
+  padding: 20px 24px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.issuesDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.issuesDetails summary::before {
+  content: '▶';
+  display: inline-block;
+  width: 16px;
+  font-size: 12px;
+  transition: transform 0.2s;
+  margin-right: 8px;
+}
+
+.issuesDetails[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.noIssues {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-color-secondary, #888);
+  font-size: 14px;
+}
+
+.issuesList {
+  padding: 0 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.issueCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.issueInfo {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.issueWarning {
+  background: #fef3c7;
+  border-color: #fbbf24;
+}
+
+.issueError {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.issueIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.issueContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.issueMessage {
+  font-size: 14px;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  color: var(--text-color, #222);
+  line-height: 1.4;
+}
+
+.issueDetails {
+  font-size: 13px;
+  color: var(--text-color-secondary, #666);
+  line-height: 1.5;
+}

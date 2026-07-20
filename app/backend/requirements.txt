@@ -22,3 +22,4 @@ psycopg[binary]
 argon2-cffi
 medconb-client
 boto3
+seaborn

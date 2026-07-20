@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styles from './ChatHistoryPanel.module.css';
 import { getChatSessions, deleteChatSession, type ChatSession } from '../../../api/chat_history/route';
-import { chatPanelDataService } from '../ChatPanelDataService';
+import { useChatService } from '../ChatServiceContext';
 import { ButtonsBar } from '../../../components/ButtonsAndTabs/ButtonsBar/ButtonsBar';
 
 interface ChatHistoryPanelProps {
@@ -25,6 +25,7 @@ function sessionLabel(session: ChatSession): string {
 }
 
 export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ studyId, onResumeSession }) => {
+  const chatService = useChatService();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ studyId, onR
   const load = async () => {
     setLoading(true);
     try {
-      const data = await getChatSessions(studyId);
+      const data = await getChatSessions(studyId, chatService.getAppContext());
       setSessions(data);
     } catch (e) {
       // Silently show empty state — the table may not exist yet (pending migration)
@@ -45,7 +46,7 @@ export const ChatHistoryPanel: React.FC<ChatHistoryPanelProps> = ({ studyId, onR
   useEffect(() => { load(); }, [studyId]);
 
   const handleResume = async (session: ChatSession) => {
-    await chatPanelDataService.loadSession(session);
+    await chatService.loadSession(session);
     onResumeSession();
   };
 

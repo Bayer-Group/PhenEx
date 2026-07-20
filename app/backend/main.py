@@ -257,6 +257,16 @@ from .routes.ai.report_analysis import router as report_analysis_router
 
 app.include_router(report_analysis_router)
 
+# Include the TLF import router
+from .routes.tlf_import import router as tlf_import_router
+
+app.include_router(tlf_import_router)
+
+# Include the TLF analysis router
+from .routes.tlf_analyze import router as tlf_analyze_router
+
+app.include_router(tlf_analyze_router)
+
 # Include the auth router
 from .routes.auth import router as auth_router
 

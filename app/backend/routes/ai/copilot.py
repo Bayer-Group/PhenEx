@@ -3611,7 +3611,7 @@ User request: {req_body.user_request}
 
             # Stream the agent response in real-time using Pydantic AI's streaming API
             async with agent.run_stream(
-                user_message, deps=context, model_settings={"max_tokens": 8192}
+                user_message, deps=context, model_settings={"max_completion_tokens": 8192}
             ) as result:
                 # Interleave AI text tokens with tool call messages
                 async for text_chunk in result.stream_text(delta=True):

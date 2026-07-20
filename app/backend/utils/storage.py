@@ -265,6 +265,16 @@ def read_json(path: str) -> object:
     return json.loads(read_text(path))
 
 
+def write_bytes(path: str, data: bytes, content_type: str = "application/octet-stream") -> None:
+    if is_s3(path):
+        bucket, key = _parse_s3(path)
+        _get_s3_client().put_object(Bucket=bucket, Key=key, Body=data, ContentType=content_type)
+    else:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(data)
+
+
 def rmtree(path: str) -> None:
     """Delete a directory (local) or all objects under a prefix (S3)."""
     if is_s3(path):
