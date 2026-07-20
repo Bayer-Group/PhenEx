@@ -31,13 +31,14 @@ export interface AgGridWithCustomScrollbarsProps extends AgGridReactProps {
   hideHorizontalScrollbar?: boolean; // External control to hide only horizontal scrollbar
   enableRightClickMenu?: boolean; // Enable right-click menu support (default: true)
   bottomPadding?: number; // Bottom padding in pixels (default: 0)
+  flipScrollDirection?: boolean; // When true: scroll up/down → horizontal; shift+scroll → vertical
 }
 
 const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
-  ({ scrollbarConfig, hideScrollbars = false, hideVerticalScrollbar = false, hideHorizontalScrollbar = false, enableRightClickMenu = true, bottomPadding = 0, className, ...agGridProps }, ref) => {
+  ({ scrollbarConfig, hideScrollbars = false, hideVerticalScrollbar = false, hideHorizontalScrollbar = false, enableRightClickMenu = true, bottomPadding = 0, flipScrollDirection = false, className, ...agGridProps }, ref) => {
     const gridContainerRef = useRef<HTMLDivElement>(null);
     const agGridRef = useRef<any>(null);    const { showMenu } = enableRightClickMenu ? useRightClickMenu() : { showMenu: () => {} };    const [isPanDragging, setIsPanDragging] = useState(false);
-    const [isShiftPressed, setIsShiftPressed] = useState(false);
+    const isShiftPressedRef = useRef(false);
     const [panDragStart, setPanDragStart] = useState({ 
       x: 0, 
       y: 0, 
@@ -47,18 +48,21 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
     const selectedNodesRef = useRef<Set<any>>(new Set());
     const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const editingStartedRef = useRef<boolean>(false);
+    const cachedScrollableRef = useRef<HTMLElement | null>(null);
+    const pendingScrollDeltaRef = useRef<number>(0);
+    const rafIdRef = useRef<number | null>(null);
 
     // Track shift key state globally
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Shift') {
-          setIsShiftPressed(true);
+          isShiftPressedRef.current = true;
         }
       };
 
       const handleKeyUp = (e: KeyboardEvent) => {
         if (e.key === 'Shift') {
-          setIsShiftPressed(false);
+          isShiftPressedRef.current = false;
         }
       };
 
@@ -76,25 +80,45 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
       const element = gridContainerRef.current;
       if (!element) return;
 
+      // Resolve and cache the scrollable element once
+      cachedScrollableRef.current = getScrollableElement();
+
       const wheelHandler = (e: WheelEvent) => {
-        const scrollableElement = getScrollableElement();
+        const scrollableElement = cachedScrollableRef.current || (cachedScrollableRef.current = getScrollableElement());
         if (!scrollableElement) return;
 
-        // Check if shift is pressed
-        if (e.shiftKey || isShiftPressed) {
-          // Shift pressed: only horizontal scrolling
+        const shiftPressed = e.shiftKey || isShiftPressedRef.current;
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+
+        const wantsHorizontal = flipScrollDirection ? !shiftPressed : shiftPressed;
+
+        if (wantsHorizontal) {
           e.preventDefault();
-          const deltaX = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-          scrollableElement.scrollLeft += deltaX;
+          // Accumulate deltas and flush in a single rAF to avoid per-event layout thrashing
+          pendingScrollDeltaRef.current += delta;
+          if (rafIdRef.current === null) {
+            rafIdRef.current = requestAnimationFrame(() => {
+              if (cachedScrollableRef.current) {
+                cachedScrollableRef.current.scrollLeft += pendingScrollDeltaRef.current;
+              }
+              pendingScrollDeltaRef.current = 0;
+              rafIdRef.current = null;
+            });
+          }
         }
-        // When shift is not pressed, let AG Grid handle vertical scrolling naturally
+        // Unmodified vertical scroll: let AG Grid handle naturally
       };
 
       element.addEventListener('wheel', wheelHandler, { passive: false });
       return () => {
         element.removeEventListener('wheel', wheelHandler);
+        if (rafIdRef.current !== null) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+        }
+        cachedScrollableRef.current = null;
       };
-    }, [isShiftPressed]);
+    }, [flipScrollDirection]);
 
     // Default scrollbar settings
     const verticalConfig = {
@@ -297,7 +321,7 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
         const deltaY = e.clientY - panDragStart.y;
         
         // Conditional scrolling based on shift key
-        if (isShiftPressed) {
+        if (isShiftPressedRef.current) {
           // Shift pressed: only horizontal scrolling
           const newScrollLeft = Math.max(0, Math.min(
             scrollableElement.scrollWidth - scrollableElement.clientWidth,
@@ -324,7 +348,7 @@ const GridInner = forwardRef<any, AgGridWithCustomScrollbarsProps>(
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
-      };    }, [isPanDragging, panDragStart, isShiftPressed]);
+      };    }, [isPanDragging, panDragStart]);
     
     // Cleanup timeout on unmount
     useEffect(() => {

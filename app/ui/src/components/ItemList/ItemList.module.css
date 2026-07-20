@@ -13,14 +13,16 @@
 }
 
 .filterInput {
-  padding: 6px 30px 6px 8px;
-  border: 1px solid var(--line-color);
+  padding-left:10px;
+  /* padding: 6px 30px 6px 8px; */
+  /* border: 1px solid var(--line-color); */
   border-radius: 4px;
   font-size: 14px;
   font-family: 'IBMPlexSans-Regular';
   background-color: transparent;
   outline: none;
-  color:white
+  border:none;
+  color:white;
 }
 
 .filterInput::placeholder {
@@ -28,9 +30,9 @@
   font-style: italic;
 }
 
-.filterInput:focus {
-  border-color: white;
-}
+/* .filterInput:focus {
+  border-color: var(--line-color);
+} */
 
 .clearButton {
   position: absolute;
@@ -72,17 +74,18 @@
     box-shadow 0.2s;
   outline: none;
 
-  color: white;
+  color:white;
   background-color: var(--button-background-color-default);
   font-family: var(--button-font-family-default) !important;
   border: 1px solid var(--button-border-color-default);
   font-size: var(--font_size_items);
   user-select: none;
   padding: 2px 4px;
-  border-radius: 4px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 6px;
+  padding: 2px 6px;
 }
 
 .checkmarkCircle {
@@ -101,25 +104,18 @@
 }
 
 .listItem:hover {
-  background-color: var(--button-background-color-hover);
+  background-color: transparent;
   font-family: var(--button-font-family-hover);
-  border: 1px solid var(--button-border-color-hover);
+  /* border: 1px solid white; */
 }
 
 .listItem.selected:hover {
-  background-color: white;
+  color:var(--text_color_notfocus);
   background-color: var(--color-accent-hover);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--color-accent);
 }
 
-.selected {
-  color: var(--button-text-color-selected);
-  font-family: var(--button-font-family-selected);
-  border-color: transparent;
-  /* border: 1px solid var(--button-border-color-selected); */
-  /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); */
-}
 
 .highlighted {
   border-color: var(--color_accent_blue);
@@ -130,30 +126,25 @@
   /* line-height: 1.2; */
 }
 .listItem:hover .itemName {
-  font-family: var(--button-font-family-hover);
+  font-family: "IBMPlexSans-regular";
 }
 
 .listItem.selected .itemName {
   font-family: var(--button-font-family-selected);
 }
 .listItem:hover {
-  background-color: var(--color_accent_blue);
+  background-color: hsla(0, 0%, 100%, 0.1);
 }
 
 .listItem.selected {
-  color: var(--color_accent_blue);
-}
-
-
-.listItem.selected {
-  /* border-color:transparent; */
-  /* border-color: var(--color_accent_blue); */
+  color: white;
+  background-color: transparent;
+  font-family: var(--button-font-family-selected);
+  border-color: hsla(0, 0%, 100%, 0.5);
 }
 
 
 .listItem.selected:hover {
-  background-color: var(--color_accent_blue);
-  color:white !important;
 }
 
 .itemInfo {
@@ -162,7 +153,7 @@
   padding-left: 3px;
   font-size: 12px;
   font-family: 'IBMPlexSans-Regular';
-  color: white;
+  color:var(--text_color_notfocus);
 }
 
 /* .listItem:hover .itemInfo{

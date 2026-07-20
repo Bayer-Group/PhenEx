@@ -53,3 +53,27 @@
 .switchTrack:hover {
   opacity: 0.8;
 }
+
+.dark .label {
+  color: black;
+}
+
+.dark .switchBackground {
+  border-color: black;
+}
+
+.dark .switchThumb {
+  background-color: black;
+}
+
+.light .label {
+  color: white;
+}
+
+.light .switchBackground {
+  border-color: white;
+}
+
+.light .switchThumb {
+  background-color: white;
+}

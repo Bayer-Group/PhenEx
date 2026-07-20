@@ -159,7 +159,7 @@ export const CallToActionNavBar: React.FC<CallToActionNavBarProps> = ({
   onAddButtonClick
 }) => {
   // CohortNavBar section state
-  const sections = ['Definition', 'Characteristics', 'Outcomes'];
+  const sections = ['Definition', 'Characteristics', 'Outcomes', 'All'];
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   
   // Menu states
@@ -196,7 +196,7 @@ export const CallToActionNavBar: React.FC<CallToActionNavBarProps> = ({
   };
 
   return (
-    <div className={`${styles.navBar} ${styles.CallToActionNavBar} ${shadow ? '' : styles.noshadow}`} style={{ height: `${height}px`, display: 'flex', alignItems: 'center', gap: '0px' }}>
+    <div className={`${styles.navBar} ${shadow ? '' : styles.noshadow}`} style={{ height: `${height}px`, display: 'flex', alignItems: 'center', gap: '0px' }}>
       {/* Left: CohortNavBar section */}
       <div>
         <div ref={dragHandleRef} data-drag-handle style={{ cursor: 'grab', userSelect: 'none', padding: '0 0' }}>

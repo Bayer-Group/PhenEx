@@ -19,23 +19,31 @@
 }
 
 .deleteButton {
-  flex-shrink: 0;
-  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
   color: currentColor;
   background: none;
   border: none;
-  padding: 2px 4px;
+  padding: 3px 3px;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-content: center;
+  z-index: 1;
+  height: 20px;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
-.editButton:hover,
-.deleteButton:hover {
+.editButton:hover {
   background: var(--button-color-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border: var(--border-accent);
+}
+
+.deleteButton:hover {
+  background-color: var(--background_color_hover_over_grid);
+  color: var(--color_accent_blue);
 }
 
 .editButton:focus,
@@ -59,17 +67,17 @@
   border: var(--border-accent);
 }
 
-:global(.ag-row:hover) .deleteButton {
-  opacity: 1;
-}
-
 .label {
   text-wrap: wrap;
   line-height: 1 !important;
   font-size: var(--font_size_phenotypename);
   font-family: "IBMPlexSans-regular";
-  padding-top:var(--item-margin-top);
+  padding-top: var(--item-margin-top);
+  padding-bottom: var(--item-margin-top);
   flex: 1;
+  hyphens: auto;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 
@@ -80,6 +88,7 @@
   gap: 8px;
   width: 100%;
   position: relative;
+  text-align: left;
 }
 
 .verticalLine {
@@ -92,16 +101,17 @@
 }
 
 .expandArrow {
-  margin: calc(var(--item-margin-top) - 3) var(--item-margin-horizontal) 0 0;
   flex-shrink: 0;
   cursor: pointer;
-  width: 28px;
-  height: 28px;
-  transition: opacity 0.15s ease, color 0.15s ease;
+  width: 20px;
+  height: 20px;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
   
-  /* Default state */
-  opacity: 0.3;
-  color: var(--text-color-secondary);
+  /* Default state — overridden by effective_type color class */
+  opacity: 1;
+  color: var(--line-color);
+  border-radius: 8px;
+
 
 }
 
@@ -114,21 +124,23 @@
 .expandArrow.selected {
   opacity: 1;
   transform: scale(1.2);
-  /* Filter to make the SVG blue (hsl(204, 98%, 50%)) */
-  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(190deg) brightness(102%) contrast(97%);
+  color: var(--color_accent_blue);
+  /* transition: scale 0.15s ease, color 0.15s ease; */
 }
 
 /* Arrow self-hovered state */
 .expandArrow:hover {
   opacity: 1 !important;
   color: var(--color_accent_blue);
-  transform: scale(1.1);
+  /* transform: scale(1.1); */
+  stroke: 3px;
+  background-color: var(--background_color_hover_over_grid);
 }
 
 /* Active/clicked state */
-.expandArrow:active {
-  transform: scale(0.95);
-}
+/* .expandArrow:active {
+  transform: scale(0.3);
+} */
 
 .container {
   padding: 10px;
@@ -142,7 +154,6 @@
   align-items: flex-start;
   position: relative;
   border-top: 1px solid;
-  background-color: red !important;
 }
 
 .ancestorLabel{
@@ -175,4 +186,14 @@
 .infotext{
       font-size: var(--font_size_infotext);
   font-family:"IBMPlexSans-regular";
+}
+
+.expandArrowContainer {
+  position: absolute;
+  top: var(--item-margin-top);
+  right: var(--item-margin-horizontal);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }

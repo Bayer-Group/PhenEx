@@ -156,7 +156,7 @@
   box-shadow: 0 4px 16px var(--background_color_dark);
   padding: 10px 10px;
   transition: transform 0.15s, box-shadow 0.15s;
-
+  
   background: hsl(30, 60%, 94%, 0.8);
   border: 2px solid var(--line-color);
   border-radius:30px;

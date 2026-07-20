@@ -116,6 +116,8 @@ export class CohortModel {
 
   private _currentFilter: string[] = ['entry', 'inclusion', 'exclusion'];
   private _showComponents: boolean = true;
+  private _componentLevel: number = Number.POSITIVE_INFINITY;
+  private _showFullCodelists: boolean = false;
   private _diff_map: Map<string, 'added' | 'modified' | 'deleted'> = new Map();
   private _deleted_phenotypes: any[] = [];
 
@@ -178,7 +180,8 @@ export class CohortModel {
       const componentPhenotypes = allPhenotypes.filter((row: TableRow) => 
         row.type === 'component' && 
         row.effective_type && 
-        this._currentFilter.includes(row.effective_type)
+        this._currentFilter.includes(row.effective_type) &&
+        ((row.level ?? 1) <= this._componentLevel)
       );
       if (componentPhenotypes.length > 0) {
         filteredPhenotypes = this.getHierarchicallyOrderedPhenotypes([...filteredPhenotypes, ...componentPhenotypes]);
@@ -289,6 +292,7 @@ export class CohortModel {
 
   public async setCohortDatabaseConfig(config: Record<string, any> | null): Promise<void> {
     this._database = config;
+    this.notifyListeners();
     await updateCohortDatabaseConfig(this._cohort_data.study_id, this._cohort_data.id, config);
   }
 
@@ -303,7 +307,7 @@ export class CohortModel {
         effective_type: 'entry',
         codelist: "missing",
         domain: "missing",
-        hierarchical_index: "1",
+        hierarchical_index: CohortModel.ENTRY_INDEX_LABEL,
         class_name:'CodelistPhenotype',
         return_date: "first"
       }
@@ -475,13 +479,14 @@ export class CohortModel {
       });
     }
 
-    // Always notify data change listeners (for PhenotypeDataService sync)
+    // Always notify listeners so name/state consumers (breadcrumb, card header) stay in sync.
+    // notifyDataChangeListeners is also called for PhenotypeDataService sync.
+    this.notifyListeners();
     this.notifyDataChangeListeners();
     
-    // Only notify grid listeners if visual refresh is needed
+    // Only refresh the grid data if the row/column content changed.
     if (refreshGrid) {
       console.log("REFRESHING GRID");
-      this.notifyListeners();
     }
   }
 
@@ -608,38 +613,59 @@ export class CohortModel {
     this.calculateHierarchicalIndices();
   }
 
+  // Label used for entry criterion phenotypes (change here to affect all displays)
+  private static readonly ENTRY_INDEX_LABEL = 'e';
+
   private calculateHierarchicalIndices(): void {
-    // Group 1: entry, inclusion, exclusion share indices
-    const sharedGroup = ['entry', 'inclusion', 'exclusion'];
-    let sharedIndex = 1;
-    
-    sharedGroup.forEach(type => {
-      const phenotypesOfType = this._cohort_data.phenotypes.filter((p: any) => p.type === type);
-      
-      phenotypesOfType.forEach((phenotype: any) => {
-        phenotype.hierarchical_index = sharedIndex.toString();
-        
-        // Calculate hierarchical indices for all component descendants
-        this.calculateComponentHierarchicalIndices(phenotype.id, sharedIndex.toString());
-        
-        sharedIndex++; // Increment for next phenotype in the shared group
+    // Entry: fixed label
+    this._cohort_data.phenotypes
+      .filter((p: any) => p.type === 'entry')
+      .forEach((phenotype: any) => {
+        phenotype.hierarchical_index = CohortModel.ENTRY_INDEX_LABEL;
+        this.calculateComponentHierarchicalIndices(phenotype.id, CohortModel.ENTRY_INDEX_LABEL);
       });
-    });
-    
-    // Group 2: baseline has its own indexing
-    const baselinePhenotypes = this._cohort_data.phenotypes.filter((p: any) => p.type === 'baseline');
-    baselinePhenotypes.forEach((phenotype: any, index: number) => {
-      const baseIndex = index + 1;
-      phenotype.hierarchical_index = baseIndex.toString();
-      this.calculateComponentHierarchicalIndices(phenotype.id, baseIndex.toString());
-    });
-    
-    // Group 3: outcome has its own indexing
-    const outcomePhenotypes = this._cohort_data.phenotypes.filter((p: any) => p.type === 'outcome');
-    outcomePhenotypes.forEach((phenotype: any, index: number) => {
-      const baseIndex = index + 1;
-      phenotype.hierarchical_index = baseIndex.toString();
-      this.calculateComponentHierarchicalIndices(phenotype.id, baseIndex.toString());
+
+    // Inclusion: own indexing starting at 1
+    this._cohort_data.phenotypes
+      .filter((p: any) => p.type === 'inclusion')
+      .forEach((phenotype: any, index: number) => {
+        const idx = (index + 1).toString();
+        phenotype.hierarchical_index = idx;
+        this.calculateComponentHierarchicalIndices(phenotype.id, idx);
+      });
+
+    // Exclusion: own indexing starting at 1
+    this._cohort_data.phenotypes
+      .filter((p: any) => p.type === 'exclusion')
+      .forEach((phenotype: any, index: number) => {
+        const idx = (index + 1).toString();
+        phenotype.hierarchical_index = idx;
+        this.calculateComponentHierarchicalIndices(phenotype.id, idx);
+      });
+
+    // Baseline: own indexing starting at 1
+    this._cohort_data.phenotypes
+      .filter((p: any) => p.type === 'baseline')
+      .forEach((phenotype: any, index: number) => {
+        const idx = (index + 1).toString();
+        phenotype.hierarchical_index = idx;
+        this.calculateComponentHierarchicalIndices(phenotype.id, idx);
+      });
+
+    // Outcome: own indexing starting at 1
+    this._cohort_data.phenotypes
+      .filter((p: any) => p.type === 'outcome')
+      .forEach((phenotype: any, index: number) => {
+        const idx = (index + 1).toString();
+        phenotype.hierarchical_index = idx;
+        this.calculateComponentHierarchicalIndices(phenotype.id, idx);
+      });
+
+    // Recalculate each phenotype's level from its current position in the
+    // hierarchy. Level drives display styling (e.g. font size / indentation),
+    // and can go stale when phenotypes are re-parented via drag & drop.
+    this._cohort_data.phenotypes.forEach((phenotype: TableRow) => {
+      phenotype.level = this.getAllAncestors(phenotype).length;
     });
   }
 
@@ -996,13 +1022,14 @@ export class CohortModel {
     
     // Update the cohort data
     this._cohort_data.phenotypes = newCompleteOrder;
-    this._table_data = this.tableDataFromCohortData();
     
     // No longer split phenotypes by type - backend expects phenotypes array only
     this._cohort_data.name = this._cohort_name;
     
-    // Recalculate hierarchical indices after hierarchical reordering
+    // Recalculate hierarchical indices (and levels) before building table data
+    // so the grid reflects any re-parenting from the drag operation.
     this.calculateHierarchicalIndices();
+    this._table_data = this.tableDataFromCohortData();
     
     await updateCohort(this._cohort_data.study_id, this._cohort_data.id, this._cohort_data);
     this.notifyNameChangeListeners();
@@ -1031,6 +1058,126 @@ export class CohortModel {
     }
     
     return result;
+  }
+
+  /**
+   * Move a phenotype into a different section (its `type`). The phenotype
+   * becomes a top-level phenotype of `newType`, and any component descendants
+   * follow it and inherit the new effective_type. `newRowData` is the grid's
+   * visible row order, used to position the moved phenotype within the
+   * destination section.
+   */
+  public async movePhenotypeToSection(draggedId: string, newType: string, newRowData: TableRow[]) {
+    const dragged = this.getPhenotypeById(draggedId);
+    if (!dragged || dragged.type === newType) {
+      // Same section: a plain reorder is sufficient.
+      await this.updateRowOrder(newRowData);
+      return;
+    }
+
+    // The entry section holds exactly one criterion; never create a second one.
+    if (newType === 'entry' && this._cohort_data.phenotypes.some(
+      (p: TableRow) => p.type === 'entry' && p.id !== draggedId
+    )) {
+      return;
+    }
+
+    // Component descendants inherit the destination section's effective_type.
+    const descendantIds = new Set(this.getAllDescendants(draggedId).map(d => d.id));
+    this._cohort_data.phenotypes.forEach((p: TableRow) => {
+      if (p.type === 'component' && descendantIds.has(p.id)) {
+        p.effective_type = newType;
+      }
+    });
+
+    // Mirror the section change onto the incoming rows so the flat reorder groups
+    // the moved phenotype (and any visible descendants) into the destination.
+    newRowData.forEach(row => {
+      if (row.id === draggedId) {
+        row.type = newType;
+        row.effective_type = newType;
+        row.parentIds = [];
+      } else if (descendantIds.has(row.id)) {
+        row.effective_type = newType;
+      }
+    });
+
+    await this.updateFlatRowOrder(newRowData, [...this._cohort_data.phenotypes]);
+  }
+
+  /**
+   * Convert a phenotype into a component of `targetParentId`, detaching it from
+   * any previous parent. Its descendants follow and inherit the parent's
+   * effective_type. The moved subtree is placed immediately after the target's
+   * existing subtree.
+   */
+  public async makePhenotypeComponentOf(draggedId: string, targetParentId: string) {
+    const dragged = this.getPhenotypeById(draggedId);
+    const target = this.getPhenotypeById(targetParentId);
+    if (!dragged || !target || draggedId === targetParentId) return;
+
+    // Guard against cycles: a phenotype cannot become a component of its own descendant.
+    if (this.getAllDescendants(draggedId).some(d => d.id === targetParentId)) return;
+
+    const newEffectiveType = target.effective_type || target.type;
+
+    // Capture the moved subtree (dragged first, then its descendants) in order,
+    // before re-parenting changes the ancestry lookups.
+    const subtree = [dragged, ...this.getAllDescendants(draggedId)];
+    const subtreeIds = new Set(subtree.map(p => p.id));
+
+    // Re-parent the dragged phenotype and propagate the new effective_type.
+    dragged.type = 'component';
+    dragged.parentIds = [targetParentId];
+    subtree.forEach(p => { p.effective_type = newEffectiveType; });
+
+    // Append the dragged phenotype as the last component of the target.
+    const existingChildCount = this._cohort_data.phenotypes.filter(
+      (p: TableRow) => p.type === 'component' && p.parentIds?.includes(targetParentId)
+    ).length;
+    dragged.index = existingChildCount + 1;
+
+    // Relocate the subtree to just after the target's existing subtree, keeping
+    // every other phenotype in place.
+    const remaining = this._cohort_data.phenotypes.filter((p: TableRow) => !subtreeIds.has(p.id));
+    const targetSubtreeIds = new Set([
+      targetParentId,
+      ...this.getAllDescendants(targetParentId)
+        .filter(d => !subtreeIds.has(d.id))
+        .map(d => d.id),
+    ]);
+    let insertAt = remaining.length;
+    for (let i = 0; i < remaining.length; i++) {
+      if (targetSubtreeIds.has(remaining[i].id)) insertAt = i + 1;
+    }
+    remaining.splice(insertAt, 0, ...subtree);
+    this._cohort_data.phenotypes = remaining;
+
+    this._cohort_data.name = this._cohort_name;
+    this.calculateHierarchicalIndices();
+    this._table_data = this.tableDataFromCohortData();
+
+    await updateCohort(this._cohort_data.study_id, this._cohort_data.id, this._cohort_data);
+    this.notifyNameChangeListeners();
+    this.issues_service.validateCohort();
+    this.notifyDataChangeListeners();
+    this.notifyListeners();
+  }
+
+  /**
+   * Whether `draggedId` may be made a component of `targetId`. Prevents
+   * self-drops and cycles (dropping onto one's own descendant).
+   */
+  public canMakePhenotypeComponentOf(draggedId: string, targetId: string): boolean {
+    if (!draggedId || !targetId || draggedId === targetId) return false;
+    const target = this.getPhenotypeById(targetId);
+    const dragged = this.getPhenotypeById(draggedId);
+    if (!target || !dragged) return false;
+    // A phenotype cannot become a component of its own descendant.
+    if (this.getAllDescendants(draggedId).some(d => d.id === targetId)) return false;
+    // Already a direct component of this target — nothing to do.
+    if (dragged.type === 'component' && dragged.parentIds?.[0] === targetId) return false;
+    return true;
   }
 
   // Method to validate drag-and-drop constraints for hierarchical phenotypes
@@ -1270,6 +1417,51 @@ export class CohortModel {
 
   public getShowComponents(): boolean {
     return this._showComponents;
+  }
+
+  public getComponentLevel(): number {
+    return this._componentLevel;
+  }
+
+  public setComponentLevel(level: number): void {
+    this._componentLevel = level;
+    this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners();
+  }
+
+  // Deepest component depth across the whole cohort. Top-level phenotypes are
+  // level 0, their direct component children are level 1, and so on.
+  public getMaxComponentLevel(): number {
+    const phenotypes = this._cohort_data?.phenotypes || [];
+    return phenotypes.reduce(
+      (max: number, p: TableRow) =>
+        p.type === 'component' ? Math.max(max, p.level ?? 1) : max,
+      0
+    );
+  }
+
+  // Deepest component depth relative to a given phenotype (its direct component
+  // children = level 1). Drives the level dropdown's dynamic range.
+  public getMaxComponentLevelForPhenotype(phenotypeId: string): number {
+    const phenotype = this.getPhenotypeById(phenotypeId);
+    if (!phenotype) return 0;
+    const baseLevel = phenotype.level ?? 0;
+    const descendants = this.getAllDescendants(phenotypeId);
+    return descendants.reduce(
+      (max: number, p: TableRow) =>
+        p.type === 'component' ? Math.max(max, (p.level ?? 0) - baseLevel) : max,
+      0
+    );
+  }
+
+  public toggleShowFullCodelists(show: boolean): void {
+    this._showFullCodelists = show;
+    this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners();
+  }
+
+  public getShowFullCodelists(): boolean {
+    return this._showFullCodelists;
   }
 
   public updateColumns(newColumns: ColumnDefinition[]): void {

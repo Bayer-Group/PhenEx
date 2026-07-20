@@ -35,6 +35,7 @@ export const SelectionCellRenderer: React.FC<SelectionCellRendererProps> = (prop
 
   const containerStyle: React.CSSProperties = {
     borderTop: `1px solid ${borderColorVar}`,
+    borderLeft: `1px solid ${borderColorVar}`,
     ...(backgroundColor ? { backgroundColor } : {}),
   };
 

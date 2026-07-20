@@ -1,10 +1,12 @@
 .filtersContainer {
+  display: inline;
   /* width: 100%; */
   /* gap: 3px;
   line-height: 11px;
   font-size: 11px;
   font-family: 'IBMPlexSans-regular';
   padding-top: var(--item-margin-top) !important; */
+  /* font-size: 11px; */
 }
 
 .filterRow {
@@ -45,7 +47,8 @@
 } */
 
 .timeValue {
-  padding: 0px 3px;
+  padding: 0px 3px 0px 0px;
+  font-family: 'IBMPlexSans-bold', sans-serif;
 
   /* color: #2c5282;
   padding: 0px 3px; */
@@ -60,7 +63,7 @@
 }
 
 .when {
-  font-family: 'IBMPlexSans-bold';
+  font-family: 'IBMPlexSans-regular';
 }
 .min {
 }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styles from './DomainSelectorEditor.module.css';
 import { useDomains } from '../../../../../hooks/useDomains';
 import { ItemList } from '../../../../../components/ItemList/ItemList';
-import typeStyles from '../../../../../styles/study_types.module.css';
+import { DatabasePanel } from '../../../../SlideoverPanels/DatabasePanel/DatabasePanel';
 
 export interface DomainSelectorEditorProps {
   value?: any;
@@ -28,24 +28,32 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = props =
     props.onValueChange?.(domainName);
   };
 
+  // When no mapper is configured, show the database panel instead of the domain
+  // list. Once a database/mapper is selected, the useDomains hook updates and the
+  // list is displayed automatically.
+  if (!mapper) {
+    return (
+      <div className={styles.container}>
+        <DatabasePanel showTitle={true} contentMode="cohort" colorMode="dark" />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <p className={styles.headerText}>
-          Using {mapper} mappers. Configure in Database<br />
-          
-        </p>
-      </div>
       <div className={styles.content}>
         <ItemList
           items={domains}
           selectedName={selectedDomain || undefined}
           onSelect={handleDomainSelect}
-        classNameListItem={styles.listItem}
-        classNameListItemSelected={styles.listItemSelected}
         showFilter={true}
         />
       </div>
+            <div className={styles.header}>
+        
+        using {mapper} mappers
+      </div>
+
     </div>
   );
 };

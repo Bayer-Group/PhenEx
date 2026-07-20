@@ -3,6 +3,7 @@ import styles from './NavBar.module.css';
 import { PhenExNavBarMenu } from './PhenExNavBarMenu';
 import { PhenExNavBarTooltip } from './PhenExNavBarTooltip';
 import { SwitchButton } from '../ButtonsAndTabs/SwitchButton/SwitchButton';
+import { LevelSelect } from '../ButtonsAndTabs/LevelSelect/LevelSelect';
 import { CohortDataService } from '../../views/CohortViewer/CohortDataService/CohortDataService';
 
 interface ViewNavBarProps {
@@ -16,6 +17,8 @@ interface ViewNavBarProps {
   scrollbarTooltipLabel?: string; // Custom tooltip for scrollbar thumb
   leftArrowTooltipLabel?: string; // Custom tooltip for left arrow
   rightArrowTooltipLabel?: string; // Custom tooltip for right arrow
+  flipScrollDirection?: boolean;
+  onFlipScrollDirectionChange?: (value: boolean) => void;
 }
 
 // Visibility Menu Component
@@ -26,6 +29,8 @@ const VisibilityMenu: React.FC<{
   menuRef: React.RefObject<HTMLDivElement>;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  flipScrollDirection: boolean;
+  onFlipScrollDirectionChange: (value: boolean) => void;
 }> = ({
   isOpen,
   onClose,
@@ -33,14 +38,28 @@ const VisibilityMenu: React.FC<{
   menuRef,
   onMouseEnter,
   onMouseLeave,
+  flipScrollDirection,
+  onFlipScrollDirectionChange,
 }) => {
   const dataService = CohortDataService.getInstance();
   const [showDescriptions, setShowDescriptions] = useState(true);
   const [showChildren, setShowChildren] = useState(() => dataService.getShowComponents());
+  const [componentLevel, setComponentLevel] = useState(() => dataService.getComponentLevel());
+  const [showFullCodelists, setShowFullCodelists] = useState(() => dataService.getShowFullCodelists());
 
   const handleShowChildrenChange = (value: boolean) => {
     setShowChildren(value);
     dataService.toggleComponentPhenotypes(value);
+  };
+
+  const handleComponentLevelChange = (value: number) => {
+    setComponentLevel(value);
+    dataService.setComponentLevel(value);
+  };
+
+  const handleShowFullCodelistsChange = (value: boolean) => {
+    setShowFullCodelists(value);
+    dataService.toggleShowFullCodelists(value);
   };
 
   return (
@@ -63,10 +82,31 @@ const VisibilityMenu: React.FC<{
           onValueChange={setShowDescriptions}
         />
         
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <SwitchButton
+            label="Show Children"
+            value={showChildren}
+            onValueChange={handleShowChildrenChange}
+          />
+          <LevelSelect
+            value={componentLevel}
+            onChange={handleComponentLevelChange}
+            maxLevel={dataService.getMaxComponentLevel()}
+            disabled={!showChildren}
+            title="Show components up to this depth"
+          />
+        </div>
+
         <SwitchButton
-          label="Show Children"
-          value={showChildren}
-          onValueChange={handleShowChildrenChange}
+          label="Show Full Codelists"
+          value={showFullCodelists}
+          onValueChange={handleShowFullCodelistsChange}
+        />
+
+        <SwitchButton
+          label="Flip Scroll Direction"
+          value={flipScrollDirection}
+          onValueChange={onFlipScrollDirectionChange}
         />
       </div>
     </PhenExNavBarMenu>
@@ -84,6 +124,8 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
   scrollbarTooltipLabel = "Scroll Through Parameters",
   leftArrowTooltipLabel = "Go to Previous Parameter",
   rightArrowTooltipLabel = "Go to Next Parameter",
+  flipScrollDirection = false,
+  onFlipScrollDirectionChange,
 }) => {
   const scrollBarRef = useRef<HTMLDivElement>(null);
   const scrollThumbRef = useRef<HTMLDivElement>(null);
@@ -242,6 +284,8 @@ export const ViewNavBar: React.FC<ViewNavBarProps> = ({
         menuRef={menuRef}
         onMouseEnter={() => setIsVisibilityMenuOpen(true)}
         onMouseLeave={() => setIsVisibilityMenuOpen(false)}
+        flipScrollDirection={flipScrollDirection}
+        onFlipScrollDirectionChange={onFlipScrollDirectionChange ?? (() => {})}
       />
     </div>
   );

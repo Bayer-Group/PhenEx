@@ -19,7 +19,7 @@
 }
 
 .domainContainer:hover {
-  background-color: white;
+  background-color: var(--background_color_hover_over_grid);
 }
 
 .domainPart {

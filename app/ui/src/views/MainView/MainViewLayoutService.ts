@@ -6,8 +6,7 @@ import { Model, Actions, DockLocation } from 'flexlayout-react';
 class MainViewLayoutService {
   private static instance: MainViewLayoutService;
   private modelRef: Model | null = null;
-  private tabListeners: Map<string, Set<() => void>> = new Map();
-  private lastSelectedTab: string | null = null;
+  private executeModelRef: Model | null = null;
 
   private constructor() {}
 
@@ -22,28 +21,8 @@ class MainViewLayoutService {
     this.modelRef = model;
   }
 
-  /** Subscribe to a right-panel tab becoming active. Returns an unsubscribe fn. */
-  public onTabActivated(tabComponent: string, callback: () => void): () => void {
-    if (!this.tabListeners.has(tabComponent)) {
-      this.tabListeners.set(tabComponent, new Set());
-    }
-    this.tabListeners.get(tabComponent)!.add(callback);
-    return () => this.tabListeners.get(tabComponent)?.delete(callback);
-  }
-
-  /** Called by MainView whenever the inner model changes to detect tab switches. */
-  public notifyModelChange(model: Model): void {
-    const right = model.getBorderSet().getBorderMap().get(DockLocation.RIGHT);
-    if (!right) return;
-    const selectedIdx = right.getSelected();
-    if (selectedIdx === -1) return;
-    const children = right.getChildren();
-    const selectedTab = children[selectedIdx];
-    if (!selectedTab) return;
-    const component = (selectedTab as any).getComponent?.() as string | undefined;
-    if (!component || component === this.lastSelectedTab) return;
-    this.lastSelectedTab = component;
-    this.tabListeners.get(component)?.forEach(cb => cb());
+  public setExecuteModel(model: Model): void {
+    this.executeModelRef = model;
   }
 
   /**
@@ -60,7 +39,7 @@ class MainViewLayoutService {
     );
 
     if (border) {
-      // Chat tab is at index 2 (Execute=0, Constants=1, Chat=2, Issues=3)
+      // Chat tab is at index 2 (Info=0, Execute=1, Chat=2)
       console.log('MainViewLayoutService: Opening Chat tab (index 2)');
       this.modelRef.doAction(Actions.updateNodeAttributes(border.getId(), { selected: 2 }));
     } else {
@@ -70,7 +49,7 @@ class MainViewLayoutService {
 
   /**
    * Open a specific tab in the right panel by index
-   * @param tabIndex 0=Execute, 1=Constants, 2=Chat, 3=Issues
+    * @param tabIndex 0=Info, 1=Execute, 2=Chat
    */
   public openRightPanelTab(tabIndex: number): void {
     if (!this.modelRef) {
@@ -85,6 +64,17 @@ class MainViewLayoutService {
     if (border) {
       this.modelRef.doAction(Actions.updateNodeAttributes(border.getId(), { selected: tabIndex }));
     }
+  }
+
+  public openExecuteIssuesTab(): void {
+    this.openRightPanelTab(1);
+
+    if (!this.executeModelRef) {
+      console.warn('MainViewLayoutService: Execute model not set, cannot open issues tab');
+      return;
+    }
+
+    this.executeModelRef.doAction(Actions.selectTab('issuesPanelTab'));
   }
 }
 

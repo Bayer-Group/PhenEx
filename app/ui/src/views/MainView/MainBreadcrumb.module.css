@@ -29,6 +29,9 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
+.crumb:focus {
+  outline: none;
+}
 .separator {
   color: #999;
   font-size: 13px;

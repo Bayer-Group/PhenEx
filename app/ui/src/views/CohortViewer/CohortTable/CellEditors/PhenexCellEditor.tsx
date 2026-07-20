@@ -18,6 +18,7 @@ import { CategoricalFilterRenderer } from '../CellRenderers/actualRendering/Cate
 import { RelativeTimeRangeRenderer } from '../CellRenderers/actualRendering/RelativeTimeRangeRenderer';
 import { TypeRenderer } from '../CellRenderers/actualRendering/TypeRenderer';
 import { ValueFilterRenderer } from '../CellRenderers/actualRendering/ValueFilterRenderer';
+import { CohortDataService } from '../../CohortDataService/CohortDataService';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
   value: any;
@@ -61,25 +62,15 @@ const getViewportDimensions = () => ({
   height: window.innerHeight,
 });
 
-const getGridDimensions = (gridElement: HTMLElement | null) => {
-  if (!gridElement) return null;
-  const rect = gridElement.getBoundingClientRect();
-  return {
-    top: rect.top,
-    left: rect.left,
-    width: rect.width,
-    height: rect.height,
-    bottom: rect.bottom,
-    right: rect.right,
-  };
-};
-
 export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) => {
   const [currentValue, setCurrentValue] = useState(() => props.value);
   const [recentlyDragged, setRecentlyDragged] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(getInfoBoxState);
-  const [showComposer, setShowComposer] = useState(false); // Always start hidden - only show on explicit user interaction
+  const [showComposer, setShowComposer] = useState(() => props.showComposerPanel ?? false);
   const [clickedItemPosition, setClickedItemPosition] = useState<{ x: number; y: number } | null>(null);
+  const [verticalShift, setVerticalShift] = useState(0);
+  const [listViewVerticalShift, setListViewVerticalShift] = useState(0);
+  const currentSelectionContainerRef = React.useRef<HTMLDivElement>(null);
   
   // Callback for children to update the current value
   // Used by list-view editors to update value and trigger auto-close
@@ -191,6 +182,43 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     setShowComposer(false);
   };
 
+  // Shift the list-view editor upward if it overflows the viewport bottom
+  useEffect(() => {
+    if (!props.autoCloseOnChange) return;
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const margin = 10;
+        const overflow = rect.bottom - (window.innerHeight - margin);
+        if (overflow > 0) {
+          setListViewVerticalShift(overflow);
+        }
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [props.autoCloseOnChange]);
+
+  // Shift the panel upward if opening the chin pushes it below the viewport
+  useEffect(() => {
+    if (!showComposer) {
+      setVerticalShift(0);
+      return;
+    }
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!currentSelectionContainerRef.current) return;
+        const rect = currentSelectionContainerRef.current.getBoundingClientRect();
+        const margin = 10;
+        const overflow = rect.bottom - (window.innerHeight - margin);
+        if (overflow > 0) {
+          setVerticalShift(overflow);
+        }
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showComposer]);
+
   const containerRef = React.useRef<HTMLDivElement>(null);
   const contentScrollableRef = React.useRef<HTMLDivElement>(null);
 
@@ -283,12 +311,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const calculatePosition = () => {
     const viewport = getViewportDimensions();
     const cellElement = props.eGridCell as HTMLElement;
-    const gridContainer = cellElement?.closest('.ag-root') as HTMLElement;
-    const gridDimensions = getGridDimensions(gridContainer);
     const cellRect = cellElement?.getBoundingClientRect();
 
-    if (!cellRect || !gridDimensions) {
-      console.warn('Could not find necessary elements for positioning');
+      if (!cellRect) {
+        console.warn('Could not find grid cell for positioning');
       return {
         currentSelection: { 
           bottomLeft: 0, 
@@ -374,7 +400,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     
     return {
       currentSelection: {
-        bottomLeft: `${bottomSectionLeft}px`,
+        bottomLeft: `${bottomSectionLeft + 20}px`,
         bottomTop: bottomSectionTop,
         width: `${cellWidth}px`,
         bottomHeight: `${cellHeight}px`,
@@ -518,6 +544,12 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         // Use the custom renderer component for field-based rendering
         // Always render, even if value is empty (for complex item editors)
         const selectedClassName = typeStyles[`${props.data.effective_type || ''}_color_block`] || '';
+
+        // Respect global showFullCodelists setting; row-level override takes precedence
+        const rowOverride: boolean | undefined = props.data?.show_full_codelist;
+        const showFullCodelist = rowOverride !== undefined
+          ? rowOverride
+          : CohortDataService.getInstance().getShowFullCodelists();
         
         return (
           <div className={styles.cellMirrorContents}>
@@ -527,6 +559,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
               onItemClick={handleItemClick}
               selectedIndex={props.selectedItemIndex}
               selectedClassName={selectedClassName}
+              showFullCodelist={showFullCodelist}
               {...(props.rendererProps || {})}
             />
           </div>
@@ -631,9 +664,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         className={`${styles.currentSelectionTopSection}`}
         style={{
           position: 'absolute',
-          left: 0,
+          left: -1,
           bottom: '100%',
-          width: '100%',
+          width: 'calc(100% + 2px)',
           zIndex: 9998,
         }}
         data-drag-handle="true"
@@ -668,7 +701,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           position: 'relative',
           width: '100%',
           minWidth: '300px',
-          minHeight: portalPosition.currentSelection.bottomHeight,
           zIndex: 9999,
         }}
         data-drag-handle="true"
@@ -685,9 +717,9 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }
         }}
       >
-{/* ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''} */}
         <div 
           className={`${styles.cellMirror} ${colorBlock} ${typeStyles[`${props.data.effective_type || ''}_border_color`] || ''}`}
+          style={{ minHeight: portalPosition.currentSelection.bottomHeight }}
           onClick={(e) => {
             e.stopPropagation();
             e.nativeEvent.stopImmediatePropagation();
@@ -700,7 +732,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }}
         >
           {renderCellMirrorContents()}
-          {props.showAddButton && (
+        
+        </div>
+
+        {props.showAddButton && (
             <button
               className={`${styles.addButton}`}
               onClick={(e) => {
@@ -717,7 +752,6 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
               </svg>
             </button>
           )}
-        </div>
       </div>
     );
   }
@@ -725,98 +759,33 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
   const renderCurrentSelectionPanel = () => {
     return (
       <div 
+        ref={currentSelectionContainerRef}
         className={styles.currentSelectionContainer}
         style={{
           position: 'absolute',
           left: portalPosition.currentSelection.bottomLeft,
-          top: portalPosition.currentSelection.bottomTop,
+          top: (portalPosition.currentSelection.bottomTop as number) - verticalShift,
           minWidth: portalPosition.currentSelection.width,
         }}
       >
         {renderCurrentSelectionPanel_top()}
         {renderCurrentSelectionPanel_bottom()}
+        {showComposer && (
+          <div
+            className={styles.composerChin}
+            onClick={e => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
+            onMouseDown={e => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}
+          >
+            <div className={styles.composerContent}>
+              {renderMainContent()}
+            </div>
+          </div>
+        )}
         <div className={styles.blocker}></div>
       </div>
     );
   };
 
-  const renderComposerPanel = () => {
-    return (
-      <>
-        {/* Backdrop for clicking outside to close */}
-        <div
-          className={styles.composerBackdrop}
-          onClick={(e) => {
-            e.stopPropagation();
-            e.nativeEvent.stopImmediatePropagation();
-            handleCloseComposer();
-          }}
-        />
-        <DraggablePortal
-          initialPosition={{
-            left: portalPosition.composer.left,
-            top: portalPosition.composer.top,
-          }}
-          dragHandleSelector="[data-drag-handle='true']"
-          onDragStart={() => {
-            setRecentlyDragged(false);
-          }}
-          onDragEnd={wasDragged => {
-            if (wasDragged) {
-              setRecentlyDragged(true);
-              setTimeout(() => {
-                setRecentlyDragged(false);
-              }, 200);
-            }
-          }}
-        >
-          <div
-            style={{
-              width: 'fit-content',
-              minWidth: '100px',
-              maxWidth: '600px',
-              maxHeight: portalPosition.composer.maxHeight,
-              zIndex: 100001,
-            }}
-            ref={containerRef}
-            className={`${styles.composerContainer}`}
-            onClick={e => {
-              e.stopPropagation();
-              e.nativeEvent.stopImmediatePropagation();
-            }}
-          onKeyDown={handleKeyDown}
-          tabIndex={0}
-        >
-          <div className={`${styles.composerContent}`}>
-            {renderMainContent()}
-            {props.onEditingDone && showComposer && (
-              <div className={styles.doneButtonContainer}>
-                <button 
-                  className={`${styles.doneButton}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.nativeEvent.stopImmediatePropagation();
-                    handleCloseComposer();
-                  }}
-                >
-                  <svg width="16" height="4" viewBox="0 0 16 4" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="16" height="4" rx="2"/>
-                  </svg>
-
-                </button>
-              </div>
-            )}
-          </div>
-            <div className={`${styles.composerHeader}`} data-drag-handle="true">
-            {/* <span className={styles.composerTitle}>Edit {titleText}</span> */}
-          </div>
-
-        </div>
-      </DraggablePortal>
-      </>
-    );
-
-  }
 
   // List-view editors (autoCloseOnChange) only show composer at cell position
   if (props.autoCloseOnChange) {
@@ -824,7 +793,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
       <DraggablePortal
         initialPosition={{
           left: portalPosition.currentSelection.bottomLeft,
-          top: portalPosition.currentSelection.bottomTop - 35,
+          top: portalPosition.currentSelection.bottomTop - 35 - listViewVerticalShift,
         }}
         dragHandleSelector="[data-drag-handle='true']"
         onDragStart={() => {
@@ -842,7 +811,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
         <div
           style={{
             width: 'fit-content',
-            minWidth: '100px',
+            minWidth: '70px',
             maxWidth: '600px',
             maxHeight: portalPosition.composer.maxHeight,
             zIndex: 100001,
@@ -859,16 +828,24 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           <div className={`${styles.composerContent}`}>
             {renderMainContent()}
           </div>
-          <div className={`${styles.composerHeader}`} data-drag-handle="true">
-          </div>
         </div>
       </DraggablePortal>
     );
   }
 
-  // Complex item editors show both cell mirror and composer panel
+  // Complex item editors show cell mirror with composer as an attached chin below
   return (
     <>
+      {showComposer && (
+        <div
+          className={styles.composerBackdrop}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            handleCloseComposer();
+          }}
+        />
+      )}
       <DraggablePortal
         initialPosition={{
           left: '0px',
@@ -887,11 +864,10 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
           }
         }}
       >
-        <div onKeyDown={handleKeyDown} tabIndex={0}>
+        <div onKeyDown={handleKeyDown} tabIndex={0} ref={containerRef}>
           {renderCurrentSelectionPanel()}
         </div>
       </DraggablePortal>
-      {showComposer && renderComposerPanel()}
     </>
   );
 });

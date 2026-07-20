@@ -47,6 +47,7 @@ export interface PhenexCellRendererProps extends ICellRendererParams {
   colorBackground?: boolean;
   colorBorder?: boolean;
   showButtons?: boolean;
+  justify?: 'left' | 'right';
   onEdit?: () => void;
   onDelete?: () => void;
 }
@@ -54,12 +55,13 @@ export interface PhenexCellRendererProps extends ICellRendererParams {
 export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const {
     showTopBorder = true,
-    showRightBorder = false,
+    showRightBorder = true,
     showBottomBorder = false,
     showLeftBorder = false,
     colorBackground = true,
     colorBorder = true,
     showButtons = true,
+    justify = 'right',
     onEdit: onEditProp,
     onDelete: onDeleteProp,
   } = props;
@@ -133,10 +135,15 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     if (showLeftBorder) borderColors.borderLeftColor = borderColorVar;
   }
 
+  const justifyStyle: React.CSSProperties = justify === 'left'
+    ? { justifyContent: 'flex-start', textAlign: 'left' }
+    : {};
+
   const combinedStyle: React.CSSProperties = {
     ...containerStyle,
     ...borderColors,
     ...(backgroundColor ? { backgroundColor } : {}),
+    ...justifyStyle,
   };
 
   const renderButtons = () =>{
@@ -157,7 +164,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   return (
     <div
-      className={`${styles.containerStyle} ${props.node.isSelected() ? styles.selected : ''}`}
+      className={`${styles.containerStyle} ${props.node.isSelected() ? styles.selected : ''} ${showRightBorder ? styles.rightBorder :''}`}
 
       style={combinedStyle}
     >
@@ -170,10 +177,17 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
           });
       }}>required</span>
       ) : (
-        props.children ? props.children : props.value
+        props.children ? props.children : (
+          props.value ? <span className={styles.itemChip} onClick={() => {
+            props.api?.startEditingCell({
+              rowIndex: props.node?.rowIndex ?? 0,
+              colKey: props.column?.getColId() ?? '',
+            });
+          }}>{props.value}</span> : null
+        )
       )}
       
-      {showButtons && renderButtons()}
+      {/* {showButtons && renderButtons()} */}
     </div>
   );
 };

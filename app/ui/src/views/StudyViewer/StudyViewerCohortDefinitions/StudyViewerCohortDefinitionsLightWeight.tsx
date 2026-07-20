@@ -6,6 +6,8 @@ import { CohortWithTableData } from './StudyViewerCohortDefinitionsTypes';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { deleteCohort } from '@/api/text_to_cohort/route';
 import { CohortGroupView } from './CohortGroupView';
+import { useThreePanelCollapse } from '../../../contexts/ThreePanelCollapseContext';
+import { DeleteConfirmModal } from '@/components/DeleteConfirmModal/DeleteConfirmModal';
 
 // Scale range constants
 const MIN_SCALE = 0.3;
@@ -78,6 +80,7 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
   const transformRef = useRef<HTMLDivElement>(null);
   const cohortDefinitionsRef = useRef(cohortDefinitions);
   const navigate = useNavigate();
+  const { setLeftPanelShown, setRightPanelShown } = useThreePanelCollapse();
   const lastZoomTime = useRef(0);
   
   // Current transform values (ref to avoid re-renders)
@@ -109,12 +112,19 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
       }
     };
 
+    const handleBlur = () => {
+      setIsShiftPressed(false);
+      setIsCommandPressed(false);
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleBlur);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleBlur);
     };
   }, []);
   
@@ -499,11 +509,20 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
     const cohortId = cohortDef.cohort.id;
     
     if (studyId && cohortId) {
+      // Navigate first so the CohortViewer mounts, then collapse the left
+      // panel on the next frame. This avoids the jarring double-transition
+      // where the StudyViewer visibly resizes before the CohortViewer renders.
       navigate(`/studies/${studyId}/cohorts/${cohortId}`);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setLeftPanelShown(false);
+          setRightPanelShown(false);
+        });
+      });
     } else {
       console.error('Missing study_id or cohort_id for navigation');
     }
-  }, [studyDataService.study_data?.id, navigate]);
+  }, [studyDataService.study_data?.id, navigate, setLeftPanelShown, setRightPanelShown]);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     setIsDragging(true);
@@ -603,39 +622,17 @@ export const StudyViewerCohortDefinitionsLightWeight = forwardRef<
 
       {/* Delete Confirmation Dialog */}
       {deleteConfirmCohort && (
-        <div className={styles.modalOverlay} onClick={() => setDeleteConfirmCohort(null)}>
-          <div className={styles.alertModal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.alertIcon}>
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-            </div>
-            <h3 className={styles.alertTitle}>Delete Cohort?</h3>
-            <p className={styles.alertMessage}>
-              Are you sure you want to delete <strong>"{deleteConfirmCohort.cohort.name || 'Unnamed Cohort'}"</strong>?
-            </p>
-            <p className={styles.alertWarning}>
-              This action cannot be undone. All cohort definitions and criteria will be permanently deleted.
-            </p>
-            <div className={styles.alertActions}>
-              <button className={styles.alertCancelButton} onClick={() => setDeleteConfirmCohort(null)}>
-                Cancel
-              </button>
-              <button className={styles.alertDeleteButton} onClick={async () => {
-                if (deleteConfirmCohort) {
-                  const studyId = deleteConfirmCohort.cohort.study_id || studyDataService.study_data?.id;
-                  await deleteCohort(studyId, deleteConfirmCohort.cohort.id);
-                  setDeleteConfirmCohort(null);
-                  await studyDataService.refreshStudyData();
-                }
-              }}>
-                Delete Cohort
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteConfirmModal
+          name={deleteConfirmCohort.cohort.name || 'Unnamed Cohort'}
+          entityName="Cohort"
+          onConfirm={async () => {
+            const studyId = deleteConfirmCohort.cohort.study_id || studyDataService.study_data?.id;
+            await deleteCohort(studyId, deleteConfirmCohort.cohort.id);
+            setDeleteConfirmCohort(null);
+            await studyDataService.refreshStudyData();
+          }}
+          onCancel={() => setDeleteConfirmCohort(null)}
+        />
       )}
     </>
   );

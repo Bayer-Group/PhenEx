@@ -44,14 +44,40 @@
   margin-right:0px;/* this is linked with the marginToEnd of the PhenotypeViewer aggrid*/
   width: 100%;
   display: flex;
-  border-radius: 18px;
   flex-direction: column;
+  position: relative;
 }
 
 .gridWrapper {
-  background-color: white;
-  border-radius: 20px;
-  min-height: 200px;
+  background-color: transparent;
+  /* min-height: 200px; */
+}
+
+/* One parameter row: parameter cell (pinned width) + value cell (flex). Both
+   cells stretch to the tallest content so the row grows naturally with rich
+   value renderers (codelists, time ranges, etc.). */
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 34px;
+  border-bottom: 1px solid var(--grid-border-color, var(--line-color-grid));
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+/* Covers the full viewport while a cell is being edited so clicking anywhere
+   outside the editor commits the edit without closing the PhenotypeViewer.
+   Sits below the editor portals (DraggablePortal z-index 9999 wins by DOM order). */
+.editingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  cursor: default;
 }
 
 

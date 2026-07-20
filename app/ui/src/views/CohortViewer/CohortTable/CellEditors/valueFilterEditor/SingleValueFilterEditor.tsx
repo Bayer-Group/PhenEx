@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './ValueFilterEditor.module.css';
 import { ValueFilter, Value } from './types';
 import { ColumnNameInput, ValueRangeSection, RemoveFilterButton } from './ValueFilterEditorComponents';
@@ -32,25 +32,34 @@ export const SingleValueFilterEditor: React.FC<SingleValueFilterEditorProps> = (
   onValueChange,
   data,
 }) => {
+  const [filter, setFilter] = useState<ValueFilter>(value);
+
+  // Notify parent component when filter changes
+  useEffect(() => {
+    if (onValueChange && filter !== value) {
+      onValueChange(filter);
+    }
+  }, [filter, onValueChange, value]);
+
   const isAgePhenotype = data?.class_name === 'AgePhenotype';
   const fieldLabel = isAgePhenotype ? 'Age' : 'Value';
 
   const updateFilter = (updates: Partial<ValueFilter>) => {
-    onValueChange({
-      ...value,
+    setFilter(prev => ({
+      ...prev,
       ...updates,
       class_name: 'ValueFilter',
-    });
+    }));
   };
 
   const handleOperatorChange = (field: 'min_value' | 'max_value', operator: string) => {
-    const currentValue = value[field];
+    const currentValue = filter[field];
     const newValue = createValueObject(operator, currentValue);
     updateFilter({ [field]: newValue });
   };
 
   const handleValueChange = (field: 'min_value' | 'max_value', newValue: number | null) => {
-    const currentField = value[field];
+    const currentField = filter[field];
     if (currentField && currentField.operator !== 'not set') {
       updateFilter({
         [field]: {
@@ -67,7 +76,7 @@ export const SingleValueFilterEditor: React.FC<SingleValueFilterEditorProps> = (
       <div className={styles.filterRow}>
         {!isAgePhenotype && (
           <ColumnNameInput
-            value={value.column_name}
+            value={filter.column_name}
             onChange={column_name => updateFilter({ column_name })}
           />
         )}
@@ -75,7 +84,7 @@ export const SingleValueFilterEditor: React.FC<SingleValueFilterEditorProps> = (
         <ValueRangeSection
           label={`Min ${fieldLabel}`}
           field="min_value"
-          value={value.min_value}
+          value={filter.min_value}
           operators={['>', '>=']}
           onOperatorChange={operator => handleOperatorChange('min_value', operator)}
           onValueChange={val => handleValueChange('min_value', val)}
@@ -84,7 +93,7 @@ export const SingleValueFilterEditor: React.FC<SingleValueFilterEditorProps> = (
         <ValueRangeSection
           label={`Max ${fieldLabel}`}
           field="max_value"
-          value={value.max_value}
+          value={filter.max_value}
           operators={['<', '<=']}
           onOperatorChange={operator => handleOperatorChange('max_value', operator)}
           onValueChange={val => handleValueChange('max_value', val)}

@@ -256,4 +256,72 @@ export class StudyViewerCohortDefinitionsDataService {
     // Call addPhenotype directly on the model instance
     model.addPhenotype(type, parentPhenotypeId);
   }
+
+  /**
+   * Move a phenotype into a different section (changes its type) for a cohort.
+   */
+  public async movePhenotypeToSection(cohortId: string, draggedId: string, newType: string, newRowData: any[]): Promise<void> {
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+      return;
+    }
+    const cohortDataService = CohortDataService.getInstance();
+    cohortDataService.setActiveCohortModel(model);
+    this._activeCohortId = cohortId;
+    await model.movePhenotypeToSection(draggedId, newType, newRowData);
+  }
+
+  /**
+   * Make a dragged phenotype a component of the drop-target phenotype for a cohort.
+   */
+  public async makePhenotypeComponentOf(cohortId: string, draggedId: string, targetParentId: string): Promise<void> {
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+      return;
+    }
+    const cohortDataService = CohortDataService.getInstance();
+    cohortDataService.setActiveCohortModel(model);
+    this._activeCohortId = cohortId;
+    await model.makePhenotypeComponentOf(draggedId, targetParentId);
+  }
+
+  /**
+   * Whether `draggedId` may be made a component of `targetId` in a cohort.
+   */
+  public canMakePhenotypeComponentOf(cohortId: string, draggedId: string, targetId: string): boolean {
+    const model = this._cohortModels.get(cohortId);
+    if (!model) return false;
+    return model.canMakePhenotypeComponentOf(draggedId, targetId);
+  }
+
+  /**
+   * Update a cohort's name and persist the change.
+   */
+  public async updateCohortName(cohortId: string, name: string): Promise<void> {
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+      return;
+    }
+    this.setActiveCohort(cohortId);
+    model.cohort_name = name;
+    if (model.cohort_data) model.cohort_data.name = name;
+    await model.saveChangesToCohort(false, false);
+  }
+
+  /**
+   * Update a cohort's description and persist the change.
+   */
+  public async updateCohortDescription(cohortId: string, description: string): Promise<void> {
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+      return;
+    }
+    this.setActiveCohort(cohortId);
+    if (model.cohort_data) model.cohort_data.description = description;
+    await model.saveChangesToCohort(false, false);
+  }
 }

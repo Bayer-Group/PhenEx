@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import styles from './MainBreadcrumb.module.css';
 import { StudyDataService } from '../StudyViewer/StudyDataService';
 import { CohortDataService } from '../CohortViewer/CohortDataService/CohortDataService';
+import { HierarchicalLeftPanelDataService } from '../LeftPanel/HierarchicalLeftPanelDataService';
 import { PhenExNavBarMenu } from '../../components/PhenExNavBar/PhenExNavBarMenu';
 
 interface MainBreadcrumbProps {
@@ -99,6 +100,8 @@ export const MainBreadcrumb: FC<MainBreadcrumbProps> = ({ studyId, showCohort })
     service.cohort_data.name = name;
     await service.saveChangesToCohort(true, false);
     setCohortName(name);
+    const cohortId = service.cohort_data?.id;
+    if (cohortId) HierarchicalLeftPanelDataService.getInstance().syncCohortDisplayName(cohortId, name);
     setEditing(null);
   };
 

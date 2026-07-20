@@ -30,6 +30,7 @@ export interface CodelistRendererProps {
   onItemClick?: (item: CodelistValue, index: number, event?: React.MouseEvent) => void; // Callback for clicking individual items in an array
   selectedIndex?: number; // Index of the currently selected item (for visual highlighting)
   selectedClassName?: string; // Optional className to apply to the selected item
+  showFullCodelist?: boolean; // When true, shows all codes without truncation
 }
 
 /**
@@ -47,6 +48,7 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   onItemClick,
   selectedIndex,
   selectedClassName,
+  showFullCodelist = false,
 }) => {
   const renderManualCodelist = (codelist: { [key: string]: string[] }, parentValue: CodelistValue, index: number = 0) => (
     <div key={index} className={styles.codelistContainer}>
@@ -78,12 +80,16 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
             style={{ cursor: onClick ? 'pointer' : 'default' }}
           >
             <div className={styles.codes}>
-              {codes.slice(0, MAX_CODES_TO_SHOW).map((code, i) => (
-                <span key={i} className={styles.code}>
-                  {code}
-                </span>
-              ))}
-              {codes.length > MAX_CODES_TO_SHOW && <span className={styles.code}>...</span>}
+              {(showFullCodelist ? codes : codes.slice(0, MAX_CODES_TO_SHOW)).map((code, i, arr) => {
+                const isLast = i === arr.length - 1;
+                const showComma = !isLast;
+                return (
+                  <span key={i} className={styles.code} style={showComma ? { paddingRight: '2px' } : undefined}>
+                    {code}{showComma ? ',' : ''}
+                  </span>
+                );
+              })}
+              {!showFullCodelist && codes.length > MAX_CODES_TO_SHOW && <span className={styles.code}>...</span>}
             </div>
             <div className={styles.codeType}>
               {displayCodeType}

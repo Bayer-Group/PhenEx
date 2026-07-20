@@ -166,3 +166,7 @@
 .newCohortButton:active {
   transform: scale(0.98);
 }
+
+.topRight{
+  z-index: 100;
+}

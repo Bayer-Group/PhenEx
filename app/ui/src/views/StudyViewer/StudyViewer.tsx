@@ -1,4 +1,4 @@
-import { FC, useState, useRef, useEffect, useCallback } from 'react';
+import { FC, ReactNode, useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './StudyViewer.module.css';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
@@ -31,9 +31,15 @@ interface StudyViewerProps {
   data?: string;
   embeddedMode?: boolean;
   activeTabIndex?: number;
+  rightBottomNavContent?: ReactNode;
 }
 
-export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, activeTabIndex }) => {
+export const StudyViewer: FC<StudyViewerProps> = ({
+  data,
+  embeddedMode = false,
+  activeTabIndex,
+  rightBottomNavContent,
+}) => {
   const navigate = useNavigate();
   const [studyName, setStudyName] = useState('');
   const [isPublicStudy, setIsPublicStudy] = useState(false);
@@ -237,7 +243,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
   return (
     <div className={styles.cohortTableContainer} style={fadeInStyle}>
       <div className={styles.bottomSection}>{renderContent()}</div>
-      <div className={navBarStyles.topRight}>
+      <div className={navBarStyles.bottomRightUnified}>
         <ViewNavBar
           height={44}
           scrollPercentage={zoomPercentage}
@@ -249,6 +255,7 @@ export const StudyViewer: FC<StudyViewerProps> = ({ data, embeddedMode = false, 
           leftArrowTooltipLabel="Pan Left"
           rightArrowTooltipLabel="Pan Right"
         />
+        {rightBottomNavContent}
       </div>
     </div>
   );

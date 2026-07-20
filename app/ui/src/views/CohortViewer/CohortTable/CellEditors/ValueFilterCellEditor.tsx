@@ -33,6 +33,13 @@ export const ValueFilterCellEditor = forwardRef((props: ValueFilterCellEditorPro
     return [value];
   };
 
+  // Convert array back to the format the backend expects: ValueFilter | AndFilter | null
+  const formatOutput = (filters: ValueFilter[]): ValueFilter | AndFilter | null => {
+    if (filters.length === 0) return null;
+    if (filters.length === 1) return filters[0];
+    return { class_name: 'AndFilter', filter1: filters[0], filter2: filters[1] };
+  };
+
   // Use the shared complex item editor hook
   const {
     selectedItemIndex,
@@ -54,19 +61,19 @@ export const ValueFilterCellEditor = forwardRef((props: ValueFilterCellEditorPro
     }),
   });
 
-  // Sync items to parent
+  // Sync formatted value to parent (AG Grid getValue)
   React.useEffect(() => {
-    props.onValueChange?.(items);
+    props.onValueChange?.(formatOutput(items));
   }, [items, props.onValueChange]);
 
   return (
     <PhenexCellEditor 
       {...props}
       ref={ref}
-      value={items}
+      value={formatOutput(items)}
       fieldName="value_filter"
       showComposerPanel={isEditing}
-      showAddButton={true}
+      showAddButton={items.length < 1}
       onAddItem={handleAddItem}
       onItemSelect={handleItemSelect}
       onEditingDone={handleEditingDone}

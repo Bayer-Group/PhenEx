@@ -3,6 +3,7 @@ import styles from './ItemList.module.css';
 
 export interface ListItemProps {
   name: string;
+  label?: string;
   info: string;
   selected?: boolean;
   highlighted?: boolean;
@@ -13,6 +14,7 @@ export interface ListItemProps {
 
 export const ListItem: React.FC<ListItemProps> = ({
   name,
+  label,
   info,
   selected,
   highlighted,
@@ -32,7 +34,7 @@ export const ListItem: React.FC<ListItemProps> = ({
           ✓
         </div>
       )} */}
-      <div className={styles.itemName}>{name}</div>
+      <div className={styles.itemName}>{label ?? name}</div>
       {/* <p className={styles.itemInfo}>{info}</p> */}
     </div>
   );

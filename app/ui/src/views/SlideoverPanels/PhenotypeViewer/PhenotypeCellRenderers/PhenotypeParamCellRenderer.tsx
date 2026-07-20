@@ -15,53 +15,28 @@ export interface PhenotypeParamCellRendererProps extends PhenexCellRendererProps
 export const PhenotypeParamCellRenderer: React.FC<PhenotypeParamCellRendererProps> = props => {
   const [showInfoPortal, setShowInfoPortal] = useState(false);
   const [portalOpacity, setPortalOpacity] = useState(0);
-  const infoButtonRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const onClickInfo = () => {
-    console.log('Edit button clicked for row with ID:', props.data);
-  };
-
-  const handleInfoButtonMouseEnter = () => {
-    // Clear any existing timers
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    
-    // Set a delay of 200ms before showing the portal
+  const handleMouseEnter = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setShowInfoPortal(true);
-      // Slight delay before starting the fade-in animation
-      setTimeout(() => {
-        setPortalOpacity(1);
-      }, 10);
+      setTimeout(() => setPortalOpacity(1), 10);
     }, 200);
   };
 
-  const handleInfoButtonMouseLeave = () => {
-    // Clear the timer if the mouse leaves before the delay completes
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
+  const handleMouseLeave = () => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
   };
 
   const handleInfoPortalHide = () => {
-    // Fade out first
     setPortalOpacity(0);
-    // Then hide after transition completes
-    setTimeout(() => {
-      setShowInfoPortal(false);
-    }, 200); // Match this with the transition duration
+    setTimeout(() => setShowInfoPortal(false), 200);
   };
-  
-  // Clean up timers on unmount
+
   useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    };
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, []);
 
   const formatValue = () => {
@@ -98,41 +73,30 @@ const getFullParameterDescription = (parameter: string): string => {
   const textColorClass = effectiveType ? typeStyles[`${effectiveType}_text_color`] || '' : '';
 
   return (
-    <div className={styles.container}>
-      <span className={`${styles.label} ${textColorClass}`}>{formatValue()}</span>
-      {/* <br></br>
-      <span className={`${styles.infotext} ${textColorClass}`}>
-        <ReactMarkdown>
-          {description}
-        </ReactMarkdown>
-      </span> */}
-      <button 
-        ref={infoButtonRef}
-        className={styles.infoButton} 
-        onClick={onClickInfo}
-        onMouseEnter={handleInfoButtonMouseEnter}
-        onMouseLeave={handleInfoButtonMouseLeave}
-      >
-        i{/* <img src={deleteIcon} className={styles.editIcon} alt="Delete" /> */}
-      </button>
-      
+    <div
+      className={styles.container}
+      ref={containerRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <span className={styles.label}>{formatValue()}</span>
+      <button className={styles.infoButton} tabIndex={-1}>i</button>
+
       {showInfoPortal && (
         <InfoPortal
-          triggerRef={infoButtonRef}
+          triggerRef={containerRef}
           position="below"
-          offsetX={-10}
-          offsetY={-15}
+          offsetX={0}
+          offsetY={-30}
           alignment="right"
+          textAlign="left"
           onHideRequest={handleInfoPortalHide}
         >
           <div
-            className={`${styles.infoPortalContainer} ${textColorClass}`}
-            style={{
-              opacity: portalOpacity,
-            }}
+            className={styles.infoPortalContainer}
+            style={{ opacity: portalOpacity }}
           >
-            <span className={styles.label}>{formatValue()}</span>
-            <br></br>
+            <span className={styles.infoPortalTitle}>{formatValue()}</span>
             <ReactMarkdown>{fullDescription}</ReactMarkdown>
           </div>
         </InfoPortal>

@@ -93,8 +93,10 @@ const LEFT_BORDER_SIZE = 300;
 const LEFT_BORDER_MIN = 200;
 const RIGHT_BORDER_SIZE = 300;
 const RIGHT_BORDER_MIN = 300;
+const EXECUTE_TAB_ID = 'executePanelTab';
+const ISSUES_TAB_ID = 'issuesPanelTab';
 
-/** Views that expose cohort/study right-panel content (Execute + Constants). */
+/** Views that expose cohort/study right-panel content (Info + Execute). */
 const COHORT_STUDY_VIEWS = new Set<ViewType>([
   ViewType.StudyViewer,
   ViewType.CohortDefinition,
@@ -109,6 +111,13 @@ const GLOBAL_LAYOUT_OPTIONS = {
   tabSetEnableMaximize: false,
   tabSetEnableDrop: false,
   borderEnableDrop: false,
+} as const;
+
+const EXECUTE_LAYOUT_OPTIONS = {
+  ...GLOBAL_LAYOUT_OPTIONS,
+  tabEnableDrag: true,
+  tabSetEnableDrop: true,
+  borderEnableDrop: true,
 } as const;
 
 /**
@@ -162,10 +171,9 @@ function createInnerLayoutModel(): Model {
         minSize: RIGHT_BORDER_MIN,
         selected: 0,
         children: [
+          { type: 'tab', name: 'Info', component: 'info', enableClose: false, enableDrag: false },
           { type: 'tab', name: 'Execute', component: 'execute', enableClose: false, enableDrag: false },
-          { type: 'tab', name: 'Constants', component: 'constants', enableClose: false, enableDrag: false },
           { type: 'tab', name: 'Chat', component: 'chat', enableClose: false, enableDrag: false },
-          { type: 'tab', name: 'Issues', component: 'issues', enableClose: false, enableDrag: false },
         ],
       },
     ],
@@ -178,6 +186,36 @@ function createInnerLayoutModel(): Model {
           enableDrop: false,
           children: [
             { type: 'tab', name: 'Center', component: 'center', enableClose: false, enableDrag: false },
+          ],
+        },
+      ],
+    },
+  };
+  return Model.fromJson(json);
+}
+
+// tabEnableClose: false,
+//       tabEnableRename: false,
+//       tabEnableDrag: true,
+//       tabSetEnableMaximize: false,
+//       tabSetEnableDrop: true,
+//       borderEnableDrop: true,
+
+
+function createExecuteLayoutModel(): Model {
+  const json: IJsonModel = {
+    global: EXECUTE_LAYOUT_OPTIONS,
+    borders: [],
+    layout: {
+      type: 'row',
+      children: [
+        {
+          type: 'tabset',
+          enableDeleteWhenEmpty: false,
+          enableDrop: true,
+          children: [
+            { type: 'tab', id: EXECUTE_TAB_ID, name: 'Execute', component: 'executePanel', enableClose: false, enableDrag: true },
+            { type: 'tab', id: ISSUES_TAB_ID, name: 'Issues', component: 'issuesPanel', enableClose: false, enableDrag: true },
           ],
         },
       ],
@@ -260,6 +298,7 @@ const MainViewInner = () => {
   // Outer layout owns the left border; inner layout owns the right border.
   const outerModelRef = useRef<Model>(createOuterLayoutModel());
   const innerModelRef = useRef<Model>(createInnerLayoutModel());
+  const executeModelRef = useRef<Model>(createExecuteLayoutModel());
   const {
     isLeftPanelShown,
     setLeftPanelShown,
@@ -293,13 +332,20 @@ const MainViewInner = () => {
   // Set up the layout service with the inner model (which has the right border)
   useEffect(() => {
     mainViewLayoutService.setModel(innerModelRef.current);
+    mainViewLayoutService.setExecuteModel(executeModelRef.current);
   }, []);
 
   // Hide right panel when on studies grid or empty view, show it for cohort/study views
+  // (but only when entering from a non-cohort/study view, so navigating within cohort/study
+  //  views — e.g. StudyViewer → CohortDefinition — doesn't force the panel open again)
+  const prevViewTypeRef = useRef<ViewType | null>(null);
   useEffect(() => {
+    const prev = prevViewTypeRef.current;
+    prevViewTypeRef.current = currentView.viewType;
+
     if (currentView.viewType === ViewType.StudiesGrid || currentView.viewType === ViewType.Empty) {
       setRightPanelShown(false);
-    } else if (COHORT_STUDY_VIEWS.has(currentView.viewType)) {
+    } else if (COHORT_STUDY_VIEWS.has(currentView.viewType) && (prev === null || !COHORT_STUDY_VIEWS.has(prev))) {
       setRightPanelShown(true);
     }
   }, [currentView.viewType, setRightPanelShown]);
@@ -336,7 +382,7 @@ const MainViewInner = () => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [toggleLeftPanel]);
 
-  const constantsContentMode =
+  const infoContentMode =
     currentView.viewType === ViewType.StudyViewer || currentView.viewType === ViewType.NewStudy
       ? 'study'
       : 'cohort';
@@ -345,6 +391,20 @@ const MainViewInner = () => {
     currentView.viewType === ViewType.CohortDefinition ||
     currentView.viewType === ViewType.PublicCohortDefinition ||
     currentView.viewType === ViewType.NewCohort;
+
+  const executePanelFactory = useCallback(
+    (node: { getComponent: () => string | undefined }) => {
+      switch (node.getComponent()) {
+        case 'executePanel':
+          return <StudyExecutePanel />;
+        case 'issuesPanel':
+          return <StudyIssuesPanel />;
+        default:
+          return null;
+      }
+    },
+    [],
+  );
 
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
@@ -368,7 +428,7 @@ const MainViewInner = () => {
                 </button>
                 <MainBreadcrumb studyId={studyId} showCohort={isCohortView} />
                 <div className={styles.titleGroupRight}>
-                  <ExportButton studyId={studyId} />
+                  <ExportButton studyId={studyId ?? null} />
                   <UserLogin />
                 </div>
               </div>
@@ -414,33 +474,25 @@ const MainViewInner = () => {
               <ChatPanel onTextEnter={() => { /* handled internally by ChatPanel */ }} />
             </div>
           );
+        case 'info':
+          return (
+            <div className={styles.rightPanelTab}>
+              {COHORT_STUDY_VIEWS.has(currentView.viewType) ? (
+                <CohortRightPanel contentMode={infoContentMode} />
+              ) : (
+                <div className={styles.emptyPane}>No info for this view.</div>
+              )}
+            </div>
+          );
         case 'execute':
           return (
             <div className={styles.rightPanelTab}>
               {COHORT_STUDY_VIEWS.has(currentView.viewType) ? (
-                <StudyExecutePanel />
+                <div className={styles.nestedTabLayout}>
+                  <Layout model={executeModelRef.current} factory={executePanelFactory} />
+                </div>
               ) : (
                 <div className={styles.emptyPane}>No execution for this view.</div>
-              )}
-            </div>
-          );
-        case 'constants':
-          return (
-            <div className={styles.rightPanelTab}>
-              {COHORT_STUDY_VIEWS.has(currentView.viewType) ? (
-                <CohortRightPanel contentMode={constantsContentMode} />
-              ) : (
-                <div className={styles.emptyPane}>No constants for this view.</div>
-              )}
-            </div>
-          );
-        case 'issues':
-          return (
-            <div className={styles.rightPanelTab}>
-              {COHORT_STUDY_VIEWS.has(currentView.viewType) ? (
-                <StudyIssuesPanel />
-              ) : (
-                <div className={styles.emptyPane}>No issues for this view.</div>
               )}
             </div>
           );
@@ -449,7 +501,7 @@ const MainViewInner = () => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentView, inReportView, constantsContentMode, studyId, isCohortView, toggleLeftPanel, handleInnerModelChange],
+    [currentView, executePanelFactory, inReportView, infoContentMode, studyId, isCohortView, toggleLeftPanel, handleInnerModelChange],
   );
 
   return (

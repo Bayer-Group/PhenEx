@@ -1,176 +1,148 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './PhenotypeViewer.module.css';
-import { AgGridReact } from '@ag-grid-community/react';
 import { PhenotypeDataService, Phenotype } from './PhenotypeDataService';
-import { AgGridWithCustomScrollbars } from '../../../components/AgGridWithCustomScrollbars/AgGridWithCustomScrollbars';
-import typeStyles from '../../../styles/study_types.module.css';
+import { CohortCardCell } from '../../CohortViewer/CohortCardViewer/CohortCardCell';
+import {
+  ShimApi,
+  ShimBacking,
+  createShimApi,
+  isColumnEditable,
+} from '../../CohortViewer/CohortCardViewer/gridApiShim';
+
 interface PhenotypeViewerProps {
   data?: Phenotype;
 }
 
+/** Which cell (by row index + column field) is currently in edit mode. */
+interface EditingState {
+  rowIndex: number;
+  field: string;
+  eventKey?: string;
+}
+
+/**
+ * PhenotypeViewer renders a phenotype's parameters as a simple two-column table
+ * (parameter name + editable value). It reuses the exact same cell renderers and
+ * editors as the cohort table via the gridApiShim, following the pattern of
+ * CohortCardViewer — no AG Grid involved.
+ */
 export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
   const dataService = useRef(PhenotypeDataService.getInstance()).current;
-  const gridRef = useRef<any>(null);
-  const gridContainerRef = useRef<HTMLDivElement>(null);
-  const [typeColor, setTypeColor] = useState('green');
-  const [typeColorDim, setTypeColorDim] = useState('green');
 
-  const refreshGrid = () => {
-    const maxRetries = 5;
-    const retryDelay = 100; // milliseconds
-    let retryCount = 0;
+  const [rows, setRows] = useState<any[]>(dataService.rowData);
+  const [editing, setEditing] = useState<EditingState | null>(null);
+  const [, forceTick] = useState(0);
 
-    const tryRefresh = () => {
-      if (gridRef.current?.api) {
-        const api = gridRef.current.api;
+  // Live refs so shim callbacks always read the current values.
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+  const editingRef = useRef<EditingState | null>(editing);
+  editingRef.current = editing;
+  const activeEditorRef = useRef<React.RefObject<any> | null>(null);
 
-        api.setGridOption('rowData', dataService.rowData);
+  const columns = useMemo(() => dataService.getColumnDefs(), [dataService]);
+  const columnsRef = useRef(columns);
+  columnsRef.current = columns;
 
-        // Force scroll to top after refresh
-        requestAnimationFrame(() => {
-          api.ensureIndexVisible(0, 'top');
-          
-          // Also scroll the viewport directly
-          if (gridContainerRef.current) {
-            const agGridViewport = gridContainerRef.current.querySelector('.ag-body-viewport');
-            if (agGridViewport) {
-              agGridViewport.scrollTop = 0;
-            }
-          }
-        });
-      } else if (retryCount < maxRetries) {
-        retryCount++;
-        setTimeout(tryRefresh, retryDelay);
+  // ---------------------------------------------------------------------------
+  // Shim api + backing (subset of the AG Grid api the renderers/editors expect)
+  // ---------------------------------------------------------------------------
+  const apiRef = useRef<ShimApi>(null as unknown as ShimApi);
+  const emptySelection = useRef(new Set<string>()).current;
+
+  const commitEdit = useCallback(
+    (cancel?: boolean) => {
+      const ed = editingRef.current;
+      if (!ed) return;
+      const editorRefObj = activeEditorRef.current;
+      setEditing(null);
+      activeEditorRef.current = null;
+      if (cancel) return;
+
+      const row = rowsRef.current[ed.rowIndex];
+      const colDef = columnsRef.current.find(c => c.field === ed.field);
+      if (!row || !colDef) return;
+
+      const rawValue = editorRefObj?.current?.getValue?.();
+      const oldValue = row[ed.field];
+      let newValue = rawValue;
+      if (typeof colDef.valueParser === 'function') {
+        newValue = colDef.valueParser({ newValue: rawValue, oldValue, data: row, colDef });
       }
-    };
-    // refresh ag-grid when new data is available.
-    // if ag-grid is not ready, retry after a delay.
-    tryRefresh();
-  };
+      if (newValue === oldValue) return;
 
+      // Mirror AG Grid's valueSetter: mutate the row in place so the renderer
+      // reflects the new value immediately.
+      row.value = newValue;
+      row[row.parameter] = newValue;
+      dataService.valueChanged(row.parameter, newValue);
+    },
+    [dataService]
+  );
+
+  const startEditingCell = useCallback(
+    (params: { rowIndex: number; colKey: string; key?: string }) => {
+      const row = rowsRef.current[params.rowIndex];
+      const colDef = columnsRef.current.find(c => c.field === params.colKey);
+      if (!row || !colDef) return;
+      if (!isColumnEditable(colDef, row, apiRef.current)) return;
+      if (editingRef.current) commitEdit();
+      setEditing({ rowIndex: params.rowIndex, field: params.colKey, eventKey: params.key });
+    },
+    [commitEdit]
+  );
+
+  const backing: ShimBacking = useMemo(
+    () => ({
+      getRows: () => rowsRef.current,
+      getColumns: () => columnsRef.current,
+      getSelectedIds: () => emptySelection,
+      setSelected: () => {},
+      deselectAll: () => {},
+      startEditingCell,
+      stopEditing: (cancel?: boolean) => commitEdit(cancel),
+      requestRefresh: () => forceTick(t => t + 1),
+      ensureRowVisible: () => {},
+      setGridOption: (key: string, value: any) => {
+        if (key === 'rowData') setRows(value ?? []);
+      },
+    }),
+    [startEditingCell, commitEdit, emptySelection]
+  );
+
+  const api = useMemo(() => createShimApi(backing), [backing]);
+  apiRef.current = api;
+
+  // ---------------------------------------------------------------------------
+  // Data wiring
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    const listener = (refreshPhenotypeGrid: boolean = false) => {
-      if (refreshPhenotypeGrid) {
-        refreshGrid();
-      }
-    };
+    // Re-pull the (possibly rebuilt) row data whenever the service notifies.
+    const listener = () => setRows([...dataService.rowData]);
     dataService.addListener(listener);
 
-    if (data) {
-      dataService.setData(data);
-      
-      // Multiple attempts to scroll to top when new data is loaded
-      const scrollToTop = () => {
-        if (gridRef.current?.api) {
-          gridRef.current.api.ensureIndexVisible(0, 'top');
-        }
-        
-        // Also scroll the AG Grid viewport directly
-        if (gridContainerRef.current) {
-          const agGridViewport = gridContainerRef.current.querySelector('.ag-body-viewport');
-          if (agGridViewport) {
-            agGridViewport.scrollTop = 0;
-          }
-        }
-      };
-      
-      // Try multiple times with increasing delays to handle dynamic row heights
-      setTimeout(scrollToTop, 50);
-      setTimeout(scrollToTop, 200);
-      setTimeout(scrollToTop, 500);
-    }
+    if (data) dataService.setData(data);
+    setEditing(null);
 
-    // Set type color based on phenotype type
-    if (data?.effective_type && typeStyles[`${data.effective_type}_color_block`]) {
-      setTypeColor(typeStyles[`${data.effective_type}_color_block`]);
-      setTypeColorDim(typeStyles[`${data.effective_type}_color_block_dim`]);
-    } else {
-      setTypeColor('blue'); // default color
-    }
+    return () => dataService.removeListener(listener);
+  }, [data, dataService]);
 
-    return () => {
-      dataService.removeListener(listener);
+  // Escape cancels an in-flight edit.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && editingRef.current) commitEdit(true);
     };
-  }, [data]);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [commitEdit]);
 
-  const onCellValueChanged = async (event: any) => {
-    console.log("PHENOTYPE VIEWER: ON CELL VALUE CHANGED");
-    if (event.newValue !== event.oldValue) {
-      console.log("PHENOTYPE VIEWER: VALUE CHANGED");
-      dataService.valueChanged(event.data.parameter, event.newValue);
-    }
-  };
+  const registerEditor = useCallback((editorRef: React.RefObject<any>) => {
+    activeEditorRef.current = editorRef;
+  }, []);
 
-  const renderPhenotypeEditorTable = () => {
-    return (
-      <div className={`${styles.gridWrapper}`}>
-      <div className={`${styles.gridContainer} ${typeColorDim}`}>
-          <AgGridWithCustomScrollbars
-          rowData={dataService.rowData}
-          columnDefs={dataService.getColumnDefs()}
-          ref={gridRef}
-          theme={dataService.getTheme()}
-          onCellValueChanged={onCellValueChanged}
-          scrollbarConfig={{ vertical: { classNameThumb: typeColor, marginToEnd: -15 }, horizontal: { enabled: false } }}
-          animateRows={false}
-          bottomPadding={0}
-          hideScrollbars={true}
-          headerHeight={0}
-          domLayout="autoHeight"
-          
-          getRowHeight={params => {
-            // Calculate height of CODELISTS
-            let current_max_height = 34;
-
-            if (params.data?.parameter == 'codelist' && params.data.codelist?.codelist) {
-              const numEntries = Object.keys(params.data.codelist.codelist).length;
-              const codelist_phenotype_height = Math.max(48, numEntries * 50 + 20); // Adjust row height based on number of codelist entries
-              current_max_height = Math.max(current_max_height, codelist_phenotype_height);
-              return current_max_height;
-            }
-
-            if (params.data?.parameter == 'categorical_filter') {
-              return current_max_height * 2;
-            }
-
-            // Calculate height of RELATIVE TIME RANGES
-            if (
-              params.data?.parameter == 'relative_time_range' &&
-              params.data?.relative_time_range
-            ) {
-              if (
-                params.data?.relative_time_range &&
-                Array.isArray(params.data.relative_time_range)
-              ) {
-                const numEntries = params.data.relative_time_range.length;
-                const time_range_phenotype_height = Math.max(48, numEntries * 30 + 20); // Adjust row height based on number of entries
-                current_max_height = Math.max(current_max_height, time_range_phenotype_height);
-              }
-            }
-
-            if (params.data?.parameter == 'description') {
-              if (!params.data?.value) {
-                current_max_height = 100;
-                return current_max_height;
-              }
-
-              const descriptionCol = params.api.getColumnDef('description');
-              // if (!descriptionCol || !params.data?.description) return 48; // Increased minimum height
-              const descWidth = 200;
-              const charPerLine = Math.floor(descWidth / 8);
-              const lines = Math.ceil(params.data?.value.length / charPerLine);
-              return Math.max(current_max_height, lines * 14 + 20); // Increased minimum height
-            }
-
-            return current_max_height;
-          }}
-        />
-        </div>
-      </div>
-    );
-  };
-
-
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
   if (!data) {
     return (
       <div className={styles.container}>
@@ -179,5 +151,49 @@ export const PhenotypeViewer: React.FC<PhenotypeViewerProps> = ({ data }) => {
     );
   }
 
-  return renderPhenotypeEditorTable();
+  const getBorderColorVar = (rowLike: any): string => {
+    const shouldColorBorder = rowLike?.colorCellBorder !== undefined ? rowLike.colorCellBorder : true;
+    return shouldColorBorder && rowLike?.effective_type
+      ? `color-mix(in srgb, var(--color_${rowLike.effective_type}_dim) 82%, black)`
+      : 'transparent';
+  };
+
+  const gridBorderStyle = ({
+    ['--grid-border-color' as any]: getBorderColorVar(data?.effective_type ? data : rows[0]),
+  } as React.CSSProperties);
+
+  return (
+    <div className={styles.gridWrapper}>
+      <div className={styles.gridContainer} style={gridBorderStyle}>
+        {editing && <div className={styles.editingOverlay} onClick={e => { e.stopPropagation(); commitEdit(); }} />}
+        {rows.map((rowData, rowIndex) => (
+          <div
+            key={rowData?.parameter ?? rowIndex}
+            className={styles.row}
+            style={{
+              ['--grid-border-color' as any]: getBorderColorVar(rowData),
+            }}
+          >
+            {columns.map(colDef => (
+              <CohortCardCell
+                key={colDef.field}
+                rowData={rowData}
+                rowIndex={rowIndex}
+                colDef={colDef}
+                api={api}
+                backing={backing}
+                isEditing={editing?.rowIndex === rowIndex && editing.field === colDef.field}
+                eventKey={
+                  editing?.rowIndex === rowIndex && editing.field === colDef.field
+                    ? editing.eventKey
+                    : undefined
+                }
+                registerEditor={registerEditor}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };

@@ -4,7 +4,7 @@ import { ValueFilter, AndFilter } from '../../CellEditors/valueFilterEditor/type
 import { LogicalFilterRenderer, FlattenedItem } from './LogicalFilterRenderer';
 import typeStyles from '../../../../../styles/study_types.module.css';
 
-export type ValueFilterValue = ValueFilter | AndFilter | null | undefined;
+export type ValueFilterValue = ValueFilter | AndFilter | ValueFilter[] | null | undefined;
 
 export interface ValueFilterRendererProps {
   value: ValueFilterValue;
@@ -61,7 +61,10 @@ export const ValueFilterRenderer: React.FC<ValueFilterRendererProps> = ({
     );
   };
 
-  const getFilters = (filterValue: ValueFilter | AndFilter): ValueFilter[] => {
+  const getFilters = (filterValue: ValueFilter | AndFilter | ValueFilter[]): ValueFilter[] => {
+    if (Array.isArray(filterValue)) {
+      return filterValue;
+    }
     if (filterValue.class_name === 'AndFilter') {
       return [filterValue.filter1, filterValue.filter2];
     }

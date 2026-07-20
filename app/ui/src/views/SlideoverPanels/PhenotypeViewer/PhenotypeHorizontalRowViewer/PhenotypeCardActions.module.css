@@ -1,0 +1,45 @@
+.actions {
+  position: absolute;
+  top: -40px;
+  right: 12px;
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+  z-index: 10;
+}
+
+.actionButton {
+  background: var(--background_color_light, #fff);
+  border: var(--border_dark);
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transition: background 0.15s ease, color 0.15s ease;
+  color: var(--text_color, #333);
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.actionButton:hover {
+  background: var(--color_accent_blue, #2f80ed);
+  color: white;
+}
+
+.actionButton:active {
+  transform: scale(0.95);
+}
+
+.deleteButton {
+  color: var(--color_danger, #e05252);
+}
+
+.deleteButton:hover {
+  background: var(--color_danger, #e05252) !important;
+  color: white !important;
+}

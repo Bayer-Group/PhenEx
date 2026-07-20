@@ -1,14 +1,11 @@
-import TypeCellRenderer from '../CohortTable/CellRenderers/TypeCellRenderer';
 import NameCellRenderer from '../CohortTable/CellRenderers/NameCellRenderer';
 import CodelistCellRenderer from '../CohortTable/CellRenderers/CodelistCellRenderer';
 import DomainCellRenderer from '../CohortTable/CellRenderers/DomainCellRenderer';
 import PhenotypeCellRenderer from '../CohortTable/CellRenderers/PhenotypeCellRenderer';
 import { PhenexCellRenderer } from '../CohortTable/CellRenderers/PhenexCellRenderer';
 import type { ICellEditorParams } from 'ag-grid-community';
-import RowDragCellRenderer from '../CohortTable/CellRenderers/RowDragCellRenderer';
-import SelectionCellRenderer from '../CohortTable/CellRenderers/SelectionCellRenderer';
+import TypeSelectionDragCellRenderer from '../CohortTable/CellRenderers/TypeSelectionDragCellRenderer';
 
-import CountCellRenderer from '../CohortTable/CellRenderers/CountCellRenderer';
 import CategoricalFilterCellRenderer from '../CohortTable/CellRenderers/CategoricalFilterCellRenderer';
 import RelativeTimeRangeCellRenderer from '../CohortTable/CellRenderers/RelativeTimeRangeCellRenderer';
 import ValueFilterCellRenderer from '../CohortTable/CellRenderers/ValueFilterCellRenderer';
@@ -36,49 +33,28 @@ export const columnNameToApplicablePhenotypeMapping = {
 
 export const componentPhenotypeColumns: any[] = [
   {
-    field: 'selection',
-    headerName: '',
-    width: 30,
-    pinned: 'left',
-    resizable: false,
-    filter: false,
-    suppressHeaderMenuButton: true,
-    cellRenderer: SelectionCellRenderer,
-  },
-  {
-    field: 'rowDrag',
-    headerName: '',
-    width: 30,
-    pinned: 'left',
-    rowDrag: true,
-    resizable: false,
-    filter: false,
-    suppressHeaderMenuButton: true,
-    cellClass: 'row-drag-handle',
-    cellRenderer: RowDragCellRenderer,
-  },
-  {
     field: 'type',
     headerName: '',
-    width: 50,
+    width: 70,
+    pinned: 'left',
+    resizable: false,
     filter: false,
     suppressHeaderMenuButton: true,
-    resizable: false,
-    pinned: 'left',
-    editable: params => {
-      return params.data.type != 'component';
-    },
+    rowDrag: true,
+    cellClass: 'type-selection-drag-handle',
+    editable: (params: any) => params.data.type != 'component',
     cellEditor: TypeSelectorCellEditor,
     cellEditorParams: {
       values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
     },
-    cellRenderer: TypeCellRenderer,
+    cellRenderer: TypeSelectionDragCellRenderer,
     cellEditorPopup: true,
   },
   {
     field: 'name',
     headerName: '',
     flex: 1,
+    pinned: 'left',
     resizable: false,
     editable: true,
     cellRenderer: NameCellRenderer,
@@ -99,46 +75,22 @@ export const componentPhenotypeColumns: any[] = [
 
 export const defaultColumns = [
   {
-    field: 'selection',
-    headerName: '',
-    width: 10,
-    pinned: 'left',
-    resizable: false,
-    filter: false,
-    suppressHeaderMenuButton: true,
-    cellRenderer: SelectionCellRenderer,
-    lockPosition: 'left',
-  },
-  {
-    field: 'rowDrag',
-    headerName: '',
-    width: 30,
-    pinned: 'left',
-    // lockPosition: 'left',
-    rowDrag: true,
-    resizable: false,
-    filter: false,
-    suppressHeaderMenuButton: true,
-    cellClass: 'row-drag-handle',
-    cellRenderer: RowDragCellRenderer,
-  },
-  {
     field: 'type',
     headerName: '',
-    width: 40,
-    resizable: false,
+    width: 70,
     pinned: 'left',
-    editable: (params: any) => {
-      return params.data.type != 'component';
-    },
+    resizable: false,
     filter: false,
     suppressHeaderMenuButton: true,
-
+    lockPosition: 'left',
+    rowDrag: true,
+    cellClass: 'type-selection-drag-handle',
+    editable: (params: any) => params.data.type != 'component',
     cellEditor: TypeSelectorCellEditor,
     cellEditorParams: {
       values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
     },
-    cellRenderer: TypeCellRenderer,
+    cellRenderer: TypeSelectionDragCellRenderer,
     cellEditorPopup: true,
   },
   {
@@ -165,9 +117,9 @@ export const defaultColumns = [
   {
     field: 'class_name',
     headerName: 'Phenotype',
-    width: 130,
+    width: 110,
     editable: true,
-    pinned: 'left',
+    // pinned: 'left',
     cellRenderer: PhenotypeCellRenderer,
     cellEditor: PhenotypeSelectorCellEditor,
     cellEditorParams: {
@@ -187,7 +139,7 @@ export const defaultColumns = [
   {
     field: 'domain',
     headerName: 'Domain',
-    width: 270,
+    width: 180,
     editable: true,
     cellRenderer: DomainCellRenderer,
     cellEditor: DomainSelectorCellEditor,
@@ -207,7 +159,7 @@ export const defaultColumns = [
   {
     field: 'codelist',
     headerName: 'Codelists',
-    width: 400,
+    width: 180,
     editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.codelist.includes(params.data.class_name);
     },
@@ -254,7 +206,7 @@ export const defaultColumns = [
   {
     field: 'relative_time_range',
     headerName: 'Relative time ranges',
-    width: 300,
+    width: 160,
     editable: (params: any) => {
       return (
         params.data.type !== 'entry' &&
@@ -296,7 +248,7 @@ export const defaultColumns = [
   {
     field: 'categorical_filter',
     headerName: 'Categorical filters',
-    width: 400,
+    width: 180,
     editable: (params: any) => {
       return columnNameToApplicablePhenotypeMapping.categorical_filter.includes(
         params.data.class_name
@@ -315,7 +267,7 @@ export const defaultColumns = [
   {
     field: 'return_date',
     headerName: 'Return Date',
-    width: 150,
+    width: 100,
     editable: true,
     cellEditor: ReturnDateCellEditor,
     cellEditorPopup: true,

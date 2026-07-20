@@ -72,6 +72,8 @@
   box-sizing: border-box;
   display: flex;
   align-items: flex-start;
+  justify-content: flex-end;
+  text-align: right;
   border-top: 1px solid transparent;
   border-right: 1px solid transparent;
   border-bottom: 1px solid transparent;
@@ -81,6 +83,30 @@
 .selected {
   /* background-color: red; */
   
+}
+
+.itemChip {
+  margin-top: var(--item-margin-top);
+  background-color: var(--item-color-default);
+  line-height: var(--item-font-size);
+  border-radius: var(--item-radius);
+  border: var(--item-border-default);
+  transition: var(--item-transition);
+  font-family: var(--item-font-family);
+  font-size: var(--item-font-size);
+  color: var(--item-font-color);
+  border-width: var(--border_width_item) !important;
+  padding: var(--padding_vertical_item) var(--padding_horizontal_item);
+  display: inline-flex;
+  align-items: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  text-wrap: wrap;
+  cursor: pointer;
+}
+
+.itemChip:hover {
+  background-color: var(--background_color_hover_over_grid);
 }
 
 .missingLabel {
@@ -93,13 +119,14 @@
 }
 
 .missingLabel:hover{
-  background-color: white;
+  background-color: var(--background_color_hover_over_grid);
+
 }
 
 /* Button styles for cells */
 .buttonContainer {
   position: absolute;
-  right: 5px;
+  left: 5px;
   bottom: 2px;
   display: flex;
   gap: 4px;
@@ -158,4 +185,9 @@
   width: 14px;
   height: 14px;
   color: var(--text-color-normal);
+}
+
+
+.rightBorder {
+  border-right: 1px solid var(--line-color);
 }

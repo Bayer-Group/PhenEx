@@ -4,11 +4,12 @@ import styles from './DeleteConfirmModal.module.css';
 
 interface DeleteConfirmModalProps {
   name: string;
+  entityName?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ name, onConfirm, onCancel }) => {
+export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ name, entityName = 'Phenotype', onConfirm, onCancel }) => {
   return createPortal(
     <div className={styles.modalOverlay} onClick={onCancel}>
       <div className={styles.alertModal} onClick={(e) => e.stopPropagation()}>
@@ -19,7 +20,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ name, on
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
         </div>
-        <h3 className={styles.alertTitle}>Delete Phenotype?</h3>
+        <h3 className={styles.alertTitle}>Delete {entityName}?</h3>
         <p className={styles.alertMessage}>
           Are you sure you want to delete <strong>"{name}"</strong>?
         </p>
@@ -31,7 +32,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ name, on
             Cancel
           </button>
           <button className={styles.alertDeleteButton} onClick={onConfirm}>
-            Delete Phenotype
+            Delete {entityName}
           </button>
         </div>
       </div>

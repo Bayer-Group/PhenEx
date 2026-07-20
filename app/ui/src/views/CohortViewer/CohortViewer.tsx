@@ -1,10 +1,11 @@
-import { FC, useState, useRef, useEffect } from 'react';
+import { FC, ReactNode, useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './CohortViewer.module.css';
 import { CohortDataService } from './CohortDataService/CohortDataService';
+import { HierarchicalLeftPanelDataService } from '../LeftPanel/HierarchicalLeftPanelDataService';
 import { getUserCohort, getStudy } from '../../api/text_to_cohort/route';
 import { PopoverHeader } from '../../components/PopoverHeader/PopoverHeader';
-import { CohortTable } from './CohortTable/CohortTable';
+import { CohortCardViewer } from './CohortCardViewer/CohortCardViewer';
 import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsBar/CustomizableDropdownButton';
 import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
@@ -33,6 +34,7 @@ interface CohortViewerProps {
   data?: string;
   onAddPhenotype?: () => void;
   activeTabIndex?: number;
+  rightBottomNavContent?: ReactNode;
 }
 
 export enum CohortViewType {
@@ -41,7 +43,12 @@ export enum CohortViewType {
   Report = 'report',
 }
 
-export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, activeTabIndex }) => {
+export const CohortViewer: FC<CohortViewerProps> = ({
+  data,
+  onAddPhenotype,
+  activeTabIndex,
+  rightBottomNavContent,
+}) => {
   const navigate = useNavigate();
   const { studyId: urlStudyId } = useParams<{ studyId: string }>();
   const [cohortName, setCohortName] = useState('');
@@ -58,6 +65,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
   const [scrollPercentage, setScrollPercentage] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [flipScrollDirection, setFlipScrollDirection] = useState(false);
   
   const fadeInStyle = useFadeIn();
 
@@ -102,9 +110,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
     // Listen to right panel state changes
     const cohortViewerService = TwoPanelCohortViewerService.getInstance();
     
-    const handleRightPanelChange = (viewType: any, extraData: any, isCollapsed: boolean) => {
-      // Right panel is open if it's not collapsed
-      setIsRightPanelOpen(!isCollapsed);
+    const handleRightPanelChange = (viewType: any) => {
+      // Right panel is open when the phenotype popover is showing
+      setIsRightPanelOpen(viewType === 'phenotype');
     };
     
     cohortViewerService.addListener(handleRightPanelChange);
@@ -120,7 +128,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
   useEffect(() => {
     // Update cohort name and study name when data service changes
     const updateCohortData = () => {
-      setCohortName(dataService._cohort_name);
+      setCohortName(dataService.cohort_name);
       setStudyName(dataService.getStudyNameForCohort());
     };
 
@@ -141,6 +149,8 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
       // Update grid data - AG Grid will maintain scroll position automatically with getRowId
       api.setGridOption('rowData', dataService.table_data['rows']);
       api.setGridOption('columnDefs', dataService.table_data['columns']);
+      // Force cell renderers to re-run (needed when display settings like showFullCodelists change)
+      api.refreshCells({ force: true });
     }
   };
   useEffect(() => {
@@ -214,6 +224,22 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
     refreshGrid();
     console.log('=== CohortViewer onRowDragEnd END ===');
   };
+
+  // Move a phenotype into a different section (changes its type and position).
+  const onSectionDrop = async (draggedId: string, newType: string, newRowData: any[]) => {
+    await dataService.movePhenotypeToSection(draggedId, newType, newRowData);
+    refreshGrid();
+  };
+
+  // Make a dragged phenotype a component of the drop-target phenotype.
+  const onComponentDrop = async (draggedId: string, targetParentId: string) => {
+    await dataService.makePhenotypeComponentOf(draggedId, targetParentId);
+    refreshGrid();
+  };
+
+  const canMakeComponent = (draggedId: string, targetId: string) =>
+    dataService.canMakePhenotypeComponentOf(draggedId, targetId);
+
   const tabs = Object.values(CohortDefinitionViewType).map(value => {
     return sectionDisplayNames[value];
   });
@@ -240,7 +266,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
           'exclusion',
           'baseline',
           'outcome',
-          'component',
         ]);
         break;
     }
@@ -318,16 +343,39 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
   };
 
   const renderTable = () => {
+    const handleCohortNameChange = (name: string) => {
+      dataService.cohort_name = name;
+      if (dataService.cohort_data) dataService.cohort_data.name = name;
+      dataService.saveChangesToCohort(false, false);
+      const cohortId = dataService.cohort_data?.id;
+      if (cohortId) HierarchicalLeftPanelDataService.getInstance().syncCohortDisplayName(cohortId, name);
+    };
+
+    const handleCohortDescriptionChange = (description: string) => {
+      if (dataService.cohort_data) dataService.cohort_data.description = description;
+      dataService.saveChangesToCohort(false, false);
+    };
+
     return (
-      <CohortTable
+      <CohortCardViewer
         data={dataService.table_data}
         currentlyViewing={currentView}
+        cohortId={dataService.cohort_data?.id}
+        cohortName={cohortName}
+        description={dataService.cohort_data?.description}
         onCellValueChanged={onCellValueChanged}
         onRowDragEnd={onRowDragEnd}
+        onSectionDrop={onSectionDrop}
+        onComponentDrop={onComponentDrop}
+        canMakeComponent={canMakeComponent}
+        onNameChange={handleCohortNameChange}
+        onDescriptionChange={handleCohortDescriptionChange}
+        onHorizontalScroll={updateScrollState}
         hideScrollbars={showIssuesPopover}
         hideVerticalScrollbar={isRightPanelOpen}
         ref={gridRef}
-        gridBottomPadding={400}
+        gridBottomPadding={200}
+        flipScrollDirection={flipScrollDirection}
       />
     );
   };
@@ -348,8 +396,6 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
   const handleViewNavigationArrowClicked = (direction: 'left' | 'right') => {
     if (gridRef.current?.scrollByColumn) {
       gridRef.current.scrollByColumn(direction);
-      // Update scroll state after scrolling
-      updateScrollState();
     }
   };
 
@@ -376,24 +422,9 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
 
   // Listen to grid scroll events to update navbar
   useEffect(() => {
-    const handleScroll = () => {
-      updateScrollState();
-    };
-
-    // Find the grid viewport and attach scroll listener
-    const gridElement = gridRef.current?.eGridDiv;
-    if (gridElement) {
-      const viewport = gridElement.querySelector('.ag-center-cols-viewport');
-      if (viewport) {
-        viewport.addEventListener('scroll', handleScroll);
-        // Initial state update
-        updateScrollState();
-        
-        return () => {
-          viewport.removeEventListener('scroll', handleScroll);
-        };
-      }
-    }
+    // Nothing to do here — scroll state is updated via the onHorizontalScroll
+    // callback passed to CohortCardViewer, which fires on every horizontal scroll
+    // event (including smooth-scroll animation frames from arrow buttons).
   }, [dataService.table_data]);
   
   return (
@@ -402,7 +433,7 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
           {renderTable()}
           <div className={styles.bottomGradient} />
         </div>
-        <div className={navBarStyles.topRight}>
+        <div className={navBarStyles.bottomRightUnified}>
           <ViewNavBar
             height={44}
             scrollPercentage={scrollPercentage}
@@ -411,7 +442,10 @@ export const CohortViewer: FC<CohortViewerProps> = ({ data, onAddPhenotype, acti
             onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
             onViewNavigationScroll={handleViewNavigationScroll}
             onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+            flipScrollDirection={flipScrollDirection}
+            onFlipScrollDirectionChange={setFlipScrollDirection}
           />
+          {rightBottomNavContent}
         </div>
       </div>
   );

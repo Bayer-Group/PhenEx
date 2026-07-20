@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { InfoPanel } from '../../SlideoverPanels/InfoPanel/InfoPanel';
 import { DatabasePanel } from '../../SlideoverPanels/DatabasePanel/DatabasePanel';
 import { CodelistsViewer } from '../../SlideoverPanels/CodelistsViewer/CodelistsViewer';
+import { ImportPanel } from '../../SlideoverPanels/ImportPanel/ImportPanel';
 import { RelativeTimeRangePanel } from '../../SlideoverPanels/ConstantsPanels/RelativeTimeRangePanel';
 import { CategoricalFilterPanel } from '../../SlideoverPanels/ConstantsPanels/CategoricalFilterPanel';
 import { TimeRangePanel } from '../../SlideoverPanels/ConstantsPanels/TimeRangePanel';
@@ -18,12 +19,12 @@ export const CohortRightPanel: React.FC<CohortRightPanelProps> = ({ contentMode 
   return (
     <div className={styles.wrapper}>
       <div ref={containerRef} className={styles.container}>
-        <InfoPanel contentMode={contentMode} />
         <DatabasePanel contentMode={contentMode} />
         <RelativeTimeRangePanel />
         <CategoricalFilterPanel />
         <TimeRangePanel />
         <CodelistsViewer />
+        <ImportPanel />
       </div>
       <SimpleCustomScrollbar
         targetRef={containerRef}
