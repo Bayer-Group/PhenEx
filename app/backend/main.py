@@ -205,6 +205,11 @@ from .routes.study_cohort import router as cohort_router
 
 app.include_router(cohort_router)
 
+# Include the cohort import router
+from .routes.cohort_import import router as cohort_import_router
+
+app.include_router(cohort_import_router)
+
 # Include the study router
 from .routes.study import router as study_router
 

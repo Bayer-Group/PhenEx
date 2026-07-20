@@ -48,6 +48,35 @@ export const updateCohortDatabaseConfig = async (study_id: string, cohort_id: st
   }
 };
 
+export interface ImportedCohortResponse {
+  status: string;
+  cohort_id: string;
+  study_id: string;
+  name: string;
+  display_order: number;
+}
+
+/**
+ * Import a cohort from a .json file into a study. The backend validates the
+ * file by building a PhenEx object before saving it to the study.
+ */
+export const importCohort = async (
+  study_id: string,
+  file: File
+): Promise<ImportedCohortResponse> => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post(`/study/${study_id}/cohort/import`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error in importCohort:', error);
+    throw error;
+  }
+};
+
 export const deleteCohort = async (study_id: string, cohort_id: string) => {
   try {
     const response = await api.delete(`/study/${study_id}/cohort/${cohort_id}`);

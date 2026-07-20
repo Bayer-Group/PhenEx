@@ -68,7 +68,8 @@ const phenotypeNames = [
   'ArithmeticPhenotype',
   'EventCountPhenotype',
   'BinPhenotype',
-  'MeasurementChange',
+  'MeasurementChangePhenotype',
+  'UserDefinedPhenotype',
 ];
 
 const phenotypes = phenotypeNames.map(name => ({

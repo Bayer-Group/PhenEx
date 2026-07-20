@@ -90,6 +90,24 @@ export class StudyDataService {
     }
   }
 
+  /**
+   * Re-fetch the current study's cohorts from the backend and reload the view.
+   * Used after an external change (e.g. importing a cohort) so the StudyViewer
+   * reflects the latest cohorts.
+   */
+  public async reloadStudy(): Promise<void> {
+    const studyId = this._study_data?.id;
+    if (!studyId) {
+      return;
+    }
+    // Dynamic import avoids a circular dependency with CohortsDataService.
+    const { CohortsDataService } = await import('../LeftPanel/CohortsDataService');
+    const cohortsDataService = CohortsDataService.getInstance();
+    cohortsDataService.clearStudyCohortsCache(studyId);
+    const cohorts = await cohortsDataService.getCohortsForStudy(studyId);
+    this.loadStudyData({ ...this._study_data, cohorts });
+  }
+
   public async createNewStudy() {
     /*
     Creates an in memory cohort (empty) data structure new cohort. This is not saved to disk! only when user inputs any changes to the cohort are changes made

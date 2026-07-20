@@ -42,3 +42,20 @@
 .hiddenInput {
   display: none;
 }
+
+.statusSuccess,
+.statusError {
+  margin-top: 8px;
+  font-size: 11px;
+  font-family: 'IBMPlexSans-regular';
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.statusSuccess {
+  color: var(--color-accent-bright);
+}
+
+.statusError {
+  color: #e05252;
+}

@@ -23,21 +23,18 @@ export const ValueFilterCellEditor = forwardRef((props: ValueFilterCellEditorPro
     return <div></div>;
   }
 
-  // Normalize value to array
+  // A value filter is always a single ValueFilter. Coerce any legacy shape
+  // (AndFilter or array) down to a single filter for editing.
   const normalizeValue = (value: any): ValueFilter[] => {
     if (!value) return [];
-    if (value.class_name === 'AndFilter') {
-      return [value.filter1, value.filter2];
-    }
-    if (Array.isArray(value)) return value;
+    if (value.class_name === 'AndFilter') return [value.filter1];
+    if (Array.isArray(value)) return value.slice(0, 1);
     return [value];
   };
 
-  // Convert array back to the format the backend expects: ValueFilter | AndFilter | null
-  const formatOutput = (filters: ValueFilter[]): ValueFilter | AndFilter | null => {
-    if (filters.length === 0) return null;
-    if (filters.length === 1) return filters[0];
-    return { class_name: 'AndFilter', filter1: filters[0], filter2: filters[1] };
+  // Output is always a single ValueFilter (or null when cleared).
+  const formatOutput = (filters: ValueFilter[]): ValueFilter | null => {
+    return filters[0] ?? null;
   };
 
   // Use the shared complex item editor hook

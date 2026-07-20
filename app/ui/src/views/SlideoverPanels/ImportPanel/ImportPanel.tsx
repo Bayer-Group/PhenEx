@@ -1,20 +1,56 @@
 import React, { useRef, useState, DragEvent } from 'react';
 import { SlideoverPanel } from '../SlideoverPanel/SlideoverPanel';
+import { importCohort } from '../../../api/text_to_cohort/route';
+import { StudyDataService } from '../../StudyViewer/StudyDataService';
 import styles from './ImportPanel.module.css';
 
 interface ImportPanelProps {
   showTitle?: boolean;
+  /**
+   * Optional override for file handling. When omitted, the panel imports the
+   * selected .json file as a cohort into the current study and reloads it.
+   */
   onFileImport?: (files: FileList) => void;
 }
+
+type ImportStatus = { type: 'idle' | 'importing' | 'success' | 'error'; message?: string };
 
 export const ImportPanel: React.FC<ImportPanelProps> = ({ showTitle = true, onFileImport }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [status, setStatus] = useState<ImportStatus>({ type: 'idle' });
+
+  const importCohortFile = async (file: File) => {
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      setStatus({ type: 'error', message: 'Please select a .json file.' });
+      return;
+    }
+
+    const studyDataService = StudyDataService.getInstance();
+    const studyId = studyDataService.study_data?.id;
+    if (!studyId) {
+      setStatus({ type: 'error', message: 'Open a study before importing a cohort.' });
+      return;
+    }
+
+    setStatus({ type: 'importing', message: `Importing ${file.name}...` });
+    try {
+      const result = await importCohort(studyId, file);
+      await studyDataService.reloadStudy();
+      setStatus({ type: 'success', message: `Imported "${result.name}".` });
+    } catch (error: any) {
+      const detail = error?.response?.data?.detail || 'Failed to import cohort.';
+      setStatus({ type: 'error', message: detail });
+    }
+  };
 
   const handleFiles = (files: FileList) => {
-    if (files.length > 0) {
-      onFileImport?.(files);
+    if (files.length === 0) return;
+    if (onFileImport) {
+      onFileImport(files);
+      return;
     }
+    void importCohortFile(files[0]);
   };
 
   const handleClick = () => {
@@ -61,16 +97,23 @@ export const ImportPanel: React.FC<ImportPanelProps> = ({ showTitle = true, onFi
           role="button"
           tabIndex={0}
           onKeyDown={e => e.key === 'Enter' && handleClick()}
-          aria-label="Click or drag a file to import a cohort"
+          aria-label="Click or drag a .json file to import a cohort"
         >
-          <span className={styles.dropText}>click to import a cohort</span>
+          <span className={styles.dropText}>
+            {status.type === 'importing' ? 'importing...' : 'click to import a cohort (.json)'}
+          </span>
         </div>
+        {status.message && status.type !== 'importing' && (
+          <div className={status.type === 'error' ? styles.statusError : styles.statusSuccess}>
+            {status.message}
+          </div>
+        )}
         <input
           ref={fileInputRef}
           type="file"
+          accept=".json,application/json"
           className={styles.hiddenInput}
           onChange={handleFileInputChange}
-          multiple
         />
       </div>
     </SlideoverPanel>
