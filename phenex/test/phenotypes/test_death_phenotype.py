@@ -5,6 +5,7 @@ from phenex.phenotypes.death_phenotype import DeathPhenotype
 from phenex.codelists import LocalCSVCodelistFactory
 from phenex.filters.date_filter import DateFilter, AfterOrOn, BeforeOrOn
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
+from phenex.tables import PhenexPersonTable
 
 from phenex.test.phenotype_test_generator import PhenotypeTestGenerator
 from phenex.filters.value import *
@@ -246,6 +247,147 @@ def test_death_phenotype_date_range_and_value():
     spg.run_tests()
 
 
+class DeathPhenotypeMonthOfDeathOnlyTestGenerator(PhenotypeTestGenerator):
+    """MONTH_OF_DEATH (YYYYMM) only — no DATE_OF_DEATH column. EVENT_DATE should be the 15th."""
+
+    name_space = "dtpt_month_only"
+    test_date = True
+
+    def define_input_tables(self):
+        self.input_table = pd.DataFrame(
+            {
+                "PERSON_ID": ["P0", "P1", "P2", "P3"],
+                # P0: no death; P1: Dec 2021; P2: Jan 2022 (index month); P3: Mar 2022
+                "MONTH_OF_DEATH": [None, "202112", "202201", "202203"],
+                "INDEX_DATE": datetime.datetime(2022, 1, 1),
+            }
+        )
+
+        class PersonTableMonthOfDeath(PhenexPersonTable):
+            DEFAULT_MAPPING = {
+                "PERSON_ID": "PERSON_ID",
+                "DATE_OF_DEATH": "MONTH_OF_DEATH",
+            }
+            DATE_FORMAT = {"MONTH_OF_DEATH": ["%Y%m", "middle"]}
+
+        return [
+            {"name": "PERSON", "df": self.input_table, "type": PersonTableMonthOfDeath}
+        ]
+
+    def define_phenotype_tests(self):
+        t1 = {
+            "name": "month_death_all",
+            "phenotype": DeathPhenotype(name="month_death_all"),
+            "persons": ["P1", "P2", "P3"],
+            "dates": [
+                datetime.date(2021, 12, 15),
+                datetime.date(2022, 1, 15),
+                datetime.date(2022, 3, 15),
+            ],
+        }
+
+        t2 = {
+            "name": "month_death_before_index",
+            "phenotype": DeathPhenotype(
+                name="month_death_before_index",
+                relative_time_range=RelativeTimeRangeFilter(when="before"),
+            ),
+            "persons": ["P1"],
+            "dates": [
+                datetime.date(2021, 12, 15),
+            ],
+        }
+
+        t3 = {
+            "name": "month_death_after_index",
+            "phenotype": DeathPhenotype(
+                name="month_death_after_index",
+                relative_time_range=RelativeTimeRangeFilter(when="after"),
+            ),
+            "persons": ["P2", "P3"],
+            "dates": [
+                datetime.date(2022, 1, 15),
+                datetime.date(2022, 3, 15),
+            ],
+        }
+
+        return [t1, t2, t3]
+
+
+def test_death_phenotype_month_only():
+    spg = DeathPhenotypeMonthOfDeathOnlyTestGenerator()
+    spg.run_tests()
+
+
+class DeathPhenotypeBothDateColumnsTestGenerator(PhenotypeTestGenerator):
+    """Both DATE_OF_DEATH and MONTH_OF_DEATH present. DATE_OF_DEATH takes priority via coalesce."""
+
+    name_space = "dtpt_month_and_date"
+    test_date = True
+
+    def define_input_tables(self):
+        self.input_table = pd.DataFrame(
+            {
+                "PERSON_ID": ["P0", "P1", "P2", "P3"],
+                # P0: exact date wins over month; P1: only month (date is null); P2: only date (month is null); P3: neither
+                "DATE_OF_DEATH": [
+                    datetime.datetime(2022, 1, 10),  # P0: exact date
+                    None,  # P1: falls back to month
+                    datetime.datetime(2022, 3, 20),  # P2: exact date, no month
+                    None,  # P3: no death
+                ],
+                "MONTH_OF_DEATH": ["202201", "202112", None, None],
+                "INDEX_DATE": datetime.datetime(2022, 1, 1),
+            }
+        )
+
+        class PersonTableBothDates(PhenexPersonTable):
+            DEFAULT_MAPPING = {
+                "PERSON_ID": "PERSON_ID",
+                "DATE_OF_DEATH": ["DATE_OF_DEATH", "MONTH_OF_DEATH"],
+            }
+            DATE_FORMAT = {"MONTH_OF_DEATH": ["%Y%m", "middle"]}
+
+        return [
+            {"name": "PERSON", "df": self.input_table, "type": PersonTableBothDates}
+        ]
+
+    def define_phenotype_tests(self):
+        t1 = {
+            "name": "both_death_all",
+            "phenotype": DeathPhenotype(name="both_death_all"),
+            # P0: 2022-01-10 (exact date), P1: 2021-12-15 (from month), P2: 2022-03-20 (exact date)
+            "persons": ["P0", "P1", "P2"],
+            "dates": [
+                datetime.date(2022, 1, 10),
+                datetime.date(2021, 12, 15),
+                datetime.date(2022, 3, 20),
+            ],
+        }
+
+        t2 = {
+            "name": "both_death_before_index",
+            "phenotype": DeathPhenotype(
+                name="both_death_before_index",
+                relative_time_range=RelativeTimeRangeFilter(when="before"),
+            ),
+            # P0: 2022-01-10 is after index 2022-01-01 → excluded; P1: 2021-12-15 before
+            "persons": ["P1"],
+            "dates": [
+                datetime.date(2021, 12, 15),
+            ],
+        }
+
+        return [t1, t2]
+
+
+def test_death_phenotype_both_date_columns():
+    spg = DeathPhenotypeBothDateColumnsTestGenerator()
+    spg.run_tests()
+
+
 if __name__ == "__main__":
     test_death_phenotype()
     test_death_phenotype_date_range_and_value()
+    # test_death_phenotype_month_only()
+    # test_death_phenotype_both_date_columns()

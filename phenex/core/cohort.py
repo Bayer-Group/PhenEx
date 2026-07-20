@@ -11,6 +11,7 @@ from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 from phenex.filters import DateFilter
 from phenex.core.data_period_filter_node import DataPeriodFilterNode
+from phenex.core.database_sampler_node import DatabaseSamplerNode
 from phenex.core.hstack_node import HStackNode
 from phenex.core.subset_table import SubsetTable
 from phenex.core.inclusions_table_node import InclusionsTableNode
@@ -44,6 +45,8 @@ class Cohort:
         data_period: Restrict all input data to a specific date range. The input data will be modified to look as if data outside the data_period was never recorded before any phenotypes are computed. See DataPeriodFilterNode for details on how the input data are affected by this parameter.
         database: Optional Database object bundling a connector, mapper, and optional data_period. If provided, tables and connector are retrieved from this object at execute() time. A database defined at the cohort level overrides a database defined at the study level. Either the cohort or its parent study must have a database configured before execution.
         custom_reporters: Additional reporter instances to run on this cohort only, after the default Waterfall and Table1 reporters. Each reporter must implement ``execute(cohort)`` and ``to_json(path)``.
+        write_subset_tables_entry: If True (default), materialize the entry-subset tables to the destination database. If False, keep them as lazy expressions instead.
+        write_subset_tables_index: If True (default), materialize the index-subset tables to the destination database. If False, keep them as lazy expressions instead.
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
@@ -68,10 +71,45 @@ class Cohort:
         description: Optional[str] = None,
         database: Optional[Database] = None,
         custom_reporters: Optional[List] = None,
+        return_index: str = "first",
+        max_index_dates: Optional[int] = None,
+        write_subset_tables_entry: bool = True,
+        write_subset_tables_index: bool = True,
+        write_characteristics_table: bool = True,
+        write_outcomes_table: bool = True,
     ):
         self.name = name
         self.description = description
         self.database = database
+        self.return_index = return_index
+        self.max_index_dates = max_index_dates
+
+        assert return_index in (
+            "first",
+            "last",
+            "all",
+        ), f"return_index must be 'first', 'last', or 'all', got '{return_index}'"
+        if max_index_dates is not None:
+            assert (
+                isinstance(max_index_dates, int) and max_index_dates > 0
+            ), f"max_index_dates must be a positive integer, got {max_index_dates}"
+
+        # When return_index requires multiple candidate dates, auto-set entry criterion
+        if return_index in ("last", "all"):
+            if (
+                hasattr(entry_criterion, "return_date")
+                and entry_criterion.return_date != "all"
+            ):
+                logger.info(
+                    f"Cohort '{name}': return_index='{return_index}' requires entry criterion "
+                    f"return_date='all'. Auto-setting from '{entry_criterion.return_date}'."
+                )
+                entry_criterion.return_date = "all"
+
+        self.write_subset_tables_entry = write_subset_tables_entry
+        self.write_subset_tables_index = write_subset_tables_index
+        self.write_characteristics_table = write_characteristics_table
+        self.write_outcomes_table = write_outcomes_table
         self.table = None  # Will be set during execution to index table
         self.subset_tables_entry = None  # Will be set during execution
         self.subset_tables_index = None  # Will be set during execution
@@ -124,8 +162,10 @@ class Cohort:
         self.derived_tables_stage = None
         self.entry_stage = None
         self.index_stage = None
+        self.subset_index_stage = None
         self.derived_tables_post_entry_stage = None
         self.reporting_stage = None
+        self.sampler_stage = self._build_sampler_stage(self._get_domains())
 
         # special Nodes that Cohort builds (later, in build_stages())
         # need to be able to refer to later to get outputs
@@ -150,6 +190,35 @@ class Cohort:
             f"Cohort '{self.name}' initialized with entry criterion '{self.entry_criterion.name}'"
         )
 
+    def _build_sampler_stage(self, domains: List[str]) -> Optional["NodeGroup"]:
+        """Create the sampler NodeGroup. Returns None when no sampler is configured."""
+        if not (self.database and self.database.sampler):
+            return None
+        _frac = self.database.sampler.fraction
+        _seed = self.database.sampler.seed
+        _frac_tag = f"f{int(_frac * 100)}_s{_seed}"
+        sampler_nodes = [
+            DatabaseSamplerNode(
+                name=f"{self.name}__sampler_{domain}__{_frac_tag}".upper(),
+                domain=domain,
+                sampler=self.database.sampler,
+            )
+            for domain in domains
+        ]
+        return NodeGroup(
+            name=f"{self.name}__sampler_stage__{_frac_tag}".upper(),
+            nodes=sampler_nodes,
+        )
+
+    @property
+    def _table_prefix(self) -> str:
+        """Table name prefix for dest DB — appends frac+seed when a sampler is present so same-name cohorts with different sampler params don't collide."""
+        if self.database is not None and self.database.sampler is not None:
+            frac = int(self.database.sampler.fraction * 100)
+            seed = self.database.sampler.seed
+            return f"{self.name}_frac{frac}_seed{seed}"
+        return self.name
+
     @staticmethod
     def _flatten(items: Optional[List]) -> List:
         """Flatten one level of nesting, so both [p1, p2] and [[p1, p2]] work."""
@@ -163,9 +232,9 @@ class Cohort:
                 result.append(item)
         return result
 
-    def _apply_table_name_prefix(self, phenotypes):
-        """Set _table_name_prefix on phenotypes and their dependencies so get_table_name() works before execute()."""
-        prefix = re.sub(r"[^A-Za-z0-9_]", "_", self.name).upper()
+    def _apply_table_name_prefix(self, phenotypes) -> None:
+        """Set _table_name_prefix on phenotypes and their dependencies."""
+        prefix = re.sub(r"[^A-Za-z0-9_]", "_", self._table_prefix).upper()
         if not isinstance(phenotypes, list):
             phenotypes = [phenotypes]
         for p in phenotypes:
@@ -267,6 +336,11 @@ class Cohort:
             )
 
         #
+        # Sampler stage: OPTIONAL
+        #
+        self.sampler_stage = self._build_sampler_stage(domains)
+
+        #
         # Data period filter stage: OPTIONAL
         #
         self.data_period_filter_stage = None
@@ -341,6 +415,8 @@ class Cohort:
             entry_phenotype=self.entry_criterion,
             inclusion_table_node=self.inclusions_table_node,
             exclusion_table_node=self.exclusions_table_node,
+            return_index=self.return_index,
+            max_index_dates=self.max_index_dates,
         )
         index_nodes.append(self.index_table_node)
 
@@ -364,24 +440,40 @@ class Cohort:
             domains=entry_domains,
             index_phenotype=self.index_table_node,
         )
-        self.index_stage = NodeGroup(
-            name="index_stage",
-            nodes=self.subset_tables_index_nodes + index_nodes,
-        )
+        if self.write_subset_tables_index:
+            # Default: materialize the index-subset tables together with the
+            # index nodes in a single multithreaded stage.
+            self.subset_index_stage = None
+            self.index_stage = NodeGroup(
+                name="index_stage",
+                nodes=self.subset_tables_index_nodes + index_nodes,
+            )
+        else:
+            # Keep the index-subset tables in a separate stage so they can be
+            # executed without materializing to the destination database
+            # (see execute()).
+            self.index_stage = NodeGroup(
+                name="index_stage",
+                nodes=index_nodes,
+            )
+            self.subset_index_stage = NodeGroup(
+                name="subset_index_stage",
+                nodes=self.subset_tables_index_nodes,
+            )
 
         #
         # Post-index / reporting stage: OPTIONAL
         #
         reporting_nodes = []
 
-        if self.characteristics:
+        if self.characteristics and self.write_characteristics_table:
             self.characteristics_table_node = HStackNode(
                 name=f"{self.name}__characteristics".upper(),
                 phenotypes=self.characteristics,
                 join_table=self.index_table_node,
             )
             reporting_nodes.append(self.characteristics_table_node)
-        if self.outcomes:
+        if self.outcomes and self.write_outcomes_table:
             self.outcomes_table_node = HStackNode(
                 name=f"{self.name}__outcomes".upper(),
                 phenotypes=self.outcomes,
@@ -573,13 +665,53 @@ class Cohort:
         """
 
         con = self._prepare_database_connector_for_execution(con)
-        tables = self._prepare_tables_for_execution(con, tables)
+        tables = dict(self._prepare_tables_for_execution(con, tables))
 
         self.n_persons_in_source_database = (
             tables["PERSON"].distinct().count().execute()
         )
 
         self.build_stages(tables)
+
+        if self.sampler_stage:
+            logger.info(f"Cohort '{self.name}': executing sampler stage ...")
+            self.sampler_stage.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+                table_name_prefix=self._table_prefix,
+            )
+            # If the tables were already cached, we reuse them and skip sample(),
+            # list never gets saved.
+            # Build it again here so fetch_person_ids() always works.
+            sampler = self.database.sampler
+            if sampler._person_ids_expr is None:
+                person_tbl = tables.get("PERSON")
+                if person_tbl is not None:
+                    person_ibis = (
+                        person_tbl.table
+                        if isinstance(person_tbl, PhenexTable)
+                        else person_tbl
+                    )
+                    sampler._person_ids_expr = sampler._sampled_person_ids(person_ibis)
+
+            # Swap in the sampled table for each domain, so the later steps use the smaller
+            # sampled data instead of the full tables.
+            for node in self.sampler_stage.children:
+                if node.table is not None:
+                    original = tables.get(node.domain)
+                    sampled = node.table
+                    if isinstance(original, PhenexTable) and not isinstance(
+                        sampled, PhenexTable
+                    ):
+                        sampled = type(original)(
+                            sampled, name=original.NAME_TABLE, column_mapping={}
+                        )
+                    node.table = sampled
+                    tables[node.domain] = sampled
+            logger.info(f"Cohort '{self.name}': completed sampler stage.")
 
         # Apply data period filter first if specified
         if self.data_period_filter_stage:
@@ -590,13 +722,22 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
             )
             # Update tables with filtered versions (only when the node actually modified the table;
             # nodes with no relevant date columns return None and the original table is kept)
             for node in self.data_period_filter_stage.children:
                 if node.table is not None:
-                    tables[node.domain] = node.table
+                    original = tables.get(node.domain)
+                    filtered = node.table
+                    if isinstance(original, PhenexTable) and not isinstance(
+                        filtered, PhenexTable
+                    ):
+                        filtered = type(original)(
+                            filtered, name=original.NAME_TABLE, column_mapping={}
+                        )
+                    node.table = filtered
+                    tables[node.domain] = filtered
             logger.info(f"Cohort '{self.name}': completed data period filter stage.")
 
         if self.derived_tables_stage:
@@ -609,7 +750,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
             )
             logger.info(
                 f"Cohort '{self.name}': completed derived tables pre-entry stage."
@@ -619,14 +760,45 @@ class Cohort:
 
         logger.info(f"Cohort '{self.name}': executing entry stage ...")
 
-        self.entry_stage.execute(
-            tables=tables,
-            con=con,
-            overwrite=overwrite,
-            n_threads=n_threads,
-            lazy_execution=lazy_execution,
-            table_name_prefix=self.name,
-        )
+        if self.write_subset_tables_entry:
+            self.entry_stage.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+                table_name_prefix=self.name,
+            )
+        else:
+            # Execute entry criterion in-memory so .table stays on the source
+            # backend, avoiding cross-backend joins with subset tables.
+            self.entry_criterion.execute(
+                tables=tables,
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                table_name_prefix=self.name,
+                lazy_execution=lazy_execution,
+            )
+
+            # Remove entry_criterion from subset table children so it won't be
+            # re-executed; its .table is already set and SubsetTable._execute
+            # accesses it via self.index_phenotype.table.
+            for node in self.subset_tables_entry_nodes:
+                node._children = [
+                    c for c in node._children if c is not self.entry_criterion
+                ]
+            self.entry_stage.execute(
+                tables=tables,
+                con=None,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                table_name_prefix=self.name,
+            )
+            # Restore children for correct dependency graphs in later stages
+            for node in self.subset_tables_entry_nodes:
+                node._children.insert(0, self.entry_criterion)
+
         self.subset_tables_entry = tables = self.get_subset_tables_entry(tables)
 
         logger.info(f"Cohort '{self.name}': completed entry stage.")
@@ -641,7 +813,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
             )
             logger.info(
                 f"Cohort '{self.name}': completed derived tables post-entry stage."
@@ -663,9 +835,30 @@ class Cohort:
             overwrite=overwrite,
             n_threads=n_threads,
             lazy_execution=lazy_execution,
-            table_name_prefix=self.name,
+            table_name_prefix=self._table_prefix,
         )
         self.table = self.index_table_node.table
+
+        if not self.write_subset_tables_index:
+            # Execute the index-subset tables in-memory so they are not
+            # materialized to the destination database. The index table is
+            # already computed, so detach it from the subset nodes' children to
+            # avoid re-executing it; SubsetTable accesses it via
+            # self.index_phenotype.table.
+            for node in self.subset_tables_index_nodes:
+                node._children = [
+                    c for c in node._children if c is not self.index_table_node
+                ]
+            self.subset_index_stage.execute(
+                tables=self.subset_tables_entry,
+                con=None,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                table_name_prefix=self.name,
+            )
+            # Restore children for correct dependency graphs in later stages
+            for node in self.subset_tables_index_nodes:
+                node._children.insert(0, self.index_table_node)
 
         logger.info(f"Cohort '{self.name}': completed index stage.")
         logger.info(f"Cohort '{self.name}': executing reporting stage ...")
@@ -692,7 +885,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
             )
 
         return self.index_table

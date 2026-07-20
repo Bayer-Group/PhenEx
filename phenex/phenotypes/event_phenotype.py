@@ -5,7 +5,7 @@ from phenex.filters.date_filter import DateFilter
 from phenex.filters.categorical_filter import CategoricalFilter
 from phenex.aggregators import First, Last
 from phenex.tables import is_phenex_code_table, PhenotypeTable
-from phenex.phenotypes.functions import select_phenotype_columns
+from phenex.phenotypes.functions import select_phenotype_columns, _get_join_keys
 
 
 class EventPhenotype(Phenotype):
@@ -101,10 +101,12 @@ class EventPhenotype(Phenotype):
 
         reduce = self.return_value != "all"
 
+        agg_index = _get_join_keys(code_table)
+
         if self.return_date == "first":
-            aggregator = First(reduce=reduce)
+            aggregator = First(reduce=reduce, aggregation_index=agg_index)
         elif self.return_date == "last":
-            aggregator = Last(reduce=reduce)
+            aggregator = Last(reduce=reduce, aggregation_index=agg_index)
         elif self.return_date == "nearest":
             raise NotImplementedError("Nearest aggregation not yet implemented")
         else:
