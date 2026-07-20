@@ -24,6 +24,33 @@ _STRUCTURED_KEYS = (
 )
 
 
+def _prettify_name(name):
+    """Turn a phenotype name like ``HF_DIAGNOSIS_PRIOR`` into ``Hf diagnosis prior``."""
+    if not isinstance(name, str):
+        return name
+    return name.replace("_", " ").strip().capitalize()
+
+
+def _normalize_phenotype_names(value):
+    """
+    Recursively walk any nested structure and prettify every phenotype ``name``
+    (replace underscores with spaces, lowercase, capitalize the first letter).
+    """
+    if isinstance(value, list):
+        for item in value:
+            _normalize_phenotype_names(item)
+    elif isinstance(value, dict):
+        class_name = value.get("class_name")
+        if (
+            isinstance(class_name, str)
+            and class_name.endswith("Phenotype")
+            and isinstance(value.get("name"), str)
+        ):
+            value["name"] = _prettify_name(value["name"])
+        for sub_value in value.values():
+            _normalize_phenotype_names(sub_value)
+
+
 @router.post("/study/{study_id}/cohort/import", tags=["study cohort"])
 async def import_cohort(request: Request, study_id: str, file: UploadFile = File(...)):
     """
@@ -79,6 +106,9 @@ async def import_cohort(request: Request, study_id: str, file: UploadFile = File
     # Cohorts exported from the PhenEx library use the structured format; convert
     # them to the flat phenotypes-only format the UI and storage layer expect.
     if any(key in cohort_data for key in _STRUCTURED_KEYS):
+        # Prettify every phenotype name (incl. nested children) before flattening
+        # so display names and logical_expression references stay in sync.
+        _normalize_phenotype_names(cohort_data)
         cohort_data = convert_structured_to_phenotypes(
             cohort_data, extract_components=True
         )
