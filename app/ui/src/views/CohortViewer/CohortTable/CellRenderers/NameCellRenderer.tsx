@@ -56,7 +56,12 @@ const NameCellRenderer: React.FC<PhenexCellRendererProps> = props => {
 
   const handleConfirmDelete = () => {
     setShowDeleteModal(false);
-    CohortDataService.getInstance().deletePhenotype(props.data.id);
+    if (!props.data?.id) return;
+    if (props.context?.deletePhenotype) {
+      props.context.deletePhenotype(props.data.id);
+    } else {
+      CohortDataService.getInstance().deletePhenotype(props.data.id);
+    }
   };
 
   const renderName = () => {

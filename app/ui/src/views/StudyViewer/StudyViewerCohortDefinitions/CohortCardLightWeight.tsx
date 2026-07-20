@@ -127,6 +127,13 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
     [definitionService, cohortId]
   );
 
+  const handleDeletePhenotype = useCallback(
+    (phenotypeId: string) => {
+      definitionService.deletePhenotype(cohortId, phenotypeId);
+    },
+    [definitionService, cohortId]
+  );
+
   const handleNameChange = useCallback(
     (name: string) => {
       definitionService.updateCohortName(cohortId, name);
@@ -262,6 +269,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                 onSectionDrop={handleSectionDrop}
                 onComponentDrop={handleComponentDrop}
                 canMakeComponent={handleCanMakeComponent}
+                onDeletePhenotype={handleDeletePhenotype}
               />
             </>
           )}

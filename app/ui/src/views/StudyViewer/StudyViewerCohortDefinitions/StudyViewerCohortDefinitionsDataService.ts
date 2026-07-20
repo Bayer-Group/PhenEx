@@ -297,6 +297,21 @@ export class StudyViewerCohortDefinitionsDataService {
   }
 
   /**
+   * Delete a phenotype from a specific cohort.
+   */
+  public deletePhenotype(cohortId: string, phenotypeId: string): void {
+    const model = this._cohortModels.get(cohortId);
+    if (!model) {
+      console.warn('[StudyViewer] No model found for cohortId:', cohortId);
+      return;
+    }
+    const cohortDataService = CohortDataService.getInstance();
+    cohortDataService.setActiveCohortModel(model);
+    this._activeCohortId = cohortId;
+    model.deletePhenotype(phenotypeId);
+  }
+
+  /**
    * Update a cohort's name and persist the change.
    */
   public async updateCohortName(cohortId: string, name: string): Promise<void> {

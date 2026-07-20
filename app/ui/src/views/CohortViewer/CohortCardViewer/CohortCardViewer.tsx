@@ -89,6 +89,8 @@ interface CohortCardViewerProps {
   onComponentDrop?: (draggedId: string, targetParentId: string) => void;
   /** Whether `draggedId` may be made a component of `targetId`. */
   canMakeComponent?: (draggedId: string, targetId: string) => boolean;
+  /** Called when the user confirms deletion of a phenotype row via the inline delete button. */
+  onDeletePhenotype?: (id: string) => void;
   /**
    * Override/extend the section title labels keyed by phenotype `type`.
    * Merged over the defaults, e.g. `{ component: 'Components' }` to title the
@@ -142,6 +144,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       onSectionDrop,
       onComponentDrop,
       canMakeComponent,
+      onDeletePhenotype,
       sectionTitles,
       sectionGroupBy = 'effective_type',
       gridBottomPadding = 0,
@@ -394,8 +397,9 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           if (key === 'rowData') setRows(value ?? []);
           else if (key === 'columnDefs') setColumns(value ?? []);
         },
+        context: onDeletePhenotype ? { deletePhenotype: onDeletePhenotype } : undefined,
       }),
-      [startEditingCell, commitEdit]
+      [startEditingCell, commitEdit, onDeletePhenotype]
     );
     backingRef.current = backing;
 

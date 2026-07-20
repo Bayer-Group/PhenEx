@@ -64,6 +64,8 @@ export interface ShimBacking {
   requestRefresh: () => void;
   ensureRowVisible: (id: string) => void;
   setGridOption: (key: string, value: any) => void;
+  /** Optional context object injected into every cell renderer's `props.context`. */
+  context?: Record<string, any>;
 }
 
 export function makeColumn(colDef: any): ShimColumn {
@@ -151,7 +153,7 @@ export function makeRendererParams(opts: {
     colDef,
     column,
     api,
-    context: {},
+    context: backing.context ?? {},
     eGridCell,
     rowIndex,
     refreshCell: () => backing.requestRefresh(),
