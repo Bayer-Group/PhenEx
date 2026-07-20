@@ -6,11 +6,12 @@ import { AuthContext } from '@/auth/AuthProvider';
 import { StudiesGridView } from '../StudiesGridView/StudiesGridView';
 import { StudyIntakeWizard } from '../../StudyViewer/NewStudyWizard/StudyIntakeWizard';
 import type { StudyIntake } from '../../StudyViewer/NewStudyWizard/StudyIntakeWizard';
-import { CohortsDataService } from '../../LeftPanel/CohortsDataService';
+import { TLFIntakeWizard } from '../../TLFReviewer/TLFIntakeWizard';
 
 export const SplashPage = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [showIntakeWizard, setShowIntakeWizard] = useState(false);
+  const [showTLFWizard, setShowTLFWizard] = useState(false);
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
@@ -27,8 +28,13 @@ export const SplashPage = () => {
   const handleReviewTLFs = () => {
     if (isAnonymous) {
       setIsLoginModalOpen(true);
+    } else {
+      setShowTLFWizard(true);
     }
-    // TLF intake form — coming soon
+  };
+
+  const handleTLFFinish = (studyId: string) => {
+    navigate(`/tlfs/${studyId}`);
   };
 
   const handleIntakeFinish = async (intake: StudyIntake, action: 'shell' | 'ai') => {
@@ -78,25 +84,24 @@ export const SplashPage = () => {
             </span>
           </div>
 
-          <div className={`${styles.moduleCard} ${styles.moduleCardDisabled}`} onClick={handleReviewTLFs}>
-            <div className={styles.moduleCardTop}>
-              <div className={styles.moduleIcon}>
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <path d="M3 9h18" />
-                  <path d="M9 21V9" />
-                  <path d="M13 13h4" />
-                  <path d="M13 17h4" />
-                </svg>
-              </div>
-              <span className={styles.comingSoonBadge}>Coming soon</span>
+          <div className={styles.moduleCard} onClick={handleReviewTLFs}>
+            <div className={styles.moduleIcon}>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18" />
+                <path d="M9 21V9" />
+                <path d="M13 13h4" />
+                <path d="M13 17h4" />
+              </svg>
             </div>
             <h2 className={styles.moduleTitle}>Review TLFs</h2>
             <p className={styles.moduleDescription}>
               Already ran your study? Upload results and explore Tables, Listings, and Figures
               with interactive analysis tools.
             </p>
-            <span className={styles.moduleAction}>Review results →</span>
+            <span className={styles.moduleAction}>
+              {isAnonymous ? 'Sign in to get started' : 'Review results →'}
+            </span>
           </div>
         </div>
       </div>
@@ -119,6 +124,12 @@ export const SplashPage = () => {
         onClose={() => setShowIntakeWizard(false)}
         onFinish={handleIntakeFinish}
         onSkip={handleSkipIntake}
+      />
+
+      <TLFIntakeWizard
+        isVisible={showTLFWizard}
+        onClose={() => setShowTLFWizard(false)}
+        onFinish={handleTLFFinish}
       />
 
       <LoginModal

@@ -21,6 +21,8 @@ type SessionChangeCallback = (sessionId: string | null) => void;
 
 export { type ChatSession };
 
+import { IChatService } from './IChatService';
+
 export interface Message {
   id: number;
   text: string;
@@ -37,7 +39,7 @@ export interface ConversationEntry {
   user_action?: string;
 }
 
-class ChatPanelDataService {
+class ChatPanelDataService implements IChatService {
   private static instance: ChatPanelDataService;
   private messages: Message[] = [
     {
@@ -63,6 +65,14 @@ class ChatPanelDataService {
   private _activeCohortId: string | null = null;
   public modifiedCohortIds: string[] = [];
   public modifiedCohortNames: string[] = [];
+  
+  public getAppContext(): string {
+    return 'study';
+  }
+
+  public getStudyId(): string | undefined {
+    return this._studyId || undefined;
+  }
   
   // Abort controller for stopping AI requests
   private abortController: AbortController | null = null;

@@ -15,6 +15,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 class CreateSessionRequest(BaseModel):
     study_id: Optional[str] = None
     title: Optional[str] = None
+    app_context: str = 'study'
     session_id: Optional[str] = None
 
 
@@ -47,12 +48,12 @@ async def create_session(request: Request, body: CreateSessionRequest):
 
 
 @router.get("/sessions")
-async def get_sessions(request: Request, study_id: Optional[str] = None):
+async def get_sessions(request: Request, study_id: Optional[str] = None, app_context: str = 'study'):
     """List chat sessions for a user (optionally filtered by study)."""
     user_id = get_authenticated_user_id(request)
     try:
         sessions = await db_manager.get_chat_sessions(
-            user_id=user_id, study_id=study_id
+            user_id=user_id, study_id=study_id, app_context=app_context
         )
         return sessions
     except Exception as e:

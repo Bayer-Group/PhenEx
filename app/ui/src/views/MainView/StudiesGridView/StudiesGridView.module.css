@@ -283,20 +283,76 @@
   line-height: 1.5;
 }
 
-.studyCardFooter {
+/* ── Module pills ─────────────────────────────────────────────── */
+
+.modulePills {
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
   padding-top: 12px;
-  border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.modulePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 7px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  cursor: default;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+  background: none;
+}
+
+.modulePillNone {
+  border-color: var(--border-color, #e0e0e0);
+  color: var(--text-color-secondary, #aaa);
+  cursor: default;
+}
+
+.modulePillActive {
+  border-color: color-mix(in srgb, var(--pill-color) 30%, transparent);
+  background: color-mix(in srgb, var(--pill-color) 10%, transparent);
+  color: var(--pill-color, #1a6fbf);
+  cursor: pointer;
+}
+
+.modulePillActive:hover {
+  background: color-mix(in srgb, var(--pill-color) 18%, transparent);
+}
+
+.pillDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-color, #ccc);
+  flex-shrink: 0;
+}
+
+.pillDotActive {
+  /* color set inline */
+}
+
+.pillLabel {
+  white-space: nowrap;
+}
+
+.pillDetail {
+  font-family: 'IBMPlexSans-Regular', sans-serif;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+/* keep old footer/type classes for compat */
+.studyCardFooter {
+  display: none;
 }
 
 .studyCardType {
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  color: var(--text-color-tertiary);
-  letter-spacing: 0.5px;
+  display: none;
 }
 
 /* Alert Modal Styles */

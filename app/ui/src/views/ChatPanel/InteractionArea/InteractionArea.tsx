@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import styles from './InteractionArea.module.css';
-import { chatPanelDataService } from '../ChatPanelDataService';
+import { useChatService } from '../ChatServiceContext';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { InteractionBar } from './InteractionBar';
 
@@ -14,6 +14,7 @@ export interface InteractionAreaRef {
 }
 
 export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaProps>(({ userHasInteracted = false, onHistory }, ref) => {
+  const chatService = useChatService();
   const textBoxRef = useRef<HTMLDivElement>(null);
   const [interactionState, setInteractionState] = useState<
     'empty' | 'thinking' | 'interactive' | 'retry'
@@ -37,13 +38,13 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
   useEffect(() => {
     const checkProvisionalState = () => {
       // Don't change state if AI is currently thinking
-      if (chatPanelDataService.isAIThinking()) {
+      if (chatService.isAIThinking()) {
         console.log('🔔 AI is thinking, not changing state');
         return;
       }
       
       // Study mode: accept/reject is handled per-cohort in ChatPanel, not here
-      if (chatPanelDataService['_studyMode']) {
+      if (chatService.getAppContext() === 'study') {
         setIsProvisional(false);
         setInteractionState('empty');
         return;
@@ -67,7 +68,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
     // If there are provisional changes but no chat history, show a system message
     const cohortDataService = CohortDataService.getInstance();
     const hasProvisionalChanges = cohortDataService.cohort_data?.is_provisional === true;
-    const currentMessages = chatPanelDataService.getMessages();
+    const currentMessages = chatService.getMessages();
     // Only count user messages for "has chat history" - system/AI messages don't count
     const hasChatHistory = currentMessages.filter(m => m.isUser).length > 0;
     
@@ -80,7 +81,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
     
     if (hasProvisionalChanges && !hasChatHistory) {
       console.log('✅ Adding provisional changes warning message');
-      chatPanelDataService.addSystemMessage(
+      chatService.addSystemMessage(
         'You have some unreviewed changes. Should we keep going from here or undo these changes? You can Accept to keep them, Reject to undo them, or continue chatting to make more changes.'
       );
     }
@@ -90,18 +91,18 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
       checkProvisionalState();
     };
 
-    chatPanelDataService.onMessagesUpdated(handleMessagesUpdated);
-    return () => chatPanelDataService.removeMessagesUpdatedListener(handleMessagesUpdated);
+    chatService.onMessagesUpdated(handleMessagesUpdated);
+    return () => chatService.removeMessagesUpdatedListener(handleMessagesUpdated);
   }, []);
 
   // Listen for messages to track AI thinking state
   useEffect(() => {
     const handleMessagesUpdated = () => {
-      setIsAIThinking(chatPanelDataService.isAIThinking());
+      setIsAIThinking(chatService.isAIThinking());
     };
     
-    chatPanelDataService.onMessagesUpdated(handleMessagesUpdated);
-    return () => chatPanelDataService.removeMessagesUpdatedListener(handleMessagesUpdated);
+    chatService.onMessagesUpdated(handleMessagesUpdated);
+    return () => chatService.removeMessagesUpdatedListener(handleMessagesUpdated);
   }, []);
 
   useEffect(() => {
@@ -124,10 +125,10 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
       }
     };
 
-    chatPanelDataService.onAICompletion(handleAICompletion);
+    chatService.onAICompletion(handleAICompletion);
 
     return () => {
-      chatPanelDataService.removeAICompletionListener(handleAICompletion);
+      chatService.removeAICompletionListener(handleAICompletion);
     };
   }, []);
 
@@ -161,7 +162,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
     setIsAIThinking(true);
 
     // Add user message
-    chatPanelDataService.addUserMessageWithText(messageText);
+    chatService.addUserMessageWithText(messageText);
 
     // Clear the text box
     if (textBoxRef.current) {
@@ -171,7 +172,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
 
   const handleStopAI = () => {
     console.log('🛑 Stop button clicked');
-    chatPanelDataService.stopAI();
+    chatService.stopAI();
     setIsAIThinking(false);
     setInteractionState('empty');
   };
@@ -179,19 +180,19 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
   const handleAccept = () => {
     // Handle accept action
     // Don't set state here - let checkProvisionalState handle it after the API call completes
-    chatPanelDataService.acceptAIResult();
+    chatService.acceptAIResult();
   };
 
   const handleReject = () => {
     // Handle reject action
     // Don't set state here - let checkProvisionalState handle it after the API call completes
-    chatPanelDataService.rejectAIResult();
+    chatService.rejectAIResult();
   };
 
   const handleRetry = () => {
     // Handle retry action
     setInteractionState('thinking');
-    chatPanelDataService.retryAIRequest();
+    chatService.retryAIRequest();
   };
 
   const handleNewChat = () => {
@@ -202,7 +203,7 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
     }
     
     // Clear conversation history and messages
-    chatPanelDataService.clearMessages();
+    chatService.clearMessages();
     setInteractionState('empty');
   };
 

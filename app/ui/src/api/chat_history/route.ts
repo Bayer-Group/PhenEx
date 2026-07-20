@@ -30,8 +30,8 @@ export async function createChatSession(params: {
   return response.data;
 }
 
-export async function getChatSessions(study_id?: string): Promise<ChatSession[]> {
-  const response = await api.get('/chat/sessions', { params: study_id ? { study_id } : {} });
+export async function getChatSessions(study_id?: string, app_context: string = 'study'): Promise<ChatSession[]> {
+  const response = await api.get('/chat/sessions', { params: { ...(study_id ? { study_id } : {}), app_context } });
   return response.data;
 }
 

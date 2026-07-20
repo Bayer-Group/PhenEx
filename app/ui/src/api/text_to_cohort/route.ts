@@ -492,3 +492,72 @@ export const deleteConstant = async (studyId: string, constantId: string) => {
     throw error;
   }
 };
+
+// ── TLF import ───────────────────────────────────────────────────────────────
+
+export interface StudyWithExecution {
+  study_id: string;
+  study_name: string;
+  last_execution_id: string;
+  executed_at: string | null;
+  manifest_path: string | null;
+}
+
+export interface ModuleStatus {
+  status: 'none' | 'in_progress' | 'complete' | 'external';
+  detail: string | null;
+}
+
+export interface StudyWithModuleStatus {
+  id: string;
+  name: string;
+  description: string;
+  is_public: boolean;
+  cohort_count: number;
+  last_execution_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  modules: {
+    cohorts: ModuleStatus;
+    tlf: ModuleStatus;
+    [key: string]: ModuleStatus;
+  };
+}
+
+export const getStudiesWithModuleStatus = async (): Promise<StudyWithModuleStatus[]> => {
+  try {
+    const response = await api.get('/studies/private/with-module-status');
+    return response.data;
+  } catch (error) {
+    console.error('Error in getStudiesWithModuleStatus:', error);
+    throw error;
+  }
+};
+
+export const getStudiesWithExecutions = async (): Promise<StudyWithExecution[]> => {
+  try {
+    const response = await api.get('/studies/private/with-executions');
+    return response.data;
+  } catch (error) {
+    console.error('Error in getStudiesWithExecutions:', error);
+    throw error;
+  }
+};
+
+export const importTLFStudy = async (
+  files: File[],
+  studyName: string,
+  studyDescription: string,
+): Promise<{ study_id: string; execution_id: string; manifest_path: string }> => {
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append('files', file, file.webkitRelativePath || file.name);
+  }
+  formData.append('study_name', studyName);
+  formData.append('study_description', studyDescription);
+
+  const response = await api.post('/study/tlf-import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
