@@ -5,7 +5,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "name",
             "index": null
         },
@@ -14,7 +14,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "description",
             "index": null
         },
@@ -23,7 +23,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -88,7 +88,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -117,7 +117,7 @@
             "required": true,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "name",
             "index": 0
         },
@@ -135,7 +135,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "description",
             "index": null
         },
@@ -144,7 +144,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -212,7 +212,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "name",
             "index": null
         },
@@ -221,7 +221,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "description",
             "index": null
         },
@@ -230,7 +230,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -269,7 +269,7 @@
             "required": false,
             "default": null,
             "type": "_empty",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "return_value",
             "index": null
         },
@@ -289,7 +289,7 @@
             "required": false,
             "default": "DEATH",
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "name",
             "index": null
         },
@@ -298,7 +298,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "description",
             "index": null
         },
@@ -307,7 +307,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -375,7 +375,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -431,7 +431,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "name",
             "index": null
         },
@@ -440,7 +440,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "description",
             "index": null
         },
@@ -449,7 +449,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -550,7 +550,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "name",
             "index": null
         },
@@ -559,7 +559,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "description",
             "index": null
         },
@@ -568,7 +568,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -682,7 +682,7 @@
             "required": false,
             "default": "TIME_RANGE",
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "name",
             "index": null
         },
@@ -691,7 +691,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "description",
             "index": null
         },
@@ -700,7 +700,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -756,7 +756,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "name",
             "index": null
         },
@@ -765,7 +765,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "description",
             "index": null
         },
@@ -774,7 +774,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -795,7 +795,7 @@
             "required": false,
             "default": "['PERSON_ID']",
             "type": "_empty",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "aggregation_index",
             "index": null
         },
@@ -804,7 +804,7 @@
             "required": false,
             "default": "boolean",
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "operate_on",
             "index": null
         },
@@ -813,7 +813,7 @@
             "required": false,
             "default": "value",
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "populate",
             "index": null
         },
@@ -822,7 +822,7 @@
             "required": false,
             "default": "False",
             "type": "bool",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "reduce",
             "index": null
         },
@@ -851,7 +851,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "name",
             "index": null
         },
@@ -860,7 +860,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "description",
             "index": null
         },
@@ -869,7 +869,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -890,7 +890,7 @@
             "required": false,
             "default": "['PERSON_ID']",
             "type": "_empty",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "aggregation_index",
             "index": null
         },
@@ -899,7 +899,7 @@
             "required": false,
             "default": "boolean",
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "operate_on",
             "index": null
         },
@@ -908,7 +908,7 @@
             "required": false,
             "default": "value",
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "populate",
             "index": null
         },
@@ -917,7 +917,7 @@
             "required": false,
             "default": "False",
             "type": "bool",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "reduce",
             "index": null
         },
@@ -946,7 +946,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "name",
             "index": null
         },
@@ -955,7 +955,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "description",
             "index": null
         },
@@ -964,7 +964,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -985,7 +985,7 @@
             "required": false,
             "default": "['PERSON_ID']",
             "type": "_empty",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "aggregation_index",
             "index": null
         },
@@ -994,7 +994,7 @@
             "required": false,
             "default": "boolean",
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "operate_on",
             "index": null
         },
@@ -1003,7 +1003,7 @@
             "required": false,
             "default": "value",
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "populate",
             "index": null
         },
@@ -1012,7 +1012,7 @@
             "required": false,
             "default": "False",
             "type": "bool",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "reduce",
             "index": null
         },
@@ -1112,7 +1112,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         }

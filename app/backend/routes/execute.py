@@ -1,4 +1,5 @@
 import sys
+import copy
 import logging
 from typing import Dict
 from fastapi import APIRouter, Request, HTTPException
@@ -376,7 +377,149 @@ async def execute_cohort(
     )
 
 
-def convert_structured_to_phenotypes(cohort_dict: Dict) -> Dict:
+def _is_phenotype_dict(value) -> bool:
+    """True when ``value`` is a serialized phenotype object."""
+    return (
+        isinstance(value, dict)
+        and isinstance(value.get("class_name"), str)
+        and value["class_name"].endswith("Phenotype")
+    )
+
+
+def _build_logical_expression(node):
+    """
+    Mirror of the frontend ``buildLogicalExpression``: converts a serialized
+    ``ComputationGraph`` into the UI's AndFilter/OrFilter/LogicalExpression tree.
+    """
+    import uuid
+
+    if isinstance(node, dict) and node.get("class_name") == "ComputationGraph":
+        filter_class = "AndFilter" if node.get("operator") == "&" else "OrFilter"
+        return {
+            "class_name": filter_class,
+            "filter1": _build_logical_expression(node.get("left")),
+            "filter2": _build_logical_expression(node.get("right")),
+        }
+
+    # Leaf node -> an actual phenotype reference
+    phenotype_id = node.get("id") if isinstance(node, dict) else None
+    phenotype_name = node.get("name") if isinstance(node, dict) else None
+    if not phenotype_id:
+        return {
+            "class_name": "LogicalExpression",
+            "phenotype_name": phenotype_name or "Unknown",
+            "phenotype_id": "",
+            "status": "empty",
+            "id": uuid.uuid4().hex,
+        }
+    return {
+        "class_name": "LogicalExpression",
+        "phenotype_name": phenotype_name or "Unknown",
+        "phenotype_id": phenotype_id,
+        "status": "filled",
+        "id": uuid.uuid4().hex,
+    }
+
+
+def _extract_child_components(value, parent_id, effective_type, components, seen):
+    """
+    Recursively walk any nested structure belonging to a parent phenotype and
+    hoist every nested phenotype found into ``components`` as a flat
+    ``type='component'`` row (mirroring the frontend component extraction, but
+    generalized to every field that can hold a phenotype: LogicPhenotype
+    expressions, anchor_phenotype, FurtherValueFilterPhenotype.phenotype,
+    EventCount/Bin nested phenotypes, return_date phenotypes, etc.).
+    """
+    import uuid
+
+    if isinstance(value, list):
+        for item in value:
+            _extract_child_components(item, parent_id, effective_type, components, seen)
+        return
+
+    if not isinstance(value, dict):
+        return
+
+    if _is_phenotype_dict(value):
+        # Ensure the embedded phenotype carries a stable id so references match.
+        if not value.get("id"):
+            value["id"] = uuid.uuid4().hex
+        child_id = value["id"]
+
+        existing = seen.get(child_id)
+        if existing is not None:
+            # Shared node: just record the additional parent, don't duplicate.
+            if parent_id and parent_id not in existing["parentIds"]:
+                existing["parentIds"].append(parent_id)
+            return
+
+        component = copy.deepcopy(value)
+        component["type"] = "component"
+        component["parentIds"] = [parent_id] if parent_id else []
+        if effective_type:
+            component["effective_type"] = effective_type
+        component["colorCellBackground"] = True
+        if component.get("class_name") == "LogicPhenotype" and component.get(
+            "expression"
+        ):
+            component["logical_expression"] = _build_logical_expression(
+                component["expression"]
+            )
+        components.append(component)
+        seen[child_id] = component
+
+        # Recurse into this phenotype's own children (grandchildren of parent).
+        for key, sub_value in value.items():
+            if key in ("id", "name", "class_name", "type"):
+                continue
+            _extract_child_components(
+                sub_value, child_id, effective_type, components, seen
+            )
+        return
+
+    # Container dict (ComputationGraph, RelativeTimeRangeFilter, etc.) -> recurse.
+    for sub_value in value.values():
+        _extract_child_components(
+            sub_value, parent_id, effective_type, components, seen
+        )
+
+
+def _extract_all_components(top_level_phenotypes: list) -> list:
+    """
+    For each top-level phenotype, hoist all nested child phenotypes into flat
+    component rows and, for LogicPhenotypes, attach the UI ``logical_expression``.
+    """
+    import uuid
+
+    components: list = []
+    seen: Dict[str, dict] = {}
+    for phenotype in top_level_phenotypes:
+        if not isinstance(phenotype, dict):
+            continue
+        if not phenotype.get("id"):
+            phenotype["id"] = uuid.uuid4().hex
+        parent_id = phenotype["id"]
+        effective_type = phenotype.get("type")
+
+        # Attach logical_expression to the top-level LogicPhenotype for the UI.
+        if phenotype.get("class_name") == "LogicPhenotype" and phenotype.get(
+            "expression"
+        ):
+            phenotype["logical_expression"] = _build_logical_expression(
+                phenotype["expression"]
+            )
+
+        for key, value in phenotype.items():
+            if key in ("id", "name", "class_name", "type", "logical_expression"):
+                continue
+            _extract_child_components(value, parent_id, effective_type, components, seen)
+
+    return components
+
+
+def convert_structured_to_phenotypes(
+    cohort_dict: Dict, extract_components: bool = False
+) -> Dict:
     """
     Converts a cohort from structured format back to phenotypes-only format.
 
@@ -388,6 +531,11 @@ def convert_structured_to_phenotypes(cohort_dict: Dict) -> Dict:
 
     Args:
         cohort_dict: Cohort in structured format with entry_criterion, inclusions, etc.
+        extract_components: When True, additionally hoist every nested child
+            phenotype into the flat array as a ``type='component'`` row (with
+            parentIds/effective_type) and attach ``logical_expression`` to
+            LogicPhenotypes, matching the UI's flat display format. Used on
+            import so nested children render as their own rows.
 
     Returns:
         Dict: Cohort with all phenotypes in a single 'phenotypes' array
@@ -442,6 +590,15 @@ def convert_structured_to_phenotypes(cohort_dict: Dict) -> Dict:
                 outcome["type"] = "outcome"
             phenotypes.append(outcome)
         del result["outcomes"]
+
+    # Optionally hoist all nested child phenotypes into flat component rows so
+    # they render as their own rows in the UI (import flow).
+    if extract_components:
+        components = _extract_all_components(phenotypes)
+        phenotypes.extend(components)
+        logger.info(
+            f"Extracted {len(components)} nested child phenotypes as components"
+        )
 
     # Set the phenotypes array
     result["phenotypes"] = phenotypes

@@ -79,7 +79,9 @@ async def import_cohort(request: Request, study_id: str, file: UploadFile = File
     # Cohorts exported from the PhenEx library use the structured format; convert
     # them to the flat phenotypes-only format the UI and storage layer expect.
     if any(key in cohort_data for key in _STRUCTURED_KEYS):
-        cohort_data = convert_structured_to_phenotypes(cohort_data)
+        cohort_data = convert_structured_to_phenotypes(
+            cohort_data, extract_components=True
+        )
 
     # Validate the UI cohort format (phenotypes-only) before doing anything else.
     try:
