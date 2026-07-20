@@ -148,6 +148,12 @@
   font-size: 13px;
 }
 
+.nestedTabLayout {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* ── FlexLayout styling (mirrors ReportViewer) ───────────────────────── */
 .page :global(.flexlayout__layout) {
   --color-background: transparent;

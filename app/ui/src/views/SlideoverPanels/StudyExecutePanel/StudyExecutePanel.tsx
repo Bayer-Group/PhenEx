@@ -234,13 +234,13 @@ export const StudyExecutePanel: React.FC = () => {
         {hasValidationErrors && (
           <div className={styles.validationWarning}>
             {validationErrorCount} issue{validationErrorCount !== 1 ? 's' : ''} must be fixed before execution.{' '}
-            <span 
-              style={{ 
-                textDecoration: 'underline', 
+            <span
+              style={{
+                textDecoration: 'underline',
                 cursor: 'pointer',
                 color: 'var(--color-accent-bright)'
               }}
-              onClick={() => mainViewLayoutService.openRightPanelTab(3)}
+              onClick={() => mainViewLayoutService.openExecuteIssuesTab()}
             >
               See Issues tab
             </span>
