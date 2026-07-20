@@ -17,6 +17,7 @@ export enum DatabaseTabTypes {
 interface DatabaseFieldsProps {
   mode: DatabaseTabTypes;
   contentMode?: 'cohort' | 'study';
+  colorMode?: 'light' | 'dark';
 }
 
 const mappers = Object.values(Mapper);
@@ -30,7 +31,7 @@ const snowflakeDefaults = {
   password: 'default_password',
 };
 
-export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode, contentMode = 'study' }) => {
+export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode, contentMode = 'study', colorMode = 'light' }) => {
   const studyDataService = StudyDataService.getInstance();
   const cohortDataService = CohortDataService.getInstance();
 
@@ -381,7 +382,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode, contentMode = 's
   };
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${colorMode === 'dark' ? styles.dark : ''}`}>
       {mode === DatabaseTabTypes.Manual && renderManualEntry()}
       {mode === DatabaseTabTypes.Default && renderDefaults()}
     </div>

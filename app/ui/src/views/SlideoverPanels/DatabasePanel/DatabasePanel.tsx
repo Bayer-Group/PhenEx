@@ -7,9 +7,10 @@ import { InfoPanelEllipsis } from '../../../components/ButtonsAndTabs/InfoPanelB
 interface DatabasePanelProps {
   showTitle?: boolean;
   contentMode?: 'cohort' | 'study';
+  colorMode?: 'light' | 'dark';
 }
 
-export const DatabasePanel: React.FC<DatabasePanelProps> = ({ showTitle = true, contentMode = 'study' }) => {
+export const DatabasePanel: React.FC<DatabasePanelProps> = ({ showTitle = true, contentMode = 'study', colorMode = 'light' }) => {
   const [mode, setMode] = useState<DatabaseTabTypes>(DatabaseTabTypes.Default);
 
   const toggleMode = () => {
@@ -56,8 +57,9 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({ showTitle = true, 
       info={infoContent()}
       showTitle={showTitle}
       headerControls={headerControls}
+      colorMode={colorMode}
     >
-      <DatabaseFields mode={mode} contentMode={contentMode} />
+      <DatabaseFields mode={mode} contentMode={contentMode} colorMode={colorMode} />
     </SlideoverPanel>
   );
 };

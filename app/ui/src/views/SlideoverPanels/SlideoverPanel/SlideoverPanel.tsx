@@ -10,6 +10,7 @@ interface SlideoverPanelProps {
   classNameHeader?: string;
   classNameContainer?: string;
   showTitle?: boolean;
+  colorMode?: 'light' | 'dark';
 }
 
 const SLIDEOVER_PANEL_INFO_STATE_KEY = 'slideoverPanelInfoOpen';
@@ -39,6 +40,7 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
   classNameHeader = '',
   classNameContainer = '',
   showTitle = true,
+  colorMode = 'light',
 }) => {
   const [isOpen, setIsOpen] = useState(getInfoBoxState);
 
@@ -79,7 +81,7 @@ export const SlideoverPanel: React.FC<SlideoverPanelProps> = ({
   };
 
   return (
-    <div className={`${styles.container} ${classNameContainer}`} onClick={onClick}>
+    <div className={`${styles.container} ${classNameContainer} ${colorMode === 'dark' ? styles.dark : ''}`} onClick={onClick}>
       <div className={`${styles.header} ${classNameHeader}`} onClick={clickOnHeader}>
         <div className={styles.headerRow}>
           <div className={styles.headerLeft}>

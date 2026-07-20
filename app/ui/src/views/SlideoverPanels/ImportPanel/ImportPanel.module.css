@@ -1,0 +1,44 @@
+.content {
+  padding: 12px 16px 16px 16px;
+}
+
+.dropArea {
+  background-color: var(--background_color_dark);
+  border-radius: var(--item-radius, 3px);
+  padding: 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  border: 1px dashed var(--line_color_dark, #aaa);
+  user-select: none;
+  outline: none;
+}
+
+.dropArea:hover {
+  background-color: var(--background_color_light);
+  border-color: var(--color-accent-bright);
+}
+
+.dropArea:focus-visible {
+  outline: 2px solid var(--color-accent-bright);
+  outline-offset: 2px;
+}
+
+.dragging {
+  border: 2px dashed #4a90e2;
+  background-color: rgba(74, 144, 226, 0.12);
+}
+
+.dropText {
+  font-size: 12px;
+  color: var(--color-accent-bright);
+  opacity: 0.7;
+  font-family: 'IBMPlexSans-regular';
+  pointer-events: none;
+}
+
+.hiddenInput {
+  display: none;
+}

@@ -34,7 +34,7 @@ export const DomainSelectorEditor: React.FC<DomainSelectorEditorProps> = props =
   if (!mapper) {
     return (
       <div className={styles.container}>
-        <DatabasePanel showTitle={false} contentMode="cohort" />
+        <DatabasePanel showTitle={true} contentMode="cohort" colorMode="dark" />
       </div>
     );
   }

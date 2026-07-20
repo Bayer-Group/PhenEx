@@ -8,13 +8,18 @@
   padding: 0;
   margin: 0;
   box-sizing: border-box;
-  background-color: var(--background_color_light) !important;
+  background-color: transparent !important;
   border-radius: 0;
   border-top: 1px solid var(--line-color);
   border-right: none !important;
   border-bottom: none;
   border-left: none;
   flex-shrink: 0;
+}
+
+.dark {
+  --color-accent-bright: rgba(255, 255, 255, 0.9);
+  --line-color: rgba(255, 255, 255, 0.2);
 }
 
 .title {
