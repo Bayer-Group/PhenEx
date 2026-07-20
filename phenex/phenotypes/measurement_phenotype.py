@@ -110,6 +110,7 @@ class MeasurementPhenotype(CodelistPhenotype):
         code_table = self._perform_codelist_filtering(code_table, tables)
         code_table = self._perform_categorical_filtering(code_table, tables)
         code_table = self._perform_null_value_filtering(code_table)
+        code_table = self._perform_value_casting(code_table)
         code_table = self._perform_nonphysiological_value_filtering(code_table)
         code_table = self._perform_time_filtering(code_table)
         code_table = self._perform_date_selection(code_table)
@@ -121,6 +122,24 @@ class MeasurementPhenotype(CodelistPhenotype):
         if self.clean_null_values and self.value_filter:
             logger.debug(f"Applying null filtering for {self.name}")
             code_table = code_table[code_table[self.value_filter.column_name].notnull()]
+        return code_table
+
+    def _perform_value_casting(self, code_table):
+        """Cast the VALUE column to float when it is stored as a string.
+
+        Measurement values are sometimes stored as strings in the source data and
+        may contain non-numeric text (e.g. study names, comments). Downstream
+        aggregation (mean/median/etc.) and value filtering require a numeric
+        column, so we safely cast using ``try_cast`` (non-numeric values become
+        NULL) and drop the resulting NULL rows.
+        """
+        if "VALUE" not in code_table.columns:
+            return code_table
+        if not code_table.VALUE.type().is_string():
+            return code_table
+        logger.debug(f"Casting VALUE column to float for {self.name}")
+        code_table = code_table.mutate(VALUE=code_table.VALUE.try_cast("float64"))
+        code_table = code_table[code_table.VALUE.notnull()]
         return code_table
 
     def _perform_nonphysiological_value_filtering(self, code_table):

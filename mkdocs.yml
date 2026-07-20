@@ -20,6 +20,7 @@ nav:
           - EventPhenotype: api/phenotypes/event_phenotype.md
           - CodelistPhenotype: api/phenotypes/codelist_phenotype.md
           - MeasurementPhenotype: api/phenotypes/measurement_phenotype.md
+          - FurtherValueFilterPhenotype: api/phenotypes/further_value_filter_phenotype.md
           - AgePhenotype: api/phenotypes/age_phenotype.md
           - SexPhenotype: api/phenotypes/sex_phenotype.md
           - DeathPhenotype: api/phenotypes/death_phenotype.md
@@ -61,6 +62,8 @@ nav:
           - Connectors: api/ibis_connect.md
           - Mappers: api/mappers.md
           - DomainsDictionary: api/domains_dictionary.md
+      - Simulation:
+          - DomainsMocker: api/sim.md
       - Reporting:
           - Report: api/reporting/reporter.md
           - Table1: api/reporting/table1.md
@@ -72,6 +75,7 @@ nav:
       - Util:
           - Pipeline Utilities: api/pipe.md
           - Serialization: api/util/serialization.md
+          - DatabaseSampler: api/util/database_sampler.md
   - License: LICENSE.md
 
 site_url: https://bayer-group.github.io/PhenEx/

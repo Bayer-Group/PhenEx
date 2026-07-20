@@ -173,3 +173,5 @@ r-package/man/
 
 
 .DS_Store
+# MCP codelist data (may contain sensitive medical codes)
+mcp/codelists/
