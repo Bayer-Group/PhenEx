@@ -8,7 +8,11 @@ import { LoginModal } from '../../../components/Form';
 import { StudyIntakeWizard } from '../../StudyViewer/NewStudyWizard/StudyIntakeWizard';
 import type { StudyIntake } from '../../StudyViewer/NewStudyWizard/StudyIntakeWizard';
 
-export const StudiesGridView = () => {
+interface StudiesGridViewProps {
+  hideTitle?: boolean;
+}
+
+export const StudiesGridView = ({ hideTitle = false }: StudiesGridViewProps) => {
   const [userStudies, setUserStudies] = useState<StudyData[]>([]);
   const [publicStudies, setPublicStudies] = useState<StudyData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -232,17 +236,16 @@ export const StudiesGridView = () => {
   return (
     <div className={styles.container}>
       <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>My Studies</h2>
-          {!isAnonymous && userStudies.length > 0 && (
-            <button 
-              className={styles.newStudyButton}
-              onClick={handleCreateFirstStudy}
-            >
-              + New Study
-            </button>
-          )}
-        </div>
+        {!hideTitle && (
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>My Studies</h2>
+            {!isAnonymous && userStudies.length > 0 && (
+              <button className={styles.newStudyButton} onClick={handleCreateFirstStudy}>
+                + New Study
+              </button>
+            )}
+          </div>
+        )}
         {isAnonymous ? (
           <div className={styles.emptyStateWithCta}>
             <div className={styles.ctaContent}>
@@ -265,24 +268,15 @@ export const StudiesGridView = () => {
         ) : (
           <div className={styles.emptyStateWithCta}>
             <div className={styles.ctaContent}>
-              <h3 className={styles.ctaTitle}>Let's get started!</h3>
               <p className={styles.ctaDescription}>
-                Create your first study to begin defining cohorts and analyzing patient data.
+                To get started, choose an option above. Or explore a demo study to see PhenEx in action.
               </p>
-              <div className={styles.ctaButtons}>
-                <button 
-                  className={styles.ctaButton}
-                  onClick={handleCreateFirstStudy}
-                >
-                  Create Your First Study
-                </button>
-                <button 
-                  className={styles.ctaButtonSecondary}
-                  onClick={handleSeeDemo}
-                >
-                  See Demo Study
-                </button>
-              </div>
+              <button 
+                className={styles.ctaButtonSecondary}
+                onClick={handleSeeDemo}
+              >
+                Load demo study
+              </button>
             </div>
           </div>
         )}

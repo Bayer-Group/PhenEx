@@ -51,17 +51,8 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  max-width: 600px;
-  background: var(--card-background, #ffffff);
-  border: 2px dashed var(--border-color, #e0e0e0);
-  border-radius: 16px;
-  padding: 40px 32px;
-  transition: all 0.3s ease;
-}
-
-.ctaContent:hover {
-  border-color: var(--accent-color, #0066cc);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  max-width: 500px;
+  gap: 16px;
 }
 
 .ctaTitle {
