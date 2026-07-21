@@ -71,7 +71,12 @@ def get_phenex_init_params(cls) -> dict:
     """
     params = {}
     if cls.__module__.startswith("phenex"):
-        for base in cls.__bases__:
-            params.update(get_phenex_init_params(base))
-        params.update(inspect.signature(cls.__init__).parameters)
+        if inspect.isclass(cls):
+            for base in cls.__bases__:
+                params.update(get_phenex_init_params(base))
+            params.update(inspect.signature(cls.__init__).parameters)
+        else:
+            # Some phenotypes (e.g. UserDefinedPhenotype) are factory functions
+            # rather than classes; use the function signature directly.
+            params.update(inspect.signature(cls).parameters)
     return params
