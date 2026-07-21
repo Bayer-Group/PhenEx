@@ -21,6 +21,7 @@ import { DescriptionCellEditor } from '../CohortTable/CellEditors/DescriptionCel
 import { SettingsCellEditor } from '../CohortTable/CellEditors/SettingsCellEditor';
 import { ReturnDateCellEditor } from '../CohortTable/CellEditors/ReturnDateCellEditor';
 import { LogicalExpressionCellEditor } from '../CohortTable/CellEditors/LogicalExpressionCellEditor';
+import { NameCellEditor } from '../CohortTable/CellEditors/NameCellEditor';
 
 import LogicalExpressionCellRenderer from '../CohortTable/CellRenderers/LogicalExpressionCellRenderer';
 
@@ -58,7 +59,7 @@ export const componentPhenotypeColumns: any[] = [
     resizable: false,
     editable: true,
     cellRenderer: NameCellRenderer,
-    cellEditor: 'agTextCellEditor',
+    cellEditor: NameCellEditor,
     cellEditorSelector: (params: ICellEditorParams) => {
       if (params.eventKey == 'settings') {
         return {
@@ -67,7 +68,7 @@ export const componentPhenotypeColumns: any[] = [
         };
       }
       return {
-        component: 'agTextCellEditor',
+        component: NameCellEditor,
       };
     },
   },
@@ -101,7 +102,7 @@ export const defaultColumns = [
     resizable: false,
     editable: true,
     cellRenderer: NameCellRenderer,
-    cellEditor: 'agTextCellEditor',
+    cellEditor: NameCellEditor,
     cellEditorSelector: (params: ICellEditorParams) => {
       if (params.eventKey == 'settings') {
         return {
@@ -110,7 +111,7 @@ export const defaultColumns = [
         };
       }
       return {
-        component: 'agTextCellEditor',
+        component: NameCellEditor,
       };
     },
   },

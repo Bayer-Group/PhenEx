@@ -283,6 +283,92 @@
             "index": null
         }
     ],
+    "EventPhenotype": [
+        {
+            "param": "domain",
+            "required": true,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "domain",
+            "index": 0
+        },
+        {
+            "param": "name",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "name",
+            "index": null
+        },
+        {
+            "param": "description",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "output_display_type",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "output_display_type",
+            "index": null
+        },
+        {
+            "param": "date_range",
+            "required": false,
+            "default": null,
+            "type": "DateFilter",
+            "user_visible": true,
+            "display_name": "date_range",
+            "index": null
+        },
+        {
+            "param": "relative_time_range",
+            "required": false,
+            "default": null,
+            "type": [
+                "RelativeTimeRangeFilter",
+                "List:RelativeTimeRangeFilter"
+            ],
+            "user_visible": true,
+            "display_name": "relative_time_range",
+            "index": null
+        },
+        {
+            "param": "return_date",
+            "required": false,
+            "default": "first",
+            "type": "_empty",
+            "user_visible": true,
+            "display_name": "return_date",
+            "index": null
+        },
+        {
+            "param": "return_value",
+            "required": false,
+            "default": null,
+            "type": "_empty",
+            "user_visible": true,
+            "display_name": "return_value",
+            "index": null
+        },
+        {
+            "param": "categorical_filter",
+            "required": false,
+            "default": null,
+            "type": "CategoricalFilter",
+            "user_visible": true,
+            "display_name": "categorical_filter",
+            "index": null
+        }
+    ],
     "DeathPhenotype": [
         {
             "param": "name",
@@ -741,6 +827,216 @@
             "index": null
         }
     ],
+    "TimeRangeCountPhenotype": [
+        {
+            "param": "domain",
+            "required": true,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "domain",
+            "index": 0
+        },
+        {
+            "param": "name",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "name",
+            "index": null
+        },
+        {
+            "param": "description",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "output_display_type",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "output_display_type",
+            "index": null
+        },
+        {
+            "param": "date_range",
+            "required": false,
+            "default": null,
+            "type": "DateFilter",
+            "user_visible": true,
+            "display_name": "date_range",
+            "index": null
+        },
+        {
+            "param": "relative_time_range",
+            "required": false,
+            "default": null,
+            "type": [
+                "RelativeTimeRangeFilter",
+                "List:RelativeTimeRangeFilter"
+            ],
+            "user_visible": true,
+            "display_name": "relative_time_range",
+            "index": null
+        },
+        {
+            "param": "value_filter",
+            "required": false,
+            "default": null,
+            "type": "ValueFilter",
+            "user_visible": true,
+            "display_name": "value_filter",
+            "index": null
+        },
+        {
+            "param": "allow_null_end_date",
+            "required": false,
+            "default": "True",
+            "type": "bool",
+            "user_visible": true,
+            "display_name": "allow_null_end_date",
+            "index": null
+        }
+    ],
+    "TimeRangeDayCountPhenotype": [
+        {
+            "param": "domain",
+            "required": true,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "domain",
+            "index": 0
+        },
+        {
+            "param": "name",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "name",
+            "index": null
+        },
+        {
+            "param": "description",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "output_display_type",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "output_display_type",
+            "index": null
+        },
+        {
+            "param": "date_range",
+            "required": false,
+            "default": null,
+            "type": "DateFilter",
+            "user_visible": true,
+            "display_name": "date_range",
+            "index": null
+        },
+        {
+            "param": "relative_time_range",
+            "required": false,
+            "default": null,
+            "type": [
+                "RelativeTimeRangeFilter",
+                "List:RelativeTimeRangeFilter"
+            ],
+            "user_visible": true,
+            "display_name": "relative_time_range",
+            "index": null
+        },
+        {
+            "param": "value_filter",
+            "required": false,
+            "default": null,
+            "type": "ValueFilter",
+            "user_visible": true,
+            "display_name": "value_filter",
+            "index": null
+        },
+        {
+            "param": "allow_null_end_date",
+            "required": false,
+            "default": "False",
+            "type": "bool",
+            "user_visible": true,
+            "display_name": "allow_null_end_date",
+            "index": null
+        }
+    ],
+    "TimeRangeDaysToNextRange": [
+        {
+            "param": "domain",
+            "required": true,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "domain",
+            "index": 0
+        },
+        {
+            "param": "name",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "name",
+            "index": null
+        },
+        {
+            "param": "description",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "output_display_type",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "output_display_type",
+            "index": null
+        },
+        {
+            "param": "relative_time_range",
+            "required": false,
+            "default": null,
+            "type": "RelativeTimeRangeFilter",
+            "user_visible": true,
+            "display_name": "relative_time_range",
+            "index": null
+        },
+        {
+            "param": "value_filter",
+            "required": false,
+            "default": null,
+            "type": "ValueFilter",
+            "user_visible": true,
+            "display_name": "value_filter",
+            "index": null
+        }
+    ],
     "ScorePhenotype": [
         {
             "param": "expression",
@@ -1114,6 +1410,92 @@
             "type": "str",
             "user_visible": false,
             "display_name": "output_display_type",
+            "index": null
+        }
+    ],
+    "FurtherValueFilterPhenotype": [
+        {
+            "param": "phenotype",
+            "required": true,
+            "default": null,
+            "type": "Phenotype",
+            "user_visible": true,
+            "display_name": "phenotype",
+            "index": 0
+        },
+        {
+            "param": "name",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "name",
+            "index": null
+        },
+        {
+            "param": "description",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "description",
+            "index": null
+        },
+        {
+            "param": "output_display_type",
+            "required": false,
+            "default": null,
+            "type": "str",
+            "user_visible": true,
+            "display_name": "output_display_type",
+            "index": null
+        },
+        {
+            "param": "value_filter",
+            "required": false,
+            "default": null,
+            "type": "ForwardRef('ValueFilter')",
+            "user_visible": true,
+            "display_name": "value_filter",
+            "index": null
+        },
+        {
+            "param": "value_aggregation",
+            "required": false,
+            "default": null,
+            "type": "ForwardRef('ValueAggregator')",
+            "user_visible": true,
+            "display_name": "value_aggregation",
+            "index": null
+        },
+        {
+            "param": "date_range",
+            "required": false,
+            "default": null,
+            "type": "DateFilter",
+            "user_visible": true,
+            "display_name": "date_range",
+            "index": null
+        },
+        {
+            "param": "relative_time_range",
+            "required": false,
+            "default": null,
+            "type": [
+                "RelativeTimeRangeFilter",
+                "List:RelativeTimeRangeFilter"
+            ],
+            "user_visible": true,
+            "display_name": "relative_time_range",
+            "index": null
+        },
+        {
+            "param": "return_date",
+            "required": false,
+            "default": "all",
+            "type": "str",
+            "user_visible": true,
+            "display_name": "return_date",
             "index": null
         }
     ]
