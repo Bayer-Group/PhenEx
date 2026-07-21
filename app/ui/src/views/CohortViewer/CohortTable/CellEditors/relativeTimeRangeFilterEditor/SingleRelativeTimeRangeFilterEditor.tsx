@@ -2,10 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import styles from './RelativeTimeRangeFilterEditor.module.css';
 import { TimeRangeFilter } from './types';
 import { CohortDataService } from '../../../CohortDataService/CohortDataService';
+import { TableRow } from '../../../tableTypes';
 
 interface SingleRelativeTimeRangeFilterEditorProps {
   value: TimeRangeFilter;
   onValueChange?: (value: TimeRangeFilter) => void;
+  phenotypeData?: any;
 }
 
 // Constants for default values
@@ -76,6 +78,7 @@ const createValueObject = (
 export const SingleRelativeTimeRangeFilterEditor: React.FC<SingleRelativeTimeRangeFilterEditorProps> = ({
   value,
   onValueChange,
+  phenotypeData,
 }) => {
   const [filter, setFilter] = useState<TimeRangeFilter>(() => normalizeFilter(value));
   
@@ -94,6 +97,18 @@ export const SingleRelativeTimeRangeFilterEditor: React.FC<SingleRelativeTimeRan
       setAvailableConstants(constants);
     }
   }, []); // Only run on mount
+
+  // Load component phenotypes for anchor phenotype dropdown
+  const [componentPhenotypes, setComponentPhenotypes] = useState<TableRow[]>([]);
+  useEffect(() => {
+    const dataService = CohortDataService.getInstance();
+    if (phenotypeData?.id) {
+      const descendants = dataService.getAllDescendants(phenotypeData.id);
+      setComponentPhenotypes(descendants.filter(pt => pt.type === 'component'));
+    } else {
+      setComponentPhenotypes([]);
+    }
+  }, [phenotypeData]);
 
   // Notify parent component when filter changes
   useEffect(() => {
@@ -183,6 +198,7 @@ export const SingleRelativeTimeRangeFilterEditor: React.FC<SingleRelativeTimeRan
             onUpdate={updateFilter}
             onOperatorChange={handleOperatorChange}
             onValueChange={handleValueChange}
+            componentPhenotypes={componentPhenotypes}
           />
         )}
       </div>
@@ -262,6 +278,7 @@ interface ManualTimeRangeControlsProps {
   onUpdate: (updates: Partial<TimeRangeFilter>) => void;
   onOperatorChange: (field: 'min_days' | 'max_days', operator: string) => void;
   onValueChange: (field: 'min_days' | 'max_days', value: number | null) => void;
+  componentPhenotypes: TableRow[];
 }
 
 const ManualTimeRangeControls: React.FC<ManualTimeRangeControlsProps> = ({
@@ -269,6 +286,7 @@ const ManualTimeRangeControls: React.FC<ManualTimeRangeControlsProps> = ({
   onUpdate,
   onOperatorChange,
   onValueChange,
+  componentPhenotypes,
 }) => (
   <>
     <DaysRangeSection
@@ -293,7 +311,7 @@ const ManualTimeRangeControls: React.FC<ManualTimeRangeControlsProps> = ({
 
     <WhenSection filter={filter} onUpdate={onUpdate} />
 
-    <AnchorSection filter={filter} onUpdate={onUpdate} />
+    <AnchorSection filter={filter} onUpdate={onUpdate} componentPhenotypes={componentPhenotypes} />
   </>
 );
 
@@ -378,9 +396,10 @@ const WhenSection: React.FC<WhenSectionProps> = ({ filter, onUpdate }) => (
 interface AnchorSectionProps {
   filter: TimeRangeFilter;
   onUpdate: (updates: Partial<TimeRangeFilter>) => void;
+  componentPhenotypes: TableRow[];
 }
 
-const AnchorSection: React.FC<AnchorSectionProps> = ({ filter, onUpdate }) => (
+const AnchorSection: React.FC<AnchorSectionProps> = ({ filter, onUpdate, componentPhenotypes }) => (
   <div className={styles.filterSection}>
     <label>
       <input
@@ -392,14 +411,17 @@ const AnchorSection: React.FC<AnchorSectionProps> = ({ filter, onUpdate }) => (
     </label>
     {!filter.useIndexDate && (
       <select
-        value={filter.anchor_phenotype || ''}
-        onChange={e => onUpdate({ anchor_phenotype: e.target.value })}
+        value={filter.anchor_phenotype?.id || ''}
+        onChange={e => {
+          const selected = componentPhenotypes.find(p => p.id === e.target.value);
+          onUpdate({ anchor_phenotype: selected ? { id: selected.id, name: selected.name } : null });
+        }}
         className={styles.select}
       >
         <option value="">Select Anchor Phenotype...</option>
-        <option value="one">one</option>
-        <option value="two">two</option>
-        <option value="three">three</option>
+        {componentPhenotypes.map(p => (
+          <option key={p.id} value={p.id}>{p.name}</option>
+        ))}
       </select>
     )}
   </div>

@@ -17,7 +17,7 @@ export interface RelativeTimeRangeFilter {
   };
   when: string;
   useIndexDate: boolean;
-  anchor_phenotype: string | null;
+  anchor_phenotype: { id: string; name: string } | string | null;
   useConstant: boolean;
   constant?: 'one_year_pre_index' | 'any_time_post_index';
 }
@@ -60,7 +60,9 @@ export const RelativeTimeRangeRenderer: React.FC<RelativeTimeRangeRendererProps>
 
     const reference = filter.useIndexDate
       ? 'index date'
-      : filter.anchor_phenotype || 'unknown phenotype';
+      : (typeof filter.anchor_phenotype === 'object' && filter.anchor_phenotype !== null
+          ? filter.anchor_phenotype.name
+          : filter.anchor_phenotype) || 'unknown phenotype';
 
     const minValue = filter.min_days?.value ?? 0;
     const minOpen = filter.min_days?.operator === '>' ? '(' : '[';

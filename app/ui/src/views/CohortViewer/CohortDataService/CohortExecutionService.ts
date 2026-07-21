@@ -78,6 +78,13 @@ export class CohortExecutionService {
       );
     }
     
+    // Expand anchor_phenotype id references in relative_time_range filters for all phenotypes
+    if (cohortCopy.phenotypes) {
+      cohortCopy.phenotypes = cohortCopy.phenotypes.map((phenotype: any) =>
+        this.expandAnchorPhenotypesInPhenotype(phenotype, phenotypesById)
+      );
+    }
+    
     // Also convert in type-specific arrays
     if (cohortCopy.entry_criterion) {
       cohortCopy.entry_criterion = this.convertLogicPhenotypeForExecution(
@@ -107,6 +114,37 @@ export class CohortExecutionService {
     }
     
     return cohortCopy;
+  }
+
+  /**
+   * Expands anchor_phenotype references in relative_time_range filters from { id, name }
+   * stubs to the full phenotype object expected by the backend.
+   */
+  private expandAnchorPhenotypesInPhenotype(
+    phenotype: any,
+    phenotypesById: { [id: string]: any }
+  ): any {
+    if (!phenotype.relative_time_range || !Array.isArray(phenotype.relative_time_range)) {
+      return phenotype;
+    }
+
+    const expanded = { ...phenotype };
+    expanded.relative_time_range = phenotype.relative_time_range.map((filter: any) => {
+      if (!filter.anchor_phenotype || typeof filter.anchor_phenotype !== 'object') {
+        return filter;
+      }
+      const anchorId = filter.anchor_phenotype.id;
+      const fullPhenotype = phenotypesById[anchorId];
+      if (!fullPhenotype) {
+        console.warn(`anchor_phenotype with id '${anchorId}' not found in phenotype map`);
+        return filter;
+      }
+      // Strip UI-only fields from the embedded anchor phenotype
+      const { index, level, hierarchical_index, colorCellBackground, parentIds, effective_type, ...cleanAnchor } = fullPhenotype;
+      return { ...filter, anchor_phenotype: cleanAnchor };
+    });
+
+    return expanded;
   }
 
   /**

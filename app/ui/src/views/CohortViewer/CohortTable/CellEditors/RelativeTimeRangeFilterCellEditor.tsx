@@ -65,6 +65,7 @@ export const RelativeTimeRangeFilterCellEditor = React.forwardRef<any, RelativeT
           key={selectedItemIndex}
           value={editingItem}
           onValueChange={handleItemChange}
+          phenotypeData={props.data}
         />
       ) : null}
     </PhenexCellEditor>

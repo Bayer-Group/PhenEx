@@ -36,7 +36,7 @@ export interface TimeRangeFilter {
   useConstant: boolean;
 
   /** Custom phenotype to use as anchor when useIndexDate is false */
-  anchor_phenotype: string | null;
+  anchor_phenotype: { id: string; name: string } | null;
 
   /** Predefined constant range option when useConstant is true */
   constant?: 'one_year_pre_index' | 'any_time_post_index';
