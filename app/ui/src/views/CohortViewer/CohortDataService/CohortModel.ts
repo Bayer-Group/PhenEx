@@ -437,6 +437,24 @@ export class CohortModel {
             }
           });
         }
+
+        // When a phenotype is renamed, propagate the new name to all anchor_phenotype
+        // stubs in other phenotypes' relative_time_range filters that reference it by id.
+        if (fieldEdited === 'name') {
+          const renamedId = phenotype.id;
+          this._cohort_data.phenotypes.forEach((p: any) => {
+            if (!Array.isArray(p.relative_time_range)) return;
+            p.relative_time_range.forEach((filter: any) => {
+              if (
+                filter.anchor_phenotype &&
+                typeof filter.anchor_phenotype === 'object' &&
+                filter.anchor_phenotype.id === renamedId
+              ) {
+                filter.anchor_phenotype.name = newValue;
+              }
+            });
+          });
+        }
       }
     });
     

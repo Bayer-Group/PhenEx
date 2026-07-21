@@ -147,6 +147,37 @@
   margin-top: 20px;
 }
 
+.defaultsStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 0 4px;
+}
+
+.defaultsLabel {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-color-secondary);
+  font-family: 'IBMPlexSans-bold';
+  margin: 0;
+  text-align: left;
+}
+
+.dropdownFull {
+  padding: 8px 12px;
+  border: var(--border);
+  border-radius: 4px;
+  background-color: var(--background-color-content);
+  color: var(--text-color-primary);
+  font-size: 14px;
+  width: 100%;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+}
+
 .gridFullWidth {
   grid-column: 1 / -1;
 }

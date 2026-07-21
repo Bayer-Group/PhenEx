@@ -341,11 +341,11 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode, contentMode = 's
 
     return (
       <div className={styles.section}>
-        <div className={styles.inputFieldsGrid}>
+        <div className={styles.defaultsStack}>
           <div className={styles.inputGroup}>
-            <label className={styles.inputLabel}>Database</label>
+            <label className={styles.defaultsLabel}>DATABASE</label>
             <select
-              className={styles.dropdown}
+              className={styles.dropdownFull}
               value={selectedDatabase}
               onChange={e => {
                 handleDatabaseChange(e.target.value);
@@ -359,11 +359,11 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode, contentMode = 's
               ))}
             </select>
           </div>
-          
+
           <div className={styles.inputGroup}>
-            <label className={styles.inputLabel}>Schema</label>
+            <label className={styles.defaultsLabel}>SCHEMA</label>
             <select
-              className={styles.dropdown}
+              className={styles.dropdownFull}
               value={selectedSchema}
               onChange={e => handleSchemaChange(e.target.value)}
               disabled={!selectedDatabase}
