@@ -14,7 +14,7 @@ import { LogicalExpressionCellEditor } from '../../../CohortViewer/CohortTable/C
 import { DescriptionCellEditor } from '../../../CohortViewer/CohortTable/CellEditors/DescriptionCellEditor';
 import { TypeSelectorCellEditor } from '../../../CohortViewer/CohortTable/CellEditors/TypeSelectorCellEditor';
 import { ReturnDateCellEditor } from '@/views/CohortViewer/CohortTable/CellEditors/ReturnDateCellEditor';
-
+import { DateRangeCellEditor } from '../../../CohortViewer/CohortTable/CellEditors/DateRangeCellEditor';
 export interface PhenexPhenotypeCellEditorProps extends ICellEditorParams {
   onValueChange?: (value: any) => void;
 }
@@ -30,6 +30,7 @@ const classNameToEditorMapping = {
   description: DescriptionCellEditor,
   type: TypeSelectorCellEditor,
   return_date: ReturnDateCellEditor,
+  date_range: DateRangeCellEditor,
 };
 
 export const PhenexPhenotypeCellEditor = forwardRef(

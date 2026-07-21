@@ -24,6 +24,8 @@ import { LogicalExpressionCellEditor } from '../CohortTable/CellEditors/LogicalE
 import { NameCellEditor } from '../CohortTable/CellEditors/NameCellEditor';
 
 import LogicalExpressionCellRenderer from '../CohortTable/CellRenderers/LogicalExpressionCellRenderer';
+import DateRangeCellRenderer from '../CohortTable/CellRenderers/DateRangeCellRenderer';
+import { DateRangeCellEditor } from '../CohortTable/CellEditors/DateRangeCellEditor';
 
 export const columnNameToApplicablePhenotypeMapping = {
   relative_time_range: ['CodelistPhenotype', 'MeasurementPhenotype', 'TimeRangePhenotype'],
@@ -328,11 +330,17 @@ export const defaultColumns = [
   {
     field: 'date_range',
     headerName: 'Date Range',
-    width: 250,
+    width: 220,
     editable: true,
-    cellEditor: DescriptionCellEditor,
     cellEditorPopup: true,
-    cellRenderer: PhenexCellRenderer,
+    valueParser: (params: any) => {
+      if (params.newValue && typeof params.newValue === 'object') {
+        return params.newValue;
+      }
+      return params.oldValue;
+    },
+    cellEditor: DateRangeCellEditor,
+    cellRenderer: DateRangeCellRenderer,
   },
   {
     field: 'clean_nonphysiologicals_value_filter',

@@ -18,6 +18,7 @@ import ValueFilterCellRenderer from '../../../CohortViewer/CohortTable/CellRende
 import LogicalExpressionCellRenderer from '../../../CohortViewer/CohortTable/CellRenderers/LogicalExpressionCellRenderer';
 import TypeCellRenderer from '../../../CohortViewer/CohortTable/CellRenderers/TypeCellRenderer';
 import DescriptionCellRenderer from '../../../CohortViewer/CohortTable/CellRenderers/DescriptionCellRenderer';
+import DateRangeCellRenderer from '../../../CohortViewer/CohortTable/CellRenderers/DateRangeCellRenderer';
 
 const classNameToRendererMapping: { [key: string]: React.ComponentType<any> } = {
   relative_time_range: RelativeTimeRangeCellRenderer,
@@ -30,6 +31,7 @@ const classNameToRendererMapping: { [key: string]: React.ComponentType<any> } = 
   type: TypeCellRenderer,
   description: DescriptionCellRenderer,
   return_date: PhenexCellRenderer,
+  date_range: DateRangeCellRenderer,
 };
 
 // Helper function to check if value is missing or empty

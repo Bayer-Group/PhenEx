@@ -18,6 +18,7 @@ import { CategoricalFilterRenderer } from '../CellRenderers/actualRendering/Cate
 import { RelativeTimeRangeRenderer } from '../CellRenderers/actualRendering/RelativeTimeRangeRenderer';
 import { TypeRenderer } from '../CellRenderers/actualRendering/TypeRenderer';
 import { ValueFilterRenderer } from '../CellRenderers/actualRendering/ValueFilterRenderer';
+import { DateRangeRenderer } from '../CellRenderers/actualRendering/DateRangeRenderer';
 import { CohortDataService } from '../../CohortDataService/CohortDataService';
 
 export interface PhenexCellEditorProps extends ICellEditorParams {
@@ -440,6 +441,7 @@ export const PhenexCellEditor = forwardRef((props: PhenexCellEditorProps, ref) =
     'relative_time_range': RelativeTimeRangeRenderer,
     'relative_time_range_filter': RelativeTimeRangeRenderer, // Support both field names
     'type': TypeRenderer,
+    'date_range': DateRangeRenderer,
     // Add more field-based renderers here as needed
   };
 
