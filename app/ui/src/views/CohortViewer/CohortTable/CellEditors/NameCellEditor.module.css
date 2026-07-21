@@ -1,18 +1,26 @@
 .textarea {
-  padding-top: 20px;
-  margin-left: 10px;
-  margin-right: 10px;
-  width: calc(100% - 30px);
-  height: calc(100% - 20px);
+  display: block;
+  padding: 10px 12px;
+  width: 100%;
+  min-width: 280px;
+  height: 80px;
+  box-sizing: border-box;
   border: none;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  background-color: var(--color-accent-bright);
+  color: #fff;
   font-family: 'IBMPlexSans-regular';
-  font-size: 14px;
-  resize: none;
+  font-size: var(--font_size_phenotypename, 14px);
   line-height: 1.5;
-  background-color: transparent;
+  resize: none;
+  outline: none;
 }
 
-.textarea:focus {
-  outline: none;
-  border: none;
+.textarea::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.textarea::selection {
+  background: rgba(255, 255, 255, 0.3);
 }
