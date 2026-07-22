@@ -40,6 +40,7 @@ async def create_session(request: Request, body: CreateSessionRequest):
             study_id=body.study_id,
             title=body.title,
             session_id=body.session_id,
+            app_context=body.app_context,
         )
         return session
     except Exception as e:
