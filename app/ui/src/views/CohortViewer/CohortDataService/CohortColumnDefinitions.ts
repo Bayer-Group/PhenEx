@@ -1,10 +1,9 @@
-import NameCellRenderer from '../CohortTable/CellRenderers/NameCellRenderer';
+import TypeNameCellRenderer from '../CohortTable/CellRenderers/TypeNameCellRenderer';
 import CodelistCellRenderer from '../CohortTable/CellRenderers/CodelistCellRenderer';
 import DomainCellRenderer from '../CohortTable/CellRenderers/DomainCellRenderer';
 import PhenotypeCellRenderer from '../CohortTable/CellRenderers/PhenotypeCellRenderer';
 import { PhenexCellRenderer } from '../CohortTable/CellRenderers/PhenexCellRenderer';
 import type { ICellEditorParams } from 'ag-grid-community';
-import TypeSelectionDragCellRenderer from '../CohortTable/CellRenderers/TypeSelectionDragCellRenderer';
 
 import CategoricalFilterCellRenderer from '../CohortTable/CellRenderers/CategoricalFilterCellRenderer';
 import RelativeTimeRangeCellRenderer from '../CohortTable/CellRenderers/RelativeTimeRangeCellRenderer';
@@ -36,34 +35,23 @@ export const columnNameToApplicablePhenotypeMapping = {
 
 export const componentPhenotypeColumns: any[] = [
   {
-    field: 'type',
-    headerName: '',
-    width: 40,
-    pinned: 'left',
-    resizable: false,
-    filter: false,
-    suppressHeaderMenuButton: true,
-    rowDrag: true,
-    cellClass: 'type-selection-drag-handle',
-    editable: (params: any) => params.data.type != 'component',
-    cellEditor: TypeSelectorCellEditor,
-    cellEditorParams: {
-      values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
-    },
-    cellRenderer: TypeSelectionDragCellRenderer,
-    cellEditorPopup: true,
-  },
-  {
     field: 'name',
     headerName: '',
     flex: 1,
     pinned: 'left',
     resizable: false,
-    editable: true,
-    cellRenderer: NameCellRenderer,
-    cellEditor: NameCellEditor,
+    rowDrag: true,
+    cellClass: 'type-selection-drag-handle',
+    cellRenderer: TypeNameCellRenderer,
     cellEditorSelector: (params: ICellEditorParams) => {
-      if (params.eventKey == 'settings') {
+      if (params.eventKey === 'type') {
+        return {
+          component: TypeSelectorCellEditor,
+          params: { values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'] },
+          popup: true,
+        };
+      }
+      if (params.eventKey === 'settings') {
         return {
           component: SettingsCellEditor,
           popup: true,
@@ -71,42 +59,34 @@ export const componentPhenotypeColumns: any[] = [
       }
       return {
         component: NameCellEditor,
+        popup: true,
+        popupPosition: 'under',
       };
     },
+    editable: true,
   },
 ];
 
 export const defaultColumns = [
   {
-    field: 'type',
+    field: 'name',
     headerName: '',
-    width: 40,
+    width: 290,
     pinned: 'left',
     resizable: false,
-    filter: false,
-    suppressHeaderMenuButton: true,
     lockPosition: 'left',
     rowDrag: true,
     cellClass: 'type-selection-drag-handle',
-    editable: (params: any) => params.data.type != 'component',
-    cellEditor: TypeSelectorCellEditor,
-    cellEditorParams: {
-      values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'],
-    },
-    cellRenderer: TypeSelectionDragCellRenderer,
-    cellEditorPopup: true,
-  },
-  {
-    field: 'name',
-    headerName: '',
-    width: 250,
-    pinned: 'left',
-    resizable: false,
-    editable: true,
-    cellRenderer: NameCellRenderer,
-    cellEditor: NameCellEditor,
+    cellRenderer: TypeNameCellRenderer,
     cellEditorSelector: (params: ICellEditorParams) => {
-      if (params.eventKey == 'settings') {
+      if (params.eventKey === 'type') {
+        return {
+          component: TypeSelectorCellEditor,
+          params: { values: ['entry', 'inclusion', 'exclusion', 'baseline', 'outcome'] },
+          popup: true,
+        };
+      }
+      if (params.eventKey === 'settings') {
         return {
           component: SettingsCellEditor,
           popup: true,
@@ -114,8 +94,11 @@ export const defaultColumns = [
       }
       return {
         component: NameCellEditor,
+        popup: true,
+        popupPosition: 'under',
       };
     },
+    editable: true,
   },
   {
     field: 'class_name',
