@@ -2,6 +2,9 @@ import { FC } from 'react';
 import styles from './TLFDashboard.module.css';
 import { DashboardCard } from './TLFReviewerView';
 
+const safeStr = (val: unknown): string =>
+  typeof val === 'object' && val !== null ? JSON.stringify(val, null, 2) : String(val ?? '');
+
 interface TLFDashboardProps {
   cards: DashboardCard[];
   analyzing: boolean;
@@ -48,7 +51,7 @@ export const TLFDashboard: FC<TLFDashboardProps> = ({ cards, analyzing, error })
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>📋 Executive Summary</h2>
           <div className={styles.summaryContent}>
-            {summary.data.content}
+            {safeStr(summary.data.content)}
           </div>
         </section>
       )}
@@ -100,13 +103,13 @@ const InsightCard: FC<{ data: any; index: number }> = ({ data, index }) => {
     <div className={styles.insightCard}>
       <div className={styles.insightNumber}>{index + 1}</div>
       <div className={styles.insightContent}>
-        <div className={styles.insightText}>{data.text}</div>
+        <div className={styles.insightText}>{safeStr(data.text)}</div>
         {data.supporting_data && Object.keys(data.supporting_data).length > 0 && (
           <div className={styles.supportingData}>
             {Object.entries(data.supporting_data).map(([key, val]) => (
               <div key={key} className={styles.dataPoint}>
                 <span className={styles.dataKey}>{key}:</span>{' '}
-                <span className={styles.dataValue}>{String(val)}</span>
+                <span className={styles.dataValue}>{safeStr(val)}</span>
               </div>
             ))}
           </div>
@@ -135,9 +138,9 @@ const IssueCard: FC<{ data: any }> = ({ data }) => {
     <div className={`${styles.issueCard} ${severityStyles[data.severity] || styles.issueInfo}`}>
       <div className={styles.issueIcon}>{severityIcons[data.severity] || 'ℹ️'}</div>
       <div className={styles.issueContent}>
-        <div className={styles.issueMessage}>{data.message}</div>
+        <div className={styles.issueMessage}>{safeStr(data.message)}</div>
         {data.details && (
-          <div className={styles.issueDetails}>{data.details}</div>
+          <div className={styles.issueDetails}>{safeStr(data.details)}</div>
         )}
       </div>
     </div>
