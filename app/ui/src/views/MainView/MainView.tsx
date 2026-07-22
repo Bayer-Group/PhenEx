@@ -5,6 +5,8 @@ import 'flexlayout-react/style/light.css';
 import { HierarchicalLeftPanel } from '../LeftPanel/HierarchicalLeftPanel';
 import { RightPanel } from './RightPanel';
 import { ChatPanel } from '../ChatPanel/ChatPanel';
+import { ChatServiceProvider } from '../ChatPanel/ChatServiceContext';
+import { chatPanelDataService } from '../ChatPanel/ChatPanelDataService';
 import { SplashPage } from './SplashPage/SplashPage';
 import { TwoPanelCohortViewer } from '../CohortViewer/TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { StudiesGridView } from './StudiesGridView/StudiesGridView';
@@ -471,7 +473,9 @@ const MainViewInner = () => {
         case 'chat':
           return (
             <div className={styles.rightPanelTab}>
-              <ChatPanel onTextEnter={() => { /* handled internally by ChatPanel */ }} />
+              <ChatServiceProvider service={chatPanelDataService}>
+                <ChatPanel onTextEnter={() => { /* handled internally by ChatPanel */ }} />
+              </ChatServiceProvider>
             </div>
           );
         case 'info':

@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, BACKEND_URL, authFetch } from '@/api/httpClient';
+import { UserButton } from '@/components/User/UserButton/UserButton';
 import styles from './TLFReviewerView.module.css';
 import { TLFDashboard } from './TLFDashboard';
 import { ChatPanel } from '../ChatPanel/ChatPanel';
@@ -60,70 +61,70 @@ export const TLFReviewerView = () => {
   // Auto-analyze on manifest load
   useEffect(() => {
     if (!manifest) return;
-    
-    const runAutoAnalysis = async () => {
-      setAnalyzing(true);
-      setAnalysisError('');
-      setCards([]);
-      
-      try {
-        const resp = await authFetch(`${BACKEND_URL}/study/${manifest.study_id}/tlf-auto-analyze`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            execution_id: manifest.execution_id,
-          }),
-        });
+    runAutoAnalysis(false);
+  }, [manifest]);
 
-        if (!resp.ok) {
-          const err = await resp.json().catch(() => ({ detail: resp.statusText }));
-          throw new Error(err.detail ?? resp.statusText);
-        }
+  const runAutoAnalysis = async (forceRefresh: boolean) => {
+    setAnalyzing(true);
+    setAnalysisError('');
+    if (forceRefresh) setCards([]);
 
-        const reader = resp.body?.getReader();
-        const decoder = new TextDecoder();
-        if (!reader) throw new Error('No response body.');
+    try {
+      const resp = await authFetch(`${BACKEND_URL}/study/${manifest!.study_id}/tlf-auto-analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          execution_id: manifest!.execution_id,
+          force_refresh: forceRefresh,
+        }),
+      });
 
-        let buffer = '';
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+        throw new Error(err.detail ?? resp.statusText);
+      }
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() ?? '';
-          
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            try {
-              const msg = JSON.parse(line.slice(6));
-              
-              if (msg.type === 'card') {
-                // Add card to dashboard
-                const newCard: DashboardCard = {
-                  id: `${msg.card_type}-${Date.now()}-${Math.random()}`,
-                  card_type: msg.card_type,
-                  data: msg.data,
-                };
-                setCards((prev) => [...prev, newCard]);
-              } else if (msg.type === 'error') {
-                setAnalysisError(msg.message ?? 'Analysis failed');
-              } else if (msg.type === 'done') {
-                setAnalyzing(false);
-              }
-            } catch {
-              // ignore malformed SSE lines
+      const reader = resp.body?.getReader();
+      const decoder = new TextDecoder();
+      if (!reader) throw new Error('No response body.');
+
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const msg = JSON.parse(line.slice(6));
+
+            if (msg.type === 'card') {
+              const newCard: DashboardCard = {
+                id: `${msg.card_type}-${Date.now()}-${Math.random()}`,
+                card_type: msg.card_type,
+                data: msg.data,
+              };
+              setCards((prev) => [...prev, newCard]);
+            } else if (msg.type === 'error') {
+              setAnalysisError(msg.message ?? 'Analysis failed');
+            } else if (msg.type === 'done') {
+              setAnalyzing(false);
             }
+          } catch {
+            // ignore malformed SSE lines
           }
         }
-      } catch (e: any) {
-        setAnalysisError(e?.message ?? 'Failed to analyze study outputs.');
-        setAnalyzing(false);
       }
-    };
-
-    runAutoAnalysis();
-  }, [manifest]);
+    } catch (e: any) {
+      setAnalysisError(e?.message ?? 'Failed to analyze study outputs.');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -158,13 +159,12 @@ export const TLFReviewerView = () => {
         <span className={styles.topBarSep}>/</span>
         <span className={styles.topBarTitle}>{manifest.study_name}</span>
         <div className={styles.topBarRight}>
-          {manifest.executed_at && (
-            <span className={styles.topBarMeta}>
-              {new Date(manifest.executed_at).toLocaleDateString(undefined, {
-                year: 'numeric', month: 'short', day: 'numeric',
-              })}
-            </span>
+          {analyzing ? (
+            <span className={styles.topBarAnalyzing}>Analyzing…</span>
+          ) : (
+            <button className={styles.rerunBtn} onClick={() => runAutoAnalysis(true)}>↺ Re-run Analysis</button>
           )}
+          <UserButton />
         </div>
       </div>
 

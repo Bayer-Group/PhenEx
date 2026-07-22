@@ -1,6 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import styles from './ChatPopover.module.css';
 import { ChatPanel } from '../../views/ChatPanel/ChatPanel';
+import { ChatServiceProvider } from '../../views/ChatPanel/ChatServiceContext';
+import { chatPanelDataService } from '../../views/ChatPanel/ChatPanelDataService';
 import BirdIcon from '../../assets/bird_icon.png';
 import { SimpleCustomScrollbar } from '../CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { ResizableContainer } from '../ResizableContainer';
@@ -62,7 +64,9 @@ export const ChatPopover: React.FC<ChatPopoverProps> = ({ onClose, dragHandleRef
         </div>
         
         <div ref={bodyRef} className={styles.body}>
-          <ChatPanel />
+          <ChatServiceProvider service={chatPanelDataService}>
+            <ChatPanel />
+          </ChatServiceProvider>
         </div>
         
         <SimpleCustomScrollbar 

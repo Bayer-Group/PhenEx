@@ -20,6 +20,7 @@ export const TLFDashboard: FC<TLFDashboardProps> = ({ cards, analyzing, error })
         <div className={styles.errorState}>
           <p className={styles.errorTitle}>Analysis Failed</p>
           <p className={styles.errorMessage}>{error}</p>
+
         </div>
       </div>
     );

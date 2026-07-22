@@ -86,6 +86,30 @@
   border-width: 2px;
 }
 
+/* ── Re-run ─────────────────────────────────────────────────── */
+
+.rerunRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.rerunBtn {
+  background: none;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: #475467;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.rerunBtn:hover {
+  border-color: #1a4bbf;
+  color: #1a4bbf;
+}
+
 /* ── Sections ───────────────────────────────────────────────── */
 
 .section {
