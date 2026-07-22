@@ -20,12 +20,7 @@ export const UserButton: FC<UserButtonProps> = ({ className = '' }) => {
         onClick={() => setIsMenuOpen(true)}
         title={`User menu for ${username}`}
       >
-        {/* <Avatar 
-          name={username}
-          email={email}
-          size="md"
-          className={styles.avatar}
-        /> */}
+        <div className={styles.avatar} />
         <div className={styles.userInfo}>
           <span className={styles.username}>{username}</span>
           {email && <span className={styles.email}>{email}</span>}

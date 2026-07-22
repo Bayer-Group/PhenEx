@@ -2,6 +2,7 @@ import { FC, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { LeftPanel } from './LeftPanel';
 import styles from './HierarchicalLeftPanel.module.css';
+import { UserLogin } from './UserLogin/UserLogin';
 import {
   HierarchicalLeftPanelDataService,
   HierarchicalTreeNode,
@@ -401,6 +402,10 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
             items={buildMenuItems(menu.row)}
           />
         )}
+
+        <div className={styles.userLoginFooter}>
+          <UserLogin />
+        </div>
 
         {error && (
           <div className={styles.errorToast} role="alert">

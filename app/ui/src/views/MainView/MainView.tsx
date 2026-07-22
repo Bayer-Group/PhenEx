@@ -21,7 +21,6 @@ import { StudyExecutePanel } from '../SlideoverPanels/StudyExecutePanel/StudyExe
 import { StudyIssuesPanel } from '../SlideoverPanels/StudyIssuesPanel/StudyIssuesPanel';
 import { MainBreadcrumb } from './MainBreadcrumb';
 import leftPanelIcon from '../../assets/icons/left_panel.svg';
-import { UserLogin } from '../LeftPanel/UserLogin/UserLogin';
 import { ExportButton } from '../../components/ExportButton/ExportButton';
 import { mainViewLayoutService } from './MainViewLayoutService';
 
@@ -362,7 +361,6 @@ const MainViewInner = () => {
     if (syncingRef.current) return;
     
     mainViewLayoutService.setModel(model);
-    mainViewLayoutService.notifyModelChange(model);
     
     const right = model.getBorderSet().getBorderMap().get(DockLocation.RIGHT);
     if (right && (right.getSelected() !== -1) !== isRightPanelShown) {
@@ -406,58 +404,13 @@ const MainViewInner = () => {
     [],
   );
 
-  const factory = useCallback(
+  // Inner layout factory: handles center + right-border tabs.
+  // Recreated when view-dependent state changes, but this is safe because the
+  // inner Layout is only re-rendered (not remounted) — FlexLayout only remounts
+  // when its `model` prop changes, not when `factory` changes.
+  const innerFactory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
-        case 'leftPanel':
-          return (
-            <div className={styles.leftPanel}>
-              <HierarchicalLeftPanel isVisible={true} />
-            </div>
-          );
-        case 'mainRegion':
-          return (
-            <div className={styles.mainRegion}>
-              <div className={styles.titleGroup}>
-                <button
-                  className={styles.leftBorderCollapseBtn}
-                  onClick={toggleLeftPanel}
-                  aria-label="Toggle left panel"
-                >
-                  <img src={leftPanelIcon} alt="" />
-                </button>
-                <MainBreadcrumb studyId={studyId} showCohort={isCohortView} />
-                <div className={styles.titleGroupRight}>
-                  <ExportButton studyId={studyId ?? null} />
-                  <UserLogin />
-                </div>
-              </div>
-              <div 
-                className={`${styles.page} ${styles.innerPage}`}
-                style={{
-                  ...(currentView.viewType === ViewType.StudiesGrid || currentView.viewType === ViewType.Empty
-                    ? {
-                        '--right-border-display': 'none',
-                      } as React.CSSProperties
-                    : {})
-                }}
-              >
-                <style>{`
-                  ${currentView.viewType === ViewType.StudiesGrid || currentView.viewType === ViewType.Empty ? `
-                    .${styles.page} .flexlayout__border_right,
-                    .${styles.page} .flexlayout__layout_main + .flexlayout__splitter_border {
-                      display: none !important;
-                    }
-                  ` : ''}
-                `}</style>
-                <Layout
-                  model={innerModelRef.current}
-                  factory={factory}
-                  onModelChange={handleInnerModelChange}
-                />
-              </div>
-            </div>
-          );
         case 'center':
           return (
             <div className={styles.centerPanel}>
@@ -500,8 +453,67 @@ const MainViewInner = () => {
           return null;
       }
     },
+    [currentView, executePanelFactory, inReportView, infoContentMode],
+  );
+
+  // Outer layout factory: handles left-border panel + main-region shell.
+  // Kept stable (deps: only things that don't change on model-change events)
+  // so that the outer Layout never remounts during a splitter drag.
+  const outerFactory = useCallback(
+    (node: { getComponent: () => string | undefined }) => {
+      switch (node.getComponent()) {
+        case 'leftPanel':
+          return (
+            <div className={styles.leftPanel}>
+              <HierarchicalLeftPanel isVisible={true} />
+            </div>
+          );
+        case 'mainRegion':
+          return (
+            <div className={styles.mainRegion}>
+              <div className={styles.titleGroup}>
+                <button
+                  className={styles.leftBorderCollapseBtn}
+                  onClick={toggleLeftPanel}
+                  aria-label="Toggle left panel"
+                >
+                  <img src={leftPanelIcon} alt="" />
+                </button>
+                <MainBreadcrumb studyId={studyId} showCohort={isCohortView} />
+                <div className={styles.titleGroupRight}>
+                  <ExportButton studyId={studyId ?? null} />
+                </div>
+              </div>
+              <div
+                className={`${styles.page} ${styles.innerPage}`}
+                style={{
+                  ...(currentView.viewType === ViewType.StudiesGrid || currentView.viewType === ViewType.Empty
+                    ? { '--right-border-display': 'none' } as React.CSSProperties
+                    : {})
+                }}
+              >
+                <style>{`
+                  ${currentView.viewType === ViewType.StudiesGrid || currentView.viewType === ViewType.Empty ? `
+                    .${styles.page} .flexlayout__border_right,
+                    .${styles.page} .flexlayout__layout_main + .flexlayout__splitter_border {
+                      display: none !important;
+                    }
+                  ` : ''}
+                `}</style>
+                <Layout
+                  model={innerModelRef.current}
+                  factory={innerFactory}
+                  onModelChange={handleInnerModelChange}
+                />
+              </div>
+            </div>
+          );
+        default:
+          return null;
+      }
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentView, executePanelFactory, inReportView, infoContentMode, studyId, isCohortView, toggleLeftPanel, handleInnerModelChange],
+    [currentView.viewType, innerFactory, studyId, isCohortView, toggleLeftPanel, handleInnerModelChange],
   );
 
   return (
@@ -509,7 +521,7 @@ const MainViewInner = () => {
       <div className={styles.page}>
         <Layout
           model={outerModelRef.current}
-          factory={factory}
+          factory={outerFactory}
           onModelChange={handleOuterModelChange}
         />
       </div>

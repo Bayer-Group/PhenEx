@@ -26,6 +26,10 @@
 }
 
 .avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent-bright) 0%, hsl(294, 25%, 55%) 100%);
   flex-shrink: 0;
 }
 
