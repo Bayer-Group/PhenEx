@@ -63,6 +63,29 @@
   color: var(--text-color-secondary, #888);
 }
 
+.topBarAnalyzing {
+  font-size: 12px;
+  color: #1a4bbf;
+}
+
+.rerunBtn {
+  background: none;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #475467;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.rerunBtn:hover {
+  border-color: #1a4bbf;
+  color: #1a4bbf;
+}
+
+
 /* ── Body (two-column layout) ─────────────────────────────────── */
 
 .body {
@@ -75,7 +98,7 @@
 .dashboardPanel {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .chatPanel {

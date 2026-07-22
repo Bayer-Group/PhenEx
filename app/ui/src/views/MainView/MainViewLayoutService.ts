@@ -7,6 +7,8 @@ class MainViewLayoutService {
   private static instance: MainViewLayoutService;
   private modelRef: Model | null = null;
   private executeModelRef: Model | null = null;
+  private tabActivatedListeners: Map<string, Set<() => void>> = new Map();
+  private lastActiveTabs: Map<string, boolean> = new Map();
 
   private constructor() {}
 
@@ -75,6 +77,41 @@ class MainViewLayoutService {
     }
 
     this.executeModelRef.doAction(Actions.selectTab('issuesPanelTab'));
+  }
+
+  /**
+   * Called by MainView on every layout model change.
+   * Detects tab activations and fires registered listeners.
+   */
+  public notifyModelChange(_model: Model): void {
+    if (!this.modelRef) return;
+    const border = this.modelRef.getBorderSet().getBorders().find(
+      (b) => b.getLocation() === DockLocation.RIGHT
+    );
+    if (!border) return;
+
+    const TAB_NAMES = ['info', 'execute', 'chat'];
+    const selected = border.getSelected();
+    TAB_NAMES.forEach((name, idx) => {
+      const isActive = selected === idx;
+      const wasActive = this.lastActiveTabs.get(name) ?? false;
+      if (isActive && !wasActive) {
+        this.tabActivatedListeners.get(name)?.forEach(cb => cb());
+      }
+      this.lastActiveTabs.set(name, isActive);
+    });
+  }
+
+  /**
+   * Subscribe to a named tab becoming active.
+   * Returns an unsubscribe function.
+   */
+  public onTabActivated(tabName: string, callback: () => void): () => void {
+    if (!this.tabActivatedListeners.has(tabName)) {
+      this.tabActivatedListeners.set(tabName, new Set());
+    }
+    this.tabActivatedListeners.get(tabName)!.add(callback);
+    return () => this.tabActivatedListeners.get(tabName)?.delete(callback);
   }
 }
 

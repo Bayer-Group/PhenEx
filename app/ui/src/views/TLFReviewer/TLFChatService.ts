@@ -7,7 +7,7 @@ export class TLFChatService implements IChatService {
   private messages: Message[] = [
     {
       id: 1,
-      text: "Hello! I'm your TLF analysis assistant. I have autonomously explored this study's output files and extracted the insights shown on the dashboard.\n\nWhat else would you like to know? I can generate plots or dive deeper into the data.",
+      text: "Hello! I'm your TLF analysis assistant. I have autonomously explored this study's output files and extracted the insights shown on the dashboard.\n\nWhat else would you like to know? I help you dive deeper into the data.",
       isUser: false,
     }
   ];
@@ -81,17 +81,17 @@ export class TLFChatService implements IChatService {
     // Ensure we have a session ID
     if (!this._sessionId) {
       try {
-        const session = await createChatSession(this.studyId, 'tlf');
+        const session = await createChatSession({ study_id: this.studyId, app_context: 'tlf' });
         this._sessionId = session.id;
         this.sessionChangeListeners.forEach(cb => cb(session.id));
-        await addChatMessage(this._sessionId, 'assistant', this.messages[0].text);
+        await addChatMessage(this._sessionId, { role: 'assistant', text: this.messages[0].text, study_id: this.studyId });
       } catch (e) {
         console.warn("Failed to create chat session", e);
       }
     }
 
     if (this._sessionId) {
-      addChatMessage(this._sessionId, 'user', text).catch(console.error);
+      addChatMessage(this._sessionId, { role: 'user', text, study_id: this.studyId }).catch(console.error);
     }
 
     // Add loading AI message
@@ -169,7 +169,7 @@ export class TLFChatService implements IChatService {
       this.conversationHistory.push({ system: aiMessage.text });
       
       if (this._sessionId) {
-        addChatMessage(this._sessionId, 'assistant', aiMessage.text).catch(console.error);
+        addChatMessage(this._sessionId, { role: 'assistant', text: aiMessage.text, study_id: this.studyId }).catch(console.error);
       }
       
       this.isAIRunning = false;
@@ -193,13 +193,13 @@ export class TLFChatService implements IChatService {
 
       this.messages = dbMessages.map(msg => ({
         id: ++this.lastMessageId,
-        text: msg.content,
+        text: msg.text,
         isUser: msg.role === 'user',
         isLoading: false,
       }));
 
       this.conversationHistory = dbMessages.map(msg => 
-        msg.role === 'user' ? { user: msg.content } : { system: msg.content }
+        msg.role === 'user' ? { user: msg.text } : { system: msg.text }
       );
 
       this._sessionId = sessionId;

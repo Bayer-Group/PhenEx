@@ -34,6 +34,7 @@ class TLFAnalyzeRequest(BaseModel):
     execution_id: str
     user_instructions: str = ""
     conversation: List[dict] = []   # prior {role, content} turns for follow-ups
+    force_refresh: bool = False     # if True, ignore cache and re-run agent
 
 
 # ── Agent Context ─────────────────────────────────────────────────────────────
@@ -228,86 +229,6 @@ async def emit_dashboard_card(
     return f"✓ Emitted {card_type} card"
 
 
-@agent.tool
-async def create_plot(
-    ctx: RunContext[TLFContext],
-    python_code: str,
-    title: str = "Plot"
-) -> str:
-    """Generate a custom plot using matplotlib/seaborn.
-    
-    Args:
-        python_code: Python code to generate the plot.
-            The environment has: `pd`, `plt`, `sns`, `io`, `artifacts_dir`, and `storage`.
-            You MUST read files using the `storage.read_bytes()` helper.
-            
-            ```python
-            # Example reading Excel with specific sheet
-            raw = storage.read_bytes(f"{artifacts_dir}/results.xlsx")
-            df = pd.read_excel(io.BytesIO(raw), sheet_name="Overview")
-            
-            plt.figure(figsize=(10, 6))
-            sns.barplot(data=df, x="Cohort", y="Final N")
-            ```
-        title: Title of the plot.
-    
-    Returns markdown with embedded image URL or error message.
-    """
-    import matplotlib
-    matplotlib.use('Agg')  # Non-interactive backend
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import pandas as pd
-    import io
-    
-    # Emit tool feedback
-    await ctx.deps.message_queue.put(
-        json.dumps({"type": "tool", "message": f"📊 Creating plot: {title}..."})
-    )
-    
-    try:
-        plt.clf()
-        
-        # Set up the execution environment with the actual storage module
-        env = {
-            "pd": pd,
-            "plt": plt,
-            "sns": sns,
-            "io": io,
-            "artifacts_dir": ctx.deps.artifacts_dir,
-            "storage": _storage  # Inject the entire storage module
-        }
-        
-        # Execute the AI-provided code
-        exec(python_code, env)
-        
-        if not plt.get_fignums():
-            return "❌ Plot generation failed: No figure was created by the code."
-            
-        import base64
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
-        buf.seek(0)
-        b64 = base64.b64encode(buf.read()).decode('utf-8')
-        plt.close('all')
-        
-        await ctx.deps.message_queue.put(
-            json.dumps({"type": "tool", "message": f"✓ Plot created successfully"})
-        )
-        
-        img_markdown = f"\n\n![{title}](data:image/png;base64,{b64})\n\n"
-        await ctx.deps.message_queue.put(
-            json.dumps({"type": "chunk", "text": img_markdown})
-        )
-        
-        return "Plot was successfully generated and displayed to the user. Just summarize what the plot shows."
-        
-    except Exception as e:
-        logger.error(f"Plot generation failed: {e}\nCode:\n{python_code}", exc_info=True)
-        plt.close('all')
-        return f"❌ Failed to create plot: {type(e).__name__}: {str(e)}"
-
-
 # ── Endpoint ──────────────────────────────────────────────────────────────────
 
 @router.post("/study/{study_id}/tlf-analyze", tags=["tlf"])
@@ -472,36 +393,64 @@ Work systematically:
 
 Be concise and clinical. Focus on what a researcher needs to know."""
 
+    # Check for cached analysis results
+    cache_path = _storage.join(artifacts_dir, "auto_analysis_cache.json")
+
     async def stream():
+        # ── Serve from cache if available ────────────────────────────────────
+        try:
+            if not body.force_refresh and _storage.isfile(cache_path):
+                cached = _storage.read_json(cache_path)
+                for card in cached.get("cards", []):
+                    yield f"data: {json.dumps(card)}\n\n"
+                    await asyncio.sleep(0)
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+                return
+        except Exception as e:
+            logger.warning("Failed to read auto-analysis cache, re-running: %s", e)
+
+        # ── Run agent and collect cards ───────────────────────────────────────
+        collected_cards = []
+
         try:
             async def drain_message_queue():
                 while True:
                     try:
                         msg = message_queue.get_nowait()
-                        yield f"data: {msg}\n\n"
+                        yield msg
                         await asyncio.sleep(0)
                     except asyncio.QueueEmpty:
                         break
-            
+
             async with agent.run_stream(
                 auto_prompt, deps=context, model_settings={"max_completion_tokens": 6000}
             ) as result:
                 async for text_chunk in result.stream_text(delta=True):
-                    async for msg in drain_message_queue():
-                        yield msg
-                    
-                    # Don't stream the text itself in auto-analysis mode
-                    # (we only care about the cards emitted via tools)
+                    async for raw_msg in drain_message_queue():
+                        parsed = json.loads(raw_msg)
+                        if parsed.get("type") == "card":
+                            collected_cards.append(parsed)
+                        yield f"data: {raw_msg}\n\n"
                     await asyncio.sleep(0)
-            
+
             # Final drain
-            async for msg in drain_message_queue():
-                yield msg
-                
+            async for raw_msg in drain_message_queue():
+                parsed = json.loads(raw_msg)
+                if parsed.get("type") == "card":
+                    collected_cards.append(parsed)
+                yield f"data: {raw_msg}\n\n"
+
         except Exception as e:
             logger.error("Auto-analysis failed: %s", e, exc_info=True)
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
             return
+
+        # ── Persist cache ─────────────────────────────────────────────────────
+        if collected_cards:
+            try:
+                _storage.write_json(cache_path, {"cards": collected_cards})
+            except Exception as e:
+                logger.warning("Failed to write auto-analysis cache: %s", e)
 
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
