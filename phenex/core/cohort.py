@@ -662,18 +662,28 @@ class Cohort:
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
         """
+        logger.info(f"Cohort '{self.name}': executing cohort execution...")
 
         con = self._prepare_database_connector_for_execution(con)
         tables = dict(self._prepare_tables_for_execution(con, tables))
+        logger.info(
+            f"Cohort '{self.name}': tables prepared. Counting persons in source database..."
+        )
 
         self.n_persons_in_source_database = (
             tables["PERSON"].distinct().count().execute()
         )
+        logger.info(
+            f"Cohort '{self.name}': {self.n_persons_in_source_database} persons in source database. Building stages..."
+        )
 
         self.build_stages(tables)
+        logger.info(f"Cohort '{self.name}': stages built. Executing sampler stage...")
 
         if self.sampler_stage:
-            logger.info(f"Cohort '{self.name}': executing sampler stage ...")
+            logger.info(
+                f"Cohort '{self.name}': executing sampler stage. Sampling {self.n_persons_in_source_database} persons..."
+            )
             self.sampler_stage.execute(
                 tables=tables,
                 con=con,

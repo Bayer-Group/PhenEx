@@ -674,10 +674,20 @@ class NodeGroup(Node):
 
     def __init__(self, name: str, nodes: List[Node]):
         super(NodeGroup, self).__init__(name=name)
-        # Stored (not just added as children) so to_dict()/hash see the nodes —
-        # this is what invalidates the sampler-stage hash on fraction/seed change.
         self.nodes = nodes
         self.add_children(nodes)
+
+    def to_dict(self) -> dict:
+        """
+        Serialize only the group's name, class, and child names. The hash changes
+        when membership changes; a changed child invalidates itself through its
+        own hash.
+        """
+        return {
+            "class_name": self.__class__.__name__,
+            "name": self.name,
+            "nodes": sorted(n.name for n in self.nodes),
+        }
 
     def _execute(self, tables: Dict[str, Table] = None) -> Table:
         """
