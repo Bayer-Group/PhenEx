@@ -786,22 +786,28 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         const el = scrollRef.current;
         if (!el) return;
 
+        // Scroll by a full page (the visible width of the scroll container).
+        // Snap to a column boundary just beyond / before the new visible edge so
+        // columns aren't awkwardly cut off after the jump.
+        const pageWidth = el.clientWidth;
+        const current = el.scrollLeft;
+
         // Build cumulative left-edge positions for each scroll column.
         const boundaries = scrollColumnsRef.current.reduce<number[]>((acc, col) => {
           const prev = acc.length > 0 ? acc[acc.length - 1] : 0;
           acc.push(prev + (col.width ?? 150));
           return acc;
         }, [0]);
-        // boundaries[i] = left edge of column i; last entry = total scroll width
 
-        const current = el.scrollLeft;
         let target: number;
         if (direction === 'right') {
-          // Snap to the first boundary strictly greater than current position.
-          target = boundaries.find(b => b > current + 1) ?? boundaries[boundaries.length - 1];
+          // The first column that starts at or after (current + pageWidth).
+          const newLeft = current + pageWidth;
+          target = boundaries.find(b => b >= newLeft - 1) ?? boundaries[boundaries.length - 1];
         } else {
-          // Snap to the last boundary strictly less than current position.
-          const candidates = boundaries.filter(b => b < current - 1);
+          // The last column boundary that sits at or before (current - pageWidth).
+          const newLeft = current - pageWidth;
+          const candidates = boundaries.filter(b => b <= newLeft + 1);
           target = candidates.length > 0 ? candidates[candidates.length - 1] : 0;
         }
         // Clamp target to the actual scrollable range.
@@ -1065,9 +1071,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
         {editing && (
           <div className={styles.editingOverlay} onClick={() => commitEdit()} />
         )}
-        {rows.length === 0 ? (
-          <div className={styles.emptyState}></div>
-        ) : cardMode ? (
+        {cardMode ? (
           <CohortCardViewerPinnedCols
             ref={pinnedContentRef}
             cardMode

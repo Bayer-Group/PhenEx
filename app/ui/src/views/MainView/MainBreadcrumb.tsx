@@ -13,12 +13,6 @@ interface MainBreadcrumbProps {
   showCohort: boolean;
 }
 
-/** Cohort sections, each mapped to the CohortDataService phenotype filter it applies. */
-const SECTIONS: { label: string; filter: string | string[] }[] = [
-  { label: 'Definition', filter: ['entry', 'inclusion', 'exclusion'] },
-  { label: 'Characteristics', filter: 'baseline' },
-  { label: 'Outcomes', filter: 'outcome' },
-];
 
 /** A small auto-focusing inline text input used for renaming (mirrors OutlinePanel). */
 const InlineEdit: FC<{ value: string; onCommit: (v: string) => void; onCancel: () => void }> = ({
@@ -105,12 +99,6 @@ export const MainBreadcrumb: FC<MainBreadcrumbProps> = ({ studyId, showCohort })
     setEditing(null);
   };
 
-  const selectSection = (index: number) => {
-    setSectionIndex(index);
-    CohortDataService.getInstance().filterType(SECTIONS[index].filter);
-    setSectionMenuOpen(false);
-  };
-
   return (
     <div className={styles.container} onClick={(e) => e.stopPropagation()}>
       {studyName &&
@@ -142,38 +130,6 @@ export const MainBreadcrumb: FC<MainBreadcrumbProps> = ({ studyId, showCohort })
         </>
       )}
 
-      {showCohort && (
-        <>
-          <span className={styles.separator}>/</span>
-          <button
-            ref={sectionButtonRef}
-            className={`${styles.crumb} ${styles.crumb_section}`}
-            onClick={() => setSectionMenuOpen((open) => !open)}
-          >
-            {SECTIONS[sectionIndex].label}
-          </button>
-          <PhenExNavBarMenu
-            isOpen={isSectionMenuOpen}
-            onClose={() => setSectionMenuOpen(false)}
-            anchorElement={sectionButtonRef.current}
-            verticalPosition="below"
-            horizontalAlignment="left"
-            gap={4}
-          >
-            <div className={styles.sectionMenu}>
-              {SECTIONS.map((section, index) => (
-                <button
-                  key={section.label}
-                  className={styles.sectionMenuItem}
-                  onClick={() => selectSection(index)}
-                >
-                  {section.label}
-                </button>
-              ))}
-            </div>
-          </PhenExNavBarMenu>
-        </>
-      )}
     </div>
   );
 };
