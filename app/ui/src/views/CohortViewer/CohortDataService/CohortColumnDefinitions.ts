@@ -38,7 +38,7 @@ export const componentPhenotypeColumns: any[] = [
   {
     field: 'type',
     headerName: '',
-    width: 70,
+    width: 40,
     pinned: 'left',
     resizable: false,
     filter: false,
@@ -80,7 +80,7 @@ export const defaultColumns = [
   {
     field: 'type',
     headerName: '',
-    width: 70,
+    width: 40,
     pinned: 'left',
     resizable: false,
     filter: false,
