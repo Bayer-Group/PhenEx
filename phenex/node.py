@@ -679,13 +679,15 @@ class NodeGroup(Node):
 
     def to_dict(self) -> dict:
         """
-        NodeGroup is a coordinator node only — it has no defining parameters of its own.
-        Each child node already captures its own hash via its own to_dict(). Serializing
-        self.nodes here would cause exponential recursive serialization of the entire DAG
-        (every NodeGroup would embed all its children's full subtrees), making build_stages
-        hang for minutes on large cohorts. Return only the name and class.
+        Serialize only the group's name, class, and child names. The hash changes
+        when membership changes; a changed child invalidates itself through its
+        own hash.
         """
-        return {"class_name": self.__class__.__name__, "name": self.name}
+        return {
+            "class_name": self.__class__.__name__,
+            "name": self.name,
+            "nodes": sorted(n.name for n in self.nodes),
+        }
 
     def _execute(self, tables: Dict[str, Table] = None) -> Table:
         """
