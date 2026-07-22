@@ -674,10 +674,18 @@ class NodeGroup(Node):
 
     def __init__(self, name: str, nodes: List[Node]):
         super(NodeGroup, self).__init__(name=name)
-        # Stored (not just added as children) so to_dict()/hash see the nodes —
-        # this is what invalidates the sampler-stage hash on fraction/seed change.
         self.nodes = nodes
         self.add_children(nodes)
+
+    def to_dict(self) -> dict:
+        """
+        NodeGroup is a coordinator node only — it has no defining parameters of its own.
+        Each child node already captures its own hash via its own to_dict(). Serializing
+        self.nodes here would cause exponential recursive serialization of the entire DAG
+        (every NodeGroup would embed all its children's full subtrees), making build_stages
+        hang for minutes on large cohorts. Return only the name and class.
+        """
+        return {"class_name": self.__class__.__name__, "name": self.name}
 
     def _execute(self, tables: Dict[str, Table] = None) -> Table:
         """
