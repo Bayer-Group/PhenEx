@@ -28,18 +28,18 @@ def to_dict(obj) -> dict:
                     )
                     for item in value
                 ]
-                # Sort for deterministic ordering, hash stability
-                try:
-                    items = sorted(
-                        items,
-                        key=lambda x: (
-                            json.dumps(x, sort_keys=True)
-                            if isinstance(x, dict)
-                            else str(x)
-                        ),
-                    )
-                except (TypeError, ValueError):
-                    pass
+                # Only sort if items are all dicts (e.g. list of serialized
+                # phenotypes). Plain scalar lists like `bins` carry semantic
+                # ordering that must be preserved; sorting them lexicographically
+                # would corrupt numeric sequences (e.g. [0,10,100,20,...]).
+                if items and all(isinstance(x, dict) for x in items):
+                    try:
+                        items = sorted(
+                            items,
+                            key=lambda x: json.dumps(x, sort_keys=True),
+                        )
+                    except (TypeError, ValueError):
+                        pass
                 _dict[param] = items
             elif isinstance(value, dict):
                 # Handle dictionaries that might contain Codelist objects
