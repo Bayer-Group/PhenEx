@@ -1,4 +1,4 @@
-import { FC, ReactNode, useState, useRef, useEffect } from 'react';
+import { FC, useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './CohortViewer.module.css';
 import { CohortDataService } from './CohortDataService/CohortDataService';
@@ -11,7 +11,8 @@ import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsB
 import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
 import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
 import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
-import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
+import { FinalActionNavBar, MenuItem as NavBarMenuItem } from '../../components/PhenExNavBar/FinalActionNavBar';
+import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
 
 import { useFadeIn } from '../../hooks/useFadeIn';
@@ -34,7 +35,14 @@ interface CohortViewerProps {
   data?: string;
   onAddPhenotype?: () => void;
   activeTabIndex?: number;
-  rightBottomNavContent?: ReactNode;
+  // FinalActionNavBar (call-to-action) props
+  navMode?: 'cohortviewer' | 'studyviewer';
+  navShadow?: boolean;
+  navMenuItems?: NavBarMenuItem[];
+  onSectionTabChange?: (index: number) => void;
+  onAddButtonClick?: () => void;
+  showReport?: boolean;
+  onShowReportChange?: (value: boolean) => void;
 }
 
 export enum CohortViewType {
@@ -47,7 +55,13 @@ export const CohortViewer: FC<CohortViewerProps> = ({
   data,
   onAddPhenotype,
   activeTabIndex,
-  rightBottomNavContent,
+  navMode = 'cohortviewer',
+  navShadow = false,
+  navMenuItems = [],
+  onSectionTabChange,
+  onAddButtonClick,
+  showReport,
+  onShowReportChange,
 }) => {
   const navigate = useNavigate();
   const { studyId: urlStudyId } = useParams<{ studyId: string }>();
@@ -434,18 +448,26 @@ export const CohortViewer: FC<CohortViewerProps> = ({
           <div className={styles.bottomGradient} />
         </div>
         <div className={navBarStyles.bottomRightUnified}>
-          <ViewNavBar
-            height={44}
-            scrollPercentage={scrollPercentage}
-            canScrollLeft={canScrollLeft}
-            canScrollRight={canScrollRight}
-            onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
-            onViewNavigationScroll={handleViewNavigationScroll}
-            onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
-            flipScrollDirection={flipScrollDirection}
-            onFlipScrollDirectionChange={setFlipScrollDirection}
-          />
-          {rightBottomNavContent}
+          <NavBarMenuProvider>
+            <FinalActionNavBar
+              height={44}
+              scrollPercentage={scrollPercentage}
+              canScrollLeft={canScrollLeft}
+              canScrollRight={canScrollRight}
+              onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
+              onViewNavigationScroll={handleViewNavigationScroll}
+              onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+              flipScrollDirection={flipScrollDirection}
+              onFlipScrollDirectionChange={setFlipScrollDirection}
+              mode={navMode}
+              shadow={navShadow}
+              menuItems={navMenuItems}
+              onSectionTabChange={onSectionTabChange}
+              onAddButtonClick={onAddButtonClick}
+              showReport={showReport}
+              onShowReportChange={onShowReportChange}
+            />
+          </NavBarMenuProvider>
         </div>
       </div>
   );

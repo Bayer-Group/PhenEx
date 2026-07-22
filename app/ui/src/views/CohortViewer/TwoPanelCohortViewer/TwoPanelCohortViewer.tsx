@@ -4,7 +4,6 @@ import { PhenotypeHorizontalRowViewer } from '../../SlideoverPanels/PhenotypeVie
 import { StudyViewer } from '../../StudyViewer/StudyViewer';
 import { MainViewService, ViewType } from '../../MainView/MainView';
 import { StudyDataService } from '../../StudyViewer/StudyDataService';
-import { CallToActionNavBar } from '../../../components/PhenExNavBar/CallToActionNavBar';
 import { NavBarMenuProvider } from '../../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import { CohortDataService } from '../CohortDataService/CohortDataService';
 import { chatPanelDataService } from '../../ChatPanel/ChatPanelDataService';
@@ -162,32 +161,22 @@ export const TwoPanelCohortViewer: FC<TwoPanelCohortViewerProps> = ({ data, cont
         data={data}
         embeddedMode={true}
         activeTabIndex={currentTabIndex}
-        rightBottomNavContent={
-          <CallToActionNavBar
-            height={44}
-            mode={'studyviewer'}
-            onSectionTabChange={setCurrentTabIndex}
-            onAddButtonClick={handleAddNewCohort}
-            shadow={true}
-            showReport={isReportMode}
-            onShowReportChange={setReportMode}
-          />
-        }
+        navMode="studyviewer"
+        navShadow={true}
+        onSectionTabChange={setCurrentTabIndex}
+        onAddButtonClick={handleAddNewCohort}
+        showReport={isReportMode}
+        onShowReportChange={setReportMode}
       />
     ) : (
       <CohortViewer
         data={service.getData()}
         activeTabIndex={currentTabIndex}
-        rightBottomNavContent={
-          <CallToActionNavBar
-            height={44}
-            mode={'cohortviewer'}
-            onSectionTabChange={setCurrentTabIndex}
-            shadow={true}
-            showReport={isReportMode}
-            onShowReportChange={setReportMode}
-          />
-        }
+        navMode="cohortviewer"
+        navShadow={true}
+        onSectionTabChange={setCurrentTabIndex}
+        showReport={isReportMode}
+        onShowReportChange={setReportMode}
       />
     );
 

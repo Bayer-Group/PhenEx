@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styles from './PhenExNavBar.module.css';
 import { ActionNavBar } from './ActionNavBar';
-import { ViewNavBar } from './ViewNavBar';
+import { FinalActionNavBar } from './FinalActionNavBar';
 import { NavBarMenuProvider } from './PhenExNavBarMenuContext';
 
 interface PhenExNavBarProps {
@@ -39,7 +39,7 @@ export const PhenExNavBar: React.FC<PhenExNavBarProps> = ({
   return (
     <NavBarMenuProvider>
       <div className={styles.topRight}>
-        <ViewNavBar
+        <FinalActionNavBar
           height={heightNavBar}
           scrollPercentage={scrollPercentage}
           canScrollLeft={canScrollLeft}

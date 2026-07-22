@@ -139,6 +139,7 @@ export const CohortNavBar: React.FC<CohortNavBarProps> = ({ height, onSectionTab
         onMouseEnter={openSectionMenu}
         onMouseLeave={closeSectionMenu}
         verticalPosition='alignTop'
+        horizontalAlignment='right'
         gap={0}
       >
         <div style={{ padding: '8px 4px', minWidth: '180px' }}>

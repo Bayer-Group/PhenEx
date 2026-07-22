@@ -49,7 +49,8 @@ export const PhenExNavBarMenu: React.FC<PhenExNavBarMenuProps> = ({
     if (!isOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node) &&
+          anchorElement && !anchorElement.contains(event.target as Node)) {
         onClose();
       }
     };
@@ -71,8 +72,6 @@ export const PhenExNavBarMenu: React.FC<PhenExNavBarMenuProps> = ({
       document.removeEventListener('keydown', handleEscKey);
     };
   }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
 
   // Calculate position relative to anchor element
   const getMenuPosition = () => {
@@ -105,6 +104,8 @@ export const PhenExNavBarMenu: React.FC<PhenExNavBarMenuProps> = ({
 
     return style;
   };
+
+  if (!isOpen) return null;
 
   return (
     <Portal>

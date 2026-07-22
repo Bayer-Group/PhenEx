@@ -1,4 +1,4 @@
-import { FC, ReactNode, useState, useRef, useEffect, useCallback } from 'react';
+import { FC, useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './StudyViewer.module.css';
 import { EditableTextField } from '../../components/EditableTextField/EditableTextField';
@@ -6,7 +6,8 @@ import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
 import { StudyDataService } from './StudyDataService';
 
 import { CohortsDataService } from '../LeftPanel/CohortsDataService';
-import { ViewNavBar } from '../../components/PhenExNavBar/ViewNavBar';
+import { FinalActionNavBar, MenuItem as NavBarMenuItem } from '../../components/PhenExNavBar/FinalActionNavBar';
+import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
 import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
 import { useFadeIn } from '../../hooks/useFadeIn';
 import { getStudy } from '../../api/text_to_cohort/route';
@@ -31,14 +32,27 @@ interface StudyViewerProps {
   data?: string;
   embeddedMode?: boolean;
   activeTabIndex?: number;
-  rightBottomNavContent?: ReactNode;
+  // FinalActionNavBar (call-to-action) props
+  navMode?: 'cohortviewer' | 'studyviewer';
+  navShadow?: boolean;
+  navMenuItems?: NavBarMenuItem[];
+  onSectionTabChange?: (index: number) => void;
+  onAddButtonClick?: () => void;
+  showReport?: boolean;
+  onShowReportChange?: (value: boolean) => void;
 }
 
 export const StudyViewer: FC<StudyViewerProps> = ({
   data,
   embeddedMode = false,
   activeTabIndex,
-  rightBottomNavContent,
+  navMode = 'studyviewer',
+  navShadow = false,
+  navMenuItems = [],
+  onSectionTabChange,
+  onAddButtonClick,
+  showReport,
+  onShowReportChange,
 }) => {
   const navigate = useNavigate();
   const [studyName, setStudyName] = useState('');
@@ -244,18 +258,26 @@ export const StudyViewer: FC<StudyViewerProps> = ({
     <div className={styles.cohortTableContainer} style={fadeInStyle}>
       <div className={styles.bottomSection}>{renderContent()}</div>
       <div className={navBarStyles.bottomRightUnified}>
-        <ViewNavBar
-          height={44}
-          scrollPercentage={zoomPercentage}
-          canScrollLeft={canNavigateLeft}
-          canScrollRight={canNavigateRight}
-          onViewNavigationArrowClicked={handleNavigationArrowClicked}
-          onViewNavigationScroll={handleNavigationScroll}
-          scrollbarTooltipLabel="Zoom In and Out"
-          leftArrowTooltipLabel="Pan Left"
-          rightArrowTooltipLabel="Pan Right"
-        />
-        {rightBottomNavContent}
+        <NavBarMenuProvider>
+          <FinalActionNavBar
+            height={44}
+            scrollPercentage={zoomPercentage}
+            canScrollLeft={canNavigateLeft}
+            canScrollRight={canNavigateRight}
+            onViewNavigationArrowClicked={handleNavigationArrowClicked}
+            onViewNavigationScroll={handleNavigationScroll}
+            scrollbarTooltipLabel="Zoom In and Out"
+            leftArrowTooltipLabel="Pan Left"
+            rightArrowTooltipLabel="Pan Right"
+            mode={navMode}
+            shadow={navShadow}
+            menuItems={navMenuItems}
+            onSectionTabChange={onSectionTabChange}
+            onAddButtonClick={onAddButtonClick}
+            showReport={showReport}
+            onShowReportChange={onShowReportChange}
+          />
+        </NavBarMenuProvider>
       </div>
     </div>
   );
