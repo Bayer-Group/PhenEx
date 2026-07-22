@@ -2243,6 +2243,7 @@ class DatabaseManager:
         study_id: Optional[str],
         title: Optional[str] = None,
         session_id: Optional[str] = None,
+        app_context: str = 'study',
     ) -> Dict:
         conn = None
         try:
@@ -2259,17 +2260,19 @@ class DatabaseManager:
                     user_id,
                     study_id,
                     title,
+                    app_context,
                 )
             else:
                 row = await conn.fetchrow(
                     """
-                    INSERT INTO chat_session (user_id, study_id, title)
-                    VALUES ($1::uuid, $2, $3)
+                    INSERT INTO chat_session (user_id, study_id, title, app_context)
+                    VALUES ($1::uuid, $2, $3, $4)
                     RETURNING id, user_id, study_id, title, created_at, updated_at
                     """,
                     user_id,
                     study_id,
                     title,
+                    app_context,
                 )
             return {
                 "id": str(row["id"]),
