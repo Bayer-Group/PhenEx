@@ -6,6 +6,13 @@ from phenex.node import Node, NodeGroup
 import ibis
 from ibis.expr.types.relations import Table
 from phenex.tables import PhenexTable
+from phenex.ibis_connect import (
+    compile_sql,
+    ibis_dialect_of_connector,
+    read_dialect_stamp,
+    read_sql_file,
+    write_sql_file,
+)
 from phenex.reporting import Table1
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
@@ -218,6 +225,12 @@ class Cohort:
             return f"{self.name}_frac{frac}_seed{seed}"
         return self.name
 
+    @property
+    def _clean_prefix(self) -> str:
+        """`_table_prefix` with non-alphanumerics collapsed to `_` and upper-cased — the exact
+        prefix baked into node table names and their saved `.sql` filenames."""
+        return re.sub(r"[^A-Za-z0-9_]", "_", self._table_prefix).upper()
+
     @staticmethod
     def _flatten(items: Optional[List]) -> List:
         """Flatten one level of nesting, so both [p1, p2] and [[p1, p2]] work."""
@@ -233,7 +246,7 @@ class Cohort:
 
     def _apply_table_name_prefix(self, phenotypes) -> None:
         """Set _table_name_prefix on phenotypes and their dependencies."""
-        prefix = re.sub(r"[^A-Za-z0-9_]", "_", self._table_prefix).upper()
+        prefix = self._clean_prefix
         if not isinstance(phenotypes, list):
             phenotypes = [phenotypes]
         for p in phenotypes:
@@ -631,6 +644,7 @@ class Cohort:
         overwrite: Optional[bool] = False,
         n_threads: Optional[int] = 1,
         lazy_execution: Optional[bool] = False,
+        sql_dir: Optional[str] = "./sql",
     ):
         """
         The execute method executes the full cohort in order of computation. The order is data period filter -> derived tables -> entry criterion -> inclusion -> exclusion -> baseline characteristics. Tables are subset at two points, after entry criterion and after full inclusion/exclusion calculation to result in subset_entry data (contains all source data for patients that fulfill the entry criterion, with a possible index date) and subset_index data (contains all source data for patients that fulfill all in/ex criteria, with a set index date). Additionally, default reporters are executed such as table 1 for baseline characteristics.
@@ -658,6 +672,7 @@ class Cohort:
             overwrite: Whether to overwrite existing tables
             lazy_execution: Whether to use lazy execution with change detection
             n_threads: Max number of jobs to run simultaneously.
+            sql_dir: Directory to write one .sql file per node (named {NODE_NAME}.sql). These files let node.to_sql() return the executed SQL in a later session. Pass None to disable file writing.
 
         Returns:
             PhenotypeTable: The index table corresponding the cohort.
@@ -776,7 +791,7 @@ class Cohort:
                 overwrite=overwrite,
                 n_threads=n_threads,
                 lazy_execution=lazy_execution,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
             )
         else:
             # Execute entry criterion in-memory so .table stays on the source
@@ -786,7 +801,7 @@ class Cohort:
                 con=con,
                 overwrite=overwrite,
                 n_threads=n_threads,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
                 lazy_execution=lazy_execution,
             )
 
@@ -802,7 +817,7 @@ class Cohort:
                 con=None,
                 overwrite=overwrite,
                 n_threads=n_threads,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
             )
             # Restore children for correct dependency graphs in later stages
             for node in self.subset_tables_entry_nodes:
@@ -863,7 +878,7 @@ class Cohort:
                 con=None,
                 overwrite=overwrite,
                 n_threads=n_threads,
-                table_name_prefix=self.name,
+                table_name_prefix=self._table_prefix,
             )
             # Restore children for correct dependency graphs in later stages
             for node in self.subset_tables_index_nodes:
@@ -897,7 +912,289 @@ class Cohort:
                 table_name_prefix=self._table_prefix,
             )
 
+        self._write_node_sql_files(sql_dir, con, overwrite)
+
         return self.index_table
+
+    def _write_node_sql_files(self, sql_dir, con, overwrite):
+        """Write one .sql per node (+ codelist sidecars) into `sql_dir`, named by get_table_name().
+        Overwrite drops this cohort's orphan .sql, lazy hits restore from phenex.db.
+        """
+        if sql_dir is not None:
+            # Remember where we wrote so a later to_sql() can default to it.
+            self._last_sql_dir = sql_dir
+            try:
+                os.makedirs(sql_dir, exist_ok=True)
+            except OSError as e:
+                logger.warning(
+                    f"Cohort '{self.name}': could not create SQL directory '{sql_dir}': {e}. "
+                    f"Skipping SQL file output."
+                )
+            else:
+                all_nodes = self._collect_all_nodes()
+                if overwrite:
+                    # Drop this cohort's orphan .sql (nodes removed since an earlier run), prefix-scoped.
+                    current_files = {n.get_sql_filename() for n in all_nodes}
+                    prefix = self._clean_prefix + "__"
+                    for fname in os.listdir(sql_dir):
+                        if (
+                            fname.endswith(".sql")
+                            and fname.startswith(prefix)
+                            and fname not in current_files
+                        ):
+                            try:
+                                os.remove(os.path.join(sql_dir, fname))
+                            except OSError:
+                                pass
+                from phenex.core.sql_view import (
+                    REUSED_CODELIST_NOTE,
+                    referenced_sidecars,
+                )
+
+                target_dialect = ibis_dialect_of_connector(con)
+                cache_hit_missing_sidecars = (
+                    0  # nodes restored from cache with a sidecar gap
+                )
+                for node in all_nodes:
+                    filename = node.get_sql_filename()
+                    filepath = os.path.join(sql_dir, filename)
+                    if node._expression is not None:
+                        try:
+                            # Compile in the connector's dialect, stamped.
+                            write_sql_file(
+                                filepath,
+                                compile_sql(node._expression, dialect=target_dialect),
+                            )
+                            # Also dump any codelist this node uses as a sidecar.
+                            self._write_codelist_sidecars(node._expression, sql_dir)
+                        except Exception as e:
+                            logger.warning(
+                                f"Cohort '{self.name}': could not write SQL file for node "
+                                f"'{node.name}': {e}. Skipping."
+                            )
+                    else:
+                        # Lazy hit (no live expression): restore from phenex.db if missing or wrong-dialect.
+                        needs_restore = not os.path.exists(filepath)
+                        if not needs_restore and target_dialect is not None:
+                            try:
+                                existing_stamp = read_dialect_stamp(
+                                    read_sql_file(filepath)
+                                )
+                            except Exception:
+                                existing_stamp = None
+                            if (
+                                existing_stamp is not None
+                                and existing_stamp != target_dialect
+                            ):
+                                needs_restore = True
+                        if not needs_restore:
+                            continue
+                        # Dialect-aware lookup: only accept SQL cached for this backend.
+                        sql = Node._node_manager.get_sql(node, con=con)
+                        if sql is not None:
+                            try:
+                                write_sql_file(filepath, sql)
+                            except Exception as e:
+                                logger.warning(
+                                    f"Cohort '{self.name}': could not restore SQL file for node "
+                                    f"'{node.name}' from phenex.db: {e}. Skipping."
+                                )
+                            else:
+                                # Cache hits restore node SQL but not sidecars. Tally nodes
+                                # whose restored query needs a memtable file this folder lacks,
+                                # so we can warn once after the loop instead of per node.
+                                if any(
+                                    not os.path.exists(
+                                        os.path.join(sql_dir, f"{m}.sql")
+                                    )
+                                    for m in referenced_sidecars(sql)
+                                ):
+                                    cache_hit_missing_sidecars += 1
+                        elif not os.path.exists(filepath):
+                            logger.warning(
+                                f"Cohort '{self.name}': no saved SQL found for node "
+                                f"'{node.name}' — its file is missing and nothing is cached. "
+                                f"Call node.to_sql() to rebuild it from its dependencies, or "
+                                f"re-run the cohort with a full (non-incremental) execution to "
+                                f"regenerate every SQL file."
+                            )
+                if cache_hit_missing_sidecars:
+                    logger.info(f"Cohort '{self.name}': {REUSED_CODELIST_NOTE}")
+                # Count .sql present now (accurate on a lazy hit). A shortfall means a warning above.
+                n_present = sum(
+                    1
+                    for node in all_nodes
+                    if os.path.exists(os.path.join(sql_dir, node.get_sql_filename()))
+                )
+                logger.info(
+                    f"Cohort '{self.name}': {n_present}/{len(all_nodes)} node SQL "
+                    f"file(s) available in '{sql_dir}'"
+                )
+
+    @staticmethod
+    def _codelist_values_sql(frame) -> str:
+        """Render a codelist DataFrame as a self-contained `VALUES` subquery."""
+
+        def lit(v):
+            if v is None or v != v:  # None or NaN
+                return "NULL"
+            if isinstance(v, bool):
+                return "TRUE" if v else "FALSE"
+            if isinstance(v, (int, float)):
+                return repr(v)
+            return "'" + str(v).replace("'", "''") + "'"
+
+        # Quote each column so the alias matches ibis's quoted-lowercase refs (e.g. "t3"."code") on any backend.
+        cols = ", ".join('"' + str(c) + '"' for c in frame.columns)
+        rows = [
+            "(" + ", ".join(lit(v) for v in row) + ")"
+            for row in frame.itertuples(index=False, name=None)
+        ]
+        body = (
+            ",\n  ".join(rows)
+            if rows
+            else "(" + ", ".join("NULL" for _ in frame.columns) + ")"
+        )
+        return (
+            "-- Self-contained codelist contents: a drop-in for the in-memory table that the\n"
+            '-- codelist node SQL joins to. Replace  FROM "ibis_pandas_memtable_..."  with\n'
+            "-- FROM ( this query ) to make that node SQL portable across sessions.\n"
+            f"SELECT * FROM (VALUES\n  {body}\n) AS t({cols})\n"
+        )
+
+    def _write_codelist_sidecars(self, expression, sql_dir: str) -> None:
+        """Write a self-contained `VALUES` sidecar (`{memtable_name}.sql`) for each codelist the
+        node references, so the codes stay on disk, deduped."""
+        import ibis.expr.operations as ops
+
+        try:
+            memtables = list(expression.op().find(ops.InMemoryTable))
+        except Exception:
+            return
+        for memtable in memtables:
+            name = getattr(memtable, "name", "") or ""
+            if not name.startswith("ibis_pandas_memtable"):
+                continue  # a named table (e.g. a mock source table), not a codelist
+            path = os.path.join(sql_dir, f"{name}.sql")
+            if os.path.exists(path):
+                continue  # already written for another node referencing the same codelist
+            try:
+                write_sql_file(
+                    path, self._codelist_values_sql(memtable.data.to_frame())
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Cohort '{self.name}': could not write codelist sidecar "
+                    f"'{name}.sql': {e}. Skipping."
+                )
+
+    def _collect_all_nodes(self) -> List[Node]:
+        """Every SQL artifact this cohort produces, deduped and order preserving."""
+        seen, ordered = set(), []
+
+        def add(node):
+            if (
+                node is not None
+                and not isinstance(node, NodeGroup)
+                and id(node) not in seen
+            ):
+                seen.add(id(node))
+                ordered.append(node)
+
+        roots = []
+        for stage in (
+            self.data_period_filter_stage,
+            self.derived_tables_stage,
+            self.entry_stage,
+            self.derived_tables_post_entry_stage,
+            self.index_stage,
+            self.subset_index_stage,
+            self.reporting_stage,
+            self.sampler_stage,
+        ):
+            if stage is not None:
+                roots.extend(stage.nodes)
+        roots += [
+            self.entry_criterion,
+            *self.inclusions,
+            *self.exclusions,
+            *self.characteristics,
+            *self.outcomes,
+            self.index_table_node,
+            self.inclusions_table_node,
+            self.exclusions_table_node,
+        ]
+        for root in roots:
+            if root is not None:
+                for node in [*root.dependencies, root]:
+                    add(node)
+        return ordered
+
+    def to_sql(self, sql_dir: Optional[str] = None, connector=None):
+        """Return a lazy, dict-like view of this cohort's SQL, keyed by node table name.
+
+        Pass `sql_dir=".../sql"` for a guaranteed read of the saved files on any
+        machine. Zero-arg reads from memory (same session) or the `phenex.db` cache
+        (fresh session, only after a lazy `execute()` here). Indexing a node resolves
+        just that query, returning `None` with a warning if it is nowhere.
+
+        Parameters:
+            sql_dir: Directory of saved `.sql` files, defaults to the last `execute()` run.
+            connector: Pins the SQL dialect, defaults to the cohort's database connector.
+        """
+        from phenex.core.sql_view import announce_sql_source, build_sql_view
+
+        connector = connector or (
+            self.database.connector if self.database is not None else None
+        )
+        sql_dir = sql_dir or getattr(self, "_last_sql_dir", None)
+
+        # index/inclusions/exclusions become objects only inside execute(). In a fresh
+        # session they are None, so rebuild those three from the phenotypes (no query).
+        if self.index_table_node is None:
+            self._build_rollup_nodes()
+        # Say up front where the SQL is read from, so a short or surprising list is traceable.
+        announce_sql_source(
+            f"Cohort '{self.name}'",
+            sql_dir,
+            "phenotypes only, no subset tables, reporters, or sidecars",
+        )
+        return build_sql_view(self._collect_all_nodes(), sql_dir, connector)
+
+    def _build_rollup_nodes(self):
+        """Re-create the index, inclusions, and exclusions node objects with no database
+        query. execute() normally builds these, a fresh session has them as None. They
+        come only from the cohort's own phenotypes (already in memory), and get the
+        cohort prefix so their names match the .sql files execute() wrote."""
+        if self.inclusions:
+            self.inclusions_table_node = InclusionsTableNode(
+                name=f"{self.name}__inclusions".upper(),
+                index_phenotype=self.entry_criterion,
+                phenotypes=self.inclusions,
+            )
+        if self.exclusions:
+            self.exclusions_table_node = ExclusionsTableNode(
+                name=f"{self.name}__exclusions".upper(),
+                index_phenotype=self.entry_criterion,
+                phenotypes=self.exclusions,
+            )
+        self.index_table_node = IndexPhenotype(
+            f"{self.name}__index".upper(),
+            entry_phenotype=self.entry_criterion,
+            inclusion_table_node=self.inclusions_table_node,
+            exclusion_table_node=self.exclusions_table_node,
+            return_index=self.return_index,
+            max_index_dates=self.max_index_dates,
+        )
+        # Match the cohort-prefixed names execute() writes to disk.
+        prefix = self._clean_prefix
+        for node in (
+            self.index_table_node,
+            self.inclusions_table_node,
+            self.exclusions_table_node,
+        ):
+            if node is not None:
+                node._table_name_prefix = prefix
 
     def _prepare_database_connector_for_execution(self, con):
         """

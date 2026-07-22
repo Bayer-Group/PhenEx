@@ -1,6 +1,7 @@
 import copy
 import hashlib
 import json
+import os
 import re
 from typing import Dict, List, Set, Optional
 import pandas as pd
@@ -10,6 +11,12 @@ from datetime import datetime
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
 from phenex.node_manager import NodeManager
+from phenex.ibis_connect import (
+    compile_sql,
+    ibis_dialect_of_connector,
+    read_dialect_stamp,
+    read_sql_file,
+)
 from phenex.tables import PhenexTable
 import threading
 import queue
@@ -69,6 +76,7 @@ class Node:
         self._name = name or type(self).__name__
         self._children = []
         self.table = None  # populated upon call to execute()
+        self._expression = None  # pre-materialization ibis expr, saved in execute()
         self._table_name_prefix = None
         self.lastexecution_start_time = None
         self.lastexecution_end_time = None
@@ -245,6 +253,26 @@ class Node:
                 return f"{prefix}__{self.name}"
         return self.name
 
+    def get_sql_filename(self) -> str:
+        """Filesystem-safe `.sql` filename for this node's table.
+
+        `<>:"/\\|?*` become `_`, plus a short hash when that changed the name so two
+        names that clean up alike never collide. Filenames longer than 250 characters
+        (including `.sql`) are truncated with the same hash suffix, staying below the
+        common 255-character per-filename filesystem limit. Only the filename changes,
+        not the SQL.
+        """
+        MAX_FILENAME_LEN = 250  # includes ".sql"
+        name = self.get_table_name()
+        safe = re.sub(r'[<>:"/\\|?*]', "_", name)
+        if safe != name:
+            safe = f"{safe}__{hashlib.md5(name.encode()).hexdigest()[:8]}"
+        if len(safe) + len(".sql") > MAX_FILENAME_LEN:
+            digest = hashlib.md5(name.encode()).hexdigest()[:8]
+            keep = MAX_FILENAME_LEN - len(".sql") - len("__") - len(digest)
+            safe = f"{safe[:keep]}__{digest}"
+        return f"{safe}.sql"
+
     def delete_table(self, con, table_name_prefix: Optional[str] = None) -> bool:
         """
         Delete this node's materialized table from the destination database.
@@ -397,6 +425,8 @@ class Node:
             db_name = node.get_table_name(table_name_prefix)
             node.lastexecution_start_time = datetime.now()
             table = node._execute(tables)
+            # Save the generating query before create_table() materializes it (to_sql layer 1).
+            node._expression = table
             if table is not None:
                 original = table
                 con.create_table(table, db_name, overwrite=overwrite)
@@ -461,6 +491,8 @@ class Node:
                         # Time the execution
                         node.lastexecution_start_time = datetime.now()
                         table = node._execute(tables)
+                        # Save the generating query before create_table() materializes it (to_sql layer 1).
+                        node._expression = table
 
                         if (
                             con and table is not None
@@ -632,6 +664,74 @@ class Node:
 
     def __repr__(self):
         return f"Node('{self.name}')"
+
+    def to_sql(self, sql_dir: str = "./sql", connector=None) -> str:
+        """Return the SQL that produces this node's table, read-only (execute() writes it).
+
+        Returns the first source available, in order: the in-memory expression (this
+        session), the saved `{sql_dir}/{name}.sql` file, the `phenex.db` cache, or a
+        recompile from dependency tables. Pass `connector` to pin the dialect.
+
+        Raises:
+            RuntimeError: If required upstream tables are missing, call `execute()` first.
+        """
+        # Explicit compile target when a connector is given; else each layer self-identifies.
+        target_dialect = (
+            ibis_dialect_of_connector(connector) if connector is not None else None
+        )
+        name = self.get_table_name()  # cohort-prefixed; matches the written filename
+
+        # 1. in-memory expression: compile + stamp in the target (or its own backend) dialect.
+        if self._expression is not None:
+            logger.info(f"to_sql('{name}') ← memory (this session)")
+            return compile_sql(self._expression, dialect=target_dialect)
+
+        # 2. saved file, keyed by name (cohort-prefixed) to match the written filename.
+        # sql_dir=None means "no directory to read from", skip straight to the cache.
+        if sql_dir is not None:
+            filepath = os.path.join(sql_dir, self.get_sql_filename())
+            if os.path.exists(filepath):
+                file_sql = read_sql_file(filepath)
+                # Use the file unless it's stamped for a different backend (wrong dialect).
+                stamp = read_dialect_stamp(file_sql)
+                if target_dialect is None or stamp is None or stamp == target_dialect:
+                    logger.info(f"to_sql('{name}') ← file: {filepath}")
+                    return file_sql
+
+        # 3. phenex.db SQL dialect-aware with a connector (only its SQL), else hash-only lookup.
+        try:
+            sql = Node._node_manager.get_sql(self, con=connector)
+        except Exception:
+            sql = None
+        if sql is not None:
+            logger.info(f"to_sql('{name}') ← phenex.db cache")
+            return sql
+
+        # 4. auto-collect dependency tables and recompile
+        collected = {dep.name: dep.table for dep in self.dependencies}
+        missing = [dep_name for dep_name, tbl in collected.items() if tbl is None]
+        if missing:
+            raise RuntimeError(
+                f"Node '{self.name}' cannot compile SQL. Missing upstream tables: "
+                f"{', '.join(missing)}. Call `load()` or `execute()` first."
+            )
+        # KeyError = a missing source table -> clear error; a real node bug -> re-raise.
+        try:
+            # Recompiled from dependency tables: compile + stamp in the target (or backend) dialect.
+            recompiled = compile_sql(self._execute(collected), dialect=target_dialect)
+            logger.info(
+                f"to_sql('{self.get_table_name()}') ← recompiled from dependencies"
+            )
+            return recompiled
+        except KeyError as e:
+            key = e.args[0]
+            if key not in collected:
+                raise RuntimeError(
+                    f"Node '{self.name}' cannot compile SQL. "
+                    f"Missing source-domain table: '{key}'. "
+                    "Call `load()` or `execute()` first."
+                ) from e
+            raise
 
     def visualize_dependencies(self) -> str:
         """

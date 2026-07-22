@@ -59,6 +59,7 @@ class Study:
         self.custom_reporters = custom_reporters
         self.description = description
         self.database = database
+        self.execution_directory = None
 
         self._create_study_output_path()
         self._check_cohort_names_unique()
@@ -106,7 +107,14 @@ class Study:
         lazy_execution: Optional[bool] = False,
         previous_executions: Optional[Dict[str, str]] = None,
     ):
+        """Execute all cohorts, writing each one's reports and per-node SQL into a fresh
+        timestamped run directory under `self.path`.
+
+        Returns:
+            str: Path to this run's directory (also on `self.execution_directory`).
+        """
         path_exec_dir_study = self._prepare_study_execution_directory()
+        self.execution_directory = path_exec_dir_study
         self._freeze_software_versions(path_exec_dir_study)
 
         self.custom_reporters = self.custom_reporters or []
@@ -140,10 +148,12 @@ class Study:
                     _original_custom_reporters or []
                 ) + self.custom_reporters
 
+                # Each cohort's SQL goes in its own run directory.
                 _cohort.execute(
                     overwrite=overwrite,
                     lazy_execution=lazy_execution,
                     n_threads=n_threads,
+                    sql_dir=os.path.join(path_exec_dir_cohort, "sql"),
                 )
 
                 _cohort.custom_reporters = _original_custom_reporters
@@ -163,6 +173,11 @@ class Study:
             self._write_manifest(
                 path_exec_dir_study, status=status, error_message=error_message
             )
+
+        logger.info(
+            f"Study '{self.name}' execution complete. Output written to: {path_exec_dir_study}"
+        )
+        return path_exec_dir_study
 
     def _write_manifest(
         self, path_exec_dir_study, status="success", error_message=None
@@ -262,7 +277,6 @@ class Study:
         now = datetime.datetime.today()
         dirname = now.strftime("D%Y-%m-%d__T%H-%M")
         path = os.path.join(self.path, dirname)
-        print(path)
         if os.path.exists(path):
             logger.warning(f"Output directory {path} already exists!")
         else:
