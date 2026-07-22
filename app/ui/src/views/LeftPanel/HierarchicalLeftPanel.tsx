@@ -355,7 +355,13 @@ export const HierarchicalLeftPanel: FC<HierarchicalLeftPanelProps> = ({ isVisibl
           <button
             type="button"
             className={`${styles.item} ${styles[`level${row.level}`] ?? ''} ${isSelected ? styles.itemActive : ''}`}
-            onClick={() => navigateToRow(row)}
+            onClick={() => {
+              if (row.kind === 'study' && isSelected) {
+                toggleExpand(node.id);
+              } else {
+                navigateToRow(row);
+              }
+            }}
             onDoubleClick={() => canRename && setRenaming({ kind: row.kind, id: node.id })}
           >
             {node.displayName}
