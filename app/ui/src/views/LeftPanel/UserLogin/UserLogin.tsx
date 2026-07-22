@@ -3,8 +3,8 @@ import styles from './UserLogin.module.css';
 import { AuthContext } from '@/auth/AuthProvider';
 
 import { UserButton } from '../../../components/User';
-import { ModernButton } from '../../../components/Form';
 import { LoginModal } from '../../../components/Form';
+import { Portal } from '../../../components/Portal/Portal';
 
 export const UserLogin: FC = () => {
   const { user } = useContext(AuthContext);
@@ -30,21 +30,23 @@ const NotLoggedIn: FC = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <ModernButton
-        variant="primary"
-        size="md"
-        onClick={() => setIsLoginModalOpen(true)}
-        className={styles.loginTriggerButton}
-      >
-        Sign In
-      </ModernButton>
+    <>
+      <Portal>
+        <div className={styles.loginPortal}>
+          <button
+            className={styles.loginButton}
+            onClick={() => setIsLoginModalOpen(true)}
+          >
+            Log in to get started
+          </button>
+        </div>
+      </Portal>
 
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
-    </div>
+    </>
   );
 };
