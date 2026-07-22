@@ -169,32 +169,37 @@ export class CohortsDataService {
   }
 
   public async loadUserWorkspace(): Promise<void> {
-    
+    // If already loaded, skip — individual methods (getUserStudies, etc.) have their own cache checks.
+    if (this._userStudies !== null && this._publicStudies !== null) {
+      return;
+    }
+
     try {
-      // Load all studies first
+      // Load all studies first (only what's missing)
       const [userStudies, publicStudies] = await Promise.all([
-        getUserStudies(),
-        getPublicStudies()
+        this._userStudies !== null ? Promise.resolve(this._userStudies) : getUserStudies(),
+        this._publicStudies !== null ? Promise.resolve(this._publicStudies) : getPublicStudies(),
       ]);
       
       this._userStudies = userStudies;
       this._publicStudies = publicStudies;
       
-      
-      // Load cohorts for all studies in parallel
+      // Load cohorts for studies not already in cache
       const allStudies = [...userStudies, ...publicStudies];
-      const cohortPromises = allStudies.map(async (study) => {
-        const cohorts = await getCohortsForStudy(study.id);
-        
-        // Attach study reference to each cohort
-        const cohortsWithStudy = cohorts.map((cohort: any) => ({
-          ...cohort,
-          study: study
-        }));
-        
-        this._studyCohortsCache.set(study.id, cohortsWithStudy);
-        return { study, cohorts: cohortsWithStudy };
-      });
+      const cohortPromises = allStudies
+        .filter(study => !this._studyCohortsCache.has(study.id))
+        .map(async (study) => {
+          const cohorts = await getCohortsForStudy(study.id);
+          
+          // Attach study reference to each cohort
+          const cohortsWithStudy = cohorts.map((cohort: any) => ({
+            ...cohort,
+            study: study
+          }));
+          
+          this._studyCohortsCache.set(study.id, cohortsWithStudy);
+          return { study, cohorts: cohortsWithStudy };
+        });
       
       await Promise.all(cohortPromises);
     } catch (error) {
@@ -384,9 +389,12 @@ export class CohortsDataService {
   public async updateStudyData(study_id: string, study_data: any) {
     await updateStudy(study_id, study_data);
     
-    // Clear cached data to force refresh
-    this._userStudies = null;
-    this._publicStudies = null;
+    // Patch in-memory caches rather than nuking them (avoids a full backend re-fetch).
+    const userStudy = this._userStudies?.find(s => s.id === study_id);
+    if (userStudy) Object.assign(userStudy, study_data);
+    const publicStudy = this._publicStudies?.find(s => s.id === study_id);
+    if (publicStudy) Object.assign(publicStudy, study_data);
+
     this.notifyListeners();
   }
 

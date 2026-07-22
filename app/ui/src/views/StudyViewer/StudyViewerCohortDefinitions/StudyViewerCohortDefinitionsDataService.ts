@@ -2,8 +2,6 @@ import { TableData, TableRow } from '../../CohortViewer/tableTypes';
 import { CohortWithTableData, cohortDefinitionColumns } from './StudyViewerCohortDefinitionsTypes';
 import { CohortModel } from '../../CohortViewer/CohortDataService/CohortModel';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
-import { CohortsDataService } from '../../LeftPanel/CohortsDataService';
-
 // Data service for StudyViewerCohortDefinitions
 export class StudyViewerCohortDefinitionsDataService {
   private _study_data: Record<string, any> = {};
@@ -60,14 +58,9 @@ export class StudyViewerCohortDefinitionsDataService {
       };
       model.addListener(modelListener);
       
-      // Subscribe to name changes to notify CohortsDataService (left panel)
-      const nameChangeListener = () => {
-        console.log('[StudyViewer] CohortModel name changed for cohort:', cohort.id);
-        const cohortsDataService = CohortsDataService.getInstance();
-        cohortsDataService.invalidateCache();
-        cohortsDataService.notifyListeners();
-      };
-      model.addNameChangeListener(nameChangeListener);
+      // Note: CohortsDataService already listens to CohortDataService.addNameChangeListener()
+      // in its own constructor, so we do NOT call invalidateCache/notifyListeners here —
+      // doing so would cause a double-flush of the entire tree on every cohort name change.
 
       // Load data for the first time
       model.loadCohortData(cohort);

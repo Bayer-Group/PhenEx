@@ -66,6 +66,10 @@ export class HierarchicalLeftPanelDataService {
   private errorListeners: ErrorListener[] = [];
   private treeData: HierarchicalTreeNode[] = [];
   private dataService = CohortsDataService.getInstance();
+  /** Guard against concurrent updateTreeData() calls. */
+  private _updateInFlight = false;
+  /** Whether another update was requested while one was in flight. */
+  private _pendingUpdate = false;
 
   private cachedPublicCohortNamesAndIds: CohortData[] = [];
   private cachedUserCohortNamesAndIds: CohortData[] = [];
@@ -158,6 +162,11 @@ export class HierarchicalLeftPanelDataService {
 
   public async updateTreeData() {
     console.log('🔄 HierarchicalLeftPanelDataService: updateTreeData called');
+    if (this._updateInFlight) {
+      this._pendingUpdate = true;
+      return;
+    }
+    this._updateInFlight = true;
 
     // Capture currently selected node ID before rebuilding
     const currentlySelectedNodeId = this.getCurrentlySelectedNodeId();
@@ -234,6 +243,12 @@ export class HierarchicalLeftPanelDataService {
     }
     this.treeData.push(await createRootNode('publicstudies', 'Public'));
     this.notifyListeners();
+
+    this._updateInFlight = false;
+    if (this._pendingUpdate) {
+      this._pendingUpdate = false;
+      await this.updateTreeData();
+    }
   }
 
   private notifyListeners() {
