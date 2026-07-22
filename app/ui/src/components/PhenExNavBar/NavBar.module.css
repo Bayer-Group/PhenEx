@@ -1,6 +1,6 @@
 :root{
     --scale_transform: scale(1.5);
-    --scale_transform_small: scale(1.1);
+    --scale_transform_small: scale(1.05);
 
 }
 .navBar {
@@ -272,7 +272,7 @@
   outline: none;
   color: white;
   background-color: transparent;
-  background-color: var(--color_accent_dark);
+  background-color: var(--color-accent-bright);
   border-radius:20px;
 
 }
@@ -281,7 +281,7 @@
 .addButton:hover {
   color:white;
   transform: scale(1.15);
-  background-color: var(--color_accent_blue) !important;
+  /* background-color: var(--color_accent_blue) !important; */
 
 }
 
@@ -436,7 +436,7 @@
 }
 
 .sectionButton {
-  background: var(--color_accent_dark);
+  background: var(--color-accent-bright);
   border: 1px solid transparent;
   border-radius: 18px;
   padding: 2px 10px;
@@ -456,7 +456,7 @@
 }
 
 .sectionButton:hover {
-  background: var(--color_accent_dark);
+  /* background: var(--color_accent_dark); */
   transform: var(--scale_transform_small);
 }
 
@@ -466,6 +466,5 @@
 
 .sectionButton.menuShowing,
 .sectionButton:global(.menuShowing) {
-  background-color: var(--color_accent_dark);
   transform: var(--scale_transform_small);
 }
