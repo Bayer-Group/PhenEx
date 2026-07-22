@@ -60,15 +60,11 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
       setIsAIThinking(false);
       
       if (!success) {
-        // Only handle failure case - show retry button
         setInteractionState('retry');
       } else {
-        // Success case: reset to empty or check provisional state
-        const cohortDataService = CohortDataService.getInstance();
-        const provisional = cohortDataService.cohort_data?.is_provisional === true;
-        
-        if (provisional) {
-          setInteractionState('interactive');
+        if (chatService.getAppContext() === 'study') {
+          // Study module handles provisional state via per-cohort accept/reject
+          setInteractionState('empty');
         } else {
           setInteractionState('empty');
         }
