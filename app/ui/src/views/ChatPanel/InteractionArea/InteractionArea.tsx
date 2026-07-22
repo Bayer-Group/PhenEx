@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import styles from './InteractionArea.module.css';
 import { useChatService } from '../ChatServiceContext';
-import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
 import { InteractionBar } from './InteractionBar';
 
 interface InteractionAreaProps {
@@ -22,8 +21,6 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
   const [isProvisional, setIsProvisional] = useState<boolean>(false);
   const [isAIThinking, setIsAIThinking] = useState<boolean>(false);
 
-  console.log('🎯 InteractionArea render - state:', interactionState, 'isProvisional:', isProvisional, 'isAIThinking:', isAIThinking);
-
   // Expose focus method to parent components
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -33,66 +30,19 @@ export const InteractionArea = forwardRef<InteractionAreaRef, InteractionAreaPro
     }
   }));
 
-  // Check if cohort is provisional and update state accordingly
-  // In study mode the per-cohort accept/reject in ChatPanel handles this — skip here.
+  // Check if cohort is provisional — only relevant in study context.
   useEffect(() => {
+    if (chatService.getAppContext() !== 'study') return;
+
     const checkProvisionalState = () => {
-      // Don't change state if AI is currently thinking
-      if (chatService.isAIThinking()) {
-        console.log('🔔 AI is thinking, not changing state');
-        return;
-      }
-      
-      // Study mode: accept/reject is handled per-cohort in ChatPanel, not here
-      if (chatService.getAppContext() === 'study') {
-        setIsProvisional(false);
-        setInteractionState('empty');
-        return;
-      }
-      const cohortDataService = CohortDataService.getInstance();
-      const cohortData = cohortDataService.cohort_data;
-      const provisional = cohortData?.is_provisional === true;
-      setIsProvisional(provisional);
-      
-      // Set interaction state based PURELY on provisional status
-      if (provisional) {
-        setInteractionState('interactive');
-      } else {
-        setInteractionState('empty');
-      }
+      if (chatService.isAIThinking()) return;
+      setIsProvisional(false);
+      setInteractionState('empty');
     };
 
-    // Check initial state
     checkProvisionalState();
-    
-    // If there are provisional changes but no chat history, show a system message
-    const cohortDataService = CohortDataService.getInstance();
-    const hasProvisionalChanges = cohortDataService.cohort_data?.is_provisional === true;
-    const currentMessages = chatService.getMessages();
-    // Only count user messages for "has chat history" - system/AI messages don't count
-    const hasChatHistory = currentMessages.filter(m => m.isUser).length > 0;
-    
-    console.log('🔔 Initial provisional check:', {
-      hasProvisionalChanges,
-      totalMessages: currentMessages.length,
-      userMessages: currentMessages.filter(m => m.isUser).length,
-      hasChatHistory
-    });
-    
-    if (hasProvisionalChanges && !hasChatHistory) {
-      console.log('✅ Adding provisional changes warning message');
-      chatService.addSystemMessage(
-        'You have some unreviewed changes. Should we keep going from here or undo these changes? You can Accept to keep them, Reject to undo them, or continue chatting to make more changes.'
-      );
-    }
-
-    // Listen for cohort updates to re-check provisional state
-    const handleMessagesUpdated = () => {
-      checkProvisionalState();
-    };
-
-    chatService.onMessagesUpdated(handleMessagesUpdated);
-    return () => chatService.removeMessagesUpdatedListener(handleMessagesUpdated);
+    chatService.onMessagesUpdated(checkProvisionalState);
+    return () => chatService.removeMessagesUpdatedListener(checkProvisionalState);
   }, []);
 
   // Listen for messages to track AI thinking state
