@@ -32,4 +32,8 @@ from .factory import (
     CHADSVASCPhenotype,
     CHADSVASCComponents,
     CODETYPE_INFO,
+    LiverDysfunctionPhenotype,
+    LiverDysfunctionComponents,
+    SexSplitMeasurementPhenotype,
+    SexSplitMeasurementComponents,
 )
