@@ -85,16 +85,16 @@
 }
 
 .sectionButton {
-  background: var(--color-accent-bright);
+  background-color: var(--color-accent-bright);
+  border: none;
   border-radius: 10px;
-  padding: 2px 4px 2px 4px;
+  padding: 2px 6px 2px 6px;
   color: var(--background_color_light);
   font-size: 20px !important;
   font-family: "IBMPlexSans-regular";
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background-color 0.2s ease;
   text-align: center;
-  /* height: 10; */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,27 +103,20 @@
   font-size: var(--font_size_breadcrumbs);
 }
 
-.sectionButton:hover {
-  /* transform: scale(1.05); */
-  /* outline: none; */
-  background-color: rgba(255, 255, 255, 0.3) !important;
-  border: none !important;
+.sectionButton:hover,
+.sectionButton.menuShowing,
+.sectionButton:global(.menuShowing) {
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 .sectionButton:focus {
-  /* outline: none;
-  border: none !important; */
-}
-
-.sectionButton.menuShowing,
-.sectionButton:global(.menuShowing) {
-  /* transform: scale(1.05); */
+  outline: none;
 }
 
 .sectionButtonWrapper {
   margin-right: 5px;
   margin-left: 5px;
-  margin-bottom: 2px;
+  margin-bottom: 0px;
 }
 
 .rightArrowIcon {

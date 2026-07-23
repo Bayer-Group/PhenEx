@@ -459,7 +459,7 @@ export const FinalActionNavBar: React.FC<FinalActionNavBarProps> = ({
         onMouseLeave={closeSectionMenu}
         verticalPosition="above"
         horizontalAlignment="center"
-        gap={9}
+        gap={11}
       >
         <div className={localStyles.sectionMenuContent}>
           <div className={localStyles.itemList}>
