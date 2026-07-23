@@ -1,0 +1,169 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  padding: 0px;
+  padding-top: 0px;
+  background-color: blue;
+}
+
+.header {
+  margin-top: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+  flex: 1;
+  /* border: 1px solid var(--color-accent_2); */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.paramsContainer {
+  flex: 1;
+  min-height: 0;
+}
+
+.title {
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 15px;
+  z-index: 1000;
+  margin-bottom: 15px;
+}
+
+.phenotypeNameInput {
+  font-size: 30px;
+  color: white;
+  font-family: 'IBMPlexSans-bold';
+}
+
+.info {
+  margin-top: 0px;
+}
+
+.gridContainer {
+  margin-right:0px;/* this is linked with the marginToEnd of the PhenotypeViewer aggrid*/
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.gridWrapper {
+  background-color: transparent;
+  /* min-height: 200px; */
+}
+
+/* One parameter row: parameter cell (pinned width) + value cell (flex). Both
+   cells stretch to the tallest content so the row grows naturally with rich
+   value renderers (codelists, time ranges, etc.). */
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 34px;
+  border-bottom: 1px solid var(--grid-border-color, var(--line-color-grid));
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+/* Covers the full viewport while a cell is being edited so clicking anywhere
+   outside the editor commits the edit without closing the PhenotypeViewer.
+   Sits below the editor portals (DraggablePortal z-index 9999 wins by DOM order). */
+.editingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  cursor: default;
+}
+
+
+.phenotypeType {
+  font-size: 20px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background-color: gray;
+  color: var(--text-color-secondary);
+}
+
+.description {
+  width: 100%;
+  min-height: 50px;
+  max-height: 1000px;
+  resize: none;
+  border: none;
+  font-family: 'IBMPlexSans-regular';
+  font-size: 12px;
+}
+
+.bottomSection {
+  height: calc(50%);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.paramsContainer {
+  width: 100%;
+}
+
+.componentsContainer {
+  flex: 1;
+}
+
+.componentsTitleDiv {
+  margin-top: 20px;
+  font-family: 'IBMPlexSans-bold';
+  line-height: 14px;
+  padding: 0px;
+  margin-left: 10px;
+}
+
+.components_title {
+}
+
+.components_phenotype_name {
+  font-size: 12px;
+}
+
+.addButton {
+  padding: 2px 4px;
+  color: var(--text-color-inactive);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  /* box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); */
+  font-family: 'IBMPlexSans-bold';
+  pointer-events: all;
+  /* display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none; */
+  /* width: 80px; */
+  position: absolute;
+  right: 5px;
+  margin-top: -13px;
+  font-family: 'IBMPlexSans-bold';
+  font-size: 12px;
+  color: var(--text-color-inactive);
+  border: 1px solid var(--line-color);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background-color: var(--color_translucent);
+}
+
+.addButton:hover {
+  transform: translateY(-1px);
+  background-color: var(--color-accent);
+  color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-accent);
+}
+
+.scrollbarContainer{
+  background-color: white;
+  /* position: absolute;
+  left:100px; */
+}

@@ -1,0 +1,150 @@
+.grid {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding-bottom: 1200px;
+}
+
+.item {
+  position: absolute;
+  box-sizing: border-box;
+  border: var(--border);
+  border-radius: 12px;
+  background: var(--background_color_light, #f0f0f0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow 0.12s;
+  user-select: none;
+}
+
+.item:hover {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+
+.itemDragging {
+  z-index: 20;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  opacity: 0.95;
+  transition: none;
+}
+
+/* Multi-selected cell: thick highlight border. */
+.itemSelected {
+  outline: 3px solid var(--accent_color, #4a7fff);
+  outline-offset: -1px;
+  box-shadow: 0 0 0 1px var(--accent_color, #4a7fff), 0 2px 12px rgba(74, 127, 255, 0.28);
+}
+
+/* Trailing card in an animated multi-drag stack. */
+.itemStacked {
+  transition: left 0.18s cubic-bezier(0.22, 1, 0.36, 1), top 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+  opacity: 0.96;
+  pointer-events: none;
+}
+
+/* Tile targeted for a swap: blur + dim so the flip is obvious. */
+.itemSwapTarget {
+  filter: blur(2px) brightness(0.96);
+  outline: 2px dashed var(--accent_color, #4a7fff);
+  outline-offset: -2px;
+  transition: filter 0.1s;
+}
+
+/* Insertion indicator drawn between tiles while dragging. */
+.insertLine {
+  position: absolute;
+  z-index: 1500;
+  pointer-events: none;
+  background: var(--accent_color, #4a7fff);
+  border-radius: 3px;
+  box-shadow: 0 0 6px rgba(74, 127, 255, 0.6);
+}
+
+.insertLineV {
+  width: 3px;
+}
+
+.insertLineH {
+  height: 3px;
+}
+
+.itemHeader {
+  flex-shrink: 0;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: 13px;
+  color: black;
+  padding: 8px 10px 4px;
+  cursor: grab;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemDragging .itemHeader {
+  cursor: grabbing;
+}
+
+.itemBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  padding: 0 8px 8px;
+}
+
+.itemBody > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* Resize handles */
+.handle {
+  position: absolute;
+  z-index: 5;
+}
+
+.handleRight {
+  top: 8px;
+  bottom: 16px;
+  right: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.handleBottom {
+  left: 8px;
+  right: 16px;
+  bottom: 0;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.handleCorner {
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+.handleCorner::after {
+  content: '';
+  position: absolute;
+  right: 3;
+  bottom: 3;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid rgba(0, 0, 0, 0.25);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.25);
+  border-bottom-right-radius: 12px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.item:hover .handleCorner::after {
+  opacity: 1;
+}

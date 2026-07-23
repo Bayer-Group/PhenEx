@@ -1,0 +1,166 @@
+/* ── Funnel container ────────────────────────────────────────────────── */
+
+.funnelContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(200px / var(--pz-scale, 1));
+  position: relative;
+  padding-top: calc(0px / var(--pz-scale, 1));
+  margin-bottom: calc(30px / var(--pz-scale, 1));
+}
+
+/* ── Step wrapper (label + trapezoid) ────────────────────────────────── */
+
+.funnelStep {
+  width: 100%;
+  position: relative;
+}
+
+/* ── Label row (absolute, floats above trapezoid) ───────────────────── */
+
+.labelRow {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: calc(2px / var(--pz-scale, 1)) calc(8px / var(--pz-scale, 1));
+  gap: calc(12px / var(--pz-scale, 1));
+  z-index: 1;
+  box-sizing: border-box;
+
+  font-family: "IBMPlexSans-regular", sans-serif;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.hovered .rowTitle {
+  text-decoration: underline;
+}
+
+/* ── Label sections ─────────────────────────────────────────────────── */
+
+.rowLeft {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: calc(1px / var(--pz-scale, 1));
+}
+
+.rowTitle {
+  font-size: calc(10px / var(--pz-scale, 1));
+  font-weight: 600;
+  color: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.rowSubtitle {
+  font-size: calc(10px / var(--pz-scale, 1));
+  color: transparent;
+  opacity: 0.55;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.rowCenter {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translate(-50%, 100%);
+  display: flex;
+  align-items: baseline;
+  gap: calc(8px / var(--pz-scale, 1));
+  z-index: 2;
+}
+
+.rowFarLeft {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform: translateY(50%);
+  z-index: 2;
+}
+
+.rowN {
+  font-size: calc(10px / var(--pz-scale, 1));
+  font-weight: 500;
+  color: var(--row-color, #333);
+  white-space: nowrap;
+}
+
+.nLabel {
+  font-style: italic;
+  font-weight: 700;
+}
+
+.rowPct {
+  font-size: calc(11px / var(--pz-scale, 1));
+  color: var(--row-color, #555);
+  opacity: 0.65;
+  white-space: nowrap;
+}
+
+.rowRight {
+  position: absolute;
+  right: 0;
+  bottom: 0px;
+  background-color: transparent;
+  transform: translateY(10px);
+  font-size: calc(10px / var(--pz-scale, 1));
+  z-index: 2;
+}
+
+.rowDelta {
+  font-size: calc(10px / var(--pz-scale, 1));
+  white-space: nowrap;
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* ── Trapezoid connector ─────────────────────────────────────────────── */
+
+.connectorWrapper {
+  width: 100%;
+  height: calc(25px / var(--pz-scale, 1));
+  position: relative;
+}
+
+.trapezoidSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Shared row modes ────────────────────────────────────────────────── */
+
+.dimmed .labelRow {
+  opacity: .3;
+  transition: opacity 0.15s ease;
+}
+
+.dimmed .connectorWrapper {
+  opacity: .8;
+  transition: opacity 0.15s ease;
+}
+/* Transition row: dim labels only, trapezoid stays full */
+.dimmedLabelsOnly .labelRow {
+  opacity: 0.3;
+  transition: opacity 0.15s ease;
+}
+/* .dimmed:hover .labelRow,
+.parentHighlighted .labelRow {
+  opacity: 1;
+}
+
+.dimmed:hover .connectorWrapper,
+.parentHighlighted .connectorWrapper {
+  opacity: 0.5;
+} */

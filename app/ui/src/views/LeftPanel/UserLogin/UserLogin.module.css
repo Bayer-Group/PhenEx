@@ -1,0 +1,166 @@
+.loginPortal {
+  position: fixed;
+  bottom: 32px;
+  left: 32px;
+  z-index: 9999;
+}
+
+.loginButton {
+  background-color: var(--color-accent-bright) !important;
+  border: none;
+  border-radius: 13px !important;
+  padding: 10px 20px !important;
+  /* width: 400px !important; */
+  /* height: 120px !important; */
+  font-size: var(--font_size_breadcrumbs) !important;
+  font-weight: 700;
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+  opacity: 1;
+  color: white !important;
+  border-color: transparent !important;
+}
+/* 
+.loginButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+} */
+
+.loginButton:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* ---------------------------------- */
+
+.container {
+  /* display: flex; */
+  /* align-items: center; */
+  /* justify-content: center; */
+  /* padding: 4px; */
+}
+
+.loginTriggerButton {
+  margin: 8px;
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}
+
+.userButton {
+  margin: 4px;
+}
+
+.loginHeader {
+  border-radius: 10px 10px 0px 0px;
+  font-family: 'IBMPlexSans-bold';
+  padding: 10px 15px;
+  background-color: var(--color-accent);
+  border: var(--border-accent);
+  color: white;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.loginHeaderButton {
+  background-color: transparent;
+  color: var(--phenex-red-active);
+  font-size: 14px;
+  width: 60px;
+  position: absolute;
+  font-family: 'IBMPlexSans-bold';
+  top: 4px;
+  right: -15px;
+}
+
+.loginHeader:hover {
+  transform: translateY(-1px);
+}
+
+.loginHeader:hover .loginHeaderButton {
+  color: red !important;
+}
+
+.loginForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.loginInput {
+  padding: 8px 12px;
+  border: 1px solid var(--color-accent_2);
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.loginInput:focus {
+  outline: none;
+  border-color: var(--phenex-red-active);
+}
+
+.loginButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.loginButton {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'IBMPlexSans-bold';
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--phenex-red);
+  color: white;
+}
+
+.loginButton:hover {
+  background-color: var(--phenex-red-active);
+  transform: translateY(-1px);
+}
+
+.loginButton:last-child {
+  background-color: transparent;
+  color: var(--phenex-red);
+  border: 1px solid var(--phenex-red);
+}
+
+.loginButton:last-child:hover {
+  background-color: var(--phenex-red);
+  color: white;
+}
+
+.errorMessage {
+  color: var(--phenex-red);
+  font-size: 14px;
+  margin-top: -4px;
+}
+
+.loginDropdownMenu {
+  min-width: 400px !important;
+  max-width: 500px !important;
+  margin-top: 12px;
+}
+
+.userDropdownMenu {
+  min-width: 300px !important;
+  max-width: 400px !important;
+  margin-top: 12px;
+}
+
+.content {
+  padding: 5px;
+}

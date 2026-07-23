@@ -1,0 +1,273 @@
+from datetime import datetime, timedelta, timezone
+from typing import Dict, Optional, TYPE_CHECKING
+from fastapi import FastAPI, Body, HTTPException, Request
+from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel
+from starlette.middleware.authentication import AuthenticationMiddleware
+import asyncio
+import sys
+
+# Add /app to the Python path for phenex import during development
+# This replaces the PYTHONPATH=/app setting in the /backend/.env file
+sys.path = ["/app"] + sys.path
+import phenex
+from phenex.ibis_connect import SnowflakeConnector
+from phenex.util.serialization.from_dict import from_dict
+
+from dotenv import load_dotenv
+import os
+import json
+import logging
+import jwt
+
+from argon2 import PasswordHasher
+
+from .utils import CohortUtils
+from .domain.user import User, new_userid
+from .config import config
+from .middleware import AuthBackend, DBSessionMiddleware
+from .database import DatabaseManager, get_sm
+from . import database as db
+from .init.main import init_db
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+
+
+load_dotenv()
+
+
+from openai import OpenAI
+
+# Constants and configuration
+COHORTS_DIR = os.environ.get("COHORTS_DIR", "/data/cohorts")
+
+# Initialize database manager
+sessionmaker = get_sm(config["database"])
+db_manager = DatabaseManager()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Configure OpenAI client for Azure OpenAI
+import httpx as _httpx_main
+from openai import AzureOpenAI
+
+openai_client = AzureOpenAI(
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version=os.getenv("OPENAI_API_VERSION", "2025-01-01-preview"),
+    http_client=_httpx_main.Client(verify=False),
+)
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Disable verbose SQLAlchemy logging
+logging.getLogger("sqlalchemy.engine").setLevel(logging.ERROR)
+logging.getLogger("sqlalchemy.dialects").setLevel(logging.ERROR)
+logging.getLogger("sqlalchemy.pool").setLevel(logging.ERROR)
+logging.getLogger("sqlalchemy.orm").setLevel(logging.ERROR)
+logging.getLogger("sqlalchemy").setLevel(logging.ERROR)
+
+from fastapi.middleware.cors import CORSMiddleware
+
+init_db()
+
+_tags_metadata = [
+    {"name": "study", "description": "Study management"},
+    {"name": "study execution", "description": "Study execution, reports, and logs"},
+    {"name": "study export", "description": "Export studies to Python/Jupyter formats"},
+    {
+        "name": "study cohort",
+        "description": "Cohort management (sub-resources of studies)",
+    },
+    {"name": "constants", "description": "Study-wide constants (filters, time ranges)"},
+    {"name": "codelist", "description": "Codelist management"},
+    {"name": "AI", "description": "AI / copilot endpoints"},
+    {"name": "chat", "description": "Chat history"},
+    {"name": "default", "description": "General endpoints"},
+    {"name": "auth", "description": "Authentication"},
+]
+
+app = FastAPI(openapi_tags=_tags_metadata)
+
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:5173",
+]
+
+
+def on_auth_error(request: Request, exc: Exception):
+    return JSONResponse({"error": str(exc)}, status_code=401)
+
+
+app.add_middleware(
+    AuthenticationMiddleware,
+    backend=AuthBackend(config["auth"], sessionmaker),
+    on_error=on_auth_error,
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
+app.add_middleware(DBSessionMiddleware, sessionmaker=sessionmaker)
+
+
+def _cors_headers(origin: str | None = None) -> dict:
+    """Headers so error responses are not blocked by CORS."""
+    if origin and origin in origins:
+        return {"Access-Control-Allow-Origin": origin}
+    return {"Access-Control-Allow-Origin": origins[0] if origins else "*"}
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Ensure error responses include CORS headers so the frontend can read them."""
+    origin = request.headers.get("origin")
+    headers = _cors_headers(origin)
+    if isinstance(exc, HTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "detail": exc.detail if isinstance(exc.detail, str) else exc.detail
+            },
+            headers=headers,
+        )
+    logger.exception("Unhandled exception: %s", exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)[:500]},
+        headers=headers,
+    )
+
+
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint for Docker health checks and service readiness.
+    Includes database connectivity test to ensure full system readiness.
+
+    Returns:
+        dict: Health status with database connectivity check
+    """
+    try:
+        # Test database connectivity by checking if we can connect and query
+        db_status = await db_manager.health_check()
+
+        # Check if database health check passed and all required tables exist
+        if db_status.get("status") != "connected" or not db_status.get(
+            "all_tables_exist", False
+        ):
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "status": "unhealthy",
+                    "service": "phenex-backend",
+                    "database": db_status,
+                    "error": "Database not ready or missing required tables",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                },
+            )
+
+        return {
+            "status": "healthy",
+            "service": "phenex-backend",
+            "database": db_status,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "status": "unhealthy",
+                "service": "phenex-backend",
+                "error": str(e),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+
+# Import authentication utilities
+from .utils.auth import get_authenticated_user_id
+
+# Include the router from rag.py
+# app.include_router(rag_router, prefix="/rag")
+
+# Include the study-cohort router (cohorts are sub-resources of studies)
+from .routes.study_cohort import router as cohort_router
+
+app.include_router(cohort_router)
+
+# Include the cohort import router
+from .routes.cohort_import import router as cohort_import_router
+
+app.include_router(cohort_import_router)
+
+# Include the study router
+from .routes.study import router as study_router
+
+app.include_router(study_router)
+
+# Include the study execution router
+from .routes.study_execute import router as study_execute_router
+
+app.include_router(study_execute_router)
+
+# Include the study export router
+from .routes.study_export import router as study_export_router
+
+app.include_router(study_export_router)
+
+# Include the constants router
+from .routes.constants import router as constants_router
+
+app.include_router(constants_router)
+
+# Include the AI router under /copilot prefix
+from .routes.ai import router as ai_router
+
+app.include_router(ai_router, prefix="/copilot")
+
+# Include the chat history router
+from .routes.chat_history import router as chat_history_router
+
+app.include_router(chat_history_router)
+
+# Include the codelist router
+from .routes.codelist import router as codelist_router
+
+app.include_router(
+    codelist_router
+)  # Codelist routes with /study/{study_id}/codelist pattern
+
+# Include the report router
+from .routes.report import router as report_router
+
+app.include_router(report_router)
+
+# Include the report analysis AI router
+from .routes.ai.report_analysis import router as report_analysis_router
+
+app.include_router(report_analysis_router)
+
+# Include the TLF import router
+from .routes.tlf_import import router as tlf_import_router
+
+app.include_router(tlf_import_router)
+
+# Include the TLF analysis router
+from .routes.tlf_analyze import router as tlf_analyze_router
+
+app.include_router(tlf_analyze_router)
+
+# Include the auth router
+from .routes.auth import router as auth_router
+
+app.include_router(auth_router, prefix="/auth")

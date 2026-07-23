@@ -1,0 +1,44 @@
+.container {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.filterSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label {
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.select {
+  width: 150px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.columnInput {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.dateInput {
+  width: 110px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.invalid {
+  border-color: #e53e3e;
+  background-color: #fff5f5;
+}

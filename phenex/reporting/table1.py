@@ -394,11 +394,6 @@ class Table1(Reporter):
         with filepath.open("w") as f:
             json.dump(payload, f, indent=2, default=str)
 
-        if hasattr(self, "_value_distributions") and self._value_distributions:
-            dist_path = filepath.with_stem(f"{filepath.stem}_value_distributions")
-            with dist_path.open("w") as f:
-                json.dump(self._value_distributions, f, indent=2, default=str)
-
         return str(filepath.absolute())
 
     def to_excel(self, filename: str) -> str:

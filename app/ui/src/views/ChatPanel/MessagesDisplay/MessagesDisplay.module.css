@@ -1,0 +1,260 @@
+.container {
+  background-color: transparent;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.messagesContainer {
+  gap: 20px;
+  flex-direction: column;
+  display: flex;
+  overflow-y: auto;
+  height: 100%;
+  color: var(--text-color-normal);
+  /* Hide default scrollbars */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for webkit browsers */
+.messagesContainer::-webkit-scrollbar {
+  display: none;
+}
+
+.image {
+  /* position: absolute;
+  top: -50px;
+  left: -150px;
+  width: 800px;
+  transform: scaleX(-1);
+  rotate: -4deg;
+  z-index: 1;
+  opacity: 1;
+  pointer-events: none; */
+}
+
+.messageBubble {
+  border-radius: 20px;
+  word-wrap: break-word;
+  /* padding-top: 30px !important;
+  padding-bottom: 30px !important; */
+  font-size: 18px;
+  color: var(--text-color-normal);
+  background-color: var(--background-color);
+  padding-top: 10px;
+  padding-bottom: 10px;
+  line-height: 1.2 !important; /* Override global 1.5 line-height */
+
+}
+
+.userMessage {
+  max-width: calc(100% - 100px);
+  align-self: flex-end;
+  transition: all 0.2s ease-in-out;
+  margin-right: 30px;
+  padding-left: 15px !important;
+  padding-right: 10px !important;
+  background-color: rgba(59, 130, 246, 0.1) !important; /* Light blue background for user */
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.userMessage:hover {
+  background-color: rgba(59, 130, 246, 0.15) !important; /* Slightly darker blue on hover */
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.1s ease-in-out,
+    background-color 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+}
+
+.assistantMessage {
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+  align-self: flex-start;
+  color: var(--text-color);
+  margin-left: 10px;
+  margin-right: 24px;
+  background-color: rgba(34, 197, 94, 0.08) !important; /* Light green background for AI */
+  border: 1px solid rgba(34, 197, 94, 0.15) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.assistantMessage:hover {
+  background-color: rgba(34, 197, 94, 0.12) !important; /* Slightly darker green on hover */
+  border: 1px solid rgba(34, 197, 94, 0.2) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.messagesContainer > div:first-child.assistantMessage {
+  margin-top: 100px;
+}
+
+.messageBubble {
+  font-family: 'IBMPlexSans-regular';
+  font-size: 14px;
+}
+
+.messageBubble h1 {
+  font-size: 18px;
+  font-family: 'IBMPlexSans-bold';
+  line-height: 18px;
+  margin: 4px 0;
+  color: var(--text-color);
+}
+
+.messageBubble h2 {
+  font-size: 16px;
+  font-family: 'IBMPlexSans-bold';
+  margin: 4px 0;
+  color: var(--text-color);
+}
+
+.messageBubble h3 {
+  font-size: 14px;
+  margin: 0.3em 0;
+  font-family: 'IBMPlexSans-bold';
+  color: var(--text-color);
+}
+
+.messageBubble h4 {
+  font-size: 13px;
+  margin: 0.2em 0;
+  font-family: 'IBMPlexSans-bold';
+  color: var(--text-color);
+}
+
+.messageBubble h5 {
+  font-size: 1.1em;
+  margin: 0.1em 0;
+  font-family: 'IBMPlexSans-bold';
+  color: var(--text-color);
+}
+
+.messageBubble h6 {
+  font-size: 1em;
+  margin: 0.1em 0;
+  font-family: 'IBMPlexSans-bold';
+  color: var(--text-color);
+}
+
+.messageBubble strong {
+  font-family: 'IBMPlexSans-bold';
+
+  color: var(--text-color);
+}
+.messageBubble em {
+  font-family: 'IBMPlexSans-italic';
+}
+
+.messageBubble ol {
+  padding-left: 20px;
+  margin: 4px 0;
+}
+
+.messageBubble ol li {
+  margin-bottom: 1px;
+}
+
+.messageBubble ul {
+  padding-left: 20px;
+  margin: 4px 0;
+}
+
+.messageBubble ul li {
+  margin-bottom: 1px;
+}
+
+/* Nested lists - CRITICAL for compact rendering */
+.messageBubble ul ul,
+.messageBubble ul ol,
+.messageBubble ol ul,
+.messageBubble ol ol {
+  margin: 0 !important;
+  padding-left: 15px !important;
+}
+
+.messageBubble p {
+  margin: 2px 0;
+  line-height: 1.2;
+}
+
+/* Simple markdown content styling */
+.markdownContent {
+  line-height: 1.4;
+  font-size: 14px;
+}
+
+.markdownContent h1 {
+  margin: 6px 0 4px 0;
+}
+
+.markdownContent h2 {
+  margin: 6px 0 4px 0;
+}
+
+.markdownContent h3 {
+  margin: 4px 0 2px 0;
+}
+
+.markdownContent ul,
+.markdownContent ol {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.markdownContent li {
+  margin: 1px 0;
+  line-height: 1.4;
+}
+
+.markdownContent p {
+  margin: 3px 0;
+  line-height: 1.4;
+}
+
+.markdownContent strong {
+  font-weight: 600;
+}
+
+/* Loading indicator styles */
+.loadingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: rgba(34, 197, 94, 0.6);
+  animation: dotPulse 1.4s infinite ease-in-out;
+}
+
+.dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dotPulse {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}

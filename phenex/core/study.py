@@ -1,4 +1,4 @@
-import os, datetime, json, sys
+import os, datetime, json, logging, sys
 from typing import List, Dict, Optional
 
 from phenex.node import Node, NodeGroup
@@ -25,6 +25,7 @@ class Study:
         name: Name of the study. Used for directory naming and identification.
         cohorts: List of Cohort objects to execute. Each cohort must have a unique name and an assigned database.
         custom_reporters: Additional reporters to run on each cohort. A Waterfall and Table1 reporter is always included by default.
+        description: A plain text description of the study.
         database: Optional database to use for all cohorts that do not have a database already defined. If a cohort already has a database, a warning is issued and the cohort-level database is used. If this is not provided, every cohort must have a database defined or an error is raised.
 
     Example:

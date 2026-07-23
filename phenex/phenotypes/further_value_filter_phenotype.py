@@ -37,7 +37,7 @@ class FurtherValueFilterPhenotype(Phenotype):
 
     def __init__(
         self,
-        phenotype: "Phenotype",
+        phenotype: Optional["Phenotype"] = None,
         value_filter: Optional["ValueFilter"] = None,
         value_aggregation: Optional["ValueAggregator"] = None,
         date_range: Optional[DateFilter] = None,
@@ -50,7 +50,8 @@ class FurtherValueFilterPhenotype(Phenotype):
         super(FurtherValueFilterPhenotype, self).__init__(**kwargs)
 
         self.source_phenotype = phenotype
-        self.add_children(phenotype)
+        if phenotype is not None:
+            self.add_children(phenotype)
 
         self.value_filter = value_filter
         self.value_aggregation = value_aggregation

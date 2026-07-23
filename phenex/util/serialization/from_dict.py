@@ -28,17 +28,28 @@ from phenex.tables import (
     PhenotypeTable,
 )
 import inspect
+from phenex.node import Node
 from phenex.util import create_logger
 from phenex.util.serialization.to_dict import get_phenex_init_params
 
 logger = create_logger(__name__)
 
 
-def from_dict(data: dict):
+def from_dict(data: dict, _node_registry: dict = None):
     """
     Method to decode all PhenEx classes. Given encoded PhenEx data, it will return the corresponding PhenEx class.
+
+    A single logical phenotype (Node) may appear multiple times in a serialized
+    cohort (for example a phenotype used both inside a LogicPhenotype expression
+    and as its `return_date`). In memory these are the same object; serialization
+    writes them out repeatedly. `_node_registry` maps phenotype name -> the
+    reconstructed Node so that repeated occurrences resolve to the same instance,
+    preserving the original object identity and avoiding spurious
+    "Duplicate node name found" errors.
     """
     # logger.debug(f"Decoding data: {data}")
+    if _node_registry is None:
+        _node_registry = {}
 
     class_name = data.get("class_name")
     if class_name is None:
@@ -51,11 +62,26 @@ def from_dict(data: dict):
     if class_name == "DomainsDictionary":
         return DomainsDictionary.from_dict(data)
 
-    data.pop("class_name", None)
+    # Backwards compatibility: previously UserDefinedPhenotype was implemented as
+    # a factory returning a private inner class named '_UserDefinedPhenotype'.
+    # Older serialized cohorts store that private name.
+    if class_name == "_UserDefinedPhenotype":
+        class_name = "UserDefinedPhenotype"
+
     # logger.debug(f"Class name: {class_name}")
     cls = globals()[class_name]
+
+    # If this is a named Node that was already reconstructed, reuse the same
+    # instance so shared phenotypes keep a single object identity.
+    node_name = data.get("name")
+    is_node = inspect.isclass(cls) and issubclass(cls, Node)
+    if is_node and node_name is not None and node_name in _node_registry:
+        return _node_registry[node_name]
+
+    data.pop("class_name", None)
     all_params = get_phenex_init_params(cls)
     # logger.debug(f"Current params: {all_params}")
+
 
     init_args = {}
     kwargs = {}
@@ -132,7 +158,7 @@ def from_dict(data: dict):
             elif isinstance(value, list):
                 init_args[param] = [
                     (
-                        from_dict(item)
+                        from_dict(item, _node_registry)
                         if isinstance(item, dict) and "class_name" in item.keys()
                         else item
                     )
@@ -141,7 +167,7 @@ def from_dict(data: dict):
             elif isinstance(value, dict) and "__datetime__" in value:
                 init_args[param] = datetime.fromisoformat(value["__datetime__"]).date()
             elif isinstance(value, dict) and "class_name" in value.keys():
-                init_args[param] = from_dict(value)
+                init_args[param] = from_dict(value, _node_registry)
             elif isinstance(value, dict):
                 init_args[param] = convert_null_keys_to_none_in_dictionary(value)
             else:
@@ -149,9 +175,11 @@ def from_dict(data: dict):
 
     # logger.debug(f"Init args: {init_args}")
     # logger.debug(f"Kwargs: {kwargs}")
-    if len(kwargs.keys()) > 0:
-        return cls(**init_args)
-    return cls(**init_args)
+    obj = cls(**init_args)
+    if is_node and node_name is not None:
+        _node_registry[node_name] = obj
+    return obj
+
 
 
 def convert_null_keys_to_none_in_dictionary(_dict):

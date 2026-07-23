@@ -1,0 +1,178 @@
+.wrapper {
+  position: relative;
+  min-width: 0;
+  overflow: visible;
+}
+
+.controlsRow {
+  padding: 4px 0 8px;
+}
+
+.infoAndControls {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 24px;
+  padding-bottom: 16px;
+  max-width: 1200px;
+}
+
+.infoText {
+  font-family: "IBMPlexSans-regular" !important;
+  flex: 1;
+  min-width: 0;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.toggleBtn {
+  z-index: 10;
+  padding: 4px 10px;
+  font-size: 12px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  cursor: pointer;
+  width: max-content;
+}
+.toggleBtn:hover {
+  background: #e0e0e0;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  gap: 60px;
+  align-items: flex-start;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 200px !important;
+  margin-bottom: 20px;
+  overflow: visible;
+}
+
+/* ── Table view — cohorts stacked vertically in legend order ─────────── */
+
+.tableStack {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0px 200px 0px;
+  gap: 20px;
+  overflow: visible;
+}
+
+.tableRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: var(--border);
+  border-radius: 12px;
+  padding: 4px 4px;
+  min-width: 0;
+  max-width: 1200px;
+  overflow: visible;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+}
+
+.tableRowLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font_size_phenotypename);
+  font-weight: 600;
+  padding-bottom: 2px;
+  color: var(--text_color_focus);
+}
+
+.tableRowFinalCohort {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 4px;
+}
+
+.tableRowFinalCohortLabel {
+  font-size: var(--font_size_infotext);
+  font-weight: 200;
+  color: var(--text_color_secondary, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tableRowFinalCohortValue {
+  font-size: var(--font_size_infotext);
+  color: #333;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tableRowFinalCohortValue strong {
+  font-family: "IBMPlexSans-bold", sans-serif;
+}
+
+.finalCohortArrow {
+  font-size: var(--font_size_infotext);
+  color: var(--text_color_secondary, #888);
+  line-height: 1;
+}
+
+
+.tableRowLabelText {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
+  font-family: "IBMPlexSans-regular" !important;
+}
+
+.tableRowMainCohortName {
+  font-size: var(--font_size_items);
+  color: var(--text_color_focus);
+  line-height: 1.2;
+  font-family: "IBMPlexSans-bold" !important;
+}
+
+.tableRowLabelSeparator {
+  font-size: var(--font_size_phenotypename);
+  color: var(--text_color);
+  line-height: 1.2;
+}
+
+.tableRowSubcohortName {
+  font-size: var(--font_size_phenotypename);
+  color: var(--text_color);
+  line-height: 1.2;
+}
+
+.tableRowDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 6px;
+  margin-left: 4px;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spacerRow {
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  min-height: 8px;
+}
+
+.spacerLabel {
+  font-size: var(--font_size_pagetitle);
+  font-family: "IBMPlexSans-bold" !important;
+  color: var(--text_color_focus);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}

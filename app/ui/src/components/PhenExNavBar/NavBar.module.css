@@ -1,0 +1,372 @@
+:root{
+    --scale_transform: scale(1.5);
+    --scale_transform_small: scale(1.05);
+
+}
+.navBar {
+  display: flex;
+  align-items: center;
+  padding: 0px 0px;
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 8px solid var(--li);
+  border-radius: 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: fit-content;
+  user-select: none;
+}
+
+.actionButtons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 0px 0px;
+  width: 100%;
+  height: 100%;
+  padding-right:10px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  padding: 0px 0px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  transition: opacity 0.2s;
+  height:100%;
+  outline: none;
+  border:none
+}
+
+.actionButton:hover {
+  outline: none;
+  border: none;
+}
+
+.actionButton:focus {
+  outline: none;
+  border: none;
+}
+
+.issuesLabel {
+  font-size: var(--font_size_breadcrumbs);
+  font-family: "IBMPlexSans-bold";
+  user-select: none;
+  margin-left:15px;
+  margin-right:4px;
+  height:100%;
+  transition: transform 0.2s;
+
+}
+
+.issuesLabel:hover {
+  transform: var(--scale_transform);
+}
+
+.birdIcon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  transition: transform 0.2s;
+  cursor: pointer;
+}
+
+.birdIcon:hover {
+  transform: var(--scale_transform_small);
+}
+
+.actionButton{
+    transition: background-color 0.2s, transform 0.2s;
+}
+.actionButton:hover{
+  transform: var(--scale_transform);
+
+}
+
+.viewContent {
+  font-size: 14px;
+  user-select: none;
+}
+
+.viewNavBar{
+  border-radius:15px !important;
+
+}
+
+.viewNavContent {
+  display: flex;
+  align-items: center;
+  padding-left:5px;
+  padding-right:5px;
+  height: 100%;
+}
+
+
+
+
+
+
+
+.classNameTabsContainer{
+  background-color: transparent !important;
+  border-color:transparent;
+
+  backdrop-filter: none !important;
+  border: none !important;
+  padding: 0px !important;
+  gap: 12px !important;
+  
+  /* border: 1px solid var(--line-color); */
+
+}
+
+.classNameTabsContainer:hover{
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+
+}
+
+.classNameSectionTabs{
+  font-size: var(--font_size_mid_phenotype_info)!important;
+  /* height: 30px !important; */
+  padding: 0px 8px !important;
+  border-radius: 14px !important;
+}
+
+.noshadow{
+  box-shadow: none !important;
+  border: 1px solid transparent;
+}
+
+.classNameActiveTab {
+  /* font-size: 100px !important; */
+  transform: var(--scale_transform_small) !important;
+  font-family:"IBMPlexSans-bold" !important;
+}
+
+.classNameActiveTab.classNameActiveTab {
+  background-color: var(--color_accent_dark) !important;
+  color:white !important;
+  border-color: transparent !important;
+}
+
+.classNameHoverTab:hover {
+    color: var(--color_accent_blue);
+    border-color: transparent;
+  transition: transform 0.2s !important;
+}
+
+.addButton {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--background_color_light);
+  transition: all 0.2s;
+  outline: none;
+  background-color: transparent;
+  background-color: var(--color-accent-bright);
+  border-radius:20px;
+
+}
+
+
+.addButton:hover {
+  color:white;
+  transform: scale(1.15);
+  /* background-color: var(--color_accent_blue) !important; */
+
+}
+
+.addButton:focus {
+  outline: none;
+}
+
+.addMenuTabsContainer {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 8px !important;
+  margin-top: 8px;
+}
+
+
+.addMenuTabsContainer:hover {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 8px !important;
+}
+
+.addMenuTab {
+  font-size: 12px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.addMenuActiveTab {
+  background-color: var(--color_accent_dark) !important;
+  color: white !important;
+  border-color: var(--color_accent_dark) !important;
+}
+
+.addMenuHoverTab:hover {
+  color: var(--color_accent_blue);
+  border-color: var(--color_accent_blue);
+}
+
+.addMenuItem {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 2px 8px;
+  color: white;
+  font-size: var(--font_size_items);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.addMenuItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+  background: var(--color_accent_blue);
+  color:white;
+  /* transform: translateX(4px); */
+}
+
+.addMenuItem:focus{
+    outline: none;
+}
+
+.optionsButton {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  outline: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  margin-left: 6px;
+  margin-right: 6px;
+  /* background-color: var(--line-color); */
+}
+
+.optionsButton:hover {
+  color: var(--color_accent_blue);
+
+  transform: var(--scale_transform_small);
+}
+
+.optionsButton:focus {
+  outline: none;
+}
+
+.optionsButton.menuShowing,
+.optionsButton:global(.menuShowing) {
+  color: var(--color_accent_blue);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.addButton.menuShowing,
+.addButton:global(.menuShowing) {
+  color: white;
+}
+
+.eyeButton.menuShowing,
+.eyeButton:global(.menuShowing) {
+  color: var(--color_accent_blue) !important;
+}
+
+
+.itemList{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.switchBackground{
+  border: 1px solid var(--color_accent_dark) !important;
+}
+.switchContainer{
+  transition: transform 0.2s ease-in-out;
+  transform: scale(1.32);
+
+}
+.switchContainer:hover{
+  /* transform: scale(1.2); */
+  transform: scale(1.7);
+
+}
+
+.switchBackgroundSelected{
+  background-color: var(--color_accent_blue) !important;
+  border: 1px solid var(--color_accent_blue) !important;
+}
+
+.switch{
+  background-color: var(--color_accent_dark) !important;
+}
+
+.switchSelected{
+  background-color: white !important;
+}
+
+.navBarAddButton{
+  box-shadow: none !important;
+  border: none !important;
+  position: absolute;
+  right:20px;
+  top:10px;
+}
+
+.sectionButton {
+  background: var(--color-accent-bright);
+  border: 1px solid transparent;
+  border-radius: 18px;
+  padding: 2px 10px;
+  color: var(--background_color_light);
+  font-size: 18px !important;
+  font-family: "IBMPlexSans-regular";
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  /* height: 10; */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0px;
+  outline: none;
+  font-size: var(--font_size_breadcrumbs);
+}
+
+.sectionButton:hover {
+  /* background: var(--color_accent_dark); */
+  transform: var(--scale_transform_small);
+}
+
+.sectionButton:focus {
+  outline: none;
+}
+
+.sectionButton.menuShowing,
+.sectionButton:global(.menuShowing) {
+  transform: var(--scale_transform_small);
+}

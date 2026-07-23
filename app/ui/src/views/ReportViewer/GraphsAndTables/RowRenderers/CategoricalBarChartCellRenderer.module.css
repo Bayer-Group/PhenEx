@@ -1,0 +1,247 @@
+/* ── Horizontal layout ────────────────────────────────────────────────── */
+
+.horizontal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 80%;
+  max-width: 600px;
+}
+
+.hGroup {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.hLabel {
+  width: 100px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 11px;
+  color: #555;
+  padding-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+}
+
+.hBars {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.hBarRow {
+  display: flex;
+  align-items: center;
+  height: 14px;
+  transition: opacity 0.15s ease;
+}
+
+.hPct {
+  width: 28px;
+  text-align: right;
+  font-size: 10px;
+  color: #666;
+  padding-right: 4px;
+  flex-shrink: 0;
+}
+
+.hTrack {
+  flex: 1;
+  height: 100%;
+  position: relative;
+}
+
+.hFill {
+  height: 100%;
+  border-radius: 0 3px 3px 0;
+  transition: width 0.2s ease;
+}
+
+.hN {
+  width: 40px;
+  text-align: left;
+  font-size: 10px;
+  color: #333;
+  padding-left: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ── Vertical layout ─────────────────────────────────────────────────── */
+
+/* Width-locking wrapper. Width is set inline (px) from the parent's measured
+   available width, so the chart fills up to the parent (max width = parent) but
+   never expands the shrink-to-fit ancestor to fit the bars. overflow:hidden
+   keeps inner overflow contained so the scroll area can clip + scroll. */
+.vSizer {
+  position: relative;
+  width: 100%;
+  min-height: 160px;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.vertical {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  box-sizing: border-box;
+  /* Headroom so the top y-axis tick ("100") and full-height bars aren't clipped. */
+  padding-top: 8px;
+}
+
+/* Label row height is reserved in both columns so the plot regions line up */
+.vertical {
+  --label-row-height: 36px;
+}
+
+/* Flex row containing the Y-axis and the scrollable bar chart */
+.vChartRow {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Fixed Y-axis, outside the scroll region.
+   Reserve the label-row height at the bottom so its plot region matches the chart. */
+.vYAxis {
+  width: 38px;
+  flex-shrink: 0;
+  padding-bottom: var(--label-row-height);
+  box-sizing: border-box;
+}
+
+/* Spans exactly the plot height; 0 sits at the bottom, top aligns with chart top */
+.vYAxisInner {
+  position: relative;
+  height: 100%;
+}
+
+.vYTick {
+  position: absolute;
+  right: 4px;
+  transform: translateY(50%);
+  font-size: 9px;
+  color: #999;
+  white-space: nowrap;
+}
+
+.vScrollArea {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 0;
+  scrollbar-width: none;
+}
+
+/* Sets the scrollable width; column so plot sits above the label row.
+   width is set inline: it fills the available width (growing bars up to their
+   max width) and only exceeds the container — triggering horizontal scroll —
+   once the min chart width no longer fits. */
+.vScrollInner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.vChartArea {
+  flex: 1;
+  position: relative;
+  border-bottom: 1px solid #ccc;
+  min-height: 0;
+}
+
+.vScrollbarRegion {
+  position: relative;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.vScrollBarTrack {
+  background-color: transparent;
+  border-radius: 4px;
+  height: 6px !important;
+}
+
+.vScrollBarThumb {
+  background-color: rgba(101, 96, 96, 0.2) !important;
+  height: 6px;
+  border-radius: 4px;
+}
+
+.vGridLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #e0e0e0;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.vGroups {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 4px;
+}
+
+.vGroup {
+  flex: 1 0 var(--group-min-width, 48px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1px;
+  flex-direction: row;
+  height: 100%;
+  min-width: var(--group-min-width, 48px);
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+
+/* Vertical separator between categories, matching the horizontal grid lines */
+.vGroup:not(:first-child) {
+  border-left: 1px solid rgba(224, 224, 224, 0.5);
+}
+
+.vBar {
+  width: 0;
+  flex: 1 1 0;
+  max-width: 16px;
+  min-height: 1px;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.2s ease, opacity 0.15s ease;
+}
+
+/* Label row — grows to fit full (wrapping) labels; the measured height is fed
+   back as --label-row-height so the plot area shrinks and the Y-axis stays
+   aligned. Scrolls horizontally with the bars. */
+.vLabelRow {
+  flex-shrink: 0;
+  min-height: var(--label-row-height);
+  display: flex;
+  padding: 4px 4px 0;
+  box-sizing: border-box;
+}
+
+.vLabel {
+  flex: 1 0 var(--group-min-width, 48px);
+  min-width: var(--group-min-width, 48px);
+  font-size: 11px;
+  color: #555;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: center;
+  line-height: 1.2;
+  padding: 0 8px;
+  box-sizing: border-box;
+}

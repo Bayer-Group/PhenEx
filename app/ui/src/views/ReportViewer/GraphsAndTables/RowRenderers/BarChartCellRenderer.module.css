@@ -1,0 +1,514 @@
+:root {
+  --HEIGHT_TABLE1_ROW_BOOLEAN_TOP: 30px;
+  --BOOLEAN_PCT_COL: 36px;
+  --BOOLEAN_N_COL: 48px;
+  --BOOLEAN_COL_GAP: 8px;
+  --BOOLEAN_BAR_LABEL_GAP: 6px;
+  --BOOLEAN_COMPACT_HEADER_HEIGHT: calc(3px + var(--font_size_infotext, 10px) * 1.4 + 20px);
+  --BOOLEAN_COMPACT_BOTTOM_PAD: 12px;
+  --BOOLEAN_PRESENTATION_LABEL_COL: 200px;
+  --BOOLEAN_PRESENTATION_PCT_COL: 60px;
+  --BOOLEAN_PRESENTATION_N_COL: 120px;
+  --BOOLEAN_PRESENTATION_GAP: 10px;
+  --BOOLEAN_PRESENTATION_ROW_HEIGHT: 20px;
+}
+
+.container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  height: 100%;
+  box-sizing: border-box;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  cursor: auto !important;
+}
+
+.containerCompact {
+  position: relative;
+  overflow: visible;
+  padding-bottom: 0;
+}
+
+.containerCompact .headerRow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 0;
+}
+
+.containerCompactNoHeader .rows {
+  padding-top: 0;
+}
+
+.compactChartBody {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  overflow: visible;
+  /* background-color: red; */
+}
+
+.compactChartBody .gridOverlayCompact {
+  top: 0;
+  bottom: 0;
+  height: auto;
+}
+
+.containerPresentation {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-right: 20px;
+  height: auto;
+}
+
+.dismissOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  cursor: default;
+}
+
+/* ── Grid lines overlay (spans bar column only) ───────────────────────── */
+.gridOverlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(100% - var(--BOOLEAN_PCT_COL) - var(--BOOLEAN_N_COL) - var(--BOOLEAN_COL_GAP) * 2);
+  z-index: 0;
+  pointer-events: none;
+  /* background-color: blue; */
+  height: 100%;
+}
+
+.gridOverlayPresentation {
+  left: calc(
+    var(--BOOLEAN_PRESENTATION_LABEL_COL)
+    + var(--BOOLEAN_PRESENTATION_PCT_COL)
+    + var(--BOOLEAN_PRESENTATION_GAP) * 2
+  );
+  width: calc(
+    100%
+    - var(--BOOLEAN_PRESENTATION_LABEL_COL)
+    - var(--BOOLEAN_PRESENTATION_PCT_COL)
+    - var(--BOOLEAN_PRESENTATION_N_COL)
+    - var(--BOOLEAN_PRESENTATION_GAP) * 3
+  );
+}
+
+.gridOverlayCompact {
+  width: 100%;
+}
+
+.gridLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--background_color_dark, #e0e0e0);
+  opacity: 1;
+}
+
+/* ── Header: bar | % | N ──────────────────────────────────────────────── */
+.headerRow {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) var(--BOOLEAN_PCT_COL) var(--BOOLEAN_N_COL);
+  gap: var(--BOOLEAN_COL_GAP);
+  padding-top: 3px;
+  padding-bottom: 20px;
+  align-items: center;
+  flex-shrink: 0;
+  /* background-color: blue; */
+
+}
+
+.headerRowHidden {
+  /* visibility: hidden; */
+}
+
+.headerRowCompact {
+  grid-template-columns: minmax(80px, 1fr);
+}
+
+.headerRowPresentation {
+  grid-template-columns: var(--BOOLEAN_PRESENTATION_LABEL_COL) var(--BOOLEAN_PRESENTATION_PCT_COL) minmax(0, 1fr) var(--BOOLEAN_PRESENTATION_N_COL);
+  gap: var(--BOOLEAN_PRESENTATION_GAP);
+}
+
+.headerCohort {
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200, 200, 200, 0.8);
+  white-space: nowrap;
+}
+
+.headerBar {
+  position: relative;
+  min-width: 0;
+}
+
+.headerTick {
+  position: absolute;
+  top: 0;
+  transform: translate(-50%, 10%);
+  font-size: var(--font_size_infotext, 10px);
+  color: var(--text_color_default, #666);
+  white-space: nowrap;
+  padding: 0 2px;
+  border-radius: 3px;
+  z-index: 100;
+}
+
+.headerPct,
+.headerN {
+  font-size: var(--font_size_infotext, 10px);
+  font-weight: bold;
+  color: var(--text_color_default, #666);
+  white-space: nowrap;
+  font-family: "IBMPlexSans-bold", sans-serif;
+}
+
+.headerPct {
+  text-align: right;
+}
+
+.headerN {
+  text-align: left;
+}
+
+.headerRowPresentation .headerPct {
+  grid-column: 2;
+  text-align: right;
+}
+
+.headerRowPresentation .headerBar {
+  grid-column: 3;
+  width: auto;
+  min-width: 0;
+}
+
+.headerRowPresentation .headerN {
+  grid-column: 4;
+}
+
+/* ── Rows ──────────────────────────────────────────────────────────────── */
+.rows {
+  position: relative;
+  z-index: 0;
+  overflow: visible;
+}
+
+.containerCompact .rows {
+  padding-top: var(--BOOLEAN_COMPACT_HEADER_HEIGHT);
+}
+
+.groupSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* border-radius: 10px; */
+  margin-bottom: 10px;
+}
+
+.groupTitle {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  text-transform: none;
+}
+
+.groupTitleStandalone {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  text-transform: none;
+}
+
+.groupRows {
+  position: relative;
+  padding-top:0px;
+}
+
+.cohortRow {
+  display: flex;
+  align-items: center;
+  position: relative;
+  /* 1 cohort → 20px, 10+ cohorts → 10px, linear between */
+  height: clamp(
+    10px,
+    calc(20px - (var(--cohort-count, 1) - 1) * 10px / 9),
+    20px
+  );
+  cursor: auto;
+  width: 100%;
+  border-radius: 0px;
+  background-color: transparent;
+  transition: background-color 0.3s ease 0.3s;
+  overflow: visible;
+  margin-bottom: 2px;
+}
+
+
+.cohortRow:hover {
+  background-color: rgba(232, 231, 231, 0.2);
+}
+
+.barSpacer {
+  width: 100%;
+  flex-shrink: 0;
+  position: relative;
+  /* Label anchoring — adjust these to move the label.
+     --SPACER_LABEL_JUSTIFY: flex-start | center | flex-end (vertical position)
+     --SPACER_LABEL_ALIGN:   flex-start | center | flex-end (horizontal position) */
+  display: flex;
+  flex-direction: column;
+  justify-content: var(--SPACER_LABEL_JUSTIFY, flex-end);
+  align-items: var(--SPACER_LABEL_ALIGN, flex-start);
+  margin-bottom: 2px;
+}
+
+.barSpacerLabel {
+  font-size: var(--font_size_infotext, 10px);
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: #555;
+  white-space: nowrap;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.barRowCompact {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.barTrackCompact {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.barFillCompact {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: 3px 3px 3px 3px;
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.cohortRow:hover .barFillCompact {
+  border-color: black;
+}
+
+.barEndLabel {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--font_size_infotext, 10px);
+  color: #666;
+  white-space: nowrap;
+  line-height: 1;
+  pointer-events: auto;
+  z-index: 0;
+}
+
+.barEndLabel strong {
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: #333;
+}
+
+/* ── Data cells: bar | % | N ──────────────────────────────────────────── */
+.dataCells {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) var(--BOOLEAN_PCT_COL) var(--BOOLEAN_N_COL);
+  gap: var(--BOOLEAN_COL_GAP);
+  align-items: center;
+  flex: 1;
+  height: 100%;
+}
+
+
+.cohortLabelCell {
+  font-size: clamp(12px, calc(14px / var(--pz-scale, 1)), 24px);
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+}
+
+.parentCohortLabelCell,
+.groupTitleStandalone {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  max-width: fit-content;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: clamp(12px, calc(14px / var(--pz-scale, 1)), 24px);
+  font-weight: 700;
+  color: white;
+  text-align: right;
+  width: 100%;
+}
+
+.barCell {
+  min-width: 0;
+  height: calc(100% - 2px);
+  align-items: center;
+  transition: opacity 0.15s ease;
+}
+
+.barFill {
+  border-radius: 0 3px 3px 0;
+  height: 100%;
+  border: 1px solid transparent;
+  transition: border-color 0.3s ease 0.3s;
+}
+
+.cohortRow:hover .barFill,
+.dataCells:hover .barFill {
+  border-color: black;
+}
+
+.pctCell {
+  box-sizing: border-box;
+  font-size: var(--font_size_infotext, 10px);
+  color: #666;
+  white-space: nowrap;
+  line-height: 1;
+  transition: opacity 0.15s ease;
+  text-align: right;
+}
+
+.nCell {
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: calc(10px / var(--pz-scale, 1));
+  color: #333;
+  white-space: nowrap;
+  line-height: 1;
+  transition: opacity 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+
+.nValuePrimary {
+  color: inherit;
+}
+
+.nValueSlash {
+  color: #bebebe;
+}
+
+.nValueSecondary {
+  color: #a8a8a8;
+}
+
+.tooltip {
+  position: fixed;
+  transform: translate(-10px, -120%);
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 16px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Fill-height (grid widget) mode ──────────────────────────────────── */
+/*
+ * When fillHeight=true the bar chart expands to fill the grid item's body.
+ * Bars share the available height equally (flex) with a minimum so they
+ * never collapse; when they overflow the chart body scrolls vertically.
+ *
+ * --fill-label-space: right padding reserved for end-labels. Defined here so
+ * the header, chart body, and grid overlay all reference the same value.
+ */
+.containerFillHeight {
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  --fill-label-space: 100px;
+}
+
+/* Header flows normally instead of being positioned absolutely.
+   Right padding matches the chart body so the 100% tick aligns with bars. */
+.containerFillHeight .headerRow {
+  position: static;
+  flex-shrink: 0;
+  padding-left: 15px;
+  padding-right: var(--fill-label-space);
+  box-sizing: border-box;
+}
+
+/* Chart body fills remaining height and scrolls vertically.
+ * padding-right is the label safe-zone: overflow-x: hidden clips at the
+ * border edge, so labels overflowing into the padding area are still shown. */
+.containerFillHeight .compactChartBody {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-left: 15px;
+  padding-right: var(--fill-label-space);
+  padding-bottom: 1px;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+/* The grid overlay is position:absolute so left/width are relative to the
+ * containing block's padding-box. Offset by fill-label-space on both sides
+ * to align grid lines with the bars in the content box. */
+.containerFillHeight .gridOverlayCompact {
+  left: 15px;
+  width: calc(100% - 15px - var(--fill-label-space));
+}
+
+/* Rows no longer need the padding that compensated for the absolute header. */
+.containerFillHeight .rows {
+  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Each bar row grows to fill available space; minimum keeps bars visible. */
+.containerFillHeight .cohortRow {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 10px;
+}
+
+/* Spacers must not flex-grow. */
+.containerFillHeight .barSpacer {
+  flex: 0 0 auto;
+}
+
+/* Custom vertical scrollbar for the fill-height chart body. */
+.fillScrollBarTrack {
+  right: 2px;
+  width: 8px;
+}
+
+.fillScrollBarThumb {
+  background: rgba(0, 0, 0, 0.25);
+}

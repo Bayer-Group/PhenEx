@@ -1,0 +1,150 @@
+import { TableData, ColumnDefinition, TableRow } from '../tableTypes';
+import { CohortModel } from './CohortModel';
+import { CohortIssuesService } from '../CohortIssuesDisplay/CohortIssuesService';
+import { ConstantsDataService } from '../../SlideoverPanels/ConstantsPanel/ConstantsDataService';
+import { CodelistDataService } from '../../SlideoverPanels/CodelistsViewer/CodelistDataService';
+import { ReportDataService } from '../../SlideoverPanels/CohortReportView/ReportDataService';
+import { CohortExecutionService } from './CohortExecutionService';
+
+export class CohortDataService {
+  private static instance: CohortDataService;
+  private _activeCohort: CohortModel;
+  private _serviceListeners: Array<() => void> = []; // Service-level listeners
+  private _modelListenerBridge?: () => void; // Bridge from model to service listeners
+
+  private constructor() {
+    this._activeCohort = new CohortModel();
+    this.setupModelListenerBridge();
+  }
+
+  public static getInstance(): CohortDataService {
+    if (!CohortDataService.instance) {
+      CohortDataService.instance = new CohortDataService();
+    }
+    return CohortDataService.instance;
+  }
+
+  // Set up a bridge that forwards model notifications to service listeners
+  private setupModelListenerBridge() {
+    // Remove old bridge if exists
+    if (this._modelListenerBridge) {
+      this._activeCohort.removeDataChangeListener(this._modelListenerBridge);
+    }
+    
+    // Create new bridge
+    this._modelListenerBridge = () => {
+      console.log('[CohortDataService] Model data changed, notifying service listeners:', this._serviceListeners.length);
+      this._serviceListeners.forEach(listener => listener());
+    };
+    
+    // Attach bridge to current model
+    this._activeCohort.addDataChangeListener(this._modelListenerBridge);
+  }
+
+  // Allow replacing the backing model if needed (or just updating data)
+  public setActiveCohortModel(model: CohortModel) {
+      console.log('[CohortDataService] setActiveCohortModel called, switching from', this._activeCohort.cohort_data?.id, 'to', model.cohort_data?.id);
+      this._activeCohort = model;
+      this.setupModelListenerBridge(); // Re-bridge to new model
+  }
+  
+  public get activeCohort(): CohortModel {
+    return this._activeCohort;
+  }
+
+  public get cohort_name(): string { return this._activeCohort.cohort_name; }
+  public set cohort_name(value: string) { this._activeCohort.cohort_name = value; }
+  public get cohort_data(): Record<string, any> { return this._activeCohort.cohort_data; }
+  public set cohort_data(value: Record<string, any>) { this._activeCohort.cohort_data = value; }
+
+  public get table_data(): TableData { return this._activeCohort.table_data; }
+
+  public get issues_service(): CohortIssuesService { return this._activeCohort.issues_service; }
+  public get constants_service(): ConstantsDataService { return this._activeCohort.constants_service; }
+  public get codelists_service(): CodelistDataService { return this._activeCohort.codelists_service; }
+  public get report_service(): ReportDataService { return this._activeCohort.report_service; }
+  public get execution_service(): CohortExecutionService { return this._activeCohort.execution_service; }
+
+  public getStudyIdForCohort(): string | null { return this._activeCohort.getStudyIdForCohort(); }
+  public getStudyNameForCohort(): string { return this._activeCohort.getStudyNameForCohort(); }
+  public tableDataFromCohortData(): TableData { return this._activeCohort.tableDataFromCohortData(); }
+  public loadCohortData(cohortData: any): void { return this._activeCohort.loadCohortData(cohortData); }
+  public setDatabaseSettings(databaseConfig: any) { return this._activeCohort.setDatabaseSettings(databaseConfig); }
+  public get database(): Record<string, any> | null { return this._activeCohort.database; }
+  public async setCohortDatabaseConfig(config: Record<string, any> | null) { return this._activeCohort.setCohortDatabaseConfig(config); }
+  
+  public createEmptyCohortDefaultPhenotypes = () => { return this._activeCohort.createEmptyCohortDefaultPhenotypes(); }
+
+  public setConstants(constants: any) { return this._activeCohort.setConstants(constants); }
+  public onCellValueChanged(event: any, selectedRows?: any[]) { return this._activeCohort.onCellValueChanged(event, selectedRows); }
+  public saveChangesToCohort(changesToCohort: boolean = true, refreshGrid: boolean = true) { return this._activeCohort.saveChangesToCohort(changesToCohort, refreshGrid); }
+  
+  public addPhenotype(type: string = 'NA', parentPhenotypeId: string | null = null) { return this._activeCohort.addPhenotype(type, parentPhenotypeId); }
+  public getPhenotypeById(id: string): TableRow | undefined { return this._activeCohort.getPhenotypeById(id); }
+  public getAllAncestors(phenotypeData: TableRow): TableRow[] { return this._activeCohort.getAllAncestors(phenotypeData); }
+  public getAllDescendants(phenotypeId: string): TableRow[] { return this._activeCohort.getAllDescendants(phenotypeId); }
+  public deletePhenotype(id: string) { return this._activeCohort.deletePhenotype(id); }
+  public updateComponentOrder(parentId: string, reorderedComponents: TableRow[]) { return this._activeCohort.updateComponentOrder(parentId, reorderedComponents); }
+  public updateRowOrder(newRowData: TableRow[]) { return this._activeCohort.updateRowOrder(newRowData); }
+  public movePhenotypeToSection(draggedId: string, newType: string, newRowData: TableRow[]) { return this._activeCohort.movePhenotypeToSection(draggedId, newType, newRowData); }
+  public makePhenotypeComponentOf(draggedId: string, targetParentId: string) { return this._activeCohort.makePhenotypeComponentOf(draggedId, targetParentId); }
+  public canMakePhenotypeComponentOf(draggedId: string, targetId: string): boolean { return this._activeCohort.canMakePhenotypeComponentOf(draggedId, targetId); }
+  public canDropPhenotype(draggedPhenotype: TableRow, targetPhenotype: TableRow, position: 'before' | 'after' | 'inside'): boolean { return this._activeCohort.canDropPhenotype(draggedPhenotype, targetPhenotype, position); }
+  public isNewCohortCreation(): boolean { return this._activeCohort.isNewCohortCreation(); }
+  public createNewCohort(studyId?: string) { return this._activeCohort.createNewCohort(studyId); }
+  
+  public addListener(listener: () => void) { return this._activeCohort.addListener(listener); }
+  public removeListener(listener: () => void) { return this._activeCohort.removeListener(listener); }
+  
+  /**
+   * If the currently active cohort matches `cohortId`, update its name and
+   * broadcast to all listeners. No-op otherwise. Used to keep the breadcrumb /
+   * cohort viewer in sync with renames made elsewhere (e.g. the left panel).
+   */
+  public updateNameIfCurrent(cohortId: string, name: string): boolean {
+    if (this._activeCohort.cohort_data?.id !== cohortId) return false;
+    this._activeCohort.cohort_name = name;
+    if (this._activeCohort.cohort_data) this._activeCohort.cohort_data.name = name;
+    this._activeCohort.notifyAllListeners();
+    return true;
+  }
+  
+  // Service-level data change listeners that work across model switches
+  public addDataChangeListener(listener: () => void) {
+    console.log('[CohortDataService] addDataChangeListener called, total:', this._serviceListeners.length + 1);
+    this._serviceListeners.push(listener);
+  }
+  
+  public removeDataChangeListener(listener: () => void) {
+    console.log('[CohortDataService] removeDataChangeListener called');
+    this._serviceListeners = this._serviceListeners.filter(l => l !== listener);
+  }
+  public addExecutionProgressListener(listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void) { return this._activeCohort.addExecutionProgressListener(listener); }
+  public removeExecutionProgressListener(listener: (message: string | any, type: 'log' | 'error' | 'result' | 'complete') => void) { return this._activeCohort.removeExecutionProgressListener(listener); }
+  public addNameChangeListener(listener: () => void) { return this._activeCohort.addNameChangeListener(listener); }
+  public removeNameChangeListener(listener: () => void) { return this._activeCohort.removeNameChangeListener(listener); }
+  
+  public updateCohortFromChat(response: any) { return this._activeCohort.updateCohortFromChat(response); }
+  public loadDiff(): Promise<void> { return this._activeCohort.loadDiff(); }
+  public computeDiff(basePhenotypes: any[]): void { return this._activeCohort.computeDiff(basePhenotypes); }
+  public clearDiff(): void { return this._activeCohort.clearDiff(); }
+  public executeCohort(): Promise<void> { return this._activeCohort.executeCohort(); }
+  public deleteCohort() { return this._activeCohort.deleteCohort(); }
+  public filterType(type: string | string[]): void { return this._activeCohort.filterType(type); }
+  public toggleComponentPhenotypes(show: boolean): void { return this._activeCohort.toggleComponentPhenotypes(show); }
+  public getShowComponents(): boolean { return this._activeCohort.getShowComponents(); }
+  public getComponentLevel(): number { return this._activeCohort.getComponentLevel(); }
+  public setComponentLevel(level: number): void { return this._activeCohort.setComponentLevel(level); }
+  public getMaxComponentLevel(): number { return this._activeCohort.getMaxComponentLevel(); }
+  public getMaxComponentLevelForPhenotype(phenotypeId: string): number { return this._activeCohort.getMaxComponentLevelForPhenotype(phenotypeId); }
+  public hasComponentChildren(phenotypeId: string): boolean { return this._activeCohort.hasComponentChildren(phenotypeId); }
+  public isRowExpanded(phenotypeId: string): boolean { return this._activeCohort.isRowExpanded(phenotypeId); }
+  public toggleRowExpansion(phenotypeId: string): void { return this._activeCohort.toggleRowExpansion(phenotypeId); }
+  public hasLevelOverrides(): boolean { return this._activeCohort.hasLevelOverrides(); }
+  public toggleShowFullCodelists(show: boolean): void { return this._activeCohort.toggleShowFullCodelists(show); }
+  public getShowFullCodelists(): boolean { return this._activeCohort.getShowFullCodelists(); }
+  public updateColumns(newColumns: ColumnDefinition[]): void { return this._activeCohort.updateColumns(newColumns); }
+  public tableDataForComponentPhenotype(parentPhenotype: any): TableData { return this._activeCohort.tableDataForComponentPhenotype(parentPhenotype); }
+
+  public _setNewPhenotypeDefaultValues(newPhenotype: any) { return this._activeCohort._setNewPhenotypeDefaultValues(newPhenotype); }
+}

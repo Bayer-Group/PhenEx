@@ -1,0 +1,124 @@
+.modeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0 4px;
+}
+
+.modeLabel {
+  font-size: var(--font_size_infotext, 11px);
+  color: var(--text_color_notfocus, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.modeSelect {
+  flex: 1;
+  font-size: var(--font_size_infotext, 11px);
+  font-family: inherit;
+  color: #333;
+  background: var(--background_color_light, #fff);
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.modeSelect:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.toneRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.toneColumn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toneHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toneLabel {
+  font-size: var(--font_size_infotext, 11px);
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.swatchRow {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.swatch:hover {
+  transform: scale(1.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.directionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 2px;
+}
+
+.directionLabel {
+  font-size: var(--font_size_infotext, 11px);
+  color: var(--text_color_notfocus, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.directionToggle {
+  display: flex;
+  flex: 1;
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.directionOption {
+  flex: 1;
+  padding: 5px 0;
+  font-size: var(--font_size_infotext, 11px);
+  font-family: inherit;
+  color: #555;
+  background: var(--background_color_light, #fff);
+  border: none;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.directionOption + .directionOption {
+  border-left: 1px solid var(--line-color, #ddd);
+}
+
+.directionOptionActive {
+  color: #fff;
+  background-color: #4a90e2;
+}

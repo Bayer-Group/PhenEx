@@ -1,0 +1,31 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding: 2px;
+  overflow: auto;
+}
+
+.member {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 0;
+}
+
+.memberTitle {
+  font-family: "IBMPlexSans-medium", sans-serif;
+  font-size: 12px;
+  color: #333;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memberBody {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+}

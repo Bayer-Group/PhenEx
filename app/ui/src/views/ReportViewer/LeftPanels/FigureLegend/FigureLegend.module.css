@@ -1,0 +1,362 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  overflow: visible;
+  /* padding-top: 30px; */
+  height: 100%;
+  
+}
+
+.headerRow {
+  /* display: flex; */
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px 8px 14px;
+  position: absolute;
+  right:5px;
+  top:5px;
+  z-index: 10;
+}
+
+.hint {
+  font-size: var(--font_size_infotext, 11px);
+  color: var(--text_color_notfocus, #aaa);
+}
+
+.scrollRegion {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.scrollContent {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-right: var(--left_panel_margin_right, 0px);
+  padding-top:30px;
+  margin-left:var(--left_panel_margin_left, 0px);
+
+}
+
+.scrollContentFloating {
+  padding-top: 50px;
+  margin-left:0px;
+
+}
+
+.topGradient {
+  position: absolute;
+  top: 0px;
+  height: 30px;
+  background: linear-gradient(to bottom, var(--background_color_dark, #2a2a2a) 6px, transparent);
+  pointer-events: none;
+  z-index: 2;
+  width:100%;
+}
+
+.topGradientFloating {
+  height: 50px;
+  background: linear-gradient(to bottom, var(--background_color_light, #f0f0f0) 30px, transparent);
+}
+
+.scrollContent::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbarRegion {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.scrollbarRegion > * {
+  pointer-events: auto;
+}
+
+.scrollBarTrack {
+  background-color: transparent;
+}
+
+.scrollBarThumb {
+  background-color: rgba(101, 96, 96, 0.2) !important;
+  width: 10px;
+}
+
+.scrollBarTrack:hover {
+  background-color: transparent;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  background-color: var(--background_color_light, #f5f5f5);
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.cardFloating {
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.dropLine {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  background-color: #4a90e2;
+  border-radius: 1px;
+  transform: translateY(-1px);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.addSpacerButton {
+  align-self: flex-start;
+  margin: 8px 4px 0 4px;
+  padding: 4px 10px;
+  font-size: var(--font_size_infotext, 11px);
+  color: #4a90e2;
+  background: transparent;
+  border: 1px dashed var(--line-color, #ccd);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.addSpacerButton:hover {
+  background-color: rgba(74, 144, 226, 0.08);
+  border-color: #4a90e2;
+}
+
+.empty {
+  font-size: var(--font_size_infotext, 12px);
+  color: var(--text_color_notfocus, #999);
+  padding: 20px 14px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ── Saved legend sets ─────────────────────────────────────────────── */
+
+.sets {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 14px 0px 14px;
+  border-top: 1px solid var(--line-color, #e0e0e0);
+}
+
+.setsCollapsed {
+  height: auto !important;
+}
+
+.setsResizeHandle {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  height: 7px;
+  cursor: ns-resize;
+  z-index: 2;
+}
+
+.setsResizeHandle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: transparent;
+  transition: background 0.12s;
+}
+
+.setsResizeHandle:hover::after {
+  background: #4a90e2;
+}
+
+.setsHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  width: 100%;
+  padding: 6px 2px 6px 2px;
+  font-family: inherit;
+  font-size: var(--font_size_infotext, 11px);
+  font-weight: 600;
+  color: var(--text_color_notfocus, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.setsHeader:hover {
+  color: var(--text_color_default, #555);
+}
+
+.setsHeader:focus {
+  outline: none;
+}
+
+.setsCaret {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.setsCaretOpen {
+  transform: rotate(90deg);
+}
+
+.setsBody {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding-right: 10px;
+}
+
+.setsBody::-webkit-scrollbar {
+  display: none;
+}
+
+.setsScrollRegion {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.setsScrollbarRegion {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.setsScrollbarRegion > * {
+  pointer-events: auto;
+}
+
+.setRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: var(--font_size_infotext, 12px);
+  color: var(--text_color_default, #333);
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.setRow:hover {
+  background-color: var(--background_color_medium, rgba(0, 0, 0, 0.04));
+  border-color: var(--line-color, #e0e0e0);
+}
+
+.setRowActive {
+  background-color: rgba(74, 144, 226, 0.12);
+  border-color: #4a90e2;
+  color: #2f6fb3;
+}
+
+.setRowActive:hover {
+  background-color: rgba(74, 144, 226, 0.16);
+}
+
+.setName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setNameInput {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: var(--font_size_infotext, 12px);
+  color: #333;
+  background: var(--background_color_light, #fff);
+  border: 1px solid #4a90e2;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.setNameInput:focus {
+  outline: none;
+}
+
+.setDelete {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  color: #aaa;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: color 0.1s, background 0.1s, opacity 0.15s;
+}
+
+.setRow:hover .setDelete {
+  opacity: 1;
+}
+
+.setDelete:hover {
+  color: #e24a4a;
+  background-color: rgba(226, 74, 74, 0.1);
+}
+
+.saveSetButton {
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 4px 10px;
+  font-size: var(--font_size_infotext, 11px);
+  color: #4a90e2;
+  background: transparent;
+  border: 1px dashed var(--line-color, #ccd);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.saveSetButton:hover {
+  background-color: rgba(74, 144, 226, 0.08);
+  border-color: #4a90e2;
+}
+

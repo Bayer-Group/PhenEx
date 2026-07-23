@@ -147,6 +147,9 @@ class DomainsMocker:
                 }
             )
 
+            # Deduplicate death dates per person (take earliest)
+            death_df = death_df.sort_values("DEATH_DATE").drop_duplicates("PERSON_ID", keep="first")
+
             # Create DataFrame with record person IDs for merging
             record_df = pd.DataFrame({"idx": range(count), "PERSON_ID": person_ids})
 
@@ -156,16 +159,16 @@ class DomainsMocker:
             # Fill NaT values with default max date, then take minimum (fully vectorized)
             death_dates = merged["DEATH_DATE"].fillna(default_max_date)
 
-            # Vectorized minimum operation
-            record_max_dates = pd.Series(death_dates).combine(
-                pd.Series([default_max_date] * count), min
-            )
+            # Element-wise minimum: cap each record's max date at death date
+            record_max_dates = death_dates.clip(upper=default_max_date)
 
-        # Ensure valid date ranges (vectorized)
-        invalid_mask = record_min_dates >= record_max_dates
-        record_max_dates[invalid_mask] = record_min_dates[invalid_mask] + pd.Timedelta(
-            days=1
-        )
+        # Ensure valid date ranges — convert to numpy to avoid index-alignment errors
+        min_vals = np.array(record_min_dates, dtype="datetime64[ns]")
+        max_vals = np.array(record_max_dates, dtype="datetime64[ns]")
+        invalid_mask = min_vals >= max_vals
+        max_vals[invalid_mask] = min_vals[invalid_mask] + np.timedelta64(1, "D")
+        record_min_dates = pd.Series(min_vals)
+        record_max_dates = pd.Series(max_vals)
 
         # Use vectorized date generation with per-record ranges
         (

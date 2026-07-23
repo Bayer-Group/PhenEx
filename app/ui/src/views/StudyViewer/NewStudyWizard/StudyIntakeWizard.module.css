@@ -1,0 +1,961 @@
+.wizardContent {
+  width: 900px;
+  min-width: 700px;
+  max-width: 95vw;
+  height: 82vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.stepMarkerWrap {
+  width: 580px;
+  margin: 0 auto;
+  padding: 14px 0 10px;
+  flex-shrink: 0;
+}
+
+.stepContent {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.stepBody {
+  padding: 4px 32px 80px 32px;
+}
+
+.stepTitle {
+  margin: 24px 0 20px;
+  font-size: 20px;
+  font-weight: 600;
+  font-family: "IBMPlexSans-bolditalic";
+  color: var(--color-accent-bright);
+}
+
+.stepTitleSecondary {
+  margin-top: 32px;
+  font-size: 16px;
+}
+
+.stepTitleCentered {
+  text-align: center;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  margin: -12px 0 18px;
+}
+
+/* ── Step 0: type grid ───────────────────────────────────────────────── */
+
+.typeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.typeCard {
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--color-background-secondary);
+  color: var(--text-color-primary);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.typeCard:hover {
+  border-color: var(--color-accent-bright);
+  background: var(--color-background-tertiary, var(--color-background-secondary));
+}
+
+.typeCardSelected {
+  border-color: var(--color-accent-bright);
+  background: color-mix(in srgb, var(--color-accent-bright) 12%, transparent);
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+}
+
+/* ── Step 1: name input ─────────────────────────────────────────────── */
+
+.nameInput {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 18px;
+  font-family: "IBMPlexSans-bolditalic";
+  color: var(--color-accent-bright);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--border-color);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.nameInput:focus {
+  border-color: var(--color-accent-bright);
+}
+
+.nameInput::placeholder {
+  color: var(--text-color-secondary);
+  font-family: 'IBMPlexSans', sans-serif;
+  font-size: 16px;
+}
+
+/* ── Step 0: mode toggle ────────────────────────────────────────────── */
+
+.modeToggle {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.modeCard {
+  flex: 1;
+  max-width: 340px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 2px solid var(--border-color);
+  background: var(--color-background-secondary);
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.modeCard:hover {
+  border-color: var(--color-accent-bright);
+  transform: translateY(-1px);
+}
+
+.modeCardSelected {
+  background: color-mix(in srgb, var(--color-accent-bright) 10%, transparent) !important;
+  border-color: var(--color-accent-bright) !important;
+}
+
+.modeCardIcon {
+  font-size: 26px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.modeCardTitle {
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 15px;
+  margin: 0 0 5px;
+  color: var(--text-color-primary);
+}
+
+.modeCardDesc {
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.manualSection,
+.uploadSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.uploadLabel {
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  margin: 0;
+}
+
+.descriptionTextarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--input-bg-color, var(--color-background-secondary));
+  color: var(--text-color-primary);
+  resize: vertical;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.descriptionTextarea:focus {
+  border-color: var(--color-accent-bright);
+}
+
+.dropzone {
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.dropzone:hover {
+  border-color: var(--color-accent-bright);
+  background: color-mix(in srgb, var(--color-accent-bright) 5%, transparent);
+}
+
+.dropzonePrompt {
+  color: var(--text-color-secondary);
+  font-size: 14px;
+}
+
+.dropzoneLoaded {
+  color: #10b981;
+  font-size: 14px;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+}
+
+.orDivider {
+  text-align: center;
+  color: var(--text-color-secondary);
+  font-size: 12px;
+  margin: 16px 0;
+  position: relative;
+}
+
+.orDivider::before,
+.orDivider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 30px);
+  height: 1px;
+  background: var(--border-color);
+}
+
+.orDivider::before {
+  left: 0;
+}
+
+.orDivider::after {
+  right: 0;
+}
+
+.orDivider span {
+  background: var(--color-background-primary, #fff);
+  padding: 0 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.errorText {
+  color: #ef4444;
+  font-size: 13px;
+  margin: 0;
+}
+
+.parseBtn {
+  align-self: flex-start;
+  padding: 9px 20px;
+  background: var(--color-accent-bright);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.parseBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.parsePreview {
+  padding: 12px 14px;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-color-primary);
+}
+
+.parsePreviewTitle {
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  margin: 0 0 6px;
+}
+
+.parsePreview p {
+  margin: 4px 0;
+}
+
+/* ── Step 2: cohorts ────────────────────────────────────────────────── */
+
+.cohortsList {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.cohortCard {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-background-secondary);
+  box-shadow: 0 1px 6px color-mix(in srgb, var(--text-color-primary) 6%, transparent);
+}
+
+/* Top zone: cohort identity — this is the primary visual element */
+.cohortCardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px 16px;
+  background: color-mix(in srgb, var(--color-accent-bright) 6%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-accent-bright) 15%, var(--border-color));
+}
+
+.cohortIdentity {
+  flex: 1;
+  min-width: 0;
+}
+
+.cohortNameInput {
+  display: block;
+  width: 100%;
+  padding: 0;
+  font-size: 17px;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  color: var(--color-accent-bright);
+  background: transparent;
+  border: none;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.cohortNameInput::placeholder {
+  color: color-mix(in srgb, var(--color-accent-bright) 40%, transparent);
+  font-family: 'IBMPlexSans', sans-serif;
+}
+
+.cohortDescInput {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 0;
+  font-size: 13px;
+  font-family: inherit;
+  font-style: italic;
+  color: var(--text-color-secondary);
+  background: transparent;
+  border: none;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.cohortDescInput::placeholder {
+  color: color-mix(in srgb, var(--text-color-secondary) 55%, transparent);
+}
+
+.removeCohortBtn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-color-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  opacity: 0.5;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.removeCohortBtn:hover {
+  opacity: 1;
+  color: #ef4444;
+  background: color-mix(in srgb, #ef4444 10%, transparent);
+}
+
+/* Criteria zone: below a divider */
+.cohortCriteria {
+  border-top: 1px solid var(--border-color);
+  padding: 14px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Entry criterion — secondary to cohort, primary within criteria */
+.entryRow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 4px;
+  padding: 8px 10px 10px;
+  background: color-mix(in srgb, var(--color-accent-bright) 4%, transparent);
+  border-radius: 7px;
+}
+
+.entryLabel {
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 12px;
+  color: var(--text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.entryInput {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-color-primary);
+  background: var(--input-bg-color, var(--color-background-primary));
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.entryInput:focus {
+  border-color: var(--color-accent-bright);
+}
+
+.entryInput::placeholder {
+  color: var(--text-color-secondary);
+}
+
+.required {
+  color: #ef4444;
+}
+
+.criteriaRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.criteriaCol {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.criteriaLabel {
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 12px;
+  color: var(--text-color-secondary);
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.criteriaItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.criteriaInput {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-color-primary);
+  background: var(--input-bg-color, var(--color-background-primary));
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  outline: none;
+}
+
+.criteriaInput:focus {
+  border-color: var(--color-accent-bright);
+}
+
+.criteriaRemoveBtn {
+  background: none;
+  border: none;
+  color: var(--text-color-secondary);
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+}
+
+.criteriaRemoveBtn:hover {
+  color: #ef4444;
+}
+
+.criteriaAddBtn {
+  background: none;
+  border: 1px dashed var(--border-color);
+  border-radius: 5px;
+  color: var(--text-color-secondary);
+  font-size: 12px;
+  padding: 5px 10px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.criteriaAddBtn:hover {
+  border-color: var(--color-accent-bright);
+  color: var(--color-accent-bright);
+}
+
+.addCohortBtn {
+  margin-top: 4px;
+  padding: 10px 18px;
+  background: none;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--text-color-secondary);
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.addCohortBtn:hover {
+  border-color: var(--color-accent-bright);
+  color: var(--color-accent-bright);
+}
+
+/* ── Step 4: summary ────────────────────────────────────────────────── */
+
+.summaryTable {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.summaryRow {
+  display: flex;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+  background: var(--color-background-secondary);
+  align-items: flex-start;
+}
+
+.summaryKey {
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  min-width: 130px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.summaryVal {
+  font-size: 14px;
+  color: var(--text-color-primary);
+  flex: 1;
+}
+
+.summaryList {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.summaryList li {
+  margin-bottom: 4px;
+}
+
+.actionPrompt {
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 15px;
+  color: var(--text-color-primary);
+  margin-bottom: 14px;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 14px;
+}
+
+.shellBtn,
+.aiBtn {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 2px solid var(--border-color);
+  background: var(--color-background-secondary);
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  outline: none;
+  color: var(--text-color-primary);
+}
+
+.shellBtn:hover,
+.aiBtn:hover {
+  border-color: var(--color-accent-bright);
+  transform: translateY(-1px);
+}
+
+.shellBtn:disabled,
+.aiBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actionBtnSelected {
+  background: color-mix(in srgb, var(--color-accent-bright) 10%, transparent) !important;
+  border-color: var(--color-accent-bright) !important;
+}
+
+.actionIcon {
+  font-size: 22px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.actionTitle {
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 15px;
+  margin: 0 0 4px;
+  color: var(--text-color-primary);
+}
+
+.actionDesc {
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Nav buttons ────────────────────────────────────────────────────── */
+
+.navButtons {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  position: absolute;
+  bottom: 10px;
+  right: 20px;
+  background: var(--color_translucent, rgba(255,255,255,0.85));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: var(--border);
+  border-radius: 8px;
+}
+
+.navBtn {
+  padding: 6px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--color-background-secondary);
+  color: var(--text-color-primary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.navBtn:hover:not(:disabled) {
+  border-color: var(--color-accent-bright);
+}
+
+.navBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.navBtnPrimary {
+  background: var(--color-accent-bright);
+  color: #fff;
+  border-color: var(--color-accent-bright);
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+}
+
+.navBtnPrimary:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+/* ── Codelist file list ──────────────────────────────────────────────── */
+
+.codelistDropzone {
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.codelistDropzone:hover {
+  border-color: var(--color-accent-bright);
+  background: color-mix(in srgb, var(--color-accent-bright) 5%, transparent);
+}
+
+.codelistFileList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.codelistFileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.codelistFileName {
+  color: var(--text-color-primary);
+}
+
+.codelistRemoveBtn {
+  background: none;
+  border: none;
+  color: var(--text-color-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.codelistRemoveBtn:hover {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  color: #ef4444;
+}
+
+.navBtnSkip {
+  background: transparent;
+  border: none;
+  color: var(--text-color-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  margin-right: auto;
+}
+
+.navBtnSkip:hover {
+  color: var(--text-color-primary);
+}
+
+/* ── Step 4: Database ──────────────────────────────────────────────── */
+
+.databaseSection {
+  margin: 24px 0;
+}
+
+.inputLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color-primary);
+  margin-bottom: 8px;
+}
+
+.selectInput {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-color-primary);
+  background: var(--color-background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.selectInput:hover {
+  border-color: var(--color-accent-bright);
+}
+
+.selectInput:focus {
+  border-color: var(--color-accent-bright);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-bright) 12%, transparent);
+}
+
+.databaseOption {
+  margin-top: 24px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-color-primary);
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.checkboxLabel span {
+  font-weight: 500;
+}
+
+.optionHint {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+  margin: 8px 0 0 28px;
+}
+
+/* ── Per-Cohort Database Configuration ──────────────────────────────── */
+
+.cohortDatabaseList {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.cohortDatabaseTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color-primary);
+  margin-bottom: 16px;
+}
+
+.cohortDatabaseCard {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.cohortDatabaseHeader {
+  font-size: 15px;
+  margin-bottom: 12px;
+  color: var(--text-color-primary);
+}
+
+.cohortDatabaseFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .cohortDatabaseFields {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Paste Textarea Styles ──────────────────────────────────────────── */
+
+.pasteTextarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'IBMPlexMono', monospace;
+  background: var(--input-bg-color, var(--color-background-secondary));
+  color: var(--text-color-primary);
+  resize: vertical;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+  min-height: 200px;
+}
+
+.pasteTextarea:focus {
+  border-color: var(--color-accent-bright);
+}
+
+.pasteTextarea::placeholder {
+  color: var(--text-color-secondary);
+  font-family: inherit;
+}
+
+/* ── Compact Summary Styles ─────────────────────────────────────────── */
+
+.hintCentered {
+  text-align: center;
+}
+
+.summaryCompact {
+  max-width: 600px;
+  margin: 32px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summaryCompactRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--color-background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  transition: border-color 0.15s;
+}
+
+.summaryCompactRow:hover {
+  border-color: color-mix(in srgb, var(--color-accent-bright) 30%, transparent);
+}
+
+.summaryCompactIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.summaryCompactLabel {
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 11px;
+  color: var(--text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.summaryCompactValue {
+  font-size: 15px;
+  color: var(--text-color-primary);
+  line-height: 1.4;
+}
+
+.actionPromptCentered {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 20px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+

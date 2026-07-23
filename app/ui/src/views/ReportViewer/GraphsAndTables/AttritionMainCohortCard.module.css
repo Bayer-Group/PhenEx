@@ -1,0 +1,123 @@
+/* ── AttritionMainCohortCard ──────────────────────────────────────────── */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.cardTitle {
+  font-size: calc(18px / var(--pz-scale, 1));
+  font-weight: 700;
+  padding: 0 12px 2px;
+}
+
+/* ── Subtitle with dropdown ──────────────────────────────────────────── */
+
+.subtitleWrapper {
+  position: relative;
+  padding: 0 12px 8px;
+}
+
+.cardSubtitle {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(6px / var(--pz-scale, 1));
+  font-size: calc(13px / var(--pz-scale, 1));
+  color: #666;
+  cursor: pointer;
+  padding: calc(6px / var(--pz-scale, 1)) calc(12px / var(--pz-scale, 1));
+  border-radius: calc(4px / var(--pz-scale, 1));
+  transition: background 0.15s, color 0.15s;
+}
+
+.cardSubtitle:hover,
+.cardSubtitleActive {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.subtitleDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.subtitleChevron {
+  font-size: 10px;
+  opacity: 0.5;
+}
+
+/* ── Dropdown menu ───────────────────────────────────────────────────── */
+
+.dropdownMenu {
+  background: var(--background_color_focus, #1a1a2e);
+  border-radius: 12px;
+  padding: 6px 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  z-index: 10004;
+  animation: menuFadeIn 0.12s ease-out;
+  min-width: 180px;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.dropdownMenu::-webkit-scrollbar {
+  display: none;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.menuItem:hover {
+  border-color: var(--color_accent_blue, #3b82f6);
+  color: white;
+}
+
+.menuItemActive {
+  background: var(--color_accent_blue, #3b82f6);
+  color: white;
+  font-weight: 600;
+}
+
+.menuDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.menuLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menuN {
+  margin-left: auto;
+  font-size: 10px;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+@keyframes menuFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

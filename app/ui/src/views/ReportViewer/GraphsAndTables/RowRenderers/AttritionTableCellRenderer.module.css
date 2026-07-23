@@ -1,0 +1,172 @@
+/* ── Table & column width tokens ─────────────────────────────────────── */
+
+.table {
+  border-collapse: collapse;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 12px;
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  margin-bottom: 20px;
+
+  --col-category:  60px;
+  --col-index:     20px;
+  --col-pctSource: 70px;
+  --col-remaining:210px;
+  --col-delta:     80px;
+  --col-pctEntry: 210px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+
+.th {
+  padding: 5px 10px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text_color_secondary, #888);
+  /* border-bottom: 1px solid var(--border_color, #e0e0e0); */
+  white-space: nowrap;
+}
+
+.th.delta,
+.th.pctSource {
+  text-align: right;
+}
+
+/* ── Column widths (single source of truth) ─────────────────────────── */
+
+.th.category,  .td.category  { width: var(--col-category); }
+.th.index,     .td.index     { width: var(--col-index); }
+.th.name,      .td.name      { width: auto; min-width: 80px; }
+.th.pctSource, .td.pctSource { width: var(--col-pctSource); }
+.th.remaining, .td.remaining { width: var(--col-remaining); }
+.th.delta,    .td.delta    { width: var(--col-delta); }
+.th.pctEntry, .td.pctEntry { width: var(--col-pctEntry); }
+
+/* ── Rows ────────────────────────────────────────────────────────────── */
+
+.tr {
+  transition: background 0.12s;
+  border-radius: 20px !important;
+  overflow: hidden;
+}
+
+.tr td:first-child {
+  border-radius: 4px 0 0 4px;
+}
+.tr td:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.tr:hover {
+  background: var(--background_color_hover, rgba(0, 0, 0, 0.02));
+}
+
+/* ── Cells ───────────────────────────────────────────────────────────── */
+
+.td {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border_color, #f0f0f0);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.td.delta,
+.td.pctSource {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.td.name {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow: hidden;
+}
+
+/* ── Category column ────────────────────────────────────────────────── */
+
+.td.category {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text_color_secondary, #999);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 8px;
+}
+
+.td.category:not(.categoryFirst) {
+  color: transparent;
+  user-select: none;
+}
+
+/* ── Row types ───────────────────────────────────────────────────────── */
+
+.type_entry .td.category,
+.type_entry .td.name {
+  color: var(--color_entry, #555);
+}
+
+.type_inclusion .td.category,
+.type_inclusion .td.name {
+  color: var(--color_inclusion, #2a9d8f);
+}
+
+.type_exclusion .td.category,
+.type_exclusion .td.name {
+  color: var(--color_exclusion, #e76f51);
+}
+
+/* ── Delta cell (negative values) ───────────────────────────────────── */
+
+.td.delta {
+  color: var(--color_exclusion, #e76f51);
+}
+
+/* ── Bar cells (remaining / pctEntry) ───────────────────────────────── */
+
+.barCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 15px;
+}
+
+.barTrack {
+  position: relative;
+  flex: 0 0 80px;
+  height: 100%;
+  background: var(--background_color_light, #e8e8e8);
+  border-radius: 3px;
+  overflow: hidden;
+  border: var(--border);
+}
+
+.barFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background-color: var(--bar-color, #888);
+  transition: border-color 0.3s ease 0.3s;
+}
+
+.tr:hover .barFill {
+  border-color: black;
+}
+
+.barLabel {
+  flex: 1;
+  font-size: var(--font_size_infotext, 10px);
+  color: #666;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.barLabel strong {
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: #333;
+}

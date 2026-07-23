@@ -1,0 +1,468 @@
+.page {
+  position: relative;
+  margin-top:50px;
+  height: calc(100vh - 50px);
+  /* margin-top:0px;
+  height: 100vh; */
+  width: 100vw;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color:white; /* BACKGROUND COLOR */
+  user-select: none;
+  background-color: transparent;
+}
+
+.container {
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color:white; /* BACKGROUND COLOR */
+  user-select: none;
+  background-color: var(--background_color_dark);
+}
+
+.runSelector {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.runSelector label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+}
+
+.runSelector select {
+  font-size: 13px;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.topGradient {
+  position: sticky;
+  top: 0;
+  height: 0px;
+  margin-bottom: -80px;
+  background: linear-gradient(to bottom, var(--background-color), transparent);
+  pointer-events: none;
+  z-index: 2;
+  background-color: transparent;
+}
+
+/* ── Legend bar (top-right) ───────────────────────────────────────────── */
+
+/* ── NavBar (center-bottom portal) ────────────────────────────────────── */
+.navBarContainer {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: auto;
+}
+/* ── Three-panel layout ─────────────────────────────────────────────── */
+.centerPanel {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+
+.rightPanel {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Container for the nested left-panel FlexLayout */
+.leftPanel {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Shown in the docked slot while a panel is popped out into a floating window. */
+.floatingPlaceholder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #888;
+  font-size: 13px;
+  padding: 20px 40px;
+}
+
+.floatingPlaceholder button {
+  padding: 5px 12px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+}
+
+.floatingPlaceholder button:hover {
+  background: #f2f2f2;
+}
+
+/* ── Title bar (breadcrumb navigation) ───────────────────────────────── */
+
+.titleGroup {
+  position: absolute;
+  /* padding: 5px 10px; */
+  padding-left: 10px;
+  pointer-events: auto;
+  background-color: rgba(249, 240, 231, 0.7);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--text_color_notfocus, red);
+  border-bottom: 1px solid var(--line-color);
+  font-family: "IBMPlexSans-regular", sans-serif;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05); */
+  width: 100%;
+  height:50px;
+
+}
+
+.titleBarScrolled {
+}
+
+.rowTitleLabel {
+  position: absolute;
+  top: 60px;
+  left: 22px;
+  z-index: 10;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: black;
+  font-size: var(--font_size_pagetitle, 18px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0px 10px;
+  pointer-events: auto;
+  background-color: white;
+  border: var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+/* ── FlexLayout styling ──────────────────────────────────────────────── */
+.page :global(.flexlayout__layout) {
+  --color-background: transparent;
+  overflow: hidden;
+}
+
+/* Left gutter — vertical tab bar */
+.page :global(.flexlayout__border_left) {
+  border-right: none;
+  background-color: red;
+  width:0px;
+  margin-left:0px;
+  margin-top:0px;
+}
+
+/* Vertical border tab labels */
+.page :global(.flexlayout__border_left) :global(.flexlayout__border_button) {
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: var(--font_size_items, 14px);
+  /* writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg); */
+  padding: 0px 0px 2px 0px;
+  background-color: red!important;
+  color: var(--text_color_notfocus, #333);
+  background-color: var(--background_color_dark);
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 8px;
+  transform: rotate(90deg);
+}
+
+.page :global(.flexlayout__border_left) :global(.flexlayout__border_button--selected) {
+  color: var(--text_color_focus, black);
+  background-color: var(--background_color_light, white);
+  font-family: "IBMPlexSans-bold", sans-serif;
+}
+
+.page :global(.flexlayout__border_left) :global(.flexlayout__border_button:hover) {
+  color: black;
+}
+
+/* Left border panel content (Cohorts / Outline) */
+.page :global(.flexlayout__border_tab_contents) {
+  background: transparent;
+  overflow: hidden;
+}
+
+/* Collapse toggle to the left of the breadcrumb title */
+.leftBorderCollapseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  margin-right: 8px;
+}
+
+.leftBorderCollapseBtn img {
+  width: 18px;
+  height: 18px;
+  opacity: 0.65;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.leftBorderCollapseBtn:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.leftBorderCollapseBtn:hover img {
+  opacity: 1;
+}
+
+.leftBorderCollapseBtn:focus {
+  outline: none;
+  border: none;
+}
+
+/* Right gutter */
+.page :global(.flexlayout__border_right) {
+  z-index: 1;
+  border-left: none;
+  background-color: var(--background_color_dark);
+  width: 0px;
+}
+
+
+/* Internal dividers (splitters) within left/ center/ right panels*/
+.page :global(.flexlayout__splitter:not(.flexlayout__splitter_border)) {
+  background-color: transparent !important;
+  box-shadow: none;
+}
+
+/* Internal dividers (splitters) within left/ center/ right panels hover */
+.page :global(.flexlayout__splitter:not(.flexlayout__splitter_border):hover),
+.page :global(.flexlayout__splitter:not(.flexlayout__splitter_border).flexlayout__splitter_drag) {
+  /* background-color: blue !important; */
+}
+
+/* Left panel ↔ center: FlexLayout renders [border_tab_contents][splitter_border][layout_main] */
+/* .page :global(.flexlayout__layout_border_container),
+.page :global(.flexlayout__layout_border_container_inner) {
+  overflow: visible;
+} */
+
+/* Border between left panel and center panel; has drop shadow */
+.page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border) {
+  position: relative;
+  z-index: 3;
+  /* background-color: var(--background_color_dark) !important;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.08);
+  clip-path: inset(0 -15px 0 0);
+  border-right: 1px solid var(--line-color); */
+  background-color: var(--background_color_light) !important;
+  box-shadow: -4px 0 8px rgba(191, 182, 180, 0.08);
+  clip-path: inset(0 0 0 -15px);
+  border-left: 1px solid var(--line-color);
+}
+
+/* Border between left panel and center panel hover */
+.page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border:hover) {
+  background-color: var(--gray) !important;
+}
+
+/* Center ↔ right: FlexLayout renders [layout_main][splitter_border][border_tab_contents] */
+.page :global(.flexlayout__layout_main + .flexlayout__splitter_border) {
+  position: relative;
+  z-index: 3;
+  background-color: var(--background_color_dark) !important;
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.08);
+  clip-path: inset(0 0 0 -15px);
+  border-left: 1px solid var(--line-color);
+}
+
+.page :global(.flexlayout__layout_main + .flexlayout__splitter_border:hover) {
+  background-color: lightgray !important;
+}
+
+/* Fallback shadow on center panel edge (visible even if splitter shadow is clipped) */
+.page :global(.flexlayout__border_tab_contents + .flexlayout__splitter_border + .flexlayout__layout_main) {
+  /* box-shadow: inset 10px 0 10px -10px rgba(0, 0, 0, 0.08); */
+}
+
+/* Each tabset inside the left panel renders as a card */
+.page :global(.flexlayout__border_left) :global(.flexlayout__tabset) {
+  border-radius: 8px;
+  background-color: var(--background_color_light) !important;
+  /* box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); */
+  overflow: hidden;
+  margin: 4px;
+}
+
+:global(.flexlayout__tabset){
+  /* background-color: white !important; */
+    /* box-shadow: 0 1px 4px rgba(0, 0, 0, .3); */
+    /* border: var(--border); */
+    /* border-radius: 8px; */
+}
+
+/* Tab bar gutter: dark background, no border-bottom */
+:global(.flexlayout__tabset_tabbar_outer) {
+  background-color: var(--background_color_dark) !important;
+  /* border-bottom: var(--border) !important; */
+  border-top: var(--border) !important;
+  padding-bottom: 0px;
+  padding-top: 5px;
+  padding-left:30px;
+}
+:global(.flexlayout__tabset_tabbar_outer_top) {
+  border-bottom: none;
+}
+
+/* Tab buttons: black background, white text, IBMPlexSans */
+:global(.flexlayout__tab_button) {
+  font-family: "IBMPlexSans-regular" !important;
+  background-color: var(--background_color_dark) !important;
+  color: var(--text_color_notfocus, #333);
+  border-radius: 8px;
+  border-bottom: none;
+  border: 1px solid var(--line-color, #ddd);
+    /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); */
+
+}
+:global(.flexlayout__tab_button--selected) {
+  background-color: var(--background_color_light) !important;
+  color: var(--text_color_focus, black);
+  font-family: "IBMPlexSans-bold", sans-serif !important  ;
+}
+:global(.flexlayout__tab_button--unselected) {
+  background-color: var(--background_color_dark) !important;
+  color: var(--text_color_notfocus, #333);
+}
+:global(.flexlayout__tab_button:hover) {
+  color: var(--text_color_focus, black);
+  background-color: var(--background_color_light, white);
+}
+
+
+/* ── Content area ────────────────────────────────────────────────────── */
+.content {
+  position: relative;
+  overflow-y: auto;
+  height: 100%;
+  width: 100%;
+  scrollbar-width: none;
+  overflow: hidden;
+}
+
+.content::-webkit-scrollbar {
+  display: none;
+}
+
+.contentInner {
+  --chart-width: calc(820/var(--pz-scale, 1) * 1px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: max-content;
+  min-width: 100%;
+  margin-left: min(8vw, 120px);
+  padding-top: 0px;
+  transform-origin: top left;
+}
+
+.chartPanel {
+  width: 900px;
+  flex-shrink: 0;
+}
+
+.bottomSpacer{
+  height: 50vh;
+  width: 100%;
+}
+
+/* ── Chart sections ──────────────────────────────────────────────────── */
+.sectionHeader {
+  font-size: var(--font_size_pagetitle, 14px);
+  color: #333;
+  margin: 0px 0 0px 0;
+  padding: 80px 0px 30px 20px;
+  background: none;
+  border-left: none;
+  border-radius: 0;
+  border-bottom: var(--line-color, #e0e0e0) 1px solid;
+  font-family: "IBMPlexSans-regular", sans-serif;
+}
+
+.sectionHeader:first-child {
+  margin-top: 0;
+}
+
+.chartSection {
+  margin-bottom: 32px;
+}
+
+.chartTitle {
+  font-size: 15px;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 8px 0;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── Load distribution button ────────────────────────────────────────── */
+.loadDistBtn {
+  font-size: 11px;
+  padding: 2px 10px;
+  border: 1px solid #4e79a7;
+  border-radius: 4px;
+  background: #fff;
+  color: #4e79a7;
+  cursor: pointer;
+  font-weight: normal;
+  transition: background 0.15s, color 0.15s;
+}
+
+.loadDistBtn:hover {
+  background: #4e79a7;
+  color: #fff;
+}
+
+/* ── Loading / empty states ──────────────────────────────────────────── */
+.loading {
+  padding: 40px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.empty {
+  padding: 40px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
+
+

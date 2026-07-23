@@ -1,0 +1,2721 @@
+import os
+import asyncpg
+from typing import List, Dict, Optional, TYPE_CHECKING
+import json
+import logging
+
+import confuse  # type: ignore
+from sqlalchemy import create_engine, select, text
+from sqlalchemy.orm import sessionmaker, Session
+
+from .domain.user import User, UserID
+from .utils.validation import validate_cohort_data_format
+
+
+if TYPE_CHECKING:
+    from confuse import ConfigView
+
+logger = logging.getLogger(__name__)
+
+
+_engine = None
+_sm = None
+
+
+def get_engine(config: "ConfigView"):
+    global _engine, _sm
+    if not _engine:
+        _engine = create_engine(
+            url=config["url"].get(str),
+            future=True,
+            echo=False,
+            pool_pre_ping=True,
+        )
+        _sm = sessionmaker(_engine)
+
+    return _engine
+
+
+def get_sm(config: "ConfigView") -> sessionmaker:
+    global _sm
+    if not _sm:
+        get_engine(config)
+    return _sm
+
+
+def get_user_by_id(session: Session, user_id: UserID) -> Optional[User]:
+    return session.get(User, user_id)
+
+
+def get_user_by_email(session: Session, email: str) -> Optional[User]:
+    return session.scalar(select(User).where(User.email == email))
+
+
+def get_user_by_external_id(session: Session, external_id: str) -> Optional[User]:
+    return session.scalar(select(User).where(User.external_id == external_id))
+
+
+def lock_user_db(session: Session) -> None:
+    session.execute(text(f'LOCK TABLE "{User.__table__.name}"'))
+
+
+class DatabaseManager:
+    def __init__(self):
+        self.connection_string = self._build_connection_string()
+        self.cohorts_table = os.getenv("COHORTS_TABLE", "cohort")
+        self.cohorts_schema = os.getenv("COHORTS_SCHEMA", "public")
+        self.full_table_name = f"{self.cohorts_schema}.{self.cohorts_table}"
+
+        # Studies table configuration
+        self.studies_table = os.getenv("STUDIES_TABLE", "study")
+        self.studies_schema = os.getenv("STUDIES_SCHEMA", "public")
+        self.full_studies_table_name = f"{self.studies_schema}.{self.studies_table}"
+
+    def _build_connection_string(self) -> str:
+        """Build PostgreSQL connection string from environment variables."""
+        host = os.getenv("POSTGRES_HOST", "localhost")
+        port = os.getenv("POSTGRES_PORT", "5432")
+        database = os.getenv("POSTGRES_DB", "phenex")
+        user = os.getenv("POSTGRES_USER", "postgres")
+        password = os.getenv("POSTGRES_PASSWORD")
+
+        if not password:
+            raise ValueError("POSTGRES_PASSWORD environment variable is required")
+
+        return f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+    async def get_connection(self):
+        """Get a database connection."""
+        try:
+            conn = await asyncpg.connect(self.connection_string)
+            return conn
+        except Exception as e:
+            logger.error(f"Failed to connect to database: {e}")
+            raise
+
+    async def get_all_cohorts_for_user(self, user_id: str) -> List[Dict]:
+        """
+        Retrieve all cohorts for a specific user from the database.
+        Returns only the latest version of each cohort, prioritizing provisional versions
+        when they exist at the highest version number.
+
+        Args:
+            user_id (str): The user ID (UUID) whose cohorts to retrieve.
+
+        Returns:
+            List[Dict]: A list of cohort objects with id and name.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Query to get the latest version of each cohort, prioritizing provisional versions
+            query = f"""
+                WITH latest_cohorts AS (
+                    SELECT cohort_id, MAX(version) as max_version
+                    FROM {self.full_table_name} 
+                    WHERE user_id = $1
+                    GROUP BY cohort_id
+                ),
+                prioritized_cohorts AS (
+                    SELECT DISTINCT ON (c.cohort_id) 
+                           c.cohort_id, c.name, c.version, c.is_provisional, c.created_at, c.updated_at
+                    FROM {self.full_table_name} c
+                    INNER JOIN latest_cohorts lc ON c.cohort_id = lc.cohort_id AND c.version = lc.max_version
+                    WHERE c.user_id = $1
+                    ORDER BY c.cohort_id, c.is_provisional DESC  -- TRUE comes before FALSE, so provisional is prioritized
+                )
+                SELECT * FROM prioritized_cohorts
+                ORDER BY updated_at DESC
+            """
+
+            rows = await conn.fetch(query, user_id)
+
+            cohorts = []
+            for row in rows:
+                cohorts.append(
+                    {
+                        "id": row["cohort_id"],
+                        "name": row["name"] or f"Cohort {row['cohort_id']}",
+                        "version": row["version"],
+                        "is_provisional": row["is_provisional"],
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                    }
+                )
+
+            logger.info(f"Retrieved {len(cohorts)} cohorts for user {user_id}")
+            return cohorts
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve cohorts for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_cohort_for_user(self, user_id: str, cohort_id: str) -> Optional[Dict]:
+        """
+        Retrieve a specific cohort for a user from the database.
+        Returns the latest cohort, which is either:
+        - The highest version number non-provisional, if no provisional exists at the highest version number
+        - The highest version number provisional if that exists
+
+        Args:
+            user_id (str): The user ID (UUID) whose cohort to retrieve.
+            cohort_id (str): The ID of the cohort to retrieve.
+
+        Returns:
+            Optional[Dict]: The cohort data or None if not found.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # First, get the highest version number
+            max_version_query = f"""
+                SELECT MAX(version) as max_version
+                FROM {self.full_table_name} 
+                WHERE user_id = $1 AND cohort_id = $2
+            """
+
+            max_version_row = await conn.fetchrow(max_version_query, user_id, cohort_id)
+
+            if not max_version_row or max_version_row["max_version"] is None:
+                return None
+
+            max_version = max_version_row["max_version"]
+
+            # Check if there's a provisional version at the highest version number
+            provisional_query = f"""
+                SELECT cohort_data, name, description, version, is_provisional, created_at, updated_at, study_id, database
+                FROM {self.full_table_name} 
+                WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = TRUE
+            """
+
+            provisional_row = await conn.fetchrow(
+                provisional_query, user_id, cohort_id, max_version
+            )
+
+            if provisional_row:
+                # Return the provisional version at the highest version number
+                # Parse the cohort_data JSON string back to an object
+                parsed_cohort_data = (
+                    json.loads(provisional_row["cohort_data"])
+                    if provisional_row["cohort_data"]
+                    else {}
+                )
+
+                cohort_data = {
+                    "cohort_data": parsed_cohort_data,
+                    "name": provisional_row["name"],
+                    "description": provisional_row["description"],
+                    "version": provisional_row["version"],
+                    "is_provisional": provisional_row["is_provisional"],
+                    "study_id": provisional_row["study_id"],
+                    "database": (
+                        json.loads(provisional_row["database"])
+                        if provisional_row["database"]
+                        else None
+                    ),
+                    "created_at": (
+                        provisional_row["created_at"].isoformat()
+                        if provisional_row["created_at"]
+                        else None
+                    ),
+                    "updated_at": (
+                        provisional_row["updated_at"].isoformat()
+                        if provisional_row["updated_at"]
+                        else None
+                    ),
+                }
+                return cohort_data
+
+            # No provisional at highest version, get the highest version non-provisional
+            non_provisional_query = f"""
+                SELECT cohort_data, name, description, version, is_provisional, created_at, updated_at, study_id, database
+                FROM {self.full_table_name} 
+                WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = FALSE
+            """
+
+            non_provisional_row = await conn.fetchrow(
+                non_provisional_query, user_id, cohort_id, max_version
+            )
+
+            if not non_provisional_row:
+                return None
+
+            # Return the non-provisional version at the highest version number
+            # Parse the cohort_data JSON string back to an object
+            parsed_cohort_data = (
+                json.loads(non_provisional_row["cohort_data"])
+                if non_provisional_row["cohort_data"]
+                else {}
+            )
+
+            cohort_data = {
+                "cohort_data": parsed_cohort_data,
+                "name": non_provisional_row["name"],
+                "description": non_provisional_row["description"],
+                "version": non_provisional_row["version"],
+                "is_provisional": non_provisional_row["is_provisional"],
+                "study_id": non_provisional_row["study_id"],
+                "database": (
+                    json.loads(non_provisional_row["database"])
+                    if non_provisional_row["database"]
+                    else None
+                ),
+                "created_at": (
+                    non_provisional_row["created_at"].isoformat()
+                    if non_provisional_row["created_at"]
+                    else None
+                ),
+                "updated_at": (
+                    non_provisional_row["updated_at"].isoformat()
+                    if non_provisional_row["updated_at"]
+                    else None
+                ),
+            }
+
+            return cohort_data
+
+        except Exception as e:
+            logger.error(
+                f"Failed to retrieve cohort {cohort_id} for user {user_id}: {e}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_cohort_for_user(
+        self,
+        user_id: str,
+        cohort_id: str,
+        cohort_data: Dict,
+        study_id: str,
+        provisional: bool = False,
+        new_version: bool = False,
+        parent_cohort_id: str = None,
+    ) -> bool:
+        """
+        Update or create a cohort for a user in the database.
+
+        Args:
+            user_id (str): The user ID (UUID) whose cohort to update.
+            cohort_id (str): The ID of the cohort to update.
+            cohort_data (Dict): The cohort data.
+            study_id (str): The ID of the study this cohort belongs to.
+            provisional (bool): Whether to save as provisional.
+            new_version (bool): If True, increment version. If False, replace existing version.
+            parent_cohort_id (str, optional): The ID of the parent cohort for subcohorts.
+
+        Returns:
+            bool: True if successful.
+        """
+        # Validate cohort data format using centralized validation function
+        # ValueError will bubble up to caller
+        validate_cohort_data_format(cohort_data)
+
+        # Extract name and description to dedicated columns; strip them from stored JSON
+        cohort_name = cohort_data.get("name") or cohort_id
+        cohort_description = cohort_data.get("description")
+        cohort_data = {
+            k: v
+            for k, v in cohort_data.items()
+            if k not in ("name", "description", "database")
+        }
+
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            if new_version:
+                # Original behavior: increment version
+                version_query = f"""
+                    SELECT MAX(version) as max_version 
+                    FROM {self.full_table_name} 
+                    WHERE user_id = $1 AND cohort_id = $2
+                """
+
+                version_row = await conn.fetchrow(version_query, user_id, cohort_id)
+                current_max_version = (
+                    version_row["max_version"]
+                    if version_row and version_row["max_version"]
+                    else 0
+                )
+                target_version = current_max_version + 1
+
+                # Insert the new version
+                insert_query = f"""
+                    INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, name, description, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+                """
+
+                await conn.execute(
+                    insert_query,
+                    cohort_id,
+                    user_id,
+                    study_id,
+                    parent_cohort_id,
+                    target_version,
+                    json.dumps(cohort_data),
+                    provisional,
+                    cohort_name,
+                    cohort_description,
+                )
+
+                logger.info(
+                    f"Successfully created cohort {cohort_id} version {target_version} for user {user_id} (provisional: {provisional})"
+                )
+            else:
+                # New behavior: replace existing version or create at version 1
+                # First, get the current max version
+                version_query = f"""
+                    SELECT MAX(version) as max_version 
+                    FROM {self.full_table_name} 
+                    WHERE user_id = $1 AND cohort_id = $2
+                """
+
+                version_row = await conn.fetchrow(version_query, user_id, cohort_id)
+                current_max_version = (
+                    version_row["max_version"]
+                    if version_row and version_row["max_version"]
+                    else 0
+                )
+
+                if current_max_version == 0:
+                    # No existing cohort, create version 1
+                    target_version = 1
+
+                    insert_query = f"""
+                        INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, name, description, created_at, updated_at)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+                    """
+
+                    await conn.execute(
+                        insert_query,
+                        cohort_id,
+                        user_id,
+                        study_id,
+                        parent_cohort_id,
+                        target_version,
+                        json.dumps(cohort_data),
+                        provisional,
+                        cohort_name,
+                        cohort_description,
+                    )
+
+                    logger.info(
+                        f"Successfully created new cohort {cohort_id} version {target_version} for user {user_id} (provisional: {provisional})"
+                    )
+                else:
+                    target_version = current_max_version
+
+                    if provisional:
+                        # If provisional, first try to update existing provisional row, otherwise insert new one
+                        update_provisional_query = f"""
+                            UPDATE {self.full_table_name} 
+                            SET cohort_data = $3, name = $5, description = $6, updated_at = NOW()
+                            WHERE user_id = $1 AND cohort_id = $2 AND version = $4 AND is_provisional = TRUE
+                        """
+
+                        result = await conn.execute(
+                            update_provisional_query,
+                            user_id,
+                            cohort_id,
+                            json.dumps(cohort_data),
+                            target_version,
+                            cohort_name,
+                            cohort_description,
+                        )
+
+                        if result == "UPDATE 0":
+                            # No existing provisional row found, insert new one
+                            insert_query = f"""
+                                INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, name, description, created_at, updated_at)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+                            """
+
+                            await conn.execute(
+                                insert_query,
+                                cohort_id,
+                                user_id,
+                                study_id,
+                                parent_cohort_id,
+                                target_version,
+                                json.dumps(cohort_data),
+                                True,  # Always provisional for this case
+                                cohort_name,
+                                cohort_description,
+                            )
+
+                            logger.info(
+                                f"Successfully created provisional cohort {cohort_id} version {target_version} for user {user_id}"
+                            )
+                        else:
+                            logger.info(
+                                f"Successfully updated existing provisional cohort {cohort_id} version {target_version} for user {user_id}"
+                            )
+                    else:
+                        # Replace existing version (update the existing row)
+                        update_query = f"""
+                            UPDATE {self.full_table_name} 
+                            SET cohort_data = $3, name = $5, description = $6, updated_at = NOW()
+                            WHERE user_id = $1 AND cohort_id = $2 AND version = $4 AND is_provisional = FALSE
+                        """
+
+                        result = await conn.execute(
+                            update_query,
+                            user_id,
+                            cohort_id,
+                            json.dumps(cohort_data),
+                            target_version,
+                            cohort_name,
+                            cohort_description,
+                        )
+
+                        if result == "UPDATE 0":
+                            # No non-provisional version found, insert new one
+                            insert_query = f"""
+                                INSERT INTO {self.full_table_name} (cohort_id, user_id, study_id, parent_cohort_id, version, cohort_data, is_provisional, name, description, created_at, updated_at)
+                                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+                            """
+
+                            await conn.execute(
+                                insert_query,
+                                cohort_id,
+                                user_id,
+                                study_id,
+                                parent_cohort_id,
+                                target_version,
+                                json.dumps(cohort_data),
+                                False,
+                                cohort_name,
+                                cohort_description,
+                            )
+
+                            logger.info(
+                                f"Successfully created cohort {cohort_id} version {target_version} for user {user_id} (no existing non-provisional version)"
+                            )
+                        else:
+                            logger.info(
+                                f"Successfully updated cohort {cohort_id} version {target_version} for user {user_id}"
+                            )
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to update cohort {cohort_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_cohort_database(
+        self, user_id: str, cohort_id: str, database: Optional[Dict]
+    ) -> bool:
+        """
+        Update the database column for the latest version of a cohort.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the cohort.
+            cohort_id (str): The ID of the cohort to update.
+            database (Optional[Dict]): The database configuration to store.
+
+        Returns:
+            bool: True if successful, False if cohort not found.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+            query = f"""
+                UPDATE {self.full_table_name}
+                SET database = $3, updated_at = NOW()
+                WHERE user_id = $1 AND cohort_id = $2
+                  AND version = (
+                      SELECT MAX(version) FROM {self.full_table_name}
+                      WHERE user_id = $1 AND cohort_id = $2
+                  )
+            """
+            result = await conn.execute(
+                query,
+                user_id,
+                cohort_id,
+                json.dumps(database) if database is not None else None,
+            )
+            if result == "UPDATE 0":
+                return False
+            logger.info(f"Updated database for cohort {cohort_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update database for cohort {cohort_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_cohort_display_order(
+        self, user_id: str, cohort_id: str, display_order: int
+    ) -> bool:
+        """
+        Update the display_order column for all versions of a cohort.
+
+        The cohort list query sorts by the display_order column, so ordering is
+        persisted here rather than inside the cohort_data JSON. All versions of the
+        cohort are updated to keep the value consistent regardless of which version
+        the list query selects.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the cohort.
+            cohort_id (str): The ID of the cohort to update.
+            display_order (int): The new display order value.
+
+        Returns:
+            bool: True if successful, False if cohort not found or access denied.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+            query = f"""
+                UPDATE {self.full_table_name}
+                SET display_order = $3, updated_at = NOW()
+                WHERE user_id = $1 AND cohort_id = $2
+            """
+            result = await conn.execute(query, user_id, cohort_id, display_order)
+            if result == "UPDATE 0":
+                return False
+            logger.info(f"Updated display_order={display_order} for cohort {cohort_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update display order for cohort {cohort_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def delete_cohort_for_user(self, user_id: str, cohort_id: str) -> bool:
+        """
+        Delete all versions of a cohort for a user from the database.
+
+        Args:
+            user_id (str): The user ID (UUID) whose cohort to delete.
+            cohort_id (str): The ID of the cohort to delete.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            query = f"""
+                DELETE FROM {self.full_table_name} 
+                WHERE user_id = $1 AND cohort_id = $2
+            """
+
+            result = await conn.execute(query, user_id, cohort_id)
+
+            if result == "DELETE 0":
+                return False  # Cohort not found
+
+            logger.info(
+                f"Successfully deleted all versions of cohort {cohort_id} for user {user_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to delete cohort {cohort_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def accept_changes(self, user_id: str, cohort_id: str) -> bool:
+        """
+        Accept provisional changes by setting is_provisional to False for the provisional cohort
+        and deleting any existing non-provisional cohort at the same version.
+
+        Args:
+            user_id (str): The user ID (UUID).
+            cohort_id (str): The ID of the cohort.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Begin transaction
+            async with conn.transaction():
+                # Get the latest provisional version and its data
+                provisional_query = f"""
+                    SELECT version, cohort_data
+                    FROM {self.full_table_name} 
+                    WHERE user_id = $1 AND cohort_id = $2 AND is_provisional = TRUE
+                    ORDER BY version DESC
+                    LIMIT 1
+                """
+
+                provisional_row = await conn.fetchrow(
+                    provisional_query, user_id, cohort_id
+                )
+
+                if not provisional_row:
+                    return False  # No provisional version found
+
+                target_version = provisional_row["version"]
+
+                # Delete any existing non-provisional cohort at the same version
+                delete_query = f"""
+                    DELETE FROM {self.full_table_name} 
+                    WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = FALSE
+                """
+
+                await conn.execute(delete_query, user_id, cohort_id, target_version)
+
+                # Set the provisional cohort to non-provisional
+                update_query = f"""
+                    UPDATE {self.full_table_name} 
+                    SET is_provisional = FALSE, updated_at = NOW()
+                    WHERE user_id = $1 AND cohort_id = $2 AND version = $3 AND is_provisional = TRUE
+                """
+
+                result = await conn.execute(
+                    update_query, user_id, cohort_id, target_version
+                )
+
+                if result == "UPDATE 0":
+                    return False  # No provisional version found
+
+            logger.info(
+                f"Successfully accepted changes for cohort {cohort_id} version {target_version} for user {user_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Failed to accept changes for cohort {cohort_id} for user {user_id}: {e}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def reject_changes(self, user_id: str, cohort_id: str) -> bool:
+        """
+        Reject provisional changes by deleting all provisional versions.
+
+        Args:
+            user_id (str): The user ID (UUID).
+            cohort_id (str): The ID of the cohort.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            query = f"""
+                DELETE FROM {self.full_table_name} 
+                WHERE user_id = $1 AND cohort_id = $2 AND is_provisional = TRUE
+            """
+
+            result = await conn.execute(query, user_id, cohort_id)
+
+            logger.info(
+                f"Successfully rejected changes for cohort {cohort_id} for user {user_id} (deleted {result.split()[1]} rows)"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Failed to reject changes for cohort {cohort_id} for user {user_id}: {e}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_public_cohorts(self) -> List[Dict]:
+        """
+        Retrieve all public cohorts (latest versions only).
+
+        Returns:
+            List[Dict]: A list of public cohort objects.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Query to get the latest version of each public cohort
+            query = f"""
+                WITH latest_public_cohorts AS (
+                    SELECT cohort_id, user_id, MAX(version) as max_version
+                    FROM {self.full_table_name} 
+                    WHERE is_public = TRUE
+                    GROUP BY cohort_id, user_id
+                )
+                SELECT c.cohort_id, c.user_id, c.name, c.version, c.created_at, c.updated_at 
+                FROM {self.full_table_name} c
+                INNER JOIN latest_public_cohorts lpc ON c.cohort_id = lpc.cohort_id 
+                    AND c.user_id = lpc.user_id 
+                    AND c.version = lpc.max_version
+                WHERE c.is_public = TRUE
+                ORDER BY c.updated_at DESC
+            """
+
+            rows = await conn.fetch(query)
+
+            cohorts = []
+            for row in rows:
+                cohorts.append(
+                    {
+                        "id": row["cohort_id"],
+                        "user_id": row["user_id"],
+                        "name": row["name"] or f"Cohort {row['cohort_id']}",
+                        "version": row["version"],
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                    }
+                )
+
+            logger.info(f"Retrieved {len(cohorts)} public cohorts")
+            return cohorts
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve public cohorts: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_changes_for_user(self, user_id: str, cohort_id: str) -> Dict:
+        """
+        Compare the most recent provisional cohort to the most recent non-provisional cohort.
+        Returns an empty dict if there is no provisional cohort.
+
+        Args:
+            user_id (str): The user ID (UUID).
+            cohort_id (str): The ID of the cohort.
+
+        Returns:
+            Dict: Dictionary of changes between provisional and non-provisional versions.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Get the most recent provisional cohort
+            provisional_query = f"""
+                SELECT cohort_data 
+                FROM {self.full_table_name} 
+                WHERE user_id = $1 AND cohort_id = $2 AND is_provisional = TRUE
+                ORDER BY version DESC
+                LIMIT 1
+            """
+
+            provisional_row = await conn.fetchrow(provisional_query, user_id, cohort_id)
+
+            # If no provisional cohort exists, return empty dict
+            if not provisional_row:
+                logger.info(
+                    f"No provisional cohort found for user {user_id}, cohort {cohort_id}"
+                )
+                return {}
+
+            # Get the most recent non-provisional cohort
+            non_provisional_query = f"""
+                SELECT cohort_data 
+                FROM {self.full_table_name} 
+                WHERE user_id = $1 AND cohort_id = $2 AND is_provisional = FALSE
+                ORDER BY version DESC
+                LIMIT 1
+            """
+
+            non_provisional_row = await conn.fetchrow(
+                non_provisional_query, user_id, cohort_id
+            )
+
+            # If no non-provisional cohort exists, return empty dict
+            if not non_provisional_row:
+                logger.info(
+                    f"No non-provisional cohort found for user {user_id}, cohort {cohort_id}"
+                )
+                return {}
+
+            provisional_data = provisional_row["cohort_data"]
+            non_provisional_data = non_provisional_row["cohort_data"]
+
+            # Use DeepDiff to calculate differences
+            from deepdiff import DeepDiff
+
+            diff = DeepDiff(provisional_data, non_provisional_data, ignore_order=True)
+
+            logger.info(
+                f"Calculated differences for cohort {cohort_id} for user {user_id}: {diff}"
+            )
+            return dict(diff) if diff else {}
+
+        except Exception as e:
+            logger.error(
+                f"Failed to get changes for cohort {cohort_id} for user {user_id}: {e}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_all_codelists_for_user(self, user_id: str) -> List[Dict]:
+        """
+        Retrieve all codelists for a specific user from the database.
+        Returns only the latest version of each codelist.
+
+        Args:
+            user_id (str): The user ID (UUID) whose codelists to retrieve.
+
+        Returns:
+            List[Dict]: A list of codelist objects.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Query to get the latest version of each codelist
+            query = """
+                WITH latest_codelists AS (
+                    SELECT file_id, MAX(version) as max_version
+                    FROM codelistfile 
+                    WHERE user_id = $1
+                    GROUP BY file_id
+                )
+                SELECT c.file_id, c.file_name, c.codelist_data->'filename' as filename, c.codelists, c.created_at, c.updated_at 
+                FROM codelistfile c
+                INNER JOIN latest_codelists lc ON c.file_id = lc.file_id AND c.version = lc.max_version
+                WHERE c.user_id = $1
+                ORDER BY c.updated_at DESC
+            """
+
+            rows = await conn.fetch(query, user_id)
+
+            codelists = []
+            for row in rows:
+                codelists.append(
+                    {
+                        "id": row["file_id"],
+                        "filename": row["file_name"] or row["filename"],
+                        "codelists": row["codelists"],
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                    }
+                )
+
+            logger.info(f"Retrieved {len(codelists)} codelists for user {user_id}")
+            return codelists
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve codelists for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_codelists_for_study(self, study_id: str) -> List[Dict]:
+        """Retrieve all codelists associated with a specific study."""
+        return await self._get_codelists_by_field("study_id", study_id)
+
+    async def _get_codelists_by_field(self, field: str, value: str) -> List[Dict]:
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            query = f"""
+                SELECT 
+                    file_id, 
+                    file_name,
+                    codelist_data->'filename' as filename, 
+                    codelists, 
+                    column_mapping,
+                    display_order,
+                    created_at, 
+                    updated_at 
+                FROM codelistfile 
+                WHERE {field} = $1
+                ORDER BY display_order ASC, created_at ASC
+            """
+
+            rows = await conn.fetch(query, value)
+
+            codelists = []
+            for row in rows:
+                # Parse column_mapping if it's a string
+                column_mapping = row["column_mapping"]
+                if isinstance(column_mapping, str):
+                    column_mapping = json.loads(column_mapping)
+
+                codelists.append(
+                    {
+                        "id": row["file_id"],
+                        "filename": row["file_name"] or row["filename"],
+                        "codelists": row["codelists"],
+                        "code_column": (
+                            column_mapping.get("code_column")
+                            if column_mapping
+                            else None
+                        ),
+                        "code_type_column": (
+                            column_mapping.get("code_type_column")
+                            if column_mapping
+                            else None
+                        ),
+                        "codelist_column": (
+                            column_mapping.get("codelist_column")
+                            if column_mapping
+                            else None
+                        ),
+                        "display_order": row.get("display_order", 0),
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                    }
+                )
+
+            logger.info(f"Retrieved {len(codelists)} codelists for {field}={value}")
+            return codelists
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve codelists for {field}={value}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_codelist(
+        self, user_id: str, codelist_id: str, study_id: str = None
+    ) -> Optional[Dict]:
+        """
+        Retrieve a specific codelist for a user from the database.
+        Returns the latest version.
+
+        Args:
+            user_id (str): The user ID (UUID) whose codelist to retrieve.
+            codelist_id (str): The ID of the codelist to retrieve.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
+
+        Returns:
+            Optional[Dict]: The codelist data or None if not found.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Get the highest version, optionally filtering by study_id
+            if study_id:
+                query = """
+                    SELECT codelist_data, column_mapping, codelists, version, created_at, updated_at 
+                    FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2 AND study_id = $3
+                    ORDER BY version DESC
+                    LIMIT 1
+                """
+                row = await conn.fetchrow(query, user_id, codelist_id, study_id)
+            else:
+                query = """
+                    SELECT codelist_data, column_mapping, codelists, version, created_at, updated_at 
+                    FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2
+                    ORDER BY version DESC
+                    LIMIT 1
+                """
+                row = await conn.fetchrow(query, user_id, codelist_id)
+
+            if not row:
+                return None
+
+            codelist_data = {
+                "codelist_data": row["codelist_data"],
+                "column_mapping": row["column_mapping"],
+                "codelists": row["codelists"],
+                "version": row["version"],
+                "created_at": (
+                    row["created_at"].isoformat() if row["created_at"] else None
+                ),
+                "updated_at": (
+                    row["updated_at"].isoformat() if row["updated_at"] else None
+                ),
+            }
+
+            return codelist_data
+
+        except Exception as e:
+            # Truncate error message to prevent log flooding with large data
+            error_msg = str(e)[:500]
+            logger.error(
+                f"Failed to retrieve codelist {codelist_id} for user {user_id}: {error_msg}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def save_codelist(
+        self,
+        user_id: str,
+        codelist_id: str,
+        codelist_data: Dict,
+        column_mapping: Dict,
+        codelists: List[str],
+        file_name: Optional[str] = None,
+        study_id: Optional[str] = None,
+    ) -> bool:
+        """
+        Save a codelist to the database. Creates a new version if it already exists.
+
+        Args:
+            user_id (str): The user ID (UUID).
+            codelist_id (str): The ID of the codelist (file_id).
+            codelist_data (Dict): The codelist data.
+            column_mapping (Dict): The column mapping.
+            codelists (List[str]): List of codelist names contained in the file.
+            file_name (Optional[str]): The name of the file. If not provided, will use first codelist name.
+            study_id (Optional[str]): The ID of the associated study.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        logger.info(
+            f"save_codelist: Getting to save codelist {codelist_id} for user {user_id}"
+        )
+        try:
+            conn = await self.get_connection()
+
+            # Determine file_name if not provided
+            if not file_name:
+                file_name = codelists[0] if codelists else "unknown"
+
+            # Get the current max version
+            version_query = """
+                SELECT MAX(version) as max_version 
+                FROM codelistfile 
+                WHERE file_id = $1
+            """
+
+            version_row = await conn.fetchrow(version_query, codelist_id)
+            current_max_version = (
+                version_row["max_version"]
+                if version_row and version_row["max_version"]
+                else 0
+            )
+            target_version = current_max_version + 1
+
+            # Insert the new version with study_id
+            if not study_id:
+                raise ValueError("study_id is required for saving codelists")
+
+            insert_query = """
+                INSERT INTO codelistfile (file_id, file_name, user_id, study_id, version, codelist_data, column_mapping, codelists, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+            """
+            await conn.execute(
+                insert_query,
+                codelist_id,
+                file_name,
+                user_id,
+                study_id,
+                target_version,
+                json.dumps(codelist_data),
+                json.dumps(column_mapping),
+                codelists,
+            )
+
+            logger.info(
+                f"Successfully saved codelist {codelist_id} version {target_version} for user {user_id}"
+            )
+            return True
+
+        except Exception as e:
+            # Truncate error message to prevent log flooding with large data
+            error_msg = str(e)[:500]
+            logger.error(
+                f"Failed to save codelist {codelist_id} for user {user_id}: {error_msg}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_codelist(
+        self,
+        user_id: str,
+        codelist_id: str,
+        codelist_data: Dict = None,
+        column_mapping: Dict = None,
+        codelists: List[str] = None,
+        study_id: str = None,
+    ) -> bool:
+        """
+        Update an existing codelist without creating a new version.
+
+        Args:
+            user_id (str): The user ID (UUID).
+            codelist_id (str): The ID of the codelist.
+            codelist_data (Dict, optional): The codelist data to update.
+            column_mapping (Dict, optional): The column mapping to update.
+            codelists (List[str], optional): List of codelist names to update.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Get the current max version, optionally filtering by study_id
+            if study_id:
+                version_query = """
+                    SELECT MAX(version) as max_version 
+                    FROM codelistfile 
+                    WHERE file_id = $1 AND user_id = $2 AND study_id = $3
+                """
+                version_row = await conn.fetchrow(
+                    version_query, codelist_id, user_id, study_id
+                )
+            else:
+                version_query = """
+                    SELECT MAX(version) as max_version 
+                    FROM codelistfile 
+                    WHERE file_id = $1 AND user_id = $2
+                """
+                version_row = await conn.fetchrow(version_query, codelist_id, user_id)
+
+            if not version_row or not version_row["max_version"]:
+                return False  # Codelist doesn't exist
+
+            current_version = version_row["max_version"]
+
+            # Prepare update query parts
+            update_parts = []
+            params = [user_id, codelist_id, current_version]
+            param_idx = 4
+
+            if codelist_data is not None:
+                update_parts.append(f"codelist_data = ${param_idx}")
+                params.append(json.dumps(codelist_data))
+                param_idx += 1
+
+            if column_mapping is not None:
+                update_parts.append(f"column_mapping = ${param_idx}")
+                params.append(json.dumps(column_mapping))
+                param_idx += 1
+
+            if codelists is not None:
+                update_parts.append(f"codelists = ${param_idx}")
+                params.append(codelists)
+                param_idx += 1
+
+            update_parts.append("updated_at = NOW()")
+
+            if not update_parts:
+                return True  # Nothing to update
+
+            # Construct and execute the update query, optionally filtering by study_id
+            if study_id:
+                update_parts.append(f"study_id = ${param_idx}")
+                params.append(study_id)
+                update_query = f"""
+                    UPDATE codelistfile 
+                    SET {", ".join(update_parts)}
+                    WHERE user_id = $1 AND file_id = $2 AND version = $3 AND study_id = ${param_idx}
+                """
+            else:
+                update_query = f"""
+                    UPDATE codelistfile 
+                    SET {", ".join(update_parts)}
+                    WHERE user_id = $1 AND file_id = $2 AND version = $3
+                """
+
+            result = await conn.execute(update_query, *params)
+
+            if result == "UPDATE 0":
+                return False  # No rows updated
+
+            logger.info(
+                f"Successfully updated codelist {codelist_id} for user {user_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Failed to update codelist {codelist_id} for user {user_id}: {e}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def delete_codelist(
+        self, user_id: str, codelist_id: str, study_id: str = None
+    ) -> bool:
+        """
+        Delete a codelist for a user from the database.
+
+        Args:
+            user_id (str): The user ID (UUID) whose codelist to delete.
+            codelist_id (str): The ID of the codelist to delete.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            if study_id:
+                query = """
+                    DELETE FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2 AND study_id = $3
+                """
+                result = await conn.execute(query, user_id, codelist_id, study_id)
+            else:
+                query = """
+                    DELETE FROM codelistfile 
+                    WHERE user_id = $1 AND file_id = $2
+                """
+                result = await conn.execute(query, user_id, codelist_id)
+
+            if result == "DELETE 0":
+                return False  # Codelist not found
+
+            logger.info(
+                f"Successfully deleted codelist {codelist_id} for user {user_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                f"Failed to delete codelist {codelist_id} for user {user_id}: {e}"
+            )
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_codelist_display_order(
+        self, user_id: str, file_id: str, display_order: int, study_id: str = None
+    ) -> bool:
+        """
+        Update the display order of a codelist file.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the codelist.
+            file_id (str): The ID of the codelist file to update.
+            display_order (int): The new display order value.
+            study_id (str, optional): The study ID to validate the codelist belongs to this study.
+
+        Returns:
+            bool: True if successful, False if codelist not found.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            if study_id:
+                query = """
+                    UPDATE codelistfile 
+                    SET display_order = $3, updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = $1 AND file_id = $2 AND study_id = $4
+                """
+                result = await conn.execute(
+                    query, user_id, file_id, display_order, study_id
+                )
+            else:
+                query = """
+                    UPDATE codelistfile 
+                    SET display_order = $3, updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = $1 AND file_id = $2
+                """
+                result = await conn.execute(query, user_id, file_id, display_order)
+
+            if result == "UPDATE 0":
+                return False  # Codelist not found
+
+            logger.info(
+                f"Successfully updated display order for codelist {file_id} to {display_order}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to update display order for codelist {file_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    def get_user_by_id(self, user_id: str) -> User: ...
+
+    # Study management methods
+    async def get_all_studies_for_user(self, user_id: str) -> List[Dict]:
+        """
+        Retrieve all studies for a specific user from the database.
+        Returns studies where the user is the creator or is in the visible_by list.
+
+        Args:
+            user_id (str): The user ID (UUID) whose studies to retrieve.
+
+        Returns:
+            List[Dict]: A list of study objects with id, name, and metadata.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Query to get studies where user is creator or in visible_by list
+            query = """
+                SELECT study_id, name, description, is_public, created_at, updated_at,
+                       user_id as creator_id, visible_by, display_order, database
+                FROM study 
+                WHERE user_id = $1 OR $1 = ANY(visible_by)
+                ORDER BY display_order ASC, updated_at DESC
+            """
+
+            rows = await conn.fetch(query, user_id)
+
+            studies = []
+            for row in rows:
+                studies.append(
+                    {
+                        "id": row["study_id"],
+                        "name": row["name"],
+                        "description": row["description"],
+                        "is_public": row["is_public"],
+                        "creator_id": row["creator_id"],
+                        "visible_by": row["visible_by"],
+                        "display_order": row["display_order"],
+                        "database": (
+                            json.loads(row["database"]) if row["database"] else None
+                        ),
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                    }
+                )
+
+            logger.info(f"Retrieved {len(studies)} studies for user {user_id}")
+            return studies
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve studies for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_all_public_studies(self) -> List[Dict]:
+        """
+        Retrieve all public studies (is_public=True) from the database.
+
+        Returns:
+            List[Dict]: A list of public study objects with id, name, and metadata.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Query to get only studies that are marked as public
+            query = """
+                SELECT study_id, name, description, is_public, created_at, updated_at,
+                       user_id as creator_id, visible_by, display_order, database
+                FROM study 
+                WHERE is_public = TRUE
+                ORDER BY display_order ASC, updated_at DESC
+            """
+
+            rows = await conn.fetch(query)
+
+            studies = []
+            for row in rows:
+                studies.append(
+                    {
+                        "id": row["study_id"],
+                        "name": row["name"],
+                        "description": row["description"],
+                        "is_public": row["is_public"],
+                        "creator_id": row["creator_id"],
+                        "visible_by": row["visible_by"],
+                        "display_order": row["display_order"],
+                        "database": (
+                            json.loads(row["database"]) if row["database"] else None
+                        ),
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                    }
+                )
+
+            logger.info(f"Retrieved {len(studies)} public studies")
+            return studies
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve public studies: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_study_for_user(self, user_id: str, study_id: str) -> Optional[Dict]:
+        """
+        Retrieve a specific study for a user from the database.
+        Returns the study if the user has access (creator, in visible_by list, or public).
+
+        Args:
+            user_id (str): The user ID (UUID) requesting the study.
+            study_id (str): The ID of the study to retrieve.
+
+        Returns:
+            Optional[Dict]: The study data or None if not found or no access.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            query = """
+                SELECT study_id, name, description, baseline_characteristics, outcomes,
+                       database, is_public, user_id as creator_id, visible_by,
+                       created_at, updated_at
+                FROM study 
+                WHERE study_id = $1 AND (user_id = $2 OR $2 = ANY(visible_by) OR is_public = TRUE)
+            """
+
+            row = await conn.fetchrow(query, study_id, user_id)
+
+            if not row:
+                return None
+
+            study_data = {
+                "id": row["study_id"],
+                "name": row["name"],
+                "description": row["description"],
+                "baseline_characteristics": row["baseline_characteristics"],
+                "outcomes": row["outcomes"],
+                "database": json.loads(row["database"]) if row["database"] else None,
+                "is_public": row["is_public"],
+                "creator_id": row["creator_id"],
+                "visible_by": row["visible_by"],
+                "created_at": (
+                    row["created_at"].isoformat() if row["created_at"] else None
+                ),
+                "updated_at": (
+                    row["updated_at"].isoformat() if row["updated_at"] else None
+                ),
+            }
+
+            return study_data
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve study {study_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_study_for_user(
+        self,
+        user_id: str,
+        study_id: str,
+        name: str,
+        description: str = None,
+        baseline_characteristics: Dict = None,
+        outcomes: Dict = None,
+        database: Dict = None,
+        visible_by: List[str] = None,
+        is_public: bool = False,
+    ) -> bool:
+        """
+        Update or create a study for a user in the database.
+
+        Args:
+            user_id (str): The user ID (UUID) creating/updating the study.
+            study_id (str): The ID of the study to update/create.
+            name (str): The name of the study.
+            description (str, optional): The description of the study.
+            baseline_characteristics (Dict, optional): The baseline characteristics.
+            outcomes (Dict, optional): The outcomes.
+            database (Dict, optional): The database connection configuration.
+            visible_by (List[str], optional): List of user IDs who can see this study.
+            is_public (bool): Whether the study is public.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Check if study already exists
+            check_query = "SELECT study_id FROM study WHERE study_id = $1"
+            existing = await conn.fetchrow(check_query, study_id)
+
+            if existing:
+                # Update existing study (only if user is the creator)
+                update_query = """
+                    UPDATE study 
+                    SET name = $3, description = $4, baseline_characteristics = $5, 
+                        outcomes = $6, database = $7, visible_by = $8, is_public = $9,
+                        updated_at = NOW()
+                    WHERE study_id = $1 AND user_id = $2
+                """
+
+                result = await conn.execute(
+                    update_query,
+                    study_id,
+                    user_id,
+                    name,
+                    description,
+                    (
+                        json.dumps(baseline_characteristics)
+                        if baseline_characteristics
+                        else None
+                    ),
+                    json.dumps(outcomes) if outcomes else None,
+                    json.dumps(database) if database else None,
+                    visible_by or [],
+                    is_public,
+                )
+
+                if result == "UPDATE 0":
+                    logger.error(
+                        f"User {user_id} is not authorized to update study {study_id}"
+                    )
+                    return False
+
+                logger.info(f"Successfully updated study {study_id} for user {user_id}")
+            else:
+                # Create new study
+                insert_query = """
+                    INSERT INTO study (study_id, user_id, name, description, baseline_characteristics,
+                                     outcomes, database, visible_by, is_public, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+                """
+
+                await conn.execute(
+                    insert_query,
+                    study_id,
+                    user_id,
+                    name,
+                    description,
+                    (
+                        json.dumps(baseline_characteristics)
+                        if baseline_characteristics
+                        else None
+                    ),
+                    json.dumps(outcomes) if outcomes else None,
+                    json.dumps(database) if database else None,
+                    visible_by or [],
+                    is_public,
+                )
+
+                logger.info(f"Successfully created study {study_id} for user {user_id}")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to update study {study_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_study_database(
+        self, user_id: str, study_id: str, database: Optional[Dict]
+    ) -> bool:
+        """
+        Update the database column for a study.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the study.
+            study_id (str): The ID of the study to update.
+            database (Optional[Dict]): The database configuration to store, or None to clear.
+
+        Returns:
+            bool: True if successful, False if study not found or access denied.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+            result = await conn.execute(
+                """
+                UPDATE study
+                SET database = $3, updated_at = NOW()
+                WHERE study_id = $1 AND user_id = $2
+                """,
+                study_id,
+                user_id,
+                json.dumps(database) if database is not None else None,
+            )
+            if result == "UPDATE 0":
+                logger.error(
+                    f"User {user_id} is not authorized to update study {study_id} or study not found"
+                )
+                return False
+            logger.info(f"Successfully updated database for study {study_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update database for study {study_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_study_display_order(
+        self, user_id: str, study_id: str, display_order: int
+    ) -> bool:
+        """
+        Update the display order of a study.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the study.
+            study_id (str): The ID of the study to update.
+            display_order (int): The new display order value.
+
+        Returns:
+            bool: True if successful, False if study not found or access denied.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            update_query = """
+                UPDATE study 
+                SET display_order = $3, updated_at = NOW()
+                WHERE study_id = $1 AND user_id = $2
+            """
+
+            result = await conn.execute(update_query, study_id, user_id, display_order)
+
+            if result == "UPDATE 0":
+                logger.error(
+                    f"User {user_id} is not authorized to update study {study_id} or study not found"
+                )
+                return False
+
+            logger.info(
+                f"Successfully updated display_order={display_order} for study {study_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to update display order for study {study_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def delete_study_for_user(self, user_id: str, study_id: str) -> bool:
+        """
+        Delete a study and all associated cohorts for a user from the database.
+        Uses cascading deletion to remove all cohorts associated with the study.
+
+        Args:
+            user_id (str): The user ID (UUID) who owns the study.
+            study_id (str): The ID of the study to delete.
+
+        Returns:
+            bool: True if successful.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Begin transaction for cascading deletion
+            async with conn.transaction():
+                # Delete execution records for this study
+                await conn.execute(
+                    "DELETE FROM study_execution WHERE study_id = $1",
+                    study_id,
+                )
+
+                # Delete all cohorts associated with this study
+                delete_cohorts_query = f"""
+                    DELETE FROM {self.full_table_name} 
+                    WHERE study_id = $1
+                """
+                cohorts_result = await conn.execute(delete_cohorts_query, study_id)
+
+                # Then delete the study itself (only if user is the creator)
+                delete_study_query = """
+                    DELETE FROM study 
+                    WHERE study_id = $1 AND user_id = $2
+                """
+                study_result = await conn.execute(delete_study_query, study_id, user_id)
+
+                if study_result == "DELETE 0":
+                    logger.error(
+                        f"User {user_id} is not authorized to delete study {study_id} or study not found"
+                    )
+                    return False
+
+            logger.info(
+                f"Successfully deleted study {study_id} and associated cohorts for user {user_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to delete study {study_id} for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_cohorts_for_study(
+        self, study_id: str, user_id: str = None
+    ) -> List[Dict]:
+        """
+        Retrieve all cohorts associated with a specific study.
+
+        Args:
+            study_id (str): The ID of the study.
+            user_id (str, optional): The user ID for access control.
+
+        Returns:
+            List[Dict]: A list of cohort objects associated with the study.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # If user_id is provided, check if user has access to the study
+            if user_id:
+                access_query = """
+                    SELECT study_id FROM study 
+                    WHERE study_id = $1 AND (user_id = $2 OR $2 = ANY(visible_by) OR is_public = TRUE)
+                """
+                access_check = await conn.fetchrow(access_query, study_id, user_id)
+                if not access_check:
+                    return []  # No access to study
+
+            # Get all cohorts for the study (latest versions only)
+            query = f"""
+                WITH latest_cohorts AS (
+                    SELECT cohort_id, MAX(version) as max_version
+                    FROM {self.full_table_name} 
+                    WHERE study_id = $1
+                    GROUP BY cohort_id
+                ),
+                prioritized_cohorts AS (
+                    SELECT DISTINCT ON (c.cohort_id) 
+                           c.cohort_id, c.name, c.description, c.version, 
+                           c.is_provisional, c.parent_cohort_id, c.created_at, c.updated_at, 
+                           c.cohort_data, c.display_order
+                    FROM {self.full_table_name} c
+                    INNER JOIN latest_cohorts lc ON c.cohort_id = lc.cohort_id AND c.version = lc.max_version
+                    WHERE c.study_id = $1
+                    ORDER BY c.cohort_id, c.is_provisional DESC  -- Prioritize provisional versions
+                )
+                SELECT * FROM prioritized_cohorts
+                ORDER BY display_order ASC, updated_at DESC
+            """
+
+            rows = await conn.fetch(query, study_id)
+
+            import json
+
+            cohorts = []
+            for row in rows:
+                cohorts.append(
+                    {
+                        "id": row["cohort_id"],
+                        "name": row["name"] or f"Cohort {row['cohort_id']}",
+                        "description": row["description"],
+                        "version": row["version"],
+                        "is_provisional": row["is_provisional"],
+                        "parent_cohort_id": row["parent_cohort_id"],
+                        "display_order": row["display_order"],
+                        "study_id": study_id,
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                        "cohort_data": (
+                            json.loads(row["cohort_data"])
+                            if row["cohort_data"]
+                            else None
+                        ),
+                    }
+                )
+
+            logger.info(f"Retrieved {len(cohorts)} cohorts for study {study_id}")
+            return cohorts
+
+        except Exception as e:
+            logger.error(f"Failed to retrieve cohorts for study {study_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def health_check(self) -> Dict:
+        """
+        Perform a health check by testing database connectivity and basic query.
+
+        Returns:
+            Dict: Health status with connection details
+
+        Raises:
+            Exception: If database is not accessible or query fails
+        """
+        conn = None
+        try:
+            # Test basic connection
+            conn = await self.get_connection()
+
+            # Test a simple query to ensure database is responsive
+            result = await conn.fetchrow(
+                "SELECT 1 as test_value, NOW() as current_time"
+            )
+
+            # Check for all required tables
+            required_tables = ["user", "cohort", "study"]
+            table_results = {}
+            all_tables_exist = True
+
+            for table_name in required_tables:
+                # Determine the correct schema for each table
+                if table_name in ["cohort"]:
+                    schema = self.cohorts_schema
+                elif table_name in ["study"]:
+                    schema = self.studies_schema
+                else:  # user table and others
+                    schema = "public"  # user table is typically in public schema
+
+                table_exists = await conn.fetchrow(
+                    f"""
+                    SELECT EXISTS (
+                        SELECT 1 FROM information_schema.tables 
+                        WHERE table_schema = '{schema}' 
+                        AND table_name = '{table_name}'
+                    ) as exists
+                """
+                )
+
+                exists = table_exists["exists"]
+                table_results[table_name] = {
+                    "exists": exists,
+                    "schema": schema,
+                    "full_name": f"{schema}.{table_name}",
+                }
+
+                if not exists:
+                    all_tables_exist = False
+
+            return {
+                "status": "connected",
+                "test_query": result["test_value"] == 1,
+                "database_time": result["current_time"].isoformat(),
+                "all_tables_exist": all_tables_exist,
+                "tables": table_results,
+                "schemas": {
+                    "cohorts": self.cohorts_schema,
+                    "studies": self.studies_schema,
+                },
+            }
+
+        except Exception as e:
+            error_msg = f"Database health check failed: {type(e).__name__}: {e}"
+            logger.error(error_msg)
+            logger.error(
+                f"Connection string (without password): postgresql://{os.getenv('POSTGRES_USER')}:***@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+            )
+            return {
+                "status": "failed",
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "schemas": {
+                    "cohorts": self.cohorts_schema,
+                    "studies": self.studies_schema,
+                },
+                "message": "Database connection or query failed",
+            }
+        finally:
+            if conn:
+                await conn.close()
+
+    async def save_study_execution(
+        self,
+        execution_id: str,
+        study_id: str,
+        user_id: str,
+    ) -> bool:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            await conn.execute(
+                """
+                INSERT INTO study_execution (execution_id, study_id, user_id, status)
+                VALUES ($1, $2, $3, 'running')
+                """,
+                execution_id,
+                study_id,
+                user_id,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save study execution {execution_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_study_execution(
+        self,
+        execution_id: str,
+        status: str,
+        manifest_path: str = None,
+        error_message: str = None,
+    ) -> bool:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            await conn.execute(
+                """
+                UPDATE study_execution
+                SET status = $1, ended_at = CURRENT_TIMESTAMP,
+                    manifest_path = $2, error_message = $3
+                WHERE execution_id = $4
+                """,
+                status,
+                manifest_path,
+                error_message,
+                execution_id,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update study execution {execution_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_study_executions(self, study_id: str, user_id: str) -> List[Dict]:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            rows = await conn.fetch(
+                """
+                SELECT execution_id, study_id, user_id, status,
+                       started_at, ended_at, manifest_path, error_message
+                FROM study_execution
+                WHERE study_id = $1 AND user_id = $2
+                ORDER BY started_at DESC
+                """,
+                study_id,
+                user_id,
+            )
+            return [
+                {
+                    "execution_id": row["execution_id"],
+                    "study_id": row["study_id"],
+                    "user_id": str(row["user_id"]),
+                    "status": row["status"],
+                    "started_at": (
+                        row["started_at"].isoformat() if row["started_at"] else None
+                    ),
+                    "ended_at": (
+                        row["ended_at"].isoformat() if row["ended_at"] else None
+                    ),
+                    "manifest_path": row["manifest_path"],
+                    "error_message": row["error_message"],
+                }
+                for row in rows
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get study executions for {study_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_studies_with_module_status(self, user_id: str) -> List[Dict]:
+        """
+        Return all user studies enriched with per-module activity status.
+
+        For each study we attach:
+          cohorts  – { status, detail }   (status: none | has_cohorts | executed)
+          tlf      – { status, detail }   (status: none | available)
+
+        Uses a single round-trip: one lateral join for cohort counts and one
+        for the most-recent successful execution.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+            rows = await conn.fetch(
+                """
+                SELECT
+                    s.study_id,
+                    s.name,
+                    s.description,
+                    s.is_public,
+                    s.display_order,
+                    s.created_at,
+                    s.updated_at,
+                    s.visible_by,
+                    COALESCE(c.cohort_count, 0) AS cohort_count,
+                    e.execution_id          AS last_execution_id,
+                    e.status                AS last_execution_status,
+                    e.ended_at              AS last_execution_ended_at,
+                    e.manifest_path         AS last_manifest_path
+                FROM study s
+                LEFT JOIN LATERAL (
+                    SELECT COUNT(*) AS cohort_count
+                    FROM cohort
+                    WHERE study_id = s.study_id AND user_id = $1
+                ) c ON true
+                LEFT JOIN LATERAL (
+                    SELECT execution_id, status, ended_at, manifest_path
+                    FROM study_execution
+                    WHERE study_id = s.study_id AND user_id = $1
+                    ORDER BY started_at DESC
+                    LIMIT 1
+                ) e ON true
+                WHERE s.user_id = $1 OR $1 = ANY(s.visible_by)
+                ORDER BY s.display_order ASC, s.updated_at DESC
+                """,
+                user_id,
+            )
+
+            result = []
+            for row in rows:
+                cohort_count = row["cohort_count"] or 0
+                exec_status = row["last_execution_status"]
+                ended_at = row["last_execution_ended_at"]
+
+                # ── Cohorts module ──────────────────────────────────────────
+                if exec_status == "success" and ended_at:
+                    date_str = ended_at.strftime("%-d %b %Y") if ended_at else ""
+                    cohorts_mod = {"status": "complete", "detail": f"Run {date_str}"}
+                elif exec_status in ("running", "failure"):
+                    cohorts_mod = {"status": "in_progress", "detail": exec_status.capitalize()}
+                elif cohort_count > 0:
+                    cohorts_mod = {"status": "in_progress", "detail": "Not yet run"}
+                else:
+                    cohorts_mod = {"status": "none", "detail": None}
+
+                # ── TLF module ──────────────────────────────────────────────
+                if exec_status == "success" and row["last_manifest_path"]:
+                    tlf_date = ended_at.strftime("%-d %b %Y") if ended_at else ""
+                    tlf_mod = {"status": "complete", "detail": tlf_date or "Available"}
+                else:
+                    tlf_mod = {"status": "none", "detail": None}
+
+                result.append({
+                    "id": row["study_id"],
+                    "name": row["name"],
+                    "description": row["description"],
+                    "is_public": row["is_public"],
+                    "display_order": row["display_order"],
+                    "visible_by": list(row["visible_by"] or []),
+                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+                    "cohort_count": cohort_count,
+                    "last_execution_id": row["last_execution_id"],
+                    "modules": {
+                        "cohorts": cohorts_mod,
+                        "tlf": tlf_mod,
+                    },
+                })
+
+            return result
+        except Exception as e:
+            logger.error(f"Failed to get studies with module status for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_studies_with_successful_executions(self, user_id: str) -> List[Dict]:
+        """
+        Return all studies owned by this user that have at least one successful
+        execution, together with the most recent such execution's metadata.
+        """
+        conn = None
+        try:
+            conn = await self.get_connection()
+            rows = await conn.fetch(
+                """
+                SELECT
+                    s.study_id,
+                    s.name AS study_name,
+                    e.execution_id AS last_execution_id,
+                    e.ended_at,
+                    e.manifest_path
+                FROM study s
+                JOIN LATERAL (
+                    SELECT execution_id, ended_at, manifest_path
+                    FROM study_execution
+                    WHERE study_id = s.study_id
+                      AND user_id  = $1
+                      AND status   = 'success'
+                    ORDER BY started_at DESC
+                    LIMIT 1
+                ) e ON true
+                WHERE s.user_id = $1
+                ORDER BY e.ended_at DESC NULLS LAST
+                """,
+                user_id,
+            )
+            return [
+                {
+                    "study_id": row["study_id"],
+                    "study_name": row["study_name"],
+                    "last_execution_id": row["last_execution_id"],
+                    "executed_at": (
+                        row["ended_at"].isoformat() if row["ended_at"] else None
+                    ),
+                    "manifest_path": row["manifest_path"],
+                }
+                for row in rows
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get studies with executions for user {user_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    # Global instance
+    async def delete_study_execution(self, execution_id: str, user_id: str) -> Dict:
+        """Delete an execution record and return its manifest_path so the caller can clean up files."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            row = await conn.fetchrow(
+                """
+                DELETE FROM study_execution
+                WHERE execution_id = $1 AND user_id = $2
+                RETURNING manifest_path
+                """,
+                execution_id,
+                user_id,
+            )
+            return {"manifest_path": row["manifest_path"] if row else None}
+        except Exception as e:
+            logger.error(f"Failed to delete study execution {execution_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    # -------------------------------------------------------------------------
+    # Chat history
+    # -------------------------------------------------------------------------
+
+    async def create_chat_session(
+        self,
+        user_id: str,
+        study_id: Optional[str],
+        title: Optional[str] = None,
+        session_id: Optional[str] = None,
+        app_context: str = 'study',
+    ) -> Dict:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            if session_id:
+                row = await conn.fetchrow(
+                    """
+                    INSERT INTO chat_session (id, user_id, study_id, title, app_context)
+                    VALUES ($1::uuid, $2::uuid, $3, $4, $5)
+                    ON CONFLICT (id) DO UPDATE SET updated_at = CURRENT_TIMESTAMP
+                    RETURNING id, user_id, study_id, title, created_at, updated_at
+                    """,
+                    session_id,
+                    user_id,
+                    study_id,
+                    title,
+                    app_context,
+                )
+            else:
+                row = await conn.fetchrow(
+                    """
+                    INSERT INTO chat_session (user_id, study_id, title, app_context)
+                    VALUES ($1::uuid, $2, $3, $4)
+                    RETURNING id, user_id, study_id, title, created_at, updated_at
+                    """,
+                    user_id,
+                    study_id,
+                    title,
+                    app_context,
+                )
+            return {
+                "id": str(row["id"]),
+                "user_id": str(row["user_id"]),
+                "study_id": str(row["study_id"]) if row["study_id"] else None,
+                "title": row["title"],
+                "created_at": row["created_at"].isoformat(),
+                "updated_at": row["updated_at"].isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to create chat session: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_chat_sessions(
+        self, user_id: str, study_id: Optional[str], app_context: str = 'study'
+    ) -> List[Dict]:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            if study_id:
+                rows = await conn.fetch(
+                    """
+                    SELECT s.id, s.user_id, s.study_id, s.title, s.created_at, s.updated_at,
+                           (SELECT text FROM chat_message WHERE session_id = s.id ORDER BY created_at LIMIT 1) AS first_message
+                    FROM chat_session s
+                    WHERE s.user_id = $1::uuid AND s.study_id = $2 AND s.app_context = $3
+                    ORDER BY s.updated_at DESC
+                    """,
+                    user_id,
+                    study_id,
+                    app_context,
+                )
+            else:
+                rows = await conn.fetch(
+                    """
+                    SELECT s.id, s.user_id, s.study_id, s.title, s.created_at, s.updated_at,
+                           (SELECT text FROM chat_message WHERE session_id = s.id ORDER BY created_at LIMIT 1) AS first_message
+                    FROM chat_session s
+                    WHERE s.user_id = $1::uuid AND s.study_id IS NULL
+                    ORDER BY s.updated_at DESC
+                    """,
+                    user_id,
+                    app_context,
+                )
+            return [
+                {
+                    "id": str(r["id"]),
+                    "user_id": str(r["user_id"]),
+                    "study_id": str(r["study_id"]) if r["study_id"] else None,
+                    "title": r["title"],
+                    "created_at": r["created_at"].isoformat(),
+                    "updated_at": r["updated_at"].isoformat(),
+                    "first_message": r["first_message"],
+                }
+                for r in rows
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get chat sessions: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def add_chat_message(
+        self,
+        session_id: str,
+        user_id: str,
+        study_id: Optional[str],
+        role: str,
+        text: str,
+        metadata: Optional[Dict] = None,
+    ) -> Dict:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            # Upsert session (update updated_at) and insert message atomically
+            await conn.execute(
+                """
+                UPDATE chat_session SET updated_at = CURRENT_TIMESTAMP
+                WHERE id = $1::uuid
+                """,
+                session_id,
+            )
+            row = await conn.fetchrow(
+                """
+                INSERT INTO chat_message (session_id, user_id, study_id, role, text, metadata)
+                VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6)
+                RETURNING id, session_id, user_id, study_id, role, text, created_at, metadata
+                """,
+                session_id,
+                user_id,
+                study_id,
+                role,
+                text,
+                json.dumps(metadata) if metadata else None,
+            )
+            return {
+                "id": str(row["id"]),
+                "session_id": str(row["session_id"]),
+                "user_id": str(row["user_id"]),
+                "study_id": str(row["study_id"]) if row["study_id"] else None,
+                "role": row["role"],
+                "text": row["text"],
+                "created_at": row["created_at"].isoformat(),
+                "metadata": json.loads(row["metadata"]) if row["metadata"] else None,
+            }
+        except Exception as e:
+            logger.error(f"Failed to add chat message: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_chat_messages(self, session_id: str, user_id: str) -> List[Dict]:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            rows = await conn.fetch(
+                """
+                SELECT m.id, m.session_id, m.user_id, m.study_id, m.role, m.text, m.created_at, m.metadata
+                FROM chat_message m
+                JOIN chat_session s ON s.id = m.session_id
+                WHERE m.session_id = $1::uuid AND s.user_id = $2::uuid
+                ORDER BY m.created_at ASC
+                """,
+                session_id,
+                user_id,
+            )
+            return [
+                {
+                    "id": str(r["id"]),
+                    "session_id": str(r["session_id"]),
+                    "user_id": str(r["user_id"]),
+                    "study_id": str(r["study_id"]) if r["study_id"] else None,
+                    "role": r["role"],
+                    "text": r["text"],
+                    "created_at": r["created_at"].isoformat(),
+                    "metadata": json.loads(r["metadata"]) if r["metadata"] else None,
+                }
+                for r in rows
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get chat messages: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_chat_session_title(
+        self, session_id: str, user_id: str, title: str
+    ) -> bool:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            await conn.execute(
+                """
+                UPDATE chat_session SET title = $1, updated_at = CURRENT_TIMESTAMP
+                WHERE id = $2::uuid AND user_id = $3::uuid
+                """,
+                title,
+                session_id,
+                user_id,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to update chat session title: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def delete_chat_session(self, session_id: str, user_id: str) -> bool:
+        conn = None
+        try:
+            conn = await self.get_connection()
+            await conn.execute(
+                "DELETE FROM chat_message WHERE session_id = $1::uuid", session_id
+            )
+            await conn.execute(
+                "DELETE FROM chat_session WHERE id = $1::uuid AND user_id = $2::uuid",
+                session_id,
+                user_id,
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Failed to delete chat session: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    # ========================================================================
+    # Constants Management
+    # ========================================================================
+
+    async def get_constants_for_study(self, study_id: str, user_id: str) -> List[Dict]:
+        """Get all constants for a study."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            rows = await conn.fetch(
+                """
+                SELECT c.constant_id, c.study_id, c.user_id, c.name, c.description,
+                       c.constant_type, c.value, c.display_order, c.created_at, c.updated_at
+                FROM constant c
+                WHERE c.study_id = $1 AND c.user_id = $2
+                ORDER BY c.constant_type, c.display_order
+                """,
+                study_id,
+                user_id,
+            )
+            return [
+                {
+                    "id": r["constant_id"],
+                    "study_id": r["study_id"],
+                    "user_id": str(r["user_id"]),
+                    "name": r["name"],
+                    "description": r["description"],
+                    "type": r["constant_type"],
+                    "value": r["value"],
+                    "display_order": r["display_order"],
+                    "created_at": r["created_at"].isoformat(),
+                    "updated_at": r["updated_at"].isoformat(),
+                }
+                for r in rows
+            ]
+        except Exception as e:
+            logger.error(f"Failed to get constants for study {study_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def get_constant(self, constant_id: str, user_id: str) -> Optional[Dict]:
+        """Get a single constant by ID."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            row = await conn.fetchrow(
+                """
+                SELECT c.constant_id, c.study_id, c.user_id, c.name, c.description,
+                       c.constant_type, c.value, c.display_order, c.created_at, c.updated_at
+                FROM constant c
+                WHERE c.constant_id = $1 AND c.user_id = $2
+                """,
+                constant_id,
+                user_id,
+            )
+            if not row:
+                return None
+            return {
+                "id": row["constant_id"],
+                "study_id": row["study_id"],
+                "user_id": str(row["user_id"]),
+                "name": row["name"],
+                "description": row["description"],
+                "type": row["constant_type"],
+                "value": row["value"],
+                "display_order": row["display_order"],
+                "created_at": row["created_at"].isoformat(),
+                "updated_at": row["updated_at"].isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to get constant {constant_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def create_constant(
+        self,
+        constant_id: str,
+        study_id: str,
+        user_id: str,
+        name: str,
+        description: str,
+        constant_type: str,
+        value: dict,
+        display_order: int = 0,
+    ) -> Dict:
+        """Create a new constant."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            row = await conn.fetchrow(
+                """
+                INSERT INTO constant (constant_id, study_id, user_id, name, description, constant_type, value, display_order)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING constant_id, study_id, user_id, name, description, constant_type, value, display_order, created_at, updated_at
+                """,
+                constant_id,
+                study_id,
+                user_id,
+                name,
+                description,
+                constant_type,
+                json.dumps(value),
+                display_order,
+            )
+            return {
+                "id": row["constant_id"],
+                "study_id": row["study_id"],
+                "user_id": str(row["user_id"]),
+                "name": row["name"],
+                "description": row["description"],
+                "type": row["constant_type"],
+                "value": row["value"],
+                "display_order": row["display_order"],
+                "created_at": row["created_at"].isoformat(),
+                "updated_at": row["updated_at"].isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to create constant: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def update_constant(
+        self,
+        constant_id: str,
+        user_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        value: Optional[dict] = None,
+        display_order: Optional[int] = None,
+    ) -> Dict:
+        """Update an existing constant."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+
+            # Build dynamic update query
+            updates = []
+            params = []
+            param_idx = 1
+
+            if name is not None:
+                updates.append(f"name = ${param_idx}")
+                params.append(name)
+                param_idx += 1
+
+            if description is not None:
+                updates.append(f"description = ${param_idx}")
+                params.append(description)
+                param_idx += 1
+
+            if value is not None:
+                updates.append(f"value = ${param_idx}")
+                params.append(json.dumps(value))
+                param_idx += 1
+
+            if display_order is not None:
+                updates.append(f"display_order = ${param_idx}")
+                params.append(display_order)
+                param_idx += 1
+
+            updates.append(f"updated_at = CURRENT_TIMESTAMP")
+            params.extend([constant_id, user_id])
+
+            query = f"""
+                UPDATE constant
+                SET {', '.join(updates)}
+                WHERE constant_id = ${param_idx} AND user_id = ${param_idx + 1}
+                RETURNING constant_id, study_id, user_id, name, description, constant_type, value, display_order, created_at, updated_at
+            """
+
+            row = await conn.fetchrow(query, *params)
+            if not row:
+                raise ValueError(f"Constant {constant_id} not found or access denied")
+
+            return {
+                "id": row["constant_id"],
+                "study_id": row["study_id"],
+                "user_id": str(row["user_id"]),
+                "name": row["name"],
+                "description": row["description"],
+                "type": row["constant_type"],
+                "value": row["value"],
+                "display_order": row["display_order"],
+                "created_at": row["created_at"].isoformat(),
+                "updated_at": row["updated_at"].isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Failed to update constant {constant_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def delete_constant(self, constant_id: str, user_id: str) -> bool:
+        """Delete a constant."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            result = await conn.execute(
+                """
+                DELETE FROM constant
+                WHERE constant_id = $1 AND user_id = $2
+                """,
+                constant_id,
+                user_id,
+            )
+            return result == "DELETE 1"
+        except Exception as e:
+            logger.error(f"Failed to delete constant {constant_id}: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+    async def check_constant_in_use(
+        self, study_id: str, constant_name: str, user_id: str
+    ) -> bool:
+        """Check if a constant is referenced in any cohort."""
+        conn = None
+        try:
+            conn = await self.get_connection()
+            # Check if constant name appears in any cohort_data
+            row = await conn.fetchrow(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM cohort
+                    WHERE study_id = $1 
+                      AND user_id = $2
+                      AND cohort_data::text LIKE $3
+                ) AS in_use
+                """,
+                study_id,
+                user_id,
+                f'%"constant": "{constant_name}"%',
+            )
+            return row["in_use"] if row else False
+        except Exception as e:
+            logger.error(f"Failed to check constant usage: {e}")
+            raise
+        finally:
+            if conn:
+                await conn.close()
+
+
+db_manager = DatabaseManager()

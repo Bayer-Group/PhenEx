@@ -1,0 +1,34 @@
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bottomRow {
+  display: flex;
+  gap: 12px;
+}
+
+.card {
+  background: var(--background_color_card, rgba(255, 255, 255, 0.06));
+  border-radius: 8px;
+  padding: 12px 20px;
+}
+
+.distributionCard {
+  composes: card;
+}
+
+.distributionCard > div {
+  height: auto;
+}
+
+.kdeSection {
+  height: 160px;
+  min-height: 0;
+}
+
+.tableHeader {
+  margin-bottom: 8px;
+}

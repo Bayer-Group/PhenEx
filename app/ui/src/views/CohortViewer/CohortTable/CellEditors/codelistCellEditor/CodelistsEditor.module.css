@@ -1,0 +1,9 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 18px 20px 10px;
+}
+
+.editorWrapper {
+}

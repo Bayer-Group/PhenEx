@@ -1,0 +1,366 @@
+/* Center-panel overlay */
+.overlay {
+  position: absolute;
+  inset: 0;
+  /* z-index: 10000; */
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.15s ease-out;
+  background-color: var(--background_color_light);/*rgba(200, 200, 200, 0.2);*/
+}
+
+.overlay.closing {
+  animation: fadeOut 0.15s ease-in forwards;
+}
+
+.topGradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0px;
+  background: linear-gradient(to bottom, var(--background_color_light), transparent);
+  pointer-events: none;
+  z-index: 4;
+}
+
+
+.titleGroup {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 6px;
+  /* background-color: red; */
+}
+
+.titleGroup > * {
+  pointer-events: auto;
+}
+
+.titleBar {
+  padding: 5px 10px;
+  margin-left:40px;
+  pointer-events: auto;
+  background-color: transparent;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  z-index: 10;
+  transition: background-color 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.titleBarScrolled {
+  background-color: var(--background_color_light);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  border: var(--border);
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border: var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  color: var(--color_inactive, #999);
+  padding: 0 8px 0px 4px;
+  flex-shrink: 0;
+  pointer-events: auto;
+  transition: color 0.15s;
+  animation: backButtonIn 0.3s ease-out both;
+  animation-delay: 0.15s;
+  position: absolute;
+  height:40px
+  /* margin-top:30px; */
+}
+
+.backButton:hover {
+  color: var(--color_accent_blue, #2563eb);
+}
+
+@keyframes backButtonIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+
+.rowTitleLabel {
+  position: absolute;
+  top: 60px;
+  left: 10px;
+  z-index: 10;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: black;
+  font-size: var(--font_size_pagetitle, 18px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 6px 0 0;
+  pointer-events: auto;
+  background-color: white;
+  border: var(--border);
+  padding: 0px 10px;
+  pointer-events: auto;
+  background-color: white;
+  border-radius: 10px;
+  border: var(--border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+
+}
+
+.scroller {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  position: relative;
+  z-index: 2;
+}
+
+.navPillContainer {
+  position: absolute;
+  bottom: 30px;
+  right: 200px;
+  z-index: 10;
+}
+
+.navPill {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  background-color: white;
+  border: var(--border);
+  box-shadow: 0 4px 16px var(--background_color_dark);
+  padding: 10px 10px;
+  transition: transform 0.15s, box-shadow 0.15s;
+  
+  background: hsl(30, 60%, 94%, 0.8);
+  border: 2px solid var(--line-color);
+  border-radius:30px;
+  box-shadow: 0 8px 30px hsl(30, 18%, 80%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.navPill:hover{
+  transform: scale(1.05);
+}
+
+.navArrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color_inactive, #999);
+  padding: 10px 12px;
+  border-radius: 20px;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.navArrow:hover:not(:disabled) {
+  color: var(--color_accent_blue, #2563eb);
+  background-color: rgba(37, 99, 235, 0.06);
+}
+
+.navArrow:focus{
+  outline: none;
+}
+
+.navArrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.cardColumn {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Horizontal layout: card on the left, comments on the right */
+.cellInner {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Comment sidebar (inside TwoPanelView right panel) ────────────────── */
+
+.commentsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 5vh 40px 32px 40px;
+  box-sizing: border-box;
+  font-family: "IBMPlexSans-regular", sans-serif;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ── Compact mode (left panel hidden) ────────────────────────────────── */
+
+.cardColumnCompact {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.commentsAbove {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+
+.fakeDataLabel{
+ position: absolute;
+  bottom: 50px;
+  right: 40px;
+  z-index: 3;
+  pointer-events: none;
+  padding: 5px 10px;
+  background-color: white;
+  border-radius: 10px;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: var(--font_size_breadcrumb, 14px);
+  color: blue;
+  letter-spacing: 0.1em;
+  border: var(--border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+
+}
+
+/* ── Comment bar positioning at bottom of overlay ────────────────────── */
+
+.commentBarContainer {
+  position: absolute;
+  bottom:30px;
+  z-index: 10;
+  right:20px;
+
+}
+
+/* ── Outline panel (slideover) ───────────────────────────────────────── */
+
+.outlinePanel {
+  display: flex;
+  flex-direction: column;
+  padding: 10vh 16px 32px 16px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.outlineCloseBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.outlineCloseBtn:hover {
+  background: #eee;
+  color: #333;
+}
+
+.outlineItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 6px;
+  transition: background 0.1s;
+}
+
+.outlineItem:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.outlineItemActive {
+  background: rgba(0, 0, 0, 0.08);
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}
+
+
+/* ── FlexLayout styling ──────────────────────────────────────────────── */
+.page :global(.flexlayout__layout) {
+  --color-background: green;
+  border-radius: 8px;
+  border: 1px solid green;
+  overflow: hidden;
+}
+
+.page :global(.flexlayout__border_left) {
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.page :global(.flexlayout__border_right) {
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}

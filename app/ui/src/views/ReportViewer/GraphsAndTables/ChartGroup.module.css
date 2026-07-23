@@ -1,0 +1,33 @@
+.chartGroup {
+  width: var(--chart-width, 8000px);
+  border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+  /* padding: calc(10px / var(--pz-scale, 1)); */
+  display: flex;
+  flex-direction: column;
+  /* border-top: 1px solid var(--line-color, #e0e0e0); */
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+  border-radius: 20px;
+  margin-bottom: clamp(100px, calc(100px / var(--pz-scale, 1)), 100px);
+  overflow: hidden;
+  padding-left: clamp(50px, calc(50px / var(--pz-scale, 1)), 50px);
+  padding-right: clamp(50px, calc(50px / var(--pz-scale, 1)), 50px);
+  background-color: white;
+}
+
+.title { /* attrition, baseline characteristics, outcomes, etc title */
+  padding-top: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 40px);
+  padding-bottom: min(calc(max(100px * var(--pz-scale, 1), 10px) + 20px), 80px);
+  /* border: calc(1px / var(--pz-scale, 1)) solid var(--line-color); */
+  border-bottom:none;
+  font-size: clamp(50px, calc(18px / var(--pz-scale, 1)), 500px);
+  font-weight: 600;
+  color: black;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.content {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+}

@@ -1,0 +1,374 @@
+import { FC, useState, useCallback, useRef, useMemo } from 'react';
+import { type ColorUsage } from '../CohortSelector/ColorPicker';
+import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import {
+  getSelectionColor,
+  isSpacer,
+  isCohortSelection,
+  generateGroupColors,
+  getCohortLabelParts,
+  type LegendItem,
+  type LegendSelection,
+  type LegendSpacer,
+  type CohortDescriptions,
+  type ColorOverrides,
+  type GroupColorConfig,
+} from '../../types';
+import { LegendRow } from './Row/LegendRow';
+import { LegendSpacerRow } from './Row/LegendSpacerRow';
+import { FigureLegendControls } from './FigureLegendControls';
+import { FigureLegendSets } from './FigureLegendSets';
+import { useFigureLegendSets, type FigureLegendSetData } from './figureLegendSetStore';
+import styles from './FigureLegend.module.css';
+
+interface FigureLegendProps {
+  items: LegendItem[];
+  onChange: (items: LegendItem[]) => void;
+  cohortDescriptions?: CohortDescriptions;
+  colorOverrides?: ColorOverrides;
+  onSetColor?: (cohortName: string, color: string) => void;
+  /** Bulk-replace all color overrides (used when applying a saved legend set). */
+  onReplaceColorOverrides?: (overrides: ColorOverrides) => void;
+  /** Run this legend belongs to; enables saved legend sets when provided. */
+  runId?: string;
+  isFloating?: boolean;
+  /** Pop the legend out to (or dock it back from) a floating window. */
+  onToggleFloat?: () => void;
+}
+
+function getLabelParts(
+  sel: LegendSelection,
+  cohortDescriptions?: CohortDescriptions,
+): { parent: string; sub: string | null } {
+  return getCohortLabelParts(
+    sel.cohortName,
+    (name) => cohortDescriptions?.[name]?.display_name,
+  );
+}
+
+function makeSpacerId(): string {
+  return `spacer-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export const FigureLegend: FC<FigureLegendProps> = ({ items, onChange, cohortDescriptions, colorOverrides, onSetColor, onReplaceColorOverrides, runId, isFloating, onToggleFloat }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const dragIndexRef = useRef<number | null>(null);
+  // The drop indicator: `index` is the gap where the item will be inserted
+  // (0 = before item 0, ..., n = after last item) and `top` is the overlay's
+  // pixel offset within the card so it never shifts the row layout.
+  const [dropLine, setDropLine] = useState<{ index: number; top: number } | null>(null);
+
+  // ── Saved legend sets ──────────────────────────────────────────────────
+  // A change to the ordered items or a cohort color is committed both to the
+  // report (via `onChange` / `onSetColor`) and, when a set is active, into that
+  // set so it always mirrors the live arrangement.
+  const sets = useFigureLegendSets(runId ?? '__no_run__');
+  const activeSetId = runId ? sets.activeSetId : null;
+
+  const commitItems = useCallback(
+    (next: LegendItem[]) => {
+      onChange(next);
+      if (activeSetId) sets.updateSetData(activeSetId, { items: next, colorOverrides: colorOverrides ?? {} });
+    },
+    [onChange, activeSetId, sets, colorOverrides],
+  );
+
+  const commitColor = useCallback(
+    (cohortName: string, color: string) => {
+      onSetColor?.(cohortName, color);
+      if (activeSetId) {
+        const nextColors = { ...(colorOverrides ?? {}), [cohortName]: color };
+        sets.updateSetData(activeSetId, { items, colorOverrides: nextColors });
+      }
+    },
+    [onSetColor, activeSetId, sets, colorOverrides, items],
+  );
+
+  // Apply a two-tone ramp across every currently selected cohort at once. The
+  // number of generated colors equals the number of selected cohorts, and each
+  // color is assigned in display order. Unlike the cohort selector's group
+  // action (which ramps a single cohort's subcohorts), this spans all cohorts.
+  const handleApplyGroupColor = useCallback(
+    (config: GroupColorConfig) => {
+      const cohortItems = items.filter(isCohortSelection);
+      if (cohortItems.length === 0) return;
+      const colors = generateGroupColors(config, cohortItems.length);
+      const nextOverrides = { ...(colorOverrides ?? {}) };
+      cohortItems.forEach((it, i) => {
+        nextOverrides[it.cohortName] = colors[i];
+      });
+      if (onReplaceColorOverrides) onReplaceColorOverrides(nextOverrides);
+      else cohortItems.forEach((it, i) => onSetColor?.(it.cohortName, colors[i]));
+      if (activeSetId) sets.updateSetData(activeSetId, { items, colorOverrides: nextOverrides });
+    },
+    [items, colorOverrides, onReplaceColorOverrides, onSetColor, activeSetId, sets],
+  );
+
+  // Seed the group picker from the first and last selected cohort's effective
+  // colors so reopening it reflects the current ramp.
+  const groupColorValue = useMemo<GroupColorConfig | undefined>(() => {
+    const cohortItems = items.filter(isCohortSelection);
+    if (cohortItems.length === 0) return undefined;
+    const toRgb = (c: string) => c.replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)[^)]*\)/, 'rgb($1, $2, $3)');
+    const first = cohortItems[0];
+    const last = cohortItems[cohortItems.length - 1];
+    return {
+      mode: 'two-color',
+      startColor: toRgb(getSelectionColor(first, colorOverrides)),
+      endColor: last !== first ? toRgb(getSelectionColor(last, colorOverrides)) : undefined,
+    };
+  }, [items, colorOverrides]);
+
+  // Build the "used colors" list for a given cohort's picker: every other
+  // cohort's effective color, so the picker can blur out taken colors.
+  const usedColorsFor = useCallback(
+    (cohortName: string): ColorUsage[] =>
+      items.flatMap((it) =>
+        isCohortSelection(it) && it.cohortName !== cohortName
+          ? [{ color: getSelectionColor(it, colorOverrides), cohortLabel: getLabelParts(it, cohortDescriptions).parent }]
+          : [],
+      ),
+    [items, colorOverrides, cohortDescriptions],
+  );
+
+  const handleDragStart = useCallback((index: number) => {
+    dragIndexRef.current = index;
+  }, []);
+
+  // Resolve the drop gap (and overlay position) from the pointer's Y against the
+  // actual row rects. Reading live rects keeps this correct regardless of scroll.
+  const computeDropLine = useCallback(
+    (clientY: number): { index: number; top: number } | null => {
+      const card = cardRef.current;
+      if (!card) return null;
+      const cardTop = card.getBoundingClientRect().top;
+      const rows = Array.from(card.querySelectorAll<HTMLElement>('[data-drop-index]'));
+      for (const row of rows) {
+        const rect = row.getBoundingClientRect();
+        if (clientY < rect.top + rect.height / 2) {
+          return { index: Number(row.dataset.dropIndex), top: rect.top - cardTop };
+        }
+      }
+      const last = rows[rows.length - 1];
+      return { index: items.length, top: last ? last.getBoundingClientRect().bottom - cardTop : 0 };
+    },
+    [items.length],
+  );
+
+  // Drag-over/drop live on the card, not individual rows, so releasing anywhere
+  // in the list (including over the indicator gap) always lands a valid drop.
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (dragIndexRef.current == null) return;
+      e.preventDefault();
+      setDropLine(computeDropLine(e.clientY));
+    },
+    [computeDropLine],
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const from = dragIndexRef.current;
+      const target = computeDropLine(e.clientY);
+      dragIndexRef.current = null;
+      setDropLine(null);
+      if (from == null || target == null) return;
+      // Resolve insertion index accounting for the removal of `from`
+      const insertAt = target.index > from ? target.index - 1 : target.index;
+      if (insertAt === from) return;
+      const next = [...items];
+      const [moved] = next.splice(from, 1);
+      next.splice(insertAt, 0, moved);
+      commitItems(next);
+    },
+    [items, commitItems, computeDropLine],
+  );
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Clear the indicator only when the pointer actually leaves the card.
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setDropLine(null);
+    }
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    dragIndexRef.current = null;
+    setDropLine(null);
+  }, []);
+
+  const handleAddSpacer = useCallback(() => {
+    const spacer: LegendSpacer = { kind: 'spacer', id: makeSpacerId(), size: 1 };
+    commitItems([...items, spacer]);
+  }, [items, commitItems]);
+
+  const handleSetSpacerSize = useCallback(
+    (index: number, size: 1 | 2 | 3 | 4) => {
+      const next = items.map((it, i) =>
+        i === index && isSpacer(it) ? { ...it, size } : it,
+      );
+      commitItems(next);
+    },
+    [items, commitItems],
+  );
+
+  const handleSetSpacerLabel = useCallback(
+    (index: number, label: string) => {
+      const next = items.map((it, i) =>
+        i === index && isSpacer(it) ? { ...it, label } : it,
+      );
+      commitItems(next);
+    },
+    [items, commitItems],
+  );
+
+  const handleRemoveSpacer = useCallback(
+    (index: number) => {
+      commitItems(items.filter((_, i) => i !== index));
+    },
+    [items, commitItems],
+  );
+
+  const handleRemoveCohort = useCallback(
+    (index: number) => {
+      commitItems(items.filter((_, i) => i !== index));
+    },
+    [items, commitItems],
+  );
+
+  const cohortCount = items.filter((it) => !isSpacer(it)).length;
+
+  // Apply a full set (order + spacers + colors) to the live report.
+  const applyData = useCallback(
+    (data: FigureLegendSetData) => {
+      onChange(data.items);
+      onReplaceColorOverrides?.(data.colorOverrides);
+    },
+    [onChange, onReplaceColorOverrides],
+  );
+
+  const handleActivateSet = useCallback(
+    (setId: string) => {
+      // Preserve the live working draft before leaving it for a named set.
+      if (sets.activeSetId === null) sets.setScratch({ items, colorOverrides: colorOverrides ?? {} });
+      const set = sets.sets.find((s) => s.id === setId);
+      if (!set) return;
+      applyData(set.data);
+      sets.setActive(setId);
+    },
+    [sets, items, colorOverrides, applyData],
+  );
+
+  const handleActivateScratch = useCallback(() => {
+    const data = sets.scratch ?? { items, colorOverrides: colorOverrides ?? {} };
+    applyData(data);
+    sets.setActive(null);
+  }, [sets, items, colorOverrides, applyData]);
+
+  const handleSaveNewSet = useCallback(() => {
+    const existing = new Set(sets.sets.map((s) => s.name));
+    let name = 'Saved set (double click to rename)';
+    for (let n = 2; existing.has(name); n++) name = `Saved set ${n} (double click to rename)`;
+    sets.createSet(name, { items, colorOverrides: colorOverrides ?? {} });
+  }, [sets, items, colorOverrides]);
+
+  if (cohortCount === 0) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.empty}>No cohorts selected. Select cohorts in the Cohorts tab.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.container}>
+            <div className={`${styles.topGradient}${isFloating ? ` ${styles.topGradientFloating}` : ''}`} />
+
+          <div className={styles.headerRow}>
+            {/* <span className={styles.hint}>Drag to reorder</span> */}
+            <FigureLegendControls
+              colorValue={groupColorValue}
+              onApplyColor={handleApplyGroupColor}
+              disabled={!onSetColor && !onReplaceColorOverrides}
+              isFloating={isFloating}
+              onToggleFloat={onToggleFloat}
+            />
+          </div>
+
+      <div className={styles.scrollRegion}>
+        <div ref={scrollRef} className={`${styles.scrollContent}${isFloating ? ` ${styles.scrollContentFloating}` : ''}`}>
+          <div
+            ref={cardRef}
+            className={`${styles.card}${isFloating ? ` ${styles.cardFloating}` : ''}`}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragLeave={handleDragLeave}
+          >
+            {dropLine && <div className={styles.dropLine} style={{ top: dropLine.top }} />}
+            {items.map((item, i) => {
+              if (isSpacer(item)) {
+                return (
+                  <LegendSpacerRow
+                    key={item.id}
+                    item={item}
+                    index={i}
+                    onDragStart={() => handleDragStart(i)}
+                    onDragEnd={handleDragEnd}
+                    onRemove={() => handleRemoveSpacer(i)}
+                    onSetSize={(size) => handleSetSpacerSize(i, size)}
+                    onSetLabel={(label) => handleSetSpacerLabel(i, label)}
+                  />
+                );
+              }
+
+              const color = getSelectionColor(item, colorOverrides);
+              const { parent, sub } = getLabelParts(item, cohortDescriptions);
+              return (
+                <LegendRow
+                  key={item.cohortName}
+                  index={i}
+                  isDragging={dragIndexRef.current === i}
+                  color={color}
+                  parent={parent}
+                  sub={sub}
+                  onDragStart={() => handleDragStart(i)}
+                  onDragEnd={handleDragEnd}
+                  onRemove={() => handleRemoveCohort(i)}
+                  onColorChange={onSetColor ? (c) => commitColor(item.cohortName, c) : undefined}
+                  usedColors={usedColorsFor(item.cohortName)}
+                />
+              );
+            })}
+          </div>
+          <button type="button" className={styles.addSpacerButton} onClick={handleAddSpacer}>
+            + Add spacer
+          </button>
+        </div>
+        <div className={styles.scrollbarRegion}>
+          <SimpleCustomScrollbar
+            targetRef={scrollRef}
+            orientation="vertical"
+            marginTop={40}
+            marginBottom={10}
+            marginToEnd={5}
+            classNameTrack={styles.scrollBarTrack}
+            classNameThumb={styles.scrollBarThumb}
+            showOnHover={true}
+          />
+        </div>
+      </div>
+      {runId && (
+        <FigureLegendSets
+          sets={sets.sets}
+          activeSetId={sets.activeSetId}
+          onActivateSet={handleActivateSet}
+          onActivateScratch={handleActivateScratch}
+          onSaveNewSet={handleSaveNewSet}
+          onRenameSet={sets.renameSet}
+          onDeleteSet={sets.deleteSet}
+        />
+      )}
+    </div>
+  );
+};

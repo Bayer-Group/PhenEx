@@ -1,0 +1,10 @@
+.container {
+  width: 600px;
+}
+
+.title {
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 8px;
+}

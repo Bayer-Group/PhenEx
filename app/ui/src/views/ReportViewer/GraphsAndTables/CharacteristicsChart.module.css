@@ -1,0 +1,299 @@
+/* ── CharacteristicsChart layout ──────────────────────────────────────── */
+
+.container {
+  user-select: none;
+}
+
+/* ── Shared row ──────────────────────────────────────────────────────── */
+
+.row {
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  margin-bottom: min(calc(max(10px * var(--pz-scale, 1), 10px) + 20px), 20px);
+  padding-right: min(calc(max(200px * var(--pz-scale, 1), 10px) + 40px), 200px);
+  border: calc(1px / var(--pz-scale, 1)) solid transparent;
+  border-radius: calc(8px / var(--pz-scale, 1));
+}
+
+.numericRow {
+  position: relative;
+  border-radius: calc(8px / var(--pz-scale, 1));
+  display: flex;
+  align-items: stretch;
+  min-height: clamp(200px, calc(300px / var(--pz-scale, 1)), 130px);
+  border: calc(1px / var(--pz-scale, 1)) solid transparent;
+}
+
+.categoricalRow{
+  position: relative;
+  border-radius: calc(8px / var(--pz-scale, 1));
+  display: flex;
+  align-items: stretch;
+  min-height: clamp(300px, calc(400px / var(--pz-scale, 1)), 430px);
+  border: calc(1px / var(--pz-scale, 1)) solid transparent;
+}
+
+.rowTooltip {
+  position: absolute;
+  top: calc(8px / var(--pz-scale, 1));
+  right: 40%;
+  font-size: calc(14px / var(--pz-scale, 1)) ;
+  background-color: white;
+  color: black;
+  pointer-events: none;
+  border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+  padding: calc(2px / var(--pz-scale, 1)) calc(8px / var(--pz-scale, 1));
+  border-radius: calc(5px / var(--pz-scale, 1));
+
+  font-family: "IBMPlexSans-regular", sans-serif;
+  opacity: 0;
+  transition: opacity 0.15s;
+  transform: translateY(-150%);
+  z-index:1000;
+}
+
+.row:hover .rowTooltip,
+.numericRow:hover .rowTooltip {
+  opacity: 1;
+}
+
+.row:hover{
+  border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+}
+
+.numericRow:hover{
+    border: calc(1px / var(--pz-scale, 1)) solid var(--line-color);
+
+}
+
+.nameCell {
+  width: clamp(350px, calc(450px / var(--pz-scale, 1)), 2300px);
+  font-size: clamp(50px, calc(18px / var(--pz-scale, 1)), 500px);
+  flex-shrink: 0;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: #333;
+  line-height: 1.25;
+  word-break: break-word;
+  white-space: normal;
+  padding: 5px 20px 0px 20px;
+  padding-left: clamp(200px, calc(100px / var(--pz-scale, 1)), 200px);
+  padding-right: calc(30px / var(--pz-scale, 1));
+  padding-bottom: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 20px);
+  padding-top: min(calc(max(20px * var(--pz-scale, 1), 10px) + 20px), 20px);
+  text-align: right;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: top;
+  background-color: transparent;
+}
+
+.numericNameCell {
+    width: calc(300px / var(--pz-scale, 1));
+  height: clamp(350px, calc(200px / var(--pz-scale, 1)), 1000px);
+
+  padding-right: calc(50px / var(--pz-scale, 1));
+  text-align: left;
+  padding-left: min(calc(max(40px * var(--pz-scale, 1), 10px) + 20px), 40px);
+}
+
+.categoricalNameCell{
+    width: calc(300px / var(--pz-scale, 1));
+  height: clamp(350px, calc(200px / var(--pz-scale, 1)), 1000px);
+
+  padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 10px);
+  text-align: left;
+  padding-left: min(calc(max(40px * var(--pz-scale, 1), 10px) + 20px), 40px);
+
+}
+
+.chartCell {
+  width: clamp(50px, calc(175px / var(--pz-scale, 1)), 2000px);
+  padding-right: min(calc(max(150px * var(--pz-scale, 1), 10px) + 20px), 20px);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+
+.chartCell:hover{
+  border: calc(1px / var(--pz-scale, 1)) solid black;
+}
+
+.booleanChartCell {
+  flex: 1;
+  min-width: clamp(100px, calc(200px / var(--pz-scale, 1)), 1500px);
+}
+/* ── Categorical group ───────────────────────────────────────────────── */
+
+.categoricalGroup {
+  border-bottom: 1px solid var(--line-color, #e0e0e0);
+}
+
+.categoricalGroup .row {
+  border-bottom: none;
+}
+
+.categoricalHeader {
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-size: clamp(16px, calc(12px / var(--pz-scale, 1)), 20px);
+  color: #666;
+  padding: 12px 10px 4px 20px;
+  text-align: right;
+  width: 350px;
+  box-sizing: border-box;
+}
+
+.subNameCell {
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: clamp(14px, calc(18px / var(--pz-scale, 1)), 18px);
+  color: #555;
+  padding-left: 40px;
+}
+
+/* ── Numeric row ─────────────────────────────────────────────────────── */
+
+
+
+.kdeCell {
+  width: calc(500px / var(--pz-scale, 1));
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0px 0;
+  box-sizing: border-box;
+  overflow: visible;
+  margin-right:20px;
+  margin-left: 20px;
+}
+
+.kdeSvg {
+  display: block;
+}
+
+.kdeEmpty {
+  font-size: 11px;
+  color: #bbb;
+  font-style: italic;
+}
+
+/* ── Stats grid (numeric rows) ────────────────────────────────────────── */
+
+.statsGrid {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  align-self: center;
+}
+
+.statsHeaderRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.statsHeaderCell {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200,200,200,.8);
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.statsRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.statsRow:hover {
+  background: rgba(211, 213, 215, 0.04);
+}
+
+.statsRow + .statsRow {
+  border-top: 1px solid var(--line-color, #e0e0e0);
+}
+
+.statsCohortCell {
+  width: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.statDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statsValueCell {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #333;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.statsPctCell {
+  width: 60px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #333;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.statsPctHeaderCell {
+  width: 60px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200,200,200,.8);
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.statsNCell {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #333;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.statsNHeaderCell {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200,200,200,.8);
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}

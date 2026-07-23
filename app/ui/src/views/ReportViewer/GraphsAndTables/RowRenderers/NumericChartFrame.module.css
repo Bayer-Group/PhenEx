@@ -1,0 +1,85 @@
+.frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* ── Grid lines ──────────────────────────────────────────────────────── */
+.gridOverlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.gridLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--gridline-color, #e0e0e0);
+  opacity: 0.5;
+}
+
+/* ── Tick header ─────────────────────────────────────────────────────── */
+.headerRow {
+  position: absolute;
+  height: 20px;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  overflow: visible;
+}
+
+.headerTick {
+  position: absolute;
+  top: 20px;
+  transform: translate(-50%, 0);
+  font-size: var(--font_size_infotext) !important;
+  color: var(--text_color_notfocus) !important;
+  white-space: nowrap;
+  padding: 0 2px;
+  /* background-color: rgba(255, 255, 255, 0.7); */
+  border-radius: 3px;
+  z-index: 100;
+  font-family: "IBMPlexSans-regular" !important;
+}
+
+/* ── Hover crosshair ─────────────────────────────────────────────────── */
+.hoverLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--text_color_notfocus, #888);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 10;
+  transform: translateX(-50%);
+}
+
+.hoverLabel {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 200%);
+  font-size: var(--font_size_infotext);
+  font-family: "IBMPlexSans-regular" !important;
+  color: var(--text_color_notfocus);
+  background-color: var(--background_color, #fff);
+  white-space: nowrap;
+  padding: 0 3px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* ── Content (renders above grid) ────────────────────────────────────── */
+.content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+}
+
