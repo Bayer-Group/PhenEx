@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './NARenderer.module.css';
+import { getHierarchicalBackgroundColor } from './hierarchicalCellColors';
 
 interface NARendererProps {
   value: any;
@@ -12,9 +13,17 @@ export const NARenderer: React.FC<NARendererProps> = ({ data }) => {
     ? `var(--color_${data.effective_type}_dim)` 
     : undefined;
 
-  const containerStyle: React.CSSProperties = borderColorVar 
-    ? { borderTopColor: borderColorVar, borderRightColor: borderColorVar } 
-    : {};
+  const backgroundColor = getHierarchicalBackgroundColor(
+    data?.effective_type,
+    data?.hierarchical_index
+  );
+
+  const containerStyle: React.CSSProperties = {
+    ...(borderColorVar
+      ? { borderTopColor: borderColorVar, borderRightColor: borderColorVar }
+      : {}),
+    ...(backgroundColor ? { backgroundColor } : {}),
+  };
 
   return (
     <div 

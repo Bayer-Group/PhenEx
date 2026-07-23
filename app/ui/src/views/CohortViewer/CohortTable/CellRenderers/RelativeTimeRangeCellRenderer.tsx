@@ -41,7 +41,7 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
   if (props.data.type === 'entry') {
     return (
       <PhenexCellRenderer {...props}>
-        <NARenderer value={props.value} />
+        <NARenderer value={props.value} data={props.data} />
       </PhenexCellRenderer>
     );
   }

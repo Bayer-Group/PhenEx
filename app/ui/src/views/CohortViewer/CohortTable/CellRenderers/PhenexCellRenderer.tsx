@@ -4,37 +4,9 @@ import styles from './PhenexCellRenderer.module.css';
 import { NARenderer } from './NARenderer';
 import { columnNameToApplicablePhenotypeMapping } from '../../../../assets/phenotype_applicable_parameters';
 import typeStyles from '../../../../styles/study_types.module.css';
+import { getHierarchicalBackgroundColor } from './hierarchicalCellColors';
 
-/**
- * Utility function to calculate alpha value based on hierarchical_index depth
- * Used across all cell renderers for consistent hierarchical styling
- */
-export const getAlphaForLevel = (hierarchicalIndex: string | undefined): string => {
-  if (!hierarchicalIndex) return '33'; // Default dim alpha (hex: 33 ≈ 0.2)
-  const depth = hierarchicalIndex.split('.').length;
-  // Level 1: 33 (0.2), Level 1.1: 20 (0.125), Level 1.1.1: 10 (0.06)
-  if (depth === 1) return '25';
-  if (depth === 2) return '15';
-  if (depth === 3) return '10';
-  return '08'; // For deeper levels
-};
-
-/**
- * Utility function to generate background color with hierarchical alpha
- * Uses CSS color-mix to blend type color with transparent based on depth
- */
-export const getHierarchicalBackgroundColor = (
-  effectiveType: string | undefined,
-  hierarchicalIndex: string | undefined
-): string | undefined => {
-  if (!effectiveType) return undefined;
-  
-  const alpha = getAlphaForLevel(hierarchicalIndex);
-  const colorVar = `--color_${effectiveType}`;
-  
-  // Use CSS custom property with hierarchical alpha
-  return `color-mix(in srgb, var(${colorVar}) ${parseInt(alpha, 16) / 255 * 100}%, transparent)`;
-};
+export { getAlphaForLevel, getHierarchicalBackgroundColor } from './hierarchicalCellColors';
 
 export interface PhenexCellRendererProps extends ICellRendererParams {
   children?: React.ReactNode;
@@ -58,7 +30,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
     showRightBorder = true,
     showBottomBorder = false,
     showLeftBorder = false,
-    colorBackground = true,
+    colorBackground = false,
     colorBorder = true,
     showButtons = true,
     justify = 'right',
@@ -107,18 +79,13 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const isMissing = props.value === 'missing';
 
   // Check if data has explicit color properties (override component props)
-  const shouldColorBackground = props.data?.colorCellBackground !== undefined 
-    ? props.data.colorCellBackground 
-    : colorBackground;
   
   const shouldColorBorder = props.data?.colorCellBorder !== undefined 
     ? props.data.colorCellBorder 
     : colorBorder;
 
   // Get dynamic background color with hierarchical alpha
-  const backgroundColor = shouldColorBackground
-    ? getHierarchicalBackgroundColor(props.data?.effective_type, props.data?.hierarchical_index)
-    : 'transparent';
+  const backgroundColor ='transparent';
   const textColorClass = isMissing ? (typeStyles[`${props.data.effective_type}_text_color`] || '') : '';
 
   // Get the border color CSS variable
@@ -142,7 +109,7 @@ export const PhenexCellRenderer: React.FC<PhenexCellRendererProps> = props => {
   const combinedStyle: React.CSSProperties = {
     ...containerStyle,
     ...borderColors,
-    ...(backgroundColor ? { backgroundColor } : {}),
+    // ...(backgroundColor ? { backgroundColor } : {}),
     ...justifyStyle,
   };
 

@@ -96,7 +96,7 @@ export const CohortCardCell: React.FC<CohortCardCellProps> = ({
   const cellStyle: React.CSSProperties = {
     width: width !== undefined ? `${width}px` : undefined,
     flex: colDef.flex ? `${colDef.flex} 1 0` : '0 0 auto',
-    ...(isNA ? { backgroundColor: 'var(--background_color_light)' } : {}),
+    ...({ backgroundColor: 'var(--background_color_light)' }),
     ...(colDef.cellStyle && typeof colDef.cellStyle !== 'function' ? colDef.cellStyle : {}),
     ...(isEditing ? { position: 'relative' } : {}),
   };

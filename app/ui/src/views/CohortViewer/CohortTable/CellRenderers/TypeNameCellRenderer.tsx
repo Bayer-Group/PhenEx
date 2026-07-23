@@ -47,6 +47,10 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = (props) => {
       ? `var(--color_${props.data.effective_type}_dim)`
       : 'transparent';
 
+  const textColorVar = props.data?.effective_type
+    ? `var(--color_${props.data.effective_type})`
+    : undefined;
+
   const isSelected = props.node?.isSelected();
   const fontColor = typeStyles[`${props.data?.effective_type}_text_color`] || '';
   const hasChildren = !!props.data?._hasChildren;
@@ -121,7 +125,8 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = (props) => {
         style={{
           borderTopColor: borderColorVar,
           borderLeft: `1px solid ${borderColorVar}`,
-          ...(backgroundColor ? { backgroundColor } : {}),
+          color: textColorVar,
+          // ...(backgroundColor ? { backgroundColor } : {}),
         }}
       >
         {/* Selection indicator bar */}
@@ -156,6 +161,7 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = (props) => {
           ref={labelContainerRef}
           className={styles.nameArea}
           style={getIndentationStyle()}
+
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           onDragStart={handleDragStart}
