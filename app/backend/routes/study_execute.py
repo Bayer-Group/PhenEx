@@ -212,6 +212,7 @@ async def execute_study(request: Request):
                     cohort_data.setdefault("name", cohort_name)
                     print(f"Preparing cohort: {cohort_name}")
                     processed = prepare_cohort_for_phenex(cohort_data, user_id)
+                    processed["return_index"] = "first"
                     px_cohort = from_dict(processed)
                     print(f"  -> created cohort object with name: {px_cohort.name!r}")
                     px_cohort.database = px_database

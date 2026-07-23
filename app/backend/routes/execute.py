@@ -248,6 +248,7 @@ async def execute_cohort(
                 print("🏥 PREPARING COHORT FOR PHENEX...")
                 logger.info("🏥 PREPARING COHORT FOR PHENEX...")
                 processed_cohort = prepare_cohort_for_phenex(cohort, user_id)
+                processed_cohort["return_index"] = "first"
                 print("🏥 COHORT PREPARATION COMPLETED!")
                 logger.info("🏥 COHORT PREPARATION COMPLETED!")
 
