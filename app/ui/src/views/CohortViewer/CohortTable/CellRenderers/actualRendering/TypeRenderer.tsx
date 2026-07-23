@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './TypeCellRenderer.module.css';
 import typeStyles from '../../../../../styles/study_types.module.css';
+import { formatHierarchicalIndexLabel } from '../formatHierarchicalIndex';
 
 export interface TypeRendererProps {
   value: string | null | undefined;
@@ -31,20 +32,11 @@ export const TypeRenderer: React.FC<TypeRendererProps> = ({
   const level = data?.level || 0;
   const count = data?.count;
   const renderComponentDisplay = () => {
-    if (type === 'component') {
-      if (hierarchicalIndex) {
-        return (
-          <div className={`${styles[`level_${level}`]} ${styles.indexLabel}`}>{hierarchicalIndex}</div>
-        );
-      }
-    }
-    
     if (hierarchicalIndex) {
-        return (
-          <div className={`${styles[`level_${level}`]} ${styles.indexLabel}`}>{hierarchicalIndex}</div>
-        );
+      const label = formatHierarchicalIndexLabel(hierarchicalIndex, level);
+      return <div className={`${styles[`level_${level}`]} ${styles.indexLabel}`}>{label}</div>;
     }
-    
+
     // For non-components: show type + index
     const displayType = type === 'component' && effectiveType ? effectiveType : value;
     return `${displayType || ''}`;

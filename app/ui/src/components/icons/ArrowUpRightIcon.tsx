@@ -2,6 +2,7 @@ import React from 'react';
 
 interface ArrowUpRightIconProps {
   className?: string;
+  style?: React.CSSProperties;
   onClick?: (e: React.MouseEvent<SVGSVGElement>) => void;
   strokeWidth?: number;
   color?: string;
@@ -10,6 +11,7 @@ interface ArrowUpRightIconProps {
 
 const ArrowUpRightIcon: React.FC<ArrowUpRightIconProps> = ({
   className,
+  style,
   onClick,
   strokeWidth = 3,
   color = 'currentColor',
@@ -22,6 +24,7 @@ const ArrowUpRightIcon: React.FC<ArrowUpRightIconProps> = ({
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
+    style={style}
     onClick={onClick}
     aria-hidden="true"
   >

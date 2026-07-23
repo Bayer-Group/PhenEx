@@ -68,30 +68,14 @@
   margin-left: 4px;
 }
 
-/* ── Left: type / drag widget ─────────────────────────────────────────────── */
-.typeWidget {
-  flex-shrink: 0;
-  position: relative;
+/* ── Hierarchy label: caret + index + name ───────────────────────────────── */
+.hierarchyLabel {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: stretch;
-  pointer-events: auto;
 }
 
-.dragHandle {
-  position: absolute;
-  top: 50%;
-  right: 3px;
-  transform: translateY(-50%);
-  font-size: 10px;
-  color: var(--color_text_dim, rgba(128, 128, 128, 0.5));
-  cursor: grab;
-  pointer-events: auto;
-  user-select: none;
-  line-height: 1;
-  z-index: 1;
-}
-
-/* ── Right: name + description area ──────────────────────────────────────── */
 .nameArea {
   flex: 1;
   min-width: 0;
@@ -107,13 +91,28 @@
 .nameText {
   flex: 1;
   min-width: 0;
-  font-size: var(--font_size_phenotypename);
+  padding-right: 20px;
+  font-size: max(
+    var(--font_size_infotext),
+    calc(var(--font_size_phenotypename) - var(--phenotype-level, 0) * 3px)
+  );
   font-family: 'IBMPlexSans-regular';
   text-wrap: wrap;
   line-height: 1;
   hyphens: auto;
   overflow-wrap: break-word;
   word-break: break-word;
+}
+
+.primaryLabel {
+  padding-left: 20px;
+  text-indent: -20px;
+}
+
+.indexLabel {
+  margin-right: 0.4em;
+  cursor: pointer;
+  font-family: "IBMPlexSans-bold";
 }
 
 .infoText {
@@ -134,7 +133,9 @@
 }
 
 .deleteButton {
-  transition: opacity 0.15s ease, color 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease;
   background: none;
   border: none;
   padding: 3px;
@@ -161,7 +162,10 @@
   cursor: pointer;
   width: 20px;
   height: 20px;
-  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
   opacity: 1;
   color: var(--line-color);
   border-radius: 8px;

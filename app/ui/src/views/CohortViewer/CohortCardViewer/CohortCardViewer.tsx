@@ -1019,6 +1019,9 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
               <div
                 key={`__title_${type}`}
                 className={styles.titleRow}
+                style={{
+                  backgroundColor: getHierarchicalBackgroundColor(type ?? undefined, '1'),
+                }}
                 aria-hidden={panel === 'scroll'}
               >
                 {panel === 'pinned' && <span className={styles.titleLabel}>{label}</span>}
