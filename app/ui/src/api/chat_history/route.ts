@@ -25,6 +25,7 @@ export async function createChatSession(params: {
   study_id?: string;
   title?: string;
   session_id?: string;
+  app_context?: string;
 }): Promise<ChatSession> {
   const response = await api.post('/chat/sessions', params);
   return response.data;
