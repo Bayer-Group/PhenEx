@@ -30,14 +30,22 @@
 
 .addMenuContent {
   padding: 8px;
-  min-width: 240px;
+  min-width: 100px;
+  width: 100px;
 }
 
 /* ─── OptionsMenu ─────────────────────────────────────────────────────────── */
 
+.optionsMenu {
+  width: 100px;
+  box-sizing: border-box;
+}
+
 .optionsMenuContent {
   padding: 8px 4px;
-  min-width: 180px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .optionsMenuDivider {
@@ -51,7 +59,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.optionsMenuItemInner span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .optionsMenuArrow {
@@ -68,9 +86,8 @@
 
 .sectionButton {
   background: var(--color-accent-bright);
-  border: 1px solid transparent;
-  border-radius: 18px;
-  padding: 2px 10px;
+  border-radius: 10px;
+  padding: 2px 4px 2px 4px;
   color: var(--background_color_light);
   font-size: 20px !important;
   font-family: "IBMPlexSans-regular";
@@ -87,20 +104,25 @@
 }
 
 .sectionButton:hover {
-  /* background: var(--color_accent_dark); */
   /* transform: scale(1.05); */
+  /* outline: none; */
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  border: none !important;
 }
 
 .sectionButton:focus {
-  outline: none;
+  /* outline: none;
+  border: none !important; */
 }
 
 .sectionButton.menuShowing,
 .sectionButton:global(.menuShowing) {
   /* transform: scale(1.05); */
 }
+
 .sectionButtonWrapper {
-  margin-right: 10px;
+  margin-right: 5px;
+  margin-left: 5px;
   margin-bottom: 2px;
 }
 
@@ -117,7 +139,7 @@
 
 .sectionMenuContent {
   padding: 8px 4px;
-  min-width: 180px;
+  min-width: 100px;
 }
 
 /* ─── Add Cohort Tooltip ──────────────────────────────────────────────────── */
@@ -129,6 +151,15 @@
   color: white;
 }
 
+.horizontalScrollbar {
+  position: relative;
+  width: 80px;
+  height: 100%;
+  background-color: transparent;
+  border-radius: 3px;
+  cursor: default;
+  border-radius: 10px !important;
+}
 
 .horizontalScrollContainer{
   padding: 4px 4px;
@@ -161,8 +192,13 @@
   opacity: 0.7;
   transform: scale(1.5);
   color: var(--color_accent_blue) !important;
+  background-color: rgba(255, 255, 255, 0.3) !important;
 }
 
+.rightArrowButton{
+  margin-left: 5px;
+  margin-right: 5px;
+}
 
 
 .scrollbarThumb {
@@ -204,12 +240,138 @@
 
 .eyeButton:hover {
   color: white !important;
-  color: var(--color_accent_blue) !important;
-  /* transform: scale(1.1) !important; */
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.1) !important;
 
 }
 
 .eyeButton:focus {
   outline: none;
   border: none;
+}
+
+
+
+.addButton {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--background_color_light);
+  transition: all 0.2s;
+  outline: none;
+  background-color: transparent;
+  background-color: var(--color-accent-bright);
+  border-radius:10px;
+  margin-right: 3px;
+}
+
+
+.addButton:hover {
+  color:white;
+  transform: scale(1.15);
+  background-color: rgba(255, 255, 255, 0.3) !important;
+
+}
+
+.addButton:focus {
+  outline: none;
+}
+
+.addMenuTabsContainer:hover {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  gap: 8px !important;
+}
+
+.addMenuTab {
+  font-size: 12px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.addMenuActiveTab {
+  background-color: var(--color_accent_dark) !important;
+  color: white !important;
+  border-color: var(--color_accent_dark) !important;
+}
+
+.addMenuHoverTab:hover {
+  color: var(--color_accent_blue);
+  border-color: var(--color_accent_blue);
+}
+
+.addMenuItem {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 2px 8px;
+  color: white;
+  font-size: var(--font_size_items);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.addMenuItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+  background: var(--color_accent_blue);
+  color:white;
+  /* transform: translateX(4px); */
+}
+
+.addMenuItem:focus{
+    outline: none;
+}
+
+
+.itemList{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.callToActionNavContent {
+  display: flex;
+  align-items: center;
+  padding-left: 5px;
+  padding-right: 5px;
+  height: 100%;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.finalActionNavContent {
+  display: flex;
+  align-items: center;
+  padding-left: 5px;
+  padding-right: 5px;
+  height: 100%;
+  gap: 2px;
+}
+
+.navDivider {
+  width: 1px;
+  height: 60%;
+  background-color: var(--line-color, rgba(255,255,255,0.15));
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+
+
+.navArrowsContainer{
+  display: flex;
+
+  align-items: center;
+    gap: 10px;
+    margin-right:12px;
+    margin-left:12px;
 }

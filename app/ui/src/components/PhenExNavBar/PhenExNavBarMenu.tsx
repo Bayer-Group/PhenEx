@@ -8,6 +8,7 @@ export interface PhenExNavBarMenuProps {
   anchorElement?: HTMLElement | null;
   children: React.ReactNode;
   menuRef?: React.RefObject<HTMLDivElement>;
+  className?: string;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
   verticalPosition?: 'above' | 'below' | 'alignTop';
@@ -21,6 +22,7 @@ export const PhenExNavBarMenu: React.FC<PhenExNavBarMenuProps> = ({
   anchorElement,
   children,
   menuRef: externalMenuRef,
+  className,
   onMouseEnter,
   onMouseLeave,
   verticalPosition = 'above',
@@ -111,7 +113,7 @@ export const PhenExNavBarMenu: React.FC<PhenExNavBarMenuProps> = ({
     <Portal>
       <div
         ref={menuRef}
-        className={styles.menu}
+        className={`${styles.menu} ${className ?? ''}`}
         style={getMenuPosition()}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}

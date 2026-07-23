@@ -119,6 +119,20 @@ const VisibilityMenu: React.FC<{
 
 // ─── Add Menu (+ button, cohort viewer) ───────────────────────────────────────
 
+const ALL_PHENOTYPE_TYPES = [
+  { type: 'inclusion', label: 'Inclusion' },
+  { type: 'exclusion', label: 'Exclusion' },
+  { type: 'baseline', label: 'Characteristic' },
+  { type: 'outcome', label: 'Outcome' },
+] as const;
+
+const PHENOTYPE_TYPES_BY_SECTION: Record<string, readonly string[]> = {
+  Definition: ['inclusion', 'exclusion'],
+  Characteristics: ['baseline'],
+  Outcomes: ['outcome'],
+  All: ['inclusion', 'exclusion', 'baseline', 'outcome'],
+};
+
 const AddMenu: React.FC<{
   isOpen: boolean;
   onClose: () => void;
@@ -126,16 +140,11 @@ const AddMenu: React.FC<{
   menuRef: React.RefObject<HTMLDivElement>;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
-}> = ({ isOpen, onClose, anchorElement, menuRef, onMouseEnter, onMouseLeave }) => {
+  activeSection: string;
+}> = ({ isOpen, onClose, anchorElement, menuRef, onMouseEnter, onMouseLeave, activeSection }) => {
   const dataService = CohortDataService.getInstance();
-
-  const phenotypeTypes = [
-    { type: 'entry', label: 'Entry' },
-    { type: 'inclusion', label: 'Inclusion' },
-    { type: 'exclusion', label: 'Exclusion' },
-    { type: 'baseline', label: 'Baseline Characteristic' },
-    { type: 'outcome', label: 'Outcome' },
-  ];
+  const allowedTypes = PHENOTYPE_TYPES_BY_SECTION[activeSection] ?? PHENOTYPE_TYPES_BY_SECTION.All;
+  const phenotypeTypes = ALL_PHENOTYPE_TYPES.filter(({ type }) => allowedTypes.includes(type));
 
   return (
     <PhenExNavBarMenu
@@ -147,12 +156,12 @@ const AddMenu: React.FC<{
       onMouseLeave={onMouseLeave}
       verticalPosition="above"
       horizontalAlignment="center"
-      gap={9}
+      gap={11}
     >
       <div className={localStyles.addMenuContent}>
-        <div className={styles.itemList}>
+        <div className={localStyles.itemList}>
           {phenotypeTypes.map(({ type, label }) => (
-            <button key={type} onClick={() => dataService.addPhenotype(type)} className={styles.addMenuItem}>
+            <button key={type} onClick={() => dataService.addPhenotype(type)} className={localStyles.addMenuItem}>
               {label}
             </button>
           ))}
@@ -178,13 +187,14 @@ const OptionsMenu: React.FC<{
     onClose={onClose}
     anchorElement={anchorElement}
     menuRef={menuRef}
+    className={localStyles.optionsMenu}
     onMouseEnter={onMouseEnter}
     onMouseLeave={onMouseLeave}
     verticalPosition="above"
     horizontalAlignment="center"
   >
     <div className={localStyles.optionsMenuContent}>
-      <div className={styles.itemList}>
+      <div className={localStyles.itemList}>
         {menuItems.map(item => (
           <React.Fragment key={item.type}>
             {item.divider && (
@@ -192,7 +202,7 @@ const OptionsMenu: React.FC<{
             )}
             <button
               onClick={() => item.onClick?.()}
-              className={`${styles.addMenuItem} ${localStyles.optionsMenuItemInner}`}
+              className={`${localStyles.addMenuItem} ${localStyles.optionsMenuItemInner}`}
             >
               <span>{item.label}</span>
               <svg width="14" height="14" viewBox="0 0 48 48" fill="none" className={localStyles.optionsMenuArrow}>
@@ -311,10 +321,10 @@ export const FinalActionNavBar: React.FC<FinalActionNavBarProps> = ({
 
   return (
     <div className={`${localStyles.navBar} ${shadow ? '' : styles.noshadow}`} style={{ height: `${height}px` }}>
-      <div className={styles.finalActionNavContent}>
+      <div className={localStyles.finalActionNavContent}>
 
         {/* ── Left: view navigation (arrows + scrollbar + eye) ────────────── */}
-        <div className={styles.navArrowsContainer}>
+        <div className={localStyles.navArrowsContainer}>
           <button
             ref={leftArrowRef}
             className={localStyles.navArrowButton}
@@ -331,7 +341,7 @@ export const FinalActionNavBar: React.FC<FinalActionNavBarProps> = ({
 
           <button
             ref={rightArrowRef}
-            className={localStyles.navArrowButton}
+            className={`${localStyles.navArrowButton} ${localStyles.rightArrowButton}`}
             onClick={() => { setShowRightArrowTooltip(false); onViewNavigationArrowClicked?.('right'); }}
             onMouseEnter={() => setShowRightArrowTooltip(true)}
             onMouseLeave={() => setShowRightArrowTooltip(false)}
@@ -347,7 +357,7 @@ export const FinalActionNavBar: React.FC<FinalActionNavBarProps> = ({
         <div className={localStyles.horizontalScrollContainer}>
           <div
             ref={scrollBarRef}
-            className={styles.horizontalScrollbar}
+            className={localStyles.horizontalScrollbar}
             onMouseDown={handleMouseDown}
             onMouseEnter={() => setShowThumbTooltip(true)}
             onMouseLeave={() => setShowThumbTooltip(false)}
@@ -397,7 +407,7 @@ export const FinalActionNavBar: React.FC<FinalActionNavBarProps> = ({
 
         <button
           ref={addButtonRef}
-          className={styles.addButton}
+          className={localStyles.addButton}
           onMouseEnter={() => {
             if (isCohortViewer) openAddMenu();
             else if (isStudyViewer) openTooltip();
@@ -452,9 +462,9 @@ export const FinalActionNavBar: React.FC<FinalActionNavBarProps> = ({
         gap={9}
       >
         <div className={localStyles.sectionMenuContent}>
-          <div className={styles.itemList}>
+          <div className={localStyles.itemList}>
             {getShuffledSections().map(section => (
-              <button key={section} onClick={() => handleSectionClick(section)} className={styles.addMenuItem}>
+              <button key={section} onClick={() => handleSectionClick(section)} className={localStyles.addMenuItem}>
                 {section}
               </button>
             ))}
@@ -480,6 +490,7 @@ export const FinalActionNavBar: React.FC<FinalActionNavBarProps> = ({
           menuRef={addMenuRef}
           onMouseEnter={openAddMenu}
           onMouseLeave={closeAddMenu}
+          activeSection={sections[activeTabIndex]}
         />
       )}
 
