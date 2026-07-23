@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styles from './NavBar.module.css';
 import localStyles from './FinalActionNavBar.module.css';
 import { PhenExNavBarMenu } from './PhenExNavBarMenu';
@@ -69,7 +69,18 @@ const VisibilityMenu: React.FC<{
   const [showDescriptions, setShowDescriptions] = useState(true);
   const [showChildren, setShowChildren] = useState(() => dataService.getShowComponents());
   const [componentLevel, setComponentLevel] = useState(() => dataService.getComponentLevel());
+  const [levelOverridesActive, setLevelOverridesActive] = useState(() => dataService.hasLevelOverrides());
   const [showFullCodelists, setShowFullCodelists] = useState(() => dataService.getShowFullCodelists());
+
+  useEffect(() => {
+    const sync = () => {
+      setComponentLevel(dataService.getComponentLevel());
+      setLevelOverridesActive(dataService.hasLevelOverrides());
+      setShowChildren(dataService.getShowComponents());
+    };
+    dataService.addListener(sync);
+    return () => dataService.removeListener(sync);
+  }, [dataService]);
 
   const handleShowChildrenChange = (value: boolean) => {
     setShowChildren(value);
@@ -78,6 +89,7 @@ const VisibilityMenu: React.FC<{
 
   const handleComponentLevelChange = (value: number) => {
     setComponentLevel(value);
+    setLevelOverridesActive(false);
     dataService.setComponentLevel(value);
   };
 
@@ -107,6 +119,7 @@ const VisibilityMenu: React.FC<{
             onChange={handleComponentLevelChange}
             maxLevel={dataService.getMaxComponentLevel()}
             disabled={!showChildren}
+            mixed={levelOverridesActive}
             title="Show components up to this depth"
           />
         </div>

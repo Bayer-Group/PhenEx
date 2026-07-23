@@ -117,6 +117,12 @@ export class CohortModel {
   private _currentFilter: string[] = ['entry', 'inclusion', 'exclusion'];
   private _showComponents: boolean = true;
   private _componentLevel: number = Number.POSITIVE_INFINITY;
+  /**
+   * Per-row depth overrides keyed by phenotype id. Value is the max absolute
+   * component level visible under that node. Cleared whenever the global
+   * component level changes so global and per-row controls mutually override.
+   */
+  private _levelOverrides: Map<string, number> = new Map();
   private _showFullCodelists: boolean = false;
   private _diff_map: Map<string, 'added' | 'modified' | 'deleted'> = new Map();
   private _deleted_phenotypes: any[] = [];
@@ -177,11 +183,11 @@ export class CohortModel {
       const allPhenotypes = this._cohort_data.phenotypes || [];
       // Only include components whose effective_type matches the current filter
       // This ensures we don't show components whose root parent is filtered out
-      const componentPhenotypes = allPhenotypes.filter((row: TableRow) => 
-        row.type === 'component' && 
-        row.effective_type && 
+      const componentPhenotypes = allPhenotypes.filter((row: TableRow) =>
+        row.type === 'component' &&
+        row.effective_type &&
         this._currentFilter.includes(row.effective_type) &&
-        ((row.level ?? 1) <= this._componentLevel)
+        this.isComponentVisibleAtLevel(row)
       );
       if (componentPhenotypes.length > 0) {
         filteredPhenotypes = this.getHierarchicallyOrderedPhenotypes([...filteredPhenotypes, ...componentPhenotypes]);
@@ -193,6 +199,8 @@ export class CohortModel {
       ...phenotype,
       colorCellBackground: true,
       _ai_diff: this._diff_map.get(phenotype.id) ?? undefined,
+      _hasChildren: this._showComponents && this.hasComponentChildren(phenotype.id),
+      _childrenExpanded: this.isRowExpanded(phenotype.id),
     }));
 
     // Append deleted phenotypes so they appear as struck-through rows
@@ -1429,6 +1437,7 @@ export class CohortModel {
 
   public toggleComponentPhenotypes(show: boolean): void {
     this._showComponents = show;
+    this._levelOverrides.clear();
     this._table_data = this.tableDataFromCohortData();
     this.notifyListeners(); // Refresh the grid
   }
@@ -1443,8 +1452,72 @@ export class CohortModel {
 
   public setComponentLevel(level: number): void {
     this._componentLevel = level;
+    // Global level always wins over per-row accordion overrides.
+    this._levelOverrides.clear();
     this._table_data = this.tableDataFromCohortData();
     this.notifyListeners();
+  }
+
+  /** True when `phenotypeId` has at least one component child. */
+  public hasComponentChildren(phenotypeId: string): boolean {
+    return (this._cohort_data.phenotypes || []).some(
+      (p: TableRow) =>
+        p.type === 'component' &&
+        Array.isArray(p.parentIds) &&
+        p.parentIds.includes(phenotypeId)
+    );
+  }
+
+  /**
+   * Max absolute component level currently in effect for `row`, honouring the
+   * nearest ancestor's per-row override when present, else the global level.
+   */
+  private getEffectiveMaxLevelForRow(row: TableRow): number {
+    const ancestors = this.getAllAncestors(row);
+    for (let i = ancestors.length - 1; i >= 0; i--) {
+      const override = this._levelOverrides.get(ancestors[i].id);
+      if (override !== undefined) return override;
+    }
+    return this._componentLevel;
+  }
+
+  private isComponentVisibleAtLevel(row: TableRow): boolean {
+    return (row.level ?? 1) <= this.getEffectiveMaxLevelForRow(row);
+  }
+
+  /** Whether any direct component child of `phenotypeId` is currently visible. */
+  public isRowExpanded(phenotypeId: string): boolean {
+    if (!this._showComponents) return false;
+    const children = (this._cohort_data.phenotypes || []).filter(
+      (p: TableRow) =>
+        p.type === 'component' &&
+        Array.isArray(p.parentIds) &&
+        p.parentIds.includes(phenotypeId)
+    );
+    return children.some((child) => this.isComponentVisibleAtLevel(child));
+  }
+
+  /**
+   * Accordion toggle for one phenotype: collapse hides all descendants;
+   * expand reveals direct children only. Overrides the global component level
+   * until the next global level change.
+   */
+  public toggleRowExpansion(phenotypeId: string): void {
+    const phenotype = this.getPhenotypeById(phenotypeId);
+    if (!phenotype || !this.hasComponentChildren(phenotypeId)) return;
+
+    const level = phenotype.level ?? 0;
+    if (this.isRowExpanded(phenotypeId)) {
+      this._levelOverrides.set(phenotypeId, level);
+    } else {
+      this._levelOverrides.set(phenotypeId, level + 1);
+    }
+    this._table_data = this.tableDataFromCohortData();
+    this.notifyListeners();
+  }
+
+  public hasLevelOverrides(): boolean {
+    return this._levelOverrides.size > 0;
   }
 
   // Deepest component depth across the whole cohort. Top-level phenotypes are

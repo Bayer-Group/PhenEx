@@ -137,6 +137,10 @@ export class CohortDataService {
   public setComponentLevel(level: number): void { return this._activeCohort.setComponentLevel(level); }
   public getMaxComponentLevel(): number { return this._activeCohort.getMaxComponentLevel(); }
   public getMaxComponentLevelForPhenotype(phenotypeId: string): number { return this._activeCohort.getMaxComponentLevelForPhenotype(phenotypeId); }
+  public hasComponentChildren(phenotypeId: string): boolean { return this._activeCohort.hasComponentChildren(phenotypeId); }
+  public isRowExpanded(phenotypeId: string): boolean { return this._activeCohort.isRowExpanded(phenotypeId); }
+  public toggleRowExpansion(phenotypeId: string): void { return this._activeCohort.toggleRowExpansion(phenotypeId); }
+  public hasLevelOverrides(): boolean { return this._activeCohort.hasLevelOverrides(); }
   public toggleShowFullCodelists(show: boolean): void { return this._activeCohort.toggleShowFullCodelists(show); }
   public getShowFullCodelists(): boolean { return this._activeCohort.getShowFullCodelists(); }
   public updateColumns(newColumns: ColumnDefinition[]): void { return this._activeCohort.updateColumns(newColumns); }

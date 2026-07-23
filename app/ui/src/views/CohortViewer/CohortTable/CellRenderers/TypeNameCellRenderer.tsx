@@ -23,6 +23,7 @@ const TYPE_WIDGET_WIDTH = 40;
  *  - Click the type widget  → opens TypeSelectorCellEditor  (eventKey: 'type')
  *  - Double-click name area → opens NameCellEditor           (default)
  *  - Click settings arrow   → opens SettingsCellEditor       (eventKey: 'settings')
+ *  - Click accordion chevron → expand/collapse component children for this row
  */
 const TypeNameCellRenderer: React.FC<ICellRendererParams> = (props) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -48,6 +49,8 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = (props) => {
 
   const isSelected = props.node?.isSelected();
   const fontColor = typeStyles[`${props.data?.effective_type}_text_color`] || '';
+  const hasChildren = !!props.data?._hasChildren;
+  const childrenExpanded = !!props.data?._childrenExpanded;
 
   // ── Drag ghost image ──────────────────────────────────────────────────────────
   const handleDragStart = (e: React.DragEvent) => {
@@ -97,6 +100,12 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = (props) => {
     }
   };
 
+  const handleToggleExpansion = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!props.data?.id) return;
+    CohortDataService.getInstance().toggleRowExpansion(props.data.id);
+  };
+
   // ── Name indentation (component phenotypes) ───────────────────────────────────
   const getIndentationStyle = (): React.CSSProperties => {
     if (props.data?.type === 'component' && props.data.level > 0) {
@@ -118,9 +127,27 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = (props) => {
         {/* Selection indicator bar */}
         {isSelected && <div className={styles.selectionIndicator} />}
 
+        {/* Accordion: right of selection bar, left of index label */}
+        {hasChildren ? (
+          <button
+            type="button"
+            className={styles.accordion}
+            aria-label={childrenExpanded ? 'Collapse children' : 'Expand children'}
+            aria-expanded={childrenExpanded}
+            onClick={handleToggleExpansion}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <span className={`${styles.accordionIcon} ${childrenExpanded ? styles.accordionOpen : ''}`}>
+              ▸
+            </span>
+          </button>
+        ) : (
+          <span className={styles.accordionSpacer} aria-hidden />
+        )}
+
         {/* ── Left: type/drag widget ─────────────────────────────────────────── */}
         <div className={styles.typeWidget} style={{ width: TYPE_WIDGET_WIDTH }}>
-          <div className={styles.dragHandle} data-drag-handle="true">⠿</div>
+          {/* <div className={styles.dragHandle} data-drag-handle="true">⠿</div> */}
           <TypeRenderer value={props.data?.type} data={props.data} onClick={handleTypeClick} />
         </div>
 

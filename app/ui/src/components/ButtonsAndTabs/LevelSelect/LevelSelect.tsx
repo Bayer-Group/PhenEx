@@ -12,9 +12,15 @@ export interface LevelSelectProps {
   disabled?: boolean;
   title?: string;
   className?: string;
+  /**
+   * When true, the select shows a blank "mixed" option so re-choosing the
+   * current level fires onChange (e.g. after per-row accordion overrides).
+   */
+  mixed?: boolean;
 }
 
 const ALL_VALUE = 'all';
+const MIXED_VALUE = 'mixed';
 
 export const LevelSelect: React.FC<LevelSelectProps> = ({
   value,
@@ -24,12 +30,18 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   disabled = false,
   title,
   className,
+  mixed = false,
 }) => {
-  const selectValue = Number.isFinite(value) ? String(value) : ALL_VALUE;
+  const selectValue = mixed
+    ? MIXED_VALUE
+    : Number.isFinite(value)
+      ? String(value)
+      : ALL_VALUE;
   const levels = Array.from({ length: maxLevel - minLevel + 1 }, (_, i) => i + minLevel);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const raw = e.target.value;
+    if (raw === MIXED_VALUE) return;
     onChange(raw === ALL_VALUE ? Number.POSITIVE_INFINITY : Number(raw));
   };
 
@@ -41,6 +53,11 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
       disabled={disabled}
       title={title}
     >
+      {mixed && (
+        <option value={MIXED_VALUE} disabled>
+          —
+        </option>
+      )}
       <option value={ALL_VALUE}>All</option>
       {levels.map(level => (
         <option key={level} value={level}>

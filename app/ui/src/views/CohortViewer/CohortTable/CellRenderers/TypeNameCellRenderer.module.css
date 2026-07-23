@@ -23,6 +23,51 @@
   z-index: 2;
 }
 
+/* ── Accordion chevron (between selection bar and index label) ───────────── */
+.accordion {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 20px;
+  margin-top: var(--item-margin-top, 6px);
+  margin-left: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color_text_dim, rgba(128, 128, 128, 0.7));
+  cursor: pointer;
+  z-index: 1;
+}
+
+.accordion:hover {
+  color: var(--color_accent_blue);
+}
+
+.accordion:focus {
+  outline: none;
+}
+
+.accordionIcon {
+  display: inline-block;
+  font-size: 10px;
+  line-height: 1;
+  transition: transform 0.12s ease;
+}
+
+.accordionOpen {
+  transform: rotate(90deg);
+}
+
+.accordionSpacer {
+  flex-shrink: 0;
+  width: 16px;
+  height: 20px;
+  margin-top: var(--item-margin-top, 6px);
+  margin-left: 4px;
+}
+
 /* ── Left: type / drag widget ─────────────────────────────────────────────── */
 .typeWidget {
   flex-shrink: 0;
