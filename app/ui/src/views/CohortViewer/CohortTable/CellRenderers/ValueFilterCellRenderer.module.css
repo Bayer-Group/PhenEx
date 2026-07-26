@@ -12,14 +12,20 @@
 }
 
 .filterRow:hover {
-  transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  color: var(--text_color_hover_over_grid) !important;
+  background-color: red !important;
+
 }
 
 .filterContent {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.filterContent:hover{
+  color: var(--text_color_hover_over_grid) !important;
 }
 
 .filterValue {
@@ -29,7 +35,7 @@
 }
 
 .operator {
-  color: var(--text-color-inactive);
+  /* color: var(--text-color-inactive); */
 }
 
 /* .min {

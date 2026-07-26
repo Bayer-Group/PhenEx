@@ -33,7 +33,7 @@ export const DateRangeRenderer: React.FC<DateRangeRendererProps> = ({
 
   return (
     <div className={`${styles.filterContent} ${colorClass}`} onClick={handleClick}>
-      <span className={styles.columnName}>{value.column_name}</span>
+      {/* <span className={styles.columnName}>{value.column_name}</span> */}
       {value.min_value && (
         <span className={styles.constraint}>
           <span className={styles.operator}>{value.min_value.operator}</span>

@@ -44,7 +44,7 @@
 
 
 .filterItem:hover {
-  opacity: 0.8;
+  opacity: 1;
   /* transform: scale(1); */
   border-color: var(--line-color) !important;
   background-color: var(--background_color_hover_over_grid);
