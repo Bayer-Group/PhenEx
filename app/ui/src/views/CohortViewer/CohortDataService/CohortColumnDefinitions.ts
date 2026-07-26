@@ -123,6 +123,21 @@ export const defaultColumns = [
     cellEditorPopup: true,
   },
   {
+    field: 'expression',
+    headerName: 'Expression',
+    width: 180,
+    editable: true,
+    valueParser: (params: any) => {
+      if (params.newValue && typeof params.newValue === 'object') {
+        return params.newValue;
+      }
+      return params.oldValue;
+    },
+    cellEditor: LogicalExpressionCellEditor,
+    cellEditorPopup: true,
+    cellRenderer: LogicalExpressionCellRenderer,
+  },
+  {
     field: 'domain',
     headerName: 'Domain',
     width: 180,
@@ -259,21 +274,6 @@ export const defaultColumns = [
     cellEditorPopup: true,
     cellRenderer: PhenexCellRenderer,
   },
-  {
-    field: 'expression',
-    headerName: 'Expression',
-    width: 180,
-    editable: true,
-    valueParser: (params: any) => {
-      if (params.newValue && typeof params.newValue === 'object') {
-        return params.newValue;
-      }
-      return params.oldValue;
-    },
-    cellEditor: LogicalExpressionCellEditor,
-    cellEditorPopup: true,
-    cellRenderer: LogicalExpressionCellRenderer,
-  },
   // {
   //   field: 'direction',
   //   headerName: 'Direction',
@@ -292,15 +292,15 @@ export const defaultColumns = [
   //   cellEditorPopup: true,
   //   cellRenderer: PhenexCellRenderer,
   // },
-  {
-    field: 'anchor_phenotype',
-    headerName: 'Anchor Phenotype',
-    width: 250,
-    editable: true,
-    cellEditor: DescriptionCellEditor,
-    cellEditorPopup: true,
-    cellRenderer: PhenexCellRenderer,
-  },
+  // {
+  //   field: 'anchor_phenotype',
+  //   headerName: 'Anchor Phenotype',
+  //   width: 250,
+  //   editable: true,
+  //   cellEditor: DescriptionCellEditor,
+  //   cellEditorPopup: true,
+  //   cellRenderer: PhenexCellRenderer,
+  // },
   // {
   //   field: 'further_value_filter_phenotype',
   //   headerName: 'Further Value Filter Phenotype',
@@ -334,24 +334,24 @@ export const defaultColumns = [
   //   cellEditorPopup: true,
   //   cellRenderer: ValueFilterCellRenderer,
   // },
-  {
-    field: 'bins',
-    headerName: 'Bins',
-    width: 250,
-    editable: true,
-    cellEditor: DescriptionCellEditor,
-    cellEditorPopup: true,
-    cellRenderer: PhenexCellRenderer,
-  },
-  {
-    field: 'function',
-    headerName: 'Function',
-    width: 250,
-    editable: true,
-    cellEditor: DescriptionCellEditor,
-    cellEditorPopup: true,
-    cellRenderer: PhenexCellRenderer,
-  },
+  // {
+  //   field: 'bins',
+  //   headerName: 'Bins',
+  //   width: 250,
+  //   editable: true,
+  //   cellEditor: DescriptionCellEditor,
+  //   cellEditorPopup: true,
+  //   cellRenderer: PhenexCellRenderer,
+  // },
+  // {
+  //   field: 'function',
+  //   headerName: 'Function',
+  //   width: 250,
+  //   editable: true,
+  //   cellEditor: DescriptionCellEditor,
+  //   cellEditorPopup: true,
+  //   cellRenderer: PhenexCellRenderer,
+  // },
   // {
   //   field: 'min_change',
   //   headerName: 'Min Change',

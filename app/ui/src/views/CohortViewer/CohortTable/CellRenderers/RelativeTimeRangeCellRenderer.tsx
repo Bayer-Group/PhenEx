@@ -38,12 +38,10 @@ const RelativeTimeRangeCellRenderer: React.FC<PhenexCellRendererProps> = props =
     });
   };
 
+  // Entry criterion defines the index date — same NA treatment as a
+  // parameter that doesn't apply to a phenotype (no PhenexCellRenderer wrapper).
   if (props.data.type === 'entry') {
-    return (
-      <PhenexCellRenderer {...props}>
-        <NARenderer value={props.value} data={props.data} />
-      </PhenexCellRenderer>
-    );
+    return <NARenderer value={props.value} data={props.data} />;
   }
 
   return (

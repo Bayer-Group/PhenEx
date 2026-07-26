@@ -12,3 +12,7 @@
   font-size:16px;
   font-family : "IBMPlexSans-bolditalic";
 }
+
+.naContainer:hover {
+  color: var(--text_color_hover_over_grid) !important;
+}

@@ -121,7 +121,7 @@
 
 .missingLabel:hover{
   background-color: var(--background_color_hover_over_grid);
-  color: var(--text_color_hover_over_grid);
+  color: var(--text_color_hover_over_grid) !important;
 }
 
 /* Button styles for cells */
