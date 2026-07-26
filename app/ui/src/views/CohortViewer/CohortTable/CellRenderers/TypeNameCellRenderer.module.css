@@ -146,11 +146,17 @@
   height: 20px;
   border-radius: 8px;
   flex-shrink: 0;
+  background-color: hsla(0, 0%, 100%, 0.8);
+
+}
+
+.deleteButtonIcon:hover {
+  color: red;
 }
 
 .deleteButton:hover {
-  background-color: var(--background_color_hover_over_grid);
   color: var(--color_accent_blue);
+  background-color: hsla(0, 0%, 100%, 0.5);
 }
 
 .deleteButton:focus {

@@ -107,6 +107,7 @@
 
 .itemChip:hover {
   background-color: var(--background_color_hover_over_grid);
+  color: var(--text_color_hover_over_grid);
 }
 
 .missingLabel {
@@ -120,7 +121,7 @@
 
 .missingLabel:hover{
   background-color: var(--background_color_hover_over_grid);
-
+  color: var(--text_color_hover_over_grid);
 }
 
 /* Button styles for cells */

@@ -15,7 +15,7 @@ export const NARenderer: React.FC<NARendererProps> = ({ data }) => {
 
   const backgroundColor = getHierarchicalBackgroundColor(
     data?.effective_type,
-    data?.hierarchical_index
+    '1.1.1' // TODO: USING HIGHEST ALPHA BACKGROUND
   );
 
   const containerStyle: React.CSSProperties = {

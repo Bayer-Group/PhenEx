@@ -134,6 +134,13 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
     [definitionService, cohortId]
   );
 
+  const handleToggleRowExpansion = useCallback(
+    (phenotypeId: string) => {
+      definitionService.toggleRowExpansion(cohortId, phenotypeId);
+    },
+    [definitionService, cohortId]
+  );
+
   const handleNameChange = useCallback(
     (name: string) => {
       definitionService.updateCohortName(cohortId, name);
@@ -270,6 +277,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                 onComponentDrop={handleComponentDrop}
                 canMakeComponent={handleCanMakeComponent}
                 onDeletePhenotype={handleDeletePhenotype}
+                onToggleRowExpansion={handleToggleRowExpansion}
               />
             </>
           )}

@@ -48,6 +48,7 @@
   /* transform: scale(1); */
   border-color: var(--line-color) !important;
   background-color: var(--background_color_hover_over_grid);
+  color: var(--text_color_hover_over_grid) !important;
 }
 
 

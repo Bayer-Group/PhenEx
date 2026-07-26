@@ -105,7 +105,11 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
   const handleToggleExpansion = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!props.data?.id) return;
-    CohortDataService.getInstance().toggleRowExpansion(props.data.id);
+    if (props.context?.toggleRowExpansion) {
+      props.context.toggleRowExpansion(props.data.id);
+    } else {
+      CohortDataService.getInstance().toggleRowExpansion(props.data.id);
+    }
   };
 
   // ── Indent the complete hierarchy label (caret, index, and name) ───────────────
@@ -217,6 +221,7 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
               >
                 <svg
                   width="14"
+                  className={styles.deleteButtonIcon}
                   height="14"
                   viewBox="0 0 24 24"
                   fill="none"

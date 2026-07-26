@@ -26,6 +26,7 @@ import {
 import { TwoPanelCohortViewerService } from '../TwoPanelCohortViewer/TwoPanelCohortViewer';
 import { resolveHeaderCellRenderer } from './CohortCardHeaderCell';
 import { getHierarchicalBackgroundColor } from '../CohortTable/CellRenderers/PhenexCellRenderer';
+import typeStyles from '../../../styles/study_types.module.css';
 
 // Section title labels keyed by phenotype `type`. Rendered as all-caps title
 // rows before the first row of each section (styled like the header cells).
@@ -91,6 +92,8 @@ interface CohortCardViewerProps {
   canMakeComponent?: (draggedId: string, targetId: string) => boolean;
   /** Called when the user confirms deletion of a phenotype row via the inline delete button. */
   onDeletePhenotype?: (id: string) => void;
+  /** Called when the user toggles accordion expand/collapse on a phenotype with children. */
+  onToggleRowExpansion?: (id: string) => void;
   /**
    * Override/extend the section title labels keyed by phenotype `type`.
    * Merged over the defaults, e.g. `{ component: 'Components' }` to title the
@@ -145,6 +148,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       onComponentDrop,
       canMakeComponent,
       onDeletePhenotype,
+      onToggleRowExpansion,
       sectionTitles,
       sectionGroupBy = 'effective_type',
       gridBottomPadding = 0,
@@ -397,9 +401,15 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           if (key === 'rowData') setRows(value ?? []);
           else if (key === 'columnDefs') setColumns(value ?? []);
         },
-        context: onDeletePhenotype ? { deletePhenotype: onDeletePhenotype } : undefined,
+        context:
+          onDeletePhenotype || onToggleRowExpansion
+            ? {
+                ...(onDeletePhenotype ? { deletePhenotype: onDeletePhenotype } : {}),
+                ...(onToggleRowExpansion ? { toggleRowExpansion: onToggleRowExpansion } : {}),
+              }
+            : undefined,
       }),
-      [startEditingCell, commitEdit, onDeletePhenotype]
+      [startEditingCell, commitEdit, onDeletePhenotype, onToggleRowExpansion]
     );
     backingRef.current = backing;
 
@@ -1004,6 +1014,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
 
     const renderRows = (panel: 'pinned' | 'scroll', cols: any[]) => {
       let prevType: string | null = null;
+      let hasRenderedTitle = false;
       const out: React.ReactNode[] = [];
       rows.forEach((rowData, rowIndex) => {
         const id = rowData?.id ?? String(rowIndex);
@@ -1011,6 +1022,9 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           (sectionGroupBy === 'type'
             ? rowData?.type
             : rowData?.effective_type ?? rowData?.type) ?? null;
+        const sectionBorderColor = type
+          ? `color-mix(in srgb, var(--color_${type}) 20%, transparent)`
+          : undefined;
         // Insert a section title row before the first row of each type.
         if (type !== prevType) {
           const label = effectiveSectionTitles[type as string];
@@ -1018,15 +1032,25 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
             out.push(
               <div
                 key={`__title_${type}`}
-                className={styles.titleRow}
+                className={`${styles.titleRow} ${!hasRenderedTitle ? styles.firstTitleRow : ''}`}
                 style={{
-                  backgroundColor: getHierarchicalBackgroundColor(type ?? undefined, '1'),
+                  backgroundColor: getHierarchicalBackgroundColor(type ?? undefined, '1.1.1'),
+                 
                 }}
                 aria-hidden={panel === 'scroll'}
               >
-                {panel === 'pinned' && <span className={styles.titleLabel}>{label}</span>}
+                {panel === 'pinned' && (
+                  <span
+                    className={`${styles.titleLabel} ${
+                      typeStyles[`${type ?? ''}_text_color`] || ''
+                    }`}
+                  >
+                    {label}
+                  </span>
+                )}
               </div>
             );
+            hasRenderedTitle = true;
           }
           prevType = type;
         }
@@ -1062,6 +1086,23 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
             />
           </div>
         );
+
+        const nextRowData = rows[rowIndex + 1];
+        const nextType = nextRowData
+          ? (sectionGroupBy === 'type'
+              ? nextRowData?.type
+              : nextRowData?.effective_type ?? nextRowData?.type) ?? null
+          : null;
+        if (type !== nextType && effectiveSectionTitles[type as string]) {
+          out.push(
+            <div
+              key={`__footer_${type}_${id}`}
+              className={styles.sectionFooter}
+              style={{ backgroundColor: sectionBorderColor }}
+              aria-hidden
+            />
+          );
+        }
       });
       return out;
     };
