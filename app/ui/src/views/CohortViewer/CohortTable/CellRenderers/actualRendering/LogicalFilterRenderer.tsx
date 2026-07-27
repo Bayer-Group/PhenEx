@@ -11,6 +11,7 @@ export interface LogicalFilterRendererProps<T> {
   filterClassName?: string; // CSS class for filter items
   operatorClassName?: string; // CSS class for operator items
   selectedClassName?: string; // CSS class for selected filter
+  justify?: 'left' | 'right';
 }
 
 /**
@@ -33,20 +34,22 @@ export function LogicalFilterRenderer<T>({
   filterClassName = '',
   operatorClassName = '',
   selectedClassName = '',
+  justify = 'right',
 }: LogicalFilterRendererProps<T>) {
   
   if (!flattenedItems || flattenedItems.length === 0) {
     return <div className={styles.empty}></div>;
   }
 
+  const containerClass = `${styles.container} ${justify === 'left' ? styles.justifyLeft : ''}`.trim();
   
   return (
-    <div className={styles.container}>
+    <div className={containerClass}>
       {flattenedItems.map((item) => {
         switch (item.type) {
           case 'filter': {
             const isSelected = selectedIndex !== undefined && selectedIndex === item.index;
-            const classes = `${styles.filterItem} ${filterClassName} ${isSelected && selectedClassName ? selectedClassName : ''}`.trim();
+            const classes = `${styles.filterItem} ${justify === 'left' ? styles.filterItemLeft : ''} ${filterClassName} ${isSelected && selectedClassName ? selectedClassName : ''}`.trim();
             
             return (
               <div

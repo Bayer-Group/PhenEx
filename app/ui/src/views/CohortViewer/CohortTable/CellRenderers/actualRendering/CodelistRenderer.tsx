@@ -31,6 +31,7 @@ export interface CodelistRendererProps {
   selectedIndex?: number; // Index of the currently selected item (for visual highlighting)
   selectedClassName?: string; // Optional className to apply to the selected item
   showFullCodelist?: boolean; // When true, shows all codes without truncation
+  justify?: 'left' | 'right';
 }
 
 /**
@@ -49,9 +50,13 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
   selectedIndex,
   selectedClassName,
   showFullCodelist = false,
+  justify = 'right',
 }) => {
+  const isLeft = justify === 'left';
+  const alignClass = isLeft ? styles.alignLeft : '';
+
   const renderManualCodelist = (codelist: { [key: string]: string[] }, parentValue: CodelistValue, index: number = 0) => (
-    <div key={index} className={styles.codelistContainer}>
+    <div key={index} className={`${styles.codelistContainer} ${alignClass}`}>
       {Object.entries(codelist).map(([codeType, codes], codeIndex) => {
         // Skip entries that have file metadata properties
         if (codeType === 'file_name' || codeType === 'codelist_name' || codeType === 'file_id' || 
@@ -70,7 +75,7 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
         return (
           <div
             key={codeIndex}
-            className={styles.codeBlock}
+            className={`${styles.codeBlock} ${alignClass}`}
             onClick={() => {
               // Disabled for now
               // if (onClick) {
@@ -79,19 +84,19 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
             }}
             style={{ cursor: onClick ? 'pointer' : 'default' }}
           >
-            <div className={styles.codes}>
+            <div className={`${styles.codes} ${alignClass}`}>
               {(showFullCodelist ? codes : codes.slice(0, MAX_CODES_TO_SHOW)).map((code, i, arr) => {
                 const isLast = i === arr.length - 1;
                 const showComma = !isLast;
                 return (
-                  <span key={i} className={styles.code} style={showComma ? { paddingRight: '2px' } : undefined}>
+                  <span key={i} className={`${styles.code} ${alignClass}`} style={showComma ? { paddingRight: '2px' } : undefined}>
                     {code}{showComma ? ',' : ''}
                   </span>
                 );
               })}
-              {!showFullCodelist && codes.length > MAX_CODES_TO_SHOW && <span className={styles.code}>...</span>}
+              {!showFullCodelist && codes.length > MAX_CODES_TO_SHOW && <span className={`${styles.code} ${alignClass}`}>...</span>}
             </div>
-            <div className={styles.codeType}>
+            <div className={`${styles.codeType} ${alignClass}`}>
               {displayCodeType}
               {parentValue.use_code_type ? ' (use code type)' : ' (ignore code type)'}
               {parentValue.remove_punctuation ? ' (remove punctuation)' : ''}
@@ -113,9 +118,9 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
     const displayCodelistName = codelistName?.replace(/_/g, ' ') || 'Unknown codelist';
     
     return (
-      <div key={index} className={styles.codelistContainer}>
+      <div key={index} className={`${styles.codelistContainer} ${alignClass}`}>
         <div
-          className={styles.codeBlock}
+          className={`${styles.codeBlock} ${alignClass}`}
           onClick={() => {
             if (onClick) {
               onClick();
@@ -123,8 +128,8 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
           }}
           style={{ cursor: onClick ? 'pointer' : 'default' }}
         >
-          <div className={`${styles.codes} ${colorClass}`}>
-            <span className={styles.code}>{displayCodelistName}</span>
+          <div className={`${styles.codes} ${colorClass} ${alignClass}`}>
+            <span className={`${styles.code} ${alignClass}`}>{displayCodelistName}</span>
           </div>
         </div>
       </div>
@@ -161,6 +166,7 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
         filterClassName={borderColorClass}
         selectedIndex={selectedIndex}
         selectedClassName={selectedClassName}
+        justify={justify}
       />
     );
   }
@@ -189,6 +195,7 @@ export const CodelistRenderer: React.FC<CodelistRendererProps> = ({
       filterClassName={borderColorClass}
       selectedIndex={selectedIndex}
       selectedClassName={selectedClassName}
+      justify={justify}
     />
   );
 };

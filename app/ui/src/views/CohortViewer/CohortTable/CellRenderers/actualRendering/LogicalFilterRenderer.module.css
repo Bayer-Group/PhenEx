@@ -11,6 +11,10 @@
   padding-top:var(--item-margin-top);
 }
 
+.justifyLeft {
+  justify-content: flex-start;
+}
+
 .empty {
   color: var(--color-text-secondary, #888);
   font-style: italic;
@@ -36,6 +40,10 @@
   border-color: transparent !important;
 
 
+}
+
+.filterItemLeft {
+  text-align: left;
 }
 
 .selectedClassName{

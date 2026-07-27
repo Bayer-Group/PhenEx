@@ -52,6 +52,7 @@ const CodelistCellRenderer: React.FC<PhenexCellRendererProps> = props => {
         onClick={handleClick} 
         onItemClick={handleItemClick}
         showFullCodelist={showFullCodelist}
+        justify={props.justify}
       />
     </PhenexCellRenderer>
   );
