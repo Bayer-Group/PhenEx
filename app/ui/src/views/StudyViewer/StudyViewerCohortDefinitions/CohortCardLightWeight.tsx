@@ -12,6 +12,7 @@ import { CohortDefinitionReportD3, CohortDefinitionReportD3Ref } from './CohortD
 import { CohortCardViewer } from '../../CohortViewer/CohortCardViewer/CohortCardViewer';
 import { defaultColumns } from '../../CohortViewer/CohortDataService/CohortColumnDefinitions';
 import { TableData } from '../../CohortViewer/tableTypes';
+import { usePanZoomCardSticky } from './usePanZoomCardSticky';
 
 interface CohortCardLightWeightProps {
   cohortDef: CohortWithTableData;
@@ -41,9 +42,13 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
 }) => {
   const { isReportMode } = useReportMode();
   const cardRef = useRef<HTMLDivElement>(null);
+  const stickyHeaderRef = useRef<HTMLDivElement>(null);
   const d3ReportRef = useRef<CohortDefinitionReportD3Ref>(null);
   const [rightClickMenu, setRightClickMenu] = useState<{ position: { x: number; y: number }; rowIndex: number | null } | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const isSticky = usePanZoomCardSticky(cardRef, stickyHeaderRef, !isReportMode);
+  const cohortName = cohortDef.cohort.name || 'Unnamed Cohort';
 
   const definitionService = studyDataService.cohort_definitions_service;
   const rows = cohortDef.table_data.rows;
@@ -267,7 +272,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                 data={cardData}
                 currentlyViewing="cohort"
                 cohortId={cohortId}
-                cohortName={cohortDef.cohort.name || 'Unnamed Cohort'}
+                cohortName={cohortName}
                 description={cohortDef.cohort.description}
                 onNameChange={handleNameChange}
                 onDescriptionChange={handleDescriptionChange}
@@ -282,15 +287,22 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
             </>
           )}
 
-          {/* Controls: top-right corner, visible on hover */}
+          {/* Floats above the card; when scrolled past the viewport top, pins
+              there with the cohort name. Actions stay hover-gated via .cohortCard. */}
           {!isReportMode && (
-            <div className={styles.cardControls}>
-              <CohortCardActions
-                cohortId={cohortId}
-                studyDataService={studyDataService}
-                onDeleteCohort={onDeleteCohort ? () => onDeleteCohort(cohortDef) : undefined}
-                onOpen={openCohort}
-              />
+            <div
+              ref={stickyHeaderRef}
+              className={`${styles.stickyHeader} ${isSticky ? styles.stickyHeaderActive : ''}`}
+            >
+              <span className={styles.stickyHeaderName}>{cohortName}</span>
+              <div className={styles.cardControls}>
+                <CohortCardActions
+                  cohortId={cohortId}
+                  studyDataService={studyDataService}
+                  onDeleteCohort={onDeleteCohort ? () => onDeleteCohort(cohortDef) : undefined}
+                  onOpen={openCohort}
+                />
+              </div>
             </div>
           )}
         </div>
@@ -308,7 +320,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
 
       {showDeleteModal && (
         <DeleteConfirmModal
-          name={cohortDef.cohort.name || 'Unnamed Cohort'}
+          name={cohortName}
           entityName="Cohort"
           onConfirm={confirmDeleteCohort}
           onCancel={() => setShowDeleteModal(false)}

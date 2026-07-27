@@ -208,21 +208,68 @@
 
 }
 
-/* Controls bar — floats above the top-right corner of the card, visible on hover */
-.cardControls {
+/* Sticky header — floats above the card; counter-translated to the viewport
+   top once the card scrolls upward under pan/zoom (see usePanZoomCardSticky). */
+.stickyHeader {
   position: absolute;
   top: 0;
+  left: 0;
   right: 0;
-  transform: translateY(-100%);
   z-index: 1000;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc(8px / var(--zoom-scale, 1));
+  transform: translateY(-100%);
+  pointer-events: none;
+  /* box-sizing: border-box; */
+
+}
+
+.stickyHeaderActive {
+  justify-content: space-between;
+  background: var(--background_color_light, #fff);
+  border: 1px solid var(--line_color_dark);
+  border-bottom: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  /* border-radius: 0 0 8px 8px; */
+  padding: calc(6px / var(--zoom-scale, 1)) calc(8px / var(--zoom-scale, 1));
+  /* Inline transform from usePanZoomCardSticky overrides translateY(-100%). */
+}
+
+.stickyHeaderName {
+  display: none;
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: var(--dynamic-font-size, 16px);
+  color: #1a1a1a;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.stickyHeaderActive .stickyHeaderName {
+  display: block;
+}
+
+.cardControls {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: calc(4px / var(--zoom-scale, 1));
   padding-bottom: calc(4px / var(--zoom-scale, 1));
+  flex-shrink: 0;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
+}
+
+.stickyHeaderActive .cardControls {
+  padding-bottom: 0;
 }
 
 .cohortCard:hover:not(.noHover) .cardControls,
