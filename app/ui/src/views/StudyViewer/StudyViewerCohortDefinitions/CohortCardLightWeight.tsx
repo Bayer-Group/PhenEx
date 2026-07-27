@@ -252,7 +252,6 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
             cursor: 'pointer',
             pointerEvents: 'auto',
             '--dynamic-arrow-size': 'min(75px, calc(30px / var(--zoom-scale)))',
-            '--dynamic-button-size': 'min(34px, calc(26px / var(--zoom-scale)))',
             '--dynamic-font-size': 'min(16px, calc(12px / var(--zoom-scale)))',
           } as React.CSSProperties}
         >

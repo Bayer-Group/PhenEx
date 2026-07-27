@@ -223,27 +223,27 @@
   gap: calc(8px / var(--zoom-scale, 1));
   transform: translateY(-100%);
   pointer-events: none;
-  /* box-sizing: border-box; */
-
 }
 
 .stickyHeaderActive {
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: calc(4px / var(--zoom-scale, 1));
   background: var(--background_color_light, #fff);
   border: 1px solid var(--line_color_dark);
   border-bottom: none;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  /* border-radius: 0 0 8px 8px; */
   padding: calc(6px / var(--zoom-scale, 1)) calc(8px / var(--zoom-scale, 1));
   /* Inline transform from usePanZoomCardSticky overrides translateY(-100%). */
 }
 
 .stickyHeaderName {
   display: none;
-  flex: 1;
   min-width: 0;
   font-weight: 600;
-  font-size: var(--dynamic-font-size, 16px);
+  /* Counter zoom so the label stays breadcrumb-sized on screen. */
+  font-size: calc(var(--font_size_breadcrumb, 20px) / var(--zoom-scale, 1));
   color: #1a1a1a;
   line-height: 1.3;
   white-space: nowrap;
@@ -254,13 +254,14 @@
 
 .stickyHeaderActive .stickyHeaderName {
   display: block;
+  order: 1;
 }
 
 .cardControls {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: calc(4px / var(--zoom-scale, 1));
+  gap: 6px;
   padding-bottom: calc(4px / var(--zoom-scale, 1));
   flex-shrink: 0;
   opacity: 0;
@@ -270,6 +271,8 @@
 
 .stickyHeaderActive .cardControls {
   padding-bottom: 0;
+  align-self: flex-end;
+  order: 0;
 }
 
 .cohortCard:hover:not(.noHover) .cardControls,

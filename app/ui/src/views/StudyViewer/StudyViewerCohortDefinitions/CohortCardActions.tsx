@@ -3,7 +3,7 @@ import styles from './CohortCardActions.module.css';
 import { Tabs } from '../../../components/ButtonsAndTabs/Tabs/Tabs';
 import { PhenExNavBarMenu } from '../../../components/PhenExNavBar/PhenExNavBarMenu';
 import { useNavBarMenu } from '../../../components/PhenExNavBar/PhenExNavBarMenuContext';
-import ArrowIcon from '../../../assets/icons/arrow-up-right.svg';
+import ArrowUpRightIcon from '../../../components/icons/ArrowUpRightIcon';
 
 interface CohortCardActionsProps {
   cohortId: string;
@@ -96,7 +96,7 @@ export const CohortCardActions: React.FC<CohortCardActionsProps> = (
             onClick={onOpen}
             aria-label="Open cohort"
           >
-            <img src={ArrowIcon} alt="Expand" className={styles.expandArrow} />
+            <ArrowUpRightIcon size={20} strokeWidth={3.5} />
           </button>
         )}
 

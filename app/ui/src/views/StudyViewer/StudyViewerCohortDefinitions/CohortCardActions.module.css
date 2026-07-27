@@ -2,7 +2,7 @@
   background: var(--background_color_light, #fff);
   border: var(--border_dark);
   cursor: pointer;
-  padding: 6px;
+  padding: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10,8 +10,8 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
   transition: background 0.15s ease, color 0.15s ease;
   color: var(--text_color, #333);
-  width: calc(var(--dynamic-button-size, 26px) + 12px);
-  height: calc(var(--dynamic-button-size, 26px) + 12px);
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
 }
 
@@ -19,10 +19,6 @@
 .actionButton.menuOpen {
   background: var(--color_accent_blue, #2f80ed);
   color: white;
-}
-
-.actionButton:hover .expandArrow {
-  filter: brightness(0) invert(1);
 }
 
 .actionButton:active {
@@ -36,12 +32,6 @@
 .deleteButton:hover {
   background: var(--color_danger, #e05252) !important;
   color: white !important;
-}
-
-.expandArrow {
-  width: var(--dynamic-arrow-size, 32px);
-  height: var(--dynamic-arrow-size, 32px);
-  display: block;
 }
 
 .addMenuTabsContainer {
