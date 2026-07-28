@@ -39,6 +39,10 @@ from .phenotypes import (
     StackableRegimen,
     ISTHMajorBleedPhenotype,
     ISTHBleedComponents,
+    LiverDysfunctionPhenotype,
+    LiverDysfunctionComponents,
+    SexSplitMeasurementPhenotype,
+    SexSplitMeasurementComponents,
 )
 
 # Filters
@@ -159,6 +163,10 @@ __all__ = [
     "StackableRegimen",
     "ISTHMajorBleedPhenotype",
     "ISTHBleedComponents",
+    "LiverDysfunctionPhenotype",
+    "LiverDysfunctionComponents",
+    "SexSplitMeasurementPhenotype",
+    "SexSplitMeasurementComponents",
     # Filters
     "CategoricalFilter",
     "CodelistFilter",
