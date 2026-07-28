@@ -281,10 +281,10 @@ def _cat_to_dict(values):
     return CategoricalFilter(column_name="x", allowed_values=values).to_dict()
 
 
-def test_to_dict_sorts_scalar_list_deterministically():
-    """Same scalars in different order → identical, sorted to_dict."""
-    assert _cat_to_dict(["b", "a", "c"]) == _cat_to_dict(["a", "b", "c"])
-    assert _cat_to_dict(["b", "a", "c"])["allowed_values"] == ["a", "b", "c"]
+def test_to_dict_preserves_scalar_list_order():
+    """Scalar lists keep semantic order (e.g. bins); they are not sorted."""
+    assert _cat_to_dict(["b", "a", "c"])["allowed_values"] == ["b", "a", "c"]
+    assert _cat_to_dict(["b", "a", "c"]) != _cat_to_dict(["a", "b", "c"])
 
 
 def test_to_dict_sorts_dict_list_deterministically():
@@ -314,5 +314,5 @@ if __name__ == "__main__":
     test_ArithmeticPhenotype()
     test_LogicPhenotype()
     test_to_dict_sorts_dict_list_deterministically()
-    test_to_dict_sorts_scalar_list_deterministically()
+    test_to_dict_preserves_scalar_list_order()
     test_to_dict_unsortable_list_falls_back_without_crashing()
