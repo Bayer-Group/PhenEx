@@ -11,6 +11,7 @@ nav:
       - ArithmeticPhenotype: tutorials/ArithmeticPhenotype_Tutorial.ipynb
       - LogicPhenotype: tutorials/LogicPhenotype_Tutorial.ipynb
       - Python For PhenEx Tutorial: tutorials/Python_For_Phenex_Tutorial.ipynb
+      - Generating SQL: tutorials/generating_sql.md
   - API:
       - Core:
           - Cohort: api/core/cohort.md
