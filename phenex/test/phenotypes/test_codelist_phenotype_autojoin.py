@@ -602,6 +602,299 @@ class CodelistPhenotypeAutojoinAsymmetricTestGenerator(PhenotypeTestGenerator):
 
 
 # ============================================================================
+# EVENT_DATE_DEFINED_IN Test
+# ============================================================================
+
+
+class DummyEncounterDateTable(PhenexTable):
+    """
+    Encounter-like table that holds EVENT_DATE for events that lack a date column.
+    """
+
+    NAME_TABLE = "ENCOUNTER_DATE"
+    JOIN_KEYS = {
+        "DummyEventWithoutDateTable": ["ENCOUNTERID"],
+    }
+    KNOWN_FIELDS = ["ENCOUNTERID", "EVENT_DATE"]
+    DEFAULT_MAPPING = {
+        "ENCOUNTERID": "ENCOUNTERID",
+        "EVENT_DATE": "EVENT_DATE",
+    }
+
+
+class DummyEventWithoutDateTable(CodeTable):
+    """
+    Event table with codes but no EVENT_DATE.
+    Date is resolved from DummyEncounterDateTable via EVENT_DATE_DEFINED_IN.
+    """
+
+    NAME_TABLE = "EVENT_NO_DATE"
+    EVENT_DATE_DEFINED_IN = "ENCOUNTER_DATE"
+    JOIN_KEYS = {
+        "DummyEncounterDateTable": ["ENCOUNTERID"],
+    }
+    KNOWN_FIELDS = ["PERSON_ID", "CODE", "CODE_TYPE", "ENCOUNTERID"]
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "CODE": "CODE",
+        "CODE_TYPE": "CODE_TYPE",
+        "ENCOUNTERID": "ENCOUNTERID",
+    }
+
+
+class DummyEventWithoutCodesOrDateTable(CodeTable):
+    """
+    Event table with neither CODE nor EVENT_DATE.
+    Codes come from DummyConceptTable; dates from DummyEncounterDateForCodesTable.
+    """
+
+    NAME_TABLE = "EVENT_NO_CODE_NO_DATE"
+    CODES_DEFINED_IN = "DummyConceptTable"
+    EVENT_DATE_DEFINED_IN = "ENCOUNTER_DATE_FOR_CODES"
+    JOIN_KEYS = {
+        "DummyEventMappingTableNoDate": ["EVENTMAPPINGID"],
+        "DummyEncounterDateForCodesTable": ["ENCOUNTERID"],
+    }
+    PATHS = {
+        "DummyConceptTable": ["DummyEventMappingTableNoDate"],
+    }
+    KNOWN_FIELDS = ["PERSON_ID", "EVENTMAPPINGID", "ENCOUNTERID"]
+    DEFAULT_MAPPING = {
+        "PERSON_ID": "PERSON_ID",
+        "EVENTMAPPINGID": "EVENTMAPPINGID",
+        "ENCOUNTERID": "ENCOUNTERID",
+    }
+
+
+class DummyEventMappingTableNoDate(PhenexTable):
+    NAME_TABLE = "EVENT_MAPPING_NO_DATE"
+    JOIN_KEYS = {
+        "DummyEventWithoutCodesOrDateTable": ["EVENTMAPPINGID"],
+        "DummyConceptTable": ["CONCEPTID"],
+    }
+    KNOWN_FIELDS = ["EVENTMAPPINGID", "CONCEPTID"]
+    DEFAULT_MAPPING = {
+        "EVENTMAPPINGID": "EVENTMAPPINGID",
+        "CONCEPTID": "CONCEPTID",
+    }
+
+
+class DummyEncounterDateForCodesTable(PhenexTable):
+    NAME_TABLE = "ENCOUNTER_DATE_FOR_CODES"
+    JOIN_KEYS = {
+        "DummyEventWithoutCodesOrDateTable": ["ENCOUNTERID"],
+    }
+    KNOWN_FIELDS = ["ENCOUNTERID", "EVENT_DATE"]
+    DEFAULT_MAPPING = {
+        "ENCOUNTERID": "ENCOUNTERID",
+        "EVENT_DATE": "EVENT_DATE",
+    }
+
+
+class CodelistPhenotypeEventDateDefinedInTestGenerator(PhenotypeTestGenerator):
+    """
+    Test that EVENT_DATE_DEFINED_IN autojoins the event date from another table.
+    """
+
+    name_space = "clpt_event_date_defined_in"
+    test_date = True
+
+    def define_input_tables(self):
+        event_dates = {
+            "P1": datetime.date(2021, 1, 10),
+            "P2": datetime.date(2021, 2, 15),
+            "P3": datetime.date(2021, 3, 20),
+            "P4": datetime.date(2021, 4, 25),
+        }
+        patient_codes = {
+            "P1": ["c1", "c2"],
+            "P2": ["c1"],
+            "P3": ["c2", "c3"],
+            "P4": ["c1", "c3"],
+        }
+
+        event_rows = []
+        encounter_rows = []
+        encounter_id = 1
+        for person_id, codes in patient_codes.items():
+            for code in codes:
+                event_rows.append(
+                    {
+                        "PERSON_ID": person_id,
+                        "CODE": code,
+                        "CODE_TYPE": "ICD10CM",
+                        "ENCOUNTERID": encounter_id,
+                    }
+                )
+                encounter_rows.append(
+                    {
+                        "ENCOUNTERID": encounter_id,
+                        "EVENT_DATE": event_dates[person_id],
+                    }
+                )
+                encounter_id += 1
+
+        return [
+            {
+                "name": "event_no_date",
+                "df": pd.DataFrame(event_rows),
+                "type": DummyEventWithoutDateTable,
+            },
+            {
+                "name": "encounter_date",
+                "df": pd.DataFrame(encounter_rows),
+                "type": DummyEncounterDateTable,
+            },
+        ]
+
+    def define_phenotype_tests(self):
+        codelist_factory = LocalCSVCodelistFactory(
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        )
+
+        test_infos = [
+            {
+                "name": "c1_event_date",
+                "persons": ["P1", "P2", "P4"],
+                "dates": [
+                    datetime.date(2021, 1, 10),
+                    datetime.date(2021, 2, 15),
+                    datetime.date(2021, 4, 25),
+                ],
+            },
+            {
+                "name": "c2_event_date",
+                "persons": ["P1", "P3"],
+                "dates": [
+                    datetime.date(2021, 1, 10),
+                    datetime.date(2021, 3, 20),
+                ],
+            },
+        ]
+
+        for test_info in test_infos:
+            codelist_name = test_info["name"].replace("_event_date", "")
+            test_info["phenotype"] = CodelistPhenotype(
+                name=test_info["name"],
+                codelist=codelist_factory.get_codelist(codelist_name),
+                domain="event_no_date",
+                return_date="first",
+            )
+
+        return test_infos
+
+
+class CodelistPhenotypeCodesAndEventDateDefinedInTestGenerator(PhenotypeTestGenerator):
+    """
+    Test both CODES_DEFINED_IN and EVENT_DATE_DEFINED_IN together with a time range filter.
+    """
+
+    name_space = "clpt_codes_and_event_date_defined_in"
+
+    def define_input_tables(self):
+        min_days = datetime.timedelta(days=90)
+        max_days = datetime.timedelta(days=180)
+        one_day = datetime.timedelta(days=1)
+        index_date = datetime.date(2022, 1, 1)
+
+        event_dates = [
+            index_date - min_days - one_day,  # P0
+            index_date - min_days,  # P1
+            index_date - min_days + one_day,  # P2
+            index_date - max_days - one_day,  # P3
+            index_date - max_days,  # P4
+            index_date - max_days + one_day,  # P5
+            index_date - one_day,  # P6
+            index_date,  # P7
+        ]
+        N = len(event_dates)
+
+        df_concept = pd.DataFrame(
+            {
+                "CONCEPTID": [1],
+                "CODE": ["c1"],
+                "CODE_TYPE": ["ICD10CM"],
+            }
+        )
+        df_mapping = pd.DataFrame(
+            {
+                "EVENTMAPPINGID": list(range(1, N + 1)),
+                "CONCEPTID": [1] * N,
+            }
+        )
+        df_event = pd.DataFrame(
+            {
+                "PERSON_ID": [f"P{x}" for x in range(N)],
+                "EVENTMAPPINGID": list(range(1, N + 1)),
+                "ENCOUNTERID": list(range(1, N + 1)),
+                "INDEX_DATE": [index_date] * N,
+            }
+        )
+        df_encounter = pd.DataFrame(
+            {
+                "ENCOUNTERID": list(range(1, N + 1)),
+                "EVENT_DATE": event_dates,
+            }
+        )
+
+        return [
+            {
+                "name": "event_no_code_no_date",
+                "df": df_event,
+                "type": DummyEventWithoutCodesOrDateTable,
+            },
+            {
+                "name": "event_mapping_no_date",
+                "df": df_mapping,
+                "type": DummyEventMappingTableNoDate,
+            },
+            {
+                "name": "concept",
+                "df": df_concept,
+                "type": DummyConceptTable,
+            },
+            {
+                "name": "encounter_date_for_codes",
+                "df": df_encounter,
+                "type": DummyEncounterDateForCodesTable,
+            },
+        ]
+
+    def define_phenotype_tests(self):
+        codelist_factory = LocalCSVCodelistFactory(
+            path=os.path.join(os.path.dirname(__file__), "../util/dummy/codelists.csv")
+        )
+
+        test_infos = [
+            {
+                "name": "max_days_leq_180_remote_date",
+                "relative_time_range": RelativeTimeRangeFilter(
+                    max_days=LessThanOrEqualTo(180)
+                ),
+                "persons": ["P0", "P1", "P2", "P4", "P5", "P6", "P7"],
+            },
+            {
+                "name": "min_days_geq_90_max_days_leq_180_remote_date",
+                "relative_time_range": RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(90),
+                    max_days=LessThanOrEqualTo(180),
+                ),
+                "persons": ["P0", "P1", "P4", "P5"],
+            },
+        ]
+
+        for test_info in test_infos:
+            test_info["phenotype"] = CodelistPhenotype(
+                name=test_info["name"],
+                codelist=codelist_factory.get_codelist("c1"),
+                domain="event_no_code_no_date",
+                relative_time_range=test_info["relative_time_range"],
+            )
+
+        return test_infos
+
+
+# ============================================================================
 # Test Registration
 # ============================================================================
 
@@ -619,6 +912,14 @@ if __name__ == "__main__":
     # Asymmetric join keys test
     asymmetric_gen = CodelistPhenotypeAutojoinAsymmetricTestGenerator()
     asymmetric_gen.run_tests()
+
+    # EVENT_DATE_DEFINED_IN test
+    event_date_gen = CodelistPhenotypeEventDateDefinedInTestGenerator()
+    event_date_gen.run_tests()
+
+    # Combined CODES_DEFINED_IN + EVENT_DATE_DEFINED_IN test
+    both_gen = CodelistPhenotypeCodesAndEventDateDefinedInTestGenerator()
+    both_gen.run_tests()
 
     print("\n" + "=" * 80)
     print("All CodelistPhenotype autojoin tests completed successfully!")
