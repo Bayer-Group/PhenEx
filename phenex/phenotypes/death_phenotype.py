@@ -77,7 +77,7 @@ class DeathPhenotype(Phenotype):
             )
             # reference_column.delta(b) = reference - b  (anchor - death)
             # We want death - anchor, so negate.
-            day_diff = (-reference_column.delta(death_table.EVENT_DATE, "day")).cast(
+            day_diff = (-reference_column.cast("timestamp").delta(death_table.EVENT_DATE.cast("timestamp"), "day")).cast(
                 "float64"
             )
             death_table = death_table.mutate(VALUE=day_diff)

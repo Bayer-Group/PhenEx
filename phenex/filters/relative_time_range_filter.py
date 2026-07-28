@@ -112,7 +112,7 @@ class RelativeTimeRangeFilter(Filter):
             ), f"INDEX_DATE column not found in table {table}"
             reference_column = table.INDEX_DATE
 
-        DAYS_FROM_ANCHOR = reference_column.delta(table.EVENT_DATE, "day")
+        DAYS_FROM_ANCHOR = reference_column.cast("timestamp").delta(table.EVENT_DATE.cast("timestamp"), "day")
         if self.when == "after":
             DAYS_FROM_ANCHOR = -DAYS_FROM_ANCHOR
 
