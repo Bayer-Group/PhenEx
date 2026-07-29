@@ -664,9 +664,7 @@ class CodeTable(PhenexTable):
         "PhenexVisitOccurrenceTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
     }
     CODES_DEFINED_IN = None  # Set to mapper class name if codes are elsewhere
-    EVENT_DATE_DEFINED_IN = (
-        None  # Set to mapper class name if event date is elsewhere
-    )
+    EVENT_DATE_DEFINED_IN = None  # Set to mapper class name if event date is elsewhere
     KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "CODE", "CODE_TYPE", "VISIT_DETAIL_ID"]
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",

@@ -82,9 +82,7 @@ class DummyEventWithoutCodesTable(CodeTable):
     """
 
     NAME_TABLE = "EVENT"
-    CODES_DEFINED_IN = (
-        "DummyConceptTable"  # mapper class containing the codes
-    )
+    CODES_DEFINED_IN = "DummyConceptTable"  # mapper class containing the codes
     JOIN_KEYS = {
         "DummyEventMappingTable": ["EVENTMAPPINGID"],  # Direct join to mapping table
     }
