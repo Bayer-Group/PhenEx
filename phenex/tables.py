@@ -466,6 +466,79 @@ class PhenexTable:
             column_mapping=self.column_mapping,
         )
 
+    @staticmethod
+    def find_table_in_domains(name: str, tables: dict) -> "PhenexTable":
+        """
+        Find a table in a domains dictionary by mapper class name or NAME_TABLE.
+
+        Public mapper configuration should prefer mapper class names for
+        CODES_DEFINED_IN / EVENT_DATE_DEFINED_IN to stay aligned with JOIN_KEYS
+        and PATHS. NAME_TABLE matching is kept as a compatibility fallback.
+        """
+        for domain_table in tables.values():
+            if domain_table is None:
+                continue
+            table_name = getattr(domain_table, "NAME_TABLE", None)
+            class_name = domain_table.__class__.__name__
+            if table_name == name or class_name == name:
+                return domain_table
+
+        available = [
+            f"{t.__class__.__name__} (NAME_TABLE={getattr(t, 'NAME_TABLE', 'N/A')})"
+            for t in tables.values()
+            if t is not None
+        ]
+        raise ValueError(
+            f"Table '{name}' not found. Searched by NAME_TABLE and class name. "
+            f"Available tables: {', '.join(available)}"
+        )
+
+    def resolve_event_date(self, tables: dict) -> "PhenexTable":
+        """
+        Ensure EVENT_DATE is present, autojoining via EVENT_DATE_DEFINED_IN if needed.
+
+        If EVENT_DATE already exists on this table, returns self unchanged.
+        Otherwise joins to the table named by EVENT_DATE_DEFINED_IN and keeps
+        the original columns plus EVENT_DATE.
+        """
+        if "EVENT_DATE" in self.columns:
+            return self
+
+        event_date_domain = getattr(self, "EVENT_DATE_DEFINED_IN", None)
+        if event_date_domain is None:
+            raise ValueError(
+                f"{self.__class__.__name__} does not have an EVENT_DATE column "
+                "and EVENT_DATE_DEFINED_IN is not set. Either add EVENT_DATE to the "
+                "table mapping or set EVENT_DATE_DEFINED_IN to specify which table "
+                "contains the event date."
+            )
+        if tables is None:
+            raise ValueError(
+                f"Table required for EVENT_DATE ({event_date_domain}) but 'tables' "
+                "is None. Pass the domains dictionary via the 'tables' parameter."
+            )
+
+        target_table = self.find_table_in_domains(event_date_domain, tables)
+        if "EVENT_DATE" not in target_table.columns:
+            raise ValueError(
+                f"EVENT_DATE_DEFINED_IN='{event_date_domain}' points to "
+                f"{target_table.__class__.__name__}, which does not have an "
+                "EVENT_DATE column."
+            )
+
+        original_columns = list(self.columns)
+        joined = self.join(target_table, domains=tables)
+        columns_to_keep = [
+            c
+            for c in list(dict.fromkeys(original_columns + ["EVENT_DATE"]))
+            if c in joined.columns
+        ]
+        return type(self)(
+            joined.select(columns_to_keep),
+            name=self.NAME_TABLE,
+            column_mapping=self.column_mapping,
+        )
+
     @classmethod
     def to_dict(cls) -> dict:
         """
@@ -525,7 +598,19 @@ class PhenexPersonTable(PhenexTable):
 
 
 class EventTable(PhenexTable):
+    """
+    Base class for tables containing dated events.
+
+    EVENT_DATE_DEFINED_IN: Specifies where the EVENT_DATE column is located.
+        - None (default): EVENT_DATE is in this table itself
+        - Mapper class name: EVENT_DATE is in another table (autojoined via JOIN_KEYS/PATHS)
+
+    When EVENT_DATE_DEFINED_IN is set, omit EVENT_DATE from DEFAULT_MAPPING — the date
+    is brought in via autojoin at phenotype execution time.
+    """
+
     NAME_TABLE = "EVENT"
+    EVENT_DATE_DEFINED_IN = None
     KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE"]
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
@@ -539,21 +624,38 @@ class CodeTable(PhenexTable):
 
     CODES_DEFINED_IN: Specifies where CODE/CODE_TYPE columns are located.
         - None (default): Codes are in this table itself
-        - NAME_TABLE or class name: Codes are in another table (matched by NAME_TABLE or class name)
+        - Mapper class name: Codes are in another table
 
-    Example 1: Traditional pattern (codes in the table)
+    EVENT_DATE_DEFINED_IN: Specifies where the EVENT_DATE column is located.
+        - None (default): EVENT_DATE is in this table itself
+        - Mapper class name: EVENT_DATE is in another table
+
+    When CODES_DEFINED_IN / EVENT_DATE_DEFINED_IN is set, omit the corresponding
+    columns from DEFAULT_MAPPING — they are brought in via autojoin.
+
+    Example 1: Traditional pattern (codes and date in the table)
         class ConditionOccurrenceTable(CodeTable):
             CODES_DEFINED_IN = None  # Default, codes are here
             DEFAULT_MAPPING = {
                 "CODE": "CONDITION_CONCEPT_ID",
-                "CODE_TYPE": "VOCABULARY_ID"
+                "CODE_TYPE": "VOCABULARY_ID",
+                "EVENT_DATE": "CONDITION_START_DATE",
             }
 
     Example 2: Concept table pattern (codes in separate table)
         class EventTable(CodeTable):
-            CODES_DEFINED_IN = "CONCEPT"  # NAME_TABLE of target table
+            CODES_DEFINED_IN = "ConceptTable"
             JOIN_KEYS = {"EventMappingTable": ["EVENTMAPPINGID"]}
             PATHS = {"ConceptTable": ["EventMappingTable"]}
+
+    Example 3: Event date on a related encounter table
+        class MedicationAdministrationTable(CodeTable):
+            EVENT_DATE_DEFINED_IN = "EncounterTable"
+            JOIN_KEYS = {"EncounterTable": [("ENCOUNTERID", "ID")]}
+            DEFAULT_MAPPING = {
+                "PERSON_ID": "PERSONID",
+                # EVENT_DATE omitted — resolved from EncounterTable
+            }
     """
 
     NAME_TABLE = "CODE"
@@ -561,7 +663,8 @@ class CodeTable(PhenexTable):
         "PhenexPersonTable": ["PERSON_ID"],
         "PhenexVisitOccurrenceTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
     }
-    CODES_DEFINED_IN = None  # Set to domain name if codes are in a different table
+    CODES_DEFINED_IN = None  # Set to mapper class name if codes are elsewhere
+    EVENT_DATE_DEFINED_IN = None  # Set to mapper class name if event date is elsewhere
     KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "CODE", "CODE_TYPE", "VISIT_DETAIL_ID"]
     DEFAULT_MAPPING = {
         "PERSON_ID": "PERSON_ID",
@@ -624,6 +727,7 @@ class MeasurementTable(PhenexTable):
         "PhenexPersonTable": ["PERSON_ID"],
         "PhenexVisitOccurrenceTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
     }
+    EVENT_DATE_DEFINED_IN = None
     KNOWN_FIELDS = [
         "PERSON_ID",
         "EVENT_DATE",
