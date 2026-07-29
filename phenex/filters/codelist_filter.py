@@ -12,7 +12,8 @@ class CodelistFilter(Filter):
     CodelistFilter is a class designed to filter a CodeTable based on a specified codelist.
 
     The filter automatically detects where codes are defined by checking the CodeTable's
-    CODES_DEFINED_IN property. If CODES_DEFINED_IN is set to a domain name (e.g., "concept"),
+    CODES_DEFINED_IN property. If CODES_DEFINED_IN is set to a mapper class name
+    (e.g., "ConceptTable"),
     the filter will use autojoin to reach that table. If CODES_DEFINED_IN is None, codes
     are assumed to be in the current table.
 
@@ -121,7 +122,7 @@ class CodelistFilter(Filter):
 
             # Example 2: Codes in a separate concept table (autojoin pattern)
             class EventWithoutCodesTable(CodeTable):
-                CODES_DEFINED_IN = "CONCEPT"  # NAME_TABLE of table containing codes
+                CODES_DEFINED_IN = "ConceptTable"
                 JOIN_KEYS = {"EventMappingTable": ["EVENTMAPPINGID"]}
                 PATHS = {"ConceptTable": ["EventMappingTable"]}
 

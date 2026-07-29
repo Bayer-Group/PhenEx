@@ -469,9 +469,11 @@ class PhenexTable:
     @staticmethod
     def find_table_in_domains(name: str, tables: dict) -> "PhenexTable":
         """
-        Find a table in a domains dictionary by NAME_TABLE or class name.
+        Find a table in a domains dictionary by mapper class name or NAME_TABLE.
 
-        Used by CODES_DEFINED_IN / EVENT_DATE_DEFINED_IN autojoin resolution.
+        Public mapper configuration should prefer mapper class names for
+        CODES_DEFINED_IN / EVENT_DATE_DEFINED_IN to stay aligned with JOIN_KEYS
+        and PATHS. NAME_TABLE matching is kept as a compatibility fallback.
         """
         for domain_table in tables.values():
             if domain_table is None:
@@ -601,7 +603,7 @@ class EventTable(PhenexTable):
 
     EVENT_DATE_DEFINED_IN: Specifies where the EVENT_DATE column is located.
         - None (default): EVENT_DATE is in this table itself
-        - NAME_TABLE or class name: EVENT_DATE is in another table (autojoined via JOIN_KEYS/PATHS)
+        - Mapper class name: EVENT_DATE is in another table (autojoined via JOIN_KEYS/PATHS)
 
     When EVENT_DATE_DEFINED_IN is set, omit EVENT_DATE from DEFAULT_MAPPING — the date
     is brought in via autojoin at phenotype execution time.
@@ -622,11 +624,11 @@ class CodeTable(PhenexTable):
 
     CODES_DEFINED_IN: Specifies where CODE/CODE_TYPE columns are located.
         - None (default): Codes are in this table itself
-        - NAME_TABLE or class name: Codes are in another table (matched by NAME_TABLE or class name)
+        - Mapper class name: Codes are in another table
 
     EVENT_DATE_DEFINED_IN: Specifies where the EVENT_DATE column is located.
         - None (default): EVENT_DATE is in this table itself
-        - NAME_TABLE or class name: EVENT_DATE is in another table (autojoined via JOIN_KEYS/PATHS)
+        - Mapper class name: EVENT_DATE is in another table
 
     When CODES_DEFINED_IN / EVENT_DATE_DEFINED_IN is set, omit the corresponding
     columns from DEFAULT_MAPPING — they are brought in via autojoin.
@@ -642,13 +644,13 @@ class CodeTable(PhenexTable):
 
     Example 2: Concept table pattern (codes in separate table)
         class EventTable(CodeTable):
-            CODES_DEFINED_IN = "CONCEPT"  # NAME_TABLE of target table
+            CODES_DEFINED_IN = "ConceptTable"
             JOIN_KEYS = {"EventMappingTable": ["EVENTMAPPINGID"]}
             PATHS = {"ConceptTable": ["EventMappingTable"]}
 
     Example 3: Event date on a related encounter table
         class MedicationAdministrationTable(CodeTable):
-            EVENT_DATE_DEFINED_IN = "ENCOUNTER"
+            EVENT_DATE_DEFINED_IN = "EncounterTable"
             JOIN_KEYS = {"EncounterTable": [("ENCOUNTERID", "ID")]}
             DEFAULT_MAPPING = {
                 "PERSON_ID": "PERSONID",
@@ -661,9 +663,9 @@ class CodeTable(PhenexTable):
         "PhenexPersonTable": ["PERSON_ID"],
         "PhenexVisitOccurrenceTable": ["PERSON_ID", "VISIT_DETAIL_ID"],
     }
-    CODES_DEFINED_IN = None  # Set to domain name if codes are in a different table
+    CODES_DEFINED_IN = None  # Set to mapper class name if codes are elsewhere
     EVENT_DATE_DEFINED_IN = (
-        None  # Set to domain name if event date is in a different table
+        None  # Set to mapper class name if event date is elsewhere
     )
     KNOWN_FIELDS = ["PERSON_ID", "EVENT_DATE", "CODE", "CODE_TYPE", "VISIT_DETAIL_ID"]
     DEFAULT_MAPPING = {

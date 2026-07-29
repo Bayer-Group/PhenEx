@@ -83,7 +83,7 @@ class DummyEventWithoutCodesTable(CodeTable):
 
     NAME_TABLE = "EVENT"
     CODES_DEFINED_IN = (
-        "DummyConceptTable"  # NAME_TABLE of the table where codes are defined
+        "DummyConceptTable"  # mapper class containing the codes
     )
     JOIN_KEYS = {
         "DummyEventMappingTable": ["EVENTMAPPINGID"],  # Direct join to mapping table
@@ -629,7 +629,7 @@ class DummyEventWithoutDateTable(CodeTable):
     """
 
     NAME_TABLE = "EVENT_NO_DATE"
-    EVENT_DATE_DEFINED_IN = "ENCOUNTER_DATE"
+    EVENT_DATE_DEFINED_IN = "DummyEncounterDateTable"
     JOIN_KEYS = {
         "DummyEncounterDateTable": ["ENCOUNTERID"],
     }
@@ -650,7 +650,7 @@ class DummyEventWithoutCodesOrDateTable(CodeTable):
 
     NAME_TABLE = "EVENT_NO_CODE_NO_DATE"
     CODES_DEFINED_IN = "DummyConceptTable"
-    EVENT_DATE_DEFINED_IN = "ENCOUNTER_DATE_FOR_CODES"
+    EVENT_DATE_DEFINED_IN = "DummyEncounterDateForCodesTable"
     JOIN_KEYS = {
         "DummyEventMappingTableNoDate": ["EVENTMAPPINGID"],
         "DummyEncounterDateForCodesTable": ["ENCOUNTERID"],
