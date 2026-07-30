@@ -27,6 +27,7 @@ interface CohortCardRowProps {
   enableDrag: boolean;
   registerRowRef: (id: string, el: HTMLDivElement | null) => void;
   registerEditor: (editorRef: React.RefObject<any>, onValueChange: (v: any) => void) => void;
+  onColumnResizeStart: (field: string, startWidth: number, e: React.MouseEvent) => void;
   onRowMouseDown: (e: React.MouseEvent, rowIndex: number) => void;
   onRowClick: (e: React.MouseEvent, rowData: any, rowIndex: number) => void;
   onContextMenu: (e: React.MouseEvent, rowIndex: number) => void;
@@ -53,6 +54,7 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
   enableDrag,
   registerRowRef,
   registerEditor,
+  onColumnResizeStart,
   onRowMouseDown,
   onRowClick,
   onContextMenu,
@@ -111,6 +113,7 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
           isEditing={editingField === colDef.field}
           eventKey={editingField === colDef.field ? editingEventKey : undefined}
           registerEditor={registerEditor}
+          onColumnResizeStart={onColumnResizeStart}
         />
       ))}
     </div>

@@ -174,6 +174,9 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     const [pinnedWidthOverride, setPinnedWidthOverride] = useState<number | null>(null);
     const isDividerDraggingRef = useRef(false);
 
+    // Per-field width overrides from column-edge drag. Survives row data refreshes.
+    const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+
     // Stable display values: only update when the incoming prop is non-empty so
     // that a transient undefined (e.g. caused by a data-listener firing during an
     // async save) never unmounts the cohort-meta section or loses the last name.
@@ -239,9 +242,20 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       prevScrollTopRef.current = 0;
     }, [cohortId]);
 
+    // Apply user-dragged widths on top of column defs (without mutating defaults).
+    const sizedColumns = useMemo(
+      () =>
+        columns.map(c =>
+          columnWidths[c.field] != null
+            ? { ...c, flex: undefined, width: columnWidths[c.field] }
+            : c
+        ),
+      [columns, columnWidths]
+    );
+
     // --- Column split: pinned (left) vs scrollable (right) ---
-    const pinnedColumns = useMemo(() => columns.filter(c => c.pinned === 'left' || c.pinned === true), [columns]);
-    const scrollColumns = useMemo(() => columns.filter(c => !(c.pinned === 'left' || c.pinned === true)), [columns]);
+    const pinnedColumns = useMemo(() => sizedColumns.filter(c => c.pinned === 'left' || c.pinned === true), [sizedColumns]);
+    const scrollColumns = useMemo(() => sizedColumns.filter(c => !(c.pinned === 'left' || c.pinned === true)), [sizedColumns]);
     const scrollColumnsRef = useRef(scrollColumns);
     scrollColumnsRef.current = scrollColumns;
 
@@ -297,6 +311,38 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     }, [minPinnedWidth, maxPinnedWidth]);
+
+    // ---------------------------------------------------------------------------
+    // Column edge drag (live width on every cell/header in the column)
+    // ---------------------------------------------------------------------------
+    const handleColumnResizeStart = useCallback(
+      (field: string, startWidth: number, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const startX = e.clientX;
+        // Column resize owns pinned width; drop the divider override so the
+        // panel follows the resized column widths exactly.
+        setPinnedWidthOverride(null);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        const onMouseMove = (ev: MouseEvent) => {
+          const next = Math.max(50, Math.round(startWidth + (ev.clientX - startX)));
+          setColumnWidths(prev => (prev[field] === next ? prev : { ...prev, [field]: next }));
+        };
+
+        const onMouseUp = () => {
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      },
+      []
+    );
 
     const scrollWidth = useMemo(
       () => scrollColumns.reduce((sum, c) => sum + (c.width ?? 150), 0),
@@ -511,7 +557,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
     // Re-sync whenever the rendered rows/columns or edit state change.
     useLayoutEffect(() => {
       scheduleRowHeightSync();
-    }, [rows, columns, editing, effectivePinnedWidth, scheduleRowHeightSync]);
+    }, [rows, columns, columnWidths, editing, effectivePinnedWidth, scheduleRowHeightSync]);
 
     // ---------------------------------------------------------------------------
     // Row interaction handlers
@@ -986,7 +1032,13 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       <div className={styles.headerRow} data-header-row>
         {cols.map(colDef => {
           const HeaderCell = resolveHeaderCellRenderer(colDef.field);
-          return <HeaderCell key={colDef.field} colDef={colDef} />;
+          return (
+            <HeaderCell
+              key={colDef.field}
+              colDef={colDef}
+              onColumnResizeStart={handleColumnResizeStart}
+            />
+          );
         })}
       </div>
     );
@@ -1076,6 +1128,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
               enableDrag={armedRowId === id}
               registerRowRef={(rid, el) => registerRowRef(panel, rid, el)}
               registerEditor={registerEditor}
+              onColumnResizeStart={handleColumnResizeStart}
               onRowMouseDown={handleRowMouseDown}
               onRowClick={handleRowClick}
               onContextMenu={handleContextMenu}

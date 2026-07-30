@@ -7,7 +7,6 @@ import {
   makeRendererParams,
   resolveEditor,
 } from './gridApiShim';
-import { columnNameToApplicablePhenotypeMapping } from '../../../assets/phenotype_applicable_parameters';
 
 /**
  * Simple inline text editor emulating AG Grid's built-in 'agTextCellEditor'.
@@ -60,6 +59,7 @@ interface CohortCardCellProps {
   eventKey?: string;
   /** Called with the editor's imperative ref + a value-parser so the parent can commit on stopEditing. */
   registerEditor: (editorRef: React.RefObject<any>, onValueChange: (v: any) => void) => void;
+  onColumnResizeStart: (field: string, startWidth: number, e: React.MouseEvent) => void;
 }
 
 export const CohortCardCell: React.FC<CohortCardCellProps> = ({
@@ -71,6 +71,7 @@ export const CohortCardCell: React.FC<CohortCardCellProps> = ({
   isEditing,
   eventKey,
   registerEditor,
+  onColumnResizeStart,
 }) => {
   const cellRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<any>(null);
@@ -86,12 +87,7 @@ export const CohortCardCell: React.FC<CohortCardCellProps> = ({
   }, [isEditing, registerEditor]);
 
   const width = colDef.flex ? undefined : colDef.width ?? 150;
-
-  const field = colDef.field as string | undefined;
-  const isNA =
-    field &&
-    Object.keys(columnNameToApplicablePhenotypeMapping).includes(field) &&
-    !(columnNameToApplicablePhenotypeMapping as any)[field]?.includes(rowData?.class_name);
+  const resizable = !colDef.flex;
 
   const cellStyle: React.CSSProperties = {
     width: width !== undefined ? `${width}px` : undefined,
@@ -169,6 +165,12 @@ export const CohortCardCell: React.FC<CohortCardCellProps> = ({
       }}
     >
       {renderContent()}
+      {resizable && (
+        <div
+          className={styles.colResizeHandle}
+          onMouseDown={e => onColumnResizeStart(colDef.field, width ?? 150, e)}
+        />
+      )}
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { InfoPortal } from '../../../components/Portal/InfoPortal';
 import styles from './CohortCardHeaderCell.module.css';
+import viewerStyles from './CohortCardViewer.module.css';
 import parametersInfoRaw from '/assets/parameters_info.json?raw';
 
 const parametersInfo: Record<string, { description?: string }> = JSON.parse(parametersInfoRaw);
@@ -18,12 +19,17 @@ export interface HeaderCellProps {
   };
   /** When true the info button is always visible, not just on header-row hover. */
   showInfo?: boolean;
+  onColumnResizeStart?: (field: string, startWidth: number, e: React.MouseEvent) => void;
 }
 
 // ---------------------------------------------------------------------------
 // Generic header cell
 // ---------------------------------------------------------------------------
-export const CohortCardHeaderCell: React.FC<HeaderCellProps> = ({ colDef, showInfo = false }) => {
+export const CohortCardHeaderCell: React.FC<HeaderCellProps> = ({
+  colDef,
+  showInfo = false,
+  onColumnResizeStart,
+}) => {
   const [infoVisible, setInfoVisible] = useState(false);
   const [infoOpacity, setInfoOpacity] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -31,6 +37,8 @@ export const CohortCardHeaderCell: React.FC<HeaderCellProps> = ({ colDef, showIn
 
   const paramInfo = parametersInfo[colDef.field];
   const title = colDef.headerName ?? colDef.field;
+  const width = colDef.flex ? undefined : colDef.width ?? 150;
+  const resizable = !colDef.flex && !!onColumnResizeStart;
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
@@ -88,6 +96,13 @@ export const CohortCardHeaderCell: React.FC<HeaderCellProps> = ({ colDef, showIn
             <ReactMarkdown>{paramInfo!.description!}</ReactMarkdown>
           </div>
         </InfoPortal>
+      )}
+
+      {resizable && (
+        <div
+          className={viewerStyles.colResizeHandle}
+          onMouseDown={e => onColumnResizeStart!(colDef.field, width ?? 150, e)}
+        />
       )}
     </div>
   );
