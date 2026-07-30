@@ -1,8 +1,9 @@
 import classDefinitionsRaw from '/assets/class_definitions.json?raw';
 let classDefinitions = JSON.parse(classDefinitionsRaw);
 import { defaultColumns } from './PhenotypeColumnDefinitions';
+import { componentPhenotypeColumns } from '../../CohortViewer/CohortDataService/CohortColumnDefinitions';
 import { CohortDataService } from '../../CohortViewer/CohortDataService/CohortDataService';
-import typeStyles from '../../../styles/study_types.module.css'
+import type { TableData, TableRow } from '../../CohortViewer/tableTypes';
 export interface Phenotype {
   name: string;
   description?: string;
@@ -39,6 +40,9 @@ export class PhenotypeDataService {
   // Max component depth shown when subchildren are enabled. Level 1 = direct
   // children, level 2 = grandchildren; `Infinity` shows the full subtree.
   private _componentLevel: number = Number.POSITIVE_INFINITY;
+  // Per-row accordion overrides for this panel only (absolute phenotype levels).
+  // Collapse stores the row's own level; expand stores level + 1.
+  private _levelOverrides: Map<string, number> = new Map();
   public cohortDataService = CohortDataService.getInstance(); // Assuming CohortDataService is a singleton class
 
   private constructor() {
@@ -60,6 +64,7 @@ export class PhenotypeDataService {
   }
 
   public setData(data: Phenotype | undefined) {
+    const prevId = this.currentPhenotype?.id;
     // Always reference the actual phenotype from the cohort, not the passed-in data object
     if (data?.id) {
       const phenotypeInCohort = this.cohortDataService.cohort_data.phenotypes.find(
@@ -68,6 +73,9 @@ export class PhenotypeDataService {
       this.currentPhenotype = phenotypeInCohort || data;
     } else {
       this.currentPhenotype = data || null;
+    }
+    if (this.currentPhenotype?.id !== prevId) {
+      this._levelOverrides.clear();
     }
     this.updateRowData();
     this.updateComponentPhenotypeData();
@@ -196,14 +204,82 @@ export class PhenotypeDataService {
   }
 
   public updateComponentPhenotypeData() {
-    // Always show direct children (level 1); the toggle extends the depth to
-    // include subchildren (level 2+) up to the selected level.
-    const maxLevel = this._showSubchildren ? this._componentLevel : 1;
-    this.componentPhenotypeTableData = this.cohortDataService.tableDataForComponentPhenotype(
-      this.currentPhenotype,
-      true,
-      maxLevel
+    if (!this.currentPhenotype?.id) {
+      this.componentPhenotypeTableData = { rows: [], columns: componentPhenotypeColumns };
+      return;
+    }
+
+    const descendants = this.cohortDataService.getAllDescendants(this.currentPhenotype.id);
+    const visible = descendants.filter(
+      (row: TableRow) => row.type === 'component' && this.isComponentVisibleAtLevel(row)
     );
+
+    this.componentPhenotypeTableData = {
+      rows: visible.map((phenotype: TableRow) => ({
+        ...phenotype,
+        colorCellBackground: false,
+        _hasChildren: this.cohortDataService.hasComponentChildren(phenotype.id),
+        _childrenExpanded: this.isRowExpanded(phenotype.id),
+      })),
+      columns: componentPhenotypeColumns,
+    };
+  }
+
+  private getBaseLevel(): number {
+    return this.currentPhenotype?.level ?? 0;
+  }
+
+  /** Absolute max level from the panel's level dropdown / subchildren toggle. */
+  private getGlobalAbsoluteMaxLevel(): number {
+    const maxRelative = this._showSubchildren ? this._componentLevel : 1;
+    if (!Number.isFinite(maxRelative)) return Number.POSITIVE_INFINITY;
+    return this.getBaseLevel() + maxRelative;
+  }
+
+  /**
+   * Max absolute component level for `row`, honouring the nearest ancestor's
+   * panel-local accordion override when present.
+   */
+  private getEffectiveMaxLevelForRow(row: TableRow): number {
+    const ancestors = this.cohortDataService.getAllAncestors(row);
+    for (let i = ancestors.length - 1; i >= 0; i--) {
+      const override = this._levelOverrides.get(ancestors[i].id);
+      if (override !== undefined) return override;
+    }
+    return this.getGlobalAbsoluteMaxLevel();
+  }
+
+  private isComponentVisibleAtLevel(row: TableRow): boolean {
+    return (row.level ?? 1) <= this.getEffectiveMaxLevelForRow(row);
+  }
+
+  /** Whether any direct component child of `phenotypeId` is currently visible. */
+  public isRowExpanded(phenotypeId: string): boolean {
+    const children = (this.cohortDataService.cohort_data?.phenotypes || []).filter(
+      (p: TableRow) =>
+        p.type === 'component' &&
+        Array.isArray(p.parentIds) &&
+        p.parentIds.includes(phenotypeId)
+    );
+    return children.some((child: TableRow) => this.isComponentVisibleAtLevel(child));
+  }
+
+  /**
+   * Accordion toggle for the phenotype components panel only — does not touch
+   * the active CohortModel expand state used by the main cohort viewer.
+   */
+  public toggleRowExpansion(phenotypeId: string): void {
+    const phenotype = this.cohortDataService.getPhenotypeById(phenotypeId);
+    if (!phenotype || !this.cohortDataService.hasComponentChildren(phenotypeId)) return;
+
+    const level = phenotype.level ?? 0;
+    if (this.isRowExpanded(phenotypeId)) {
+      this._levelOverrides.set(phenotypeId, level);
+    } else {
+      this._levelOverrides.set(phenotypeId, level + 1);
+    }
+    this.updateComponentPhenotypeData();
+    this.notifyComponentPhenotypeListeners(true);
   }
 
   public getShowSubchildren(): boolean {
@@ -212,6 +288,7 @@ export class PhenotypeDataService {
 
   public setShowSubchildren(show: boolean) {
     this._showSubchildren = show;
+    this._levelOverrides.clear();
     this.updateComponentPhenotypeData();
     this.notifyComponentPhenotypeListeners(true);
   }
@@ -222,6 +299,8 @@ export class PhenotypeDataService {
 
   public setComponentLevel(level: number) {
     this._componentLevel = level;
+    // Global level always wins over per-row accordion overrides.
+    this._levelOverrides.clear();
     this.updateComponentPhenotypeData();
     this.notifyComponentPhenotypeListeners(true);
   }

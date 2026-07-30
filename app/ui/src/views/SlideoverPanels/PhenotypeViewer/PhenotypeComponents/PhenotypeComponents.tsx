@@ -29,6 +29,10 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
     dataService.setComponentLevel(value);
   };
 
+  const handleToggleRowExpansion = (phenotypeId: string) => {
+    dataService.toggleRowExpansion(phenotypeId);
+  };
+
   useEffect(() => {
     const listener = () => {
       setTableData(dataService.componentPhenotypeTableData);
@@ -106,6 +110,7 @@ export const PhenotypeComponents: FC<PhenotypeComponentsProps> = ({ data }) => {
           sectionGroupBy="type"
           onCellValueChanged={onCellValueChanged}
           onRowDragEnd={onRowDragEnd}
+          onToggleRowExpansion={handleToggleRowExpansion}
         />
       </div>
     </div>
