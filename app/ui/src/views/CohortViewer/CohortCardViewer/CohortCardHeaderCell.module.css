@@ -13,7 +13,9 @@
 }
 
 .headerCell:hover {
-  z-index: 5;
+  /* Above the next header cell for the straddling resize handle; keep below
+     any overlays — the sticky .headerRow already sits at z-index: 3. */
+  z-index: 1;
 }
 
 .title {

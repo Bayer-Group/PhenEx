@@ -328,7 +328,9 @@
 
 .cell:hover,
 .cell:has(.colResizeHandle:active) {
-  z-index: 5;
+  /* Above the next cell so the straddling handle is clickable — must stay
+     below .headerRow (z-index: 3) or hovered cells cover the sticky header. */
+  z-index: 1;
 }
 
 /* Keep content clipped; only the absolutely-positioned handle may spill. */
