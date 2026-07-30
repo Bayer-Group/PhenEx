@@ -322,14 +322,27 @@
   box-sizing: border-box;
   display: flex;
   align-items: stretch;
-  overflow: hidden;
+  /* visible so the resize handle can straddle the right border into the next cell */
+  overflow: visible;
 }
 
-/* Hit target on the right edge of a cell/header. Live-resizes the column. */
+.cell:hover,
+.cell:has(.colResizeHandle:active) {
+  z-index: 5;
+}
+
+/* Keep content clipped; only the absolutely-positioned handle may spill. */
+.cell > :not(.colResizeHandle) {
+  overflow: hidden;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Hit target centered on the cell's right border (the division between columns). */
 .colResizeHandle {
   position: absolute;
   top: 0;
-  right: 0;
+  right: -4px;
   bottom: 0;
   width: 8px;
   cursor: col-resize;
