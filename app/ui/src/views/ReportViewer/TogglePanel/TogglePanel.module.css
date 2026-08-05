@@ -1,17 +1,21 @@
 .togglePanel {
-  display: flex;
-  flex-direction: column;
+  --toggle-panel-header-height: 40px;
+  position: relative;
   height: 100%;
   width: 100%;
   overflow: hidden;
 }
 
 .header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 40px;
-  min-height: 40px;
+  height: var(--toggle-panel-header-height);
   padding: 0 10px;
   border: none;
   border-bottom: 1px solid var(--line-color, #e5e2e0);
@@ -42,7 +46,8 @@
 }
 
 .content {
-  flex: 1 1 auto;
-  min-height: 0;
+  position: absolute;
+  inset: 0;
   overflow: auto;
+  padding-top: var(--toggle-panel-header-height);
 }

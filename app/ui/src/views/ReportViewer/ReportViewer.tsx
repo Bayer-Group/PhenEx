@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
+import { FC, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalStore, type MouseEvent as ReactMouseEvent } from 'react';
 import { Layout, Model, IJsonModel, Actions, BorderNode, DockLocation, type Action } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
@@ -560,6 +560,18 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     [],
   );
 
+  // Pressing the inner splitter (between Cohorts and Outline) collapses the
+  // Cohorts panel rather than resizing — it is not a drag handle. Uses
+  // mousedown-capture because FlexLayout captures the pointer and swallows the
+  // subsequent click.
+  const handleLeftPanelClick = useCallback((e: ReactMouseEvent) => {
+    if ((e.target as HTMLElement).closest('.flexlayout__splitter')) {
+      e.preventDefault();
+      e.stopPropagation();
+      togglePanel('cohortSelector');
+    }
+  }, [togglePanel]);
+
   const lastBorderSizeRef = useRef(LEFT_BORDER_SIZE);
   const lastSelectedTabRef = useRef(0);
   const syncingBorderRef = useRef(false);
@@ -904,7 +916,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       switch (node.getComponent()) {
         case 'leftPanel':
           return (
-            <div className={styles.leftPanel}>
+            <div className={styles.leftPanel} onMouseDownCapture={handleLeftPanelClick}>
               <Layout model={leftPanelModelRef.current!} factory={leftPanelFactory} />
             </div>
           );
@@ -948,6 +960,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       finalCohortSizes, cohortDataMap, barChartSpacers,
       tteCohorts, table2Cohorts, studyDescription,
       leftPanelFactory, renderComponent,
+      handleLeftPanelClick,
     ],
   );
 
@@ -956,7 +969,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   return (
     <CellLayoutStoreProvider>
     <div className={styles.container}>
-      <div className={styles.titleGroup}>
+      {/* <div className={styles.titleGroup}>
           <button
             type="button"
             className={styles.leftBorderCollapseBtn}
@@ -974,7 +987,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
             onNavigate={handleViewerNavigate}
           />
           <ReportStoreMenu outline={storedOutline} onImportOutline={setStoredOutline} />
-      </div>
+      </div> */}
       <div className={styles.page}>
         <Layout
           model={layoutModelRef.current}
