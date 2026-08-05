@@ -306,11 +306,9 @@
 
 .titleLabel {
   font-size: 20px;
-  font-weight: 600;
-  font-family: 'IBMPlexSans-regular';
+  font-weight: 700;
+  font-family: 'IBMPlexSans-bold';
   color: var(--text-color-secondary, #666);
-  /* text-transform: uppercase; */
-  /* letter-spacing: 0.04em; */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

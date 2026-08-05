@@ -28,13 +28,13 @@ import { resolveHeaderCellRenderer } from './CohortCardHeaderCell';
 import { getHierarchicalBackgroundColor } from '../CohortTable/CellRenderers/PhenexCellRenderer';
 import typeStyles from '../../../styles/study_types.module.css';
 
-// Section title labels keyed by phenotype `type`. Rendered as all-caps title
-// rows before the first row of each section (styled like the header cells).
+// Section title labels keyed by phenotype `type`. Rendered as uppercase bold
+// title rows before the first row of each section.
 const SECTION_TITLES: Record<string, string> = {
-  entry: 'Entry criterion',
-  inclusion: 'Inclusion criteria',
-  exclusion: 'Exclusion criteria',
-  baseline: 'Baseline characteristics',
+  entry: 'Entry',
+  inclusion: 'Inclusion',
+  exclusion: 'Exclusion',
+  baseline: 'Baseline',
   outcome: 'Outcomes',
 };
 
@@ -1085,10 +1085,6 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
               <div
                 key={`__title_${type}`}
                 className={`${styles.titleRow} ${!hasRenderedTitle ? styles.firstTitleRow : ''}`}
-                style={{
-                  backgroundColor: getHierarchicalBackgroundColor(type ?? undefined, '1.1.1'),
-                 
-                }}
                 aria-hidden={panel === 'scroll'}
               >
                 {panel === 'pinned' && (
@@ -1097,7 +1093,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
                       typeStyles[`${type ?? ''}_text_color`] || ''
                     }`}
                   >
-                    {label}
+                    {label.toUpperCase()}
                   </span>
                 )}
               </div>
