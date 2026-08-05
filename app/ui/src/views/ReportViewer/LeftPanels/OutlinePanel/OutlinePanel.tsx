@@ -431,8 +431,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
           className={`${styles.floatingHeader}${scrolled ? ` ${styles.floatingHeaderScrolled}` : ''}`}
           style={!scrolled && headerHeight ? { maxHeight: headerHeight } : undefined}
         >
-          <span className={styles.titleLarge}>{studyTitle}</span>
-          <span className={styles.titleSlim}>{studyTitle}</span>
+          <span className={styles.title}>{studyTitle}</span>
         </div>
       )}
       <div ref={scrollRef} className={styles.scrollContent} style={headerHeight ? { paddingTop: headerHeight + 40 } : undefined}>

@@ -14,18 +14,11 @@
   left: 0;
   right: 0;
   z-index: 10;
-  overflow: hidden;
-  max-height: 200px;
   background: var(--background_color_dark, #fff);
-  /* transition: max-height 0.2s ease; */
 }
 
-.floatingHeaderScrolled {
-  max-height: 28px;
-}
-
-/* titleLarge is in normal flow — the container grows to fit it */
-.titleLarge {
+/* title transitions font-size so the header naturally hugs content height */
+.title {
   display: block;
   padding: 10px 12px 8px;
   font-size: var(--font_size_pagetitle, 18px);
@@ -34,33 +27,12 @@
   line-height: 1.2;
   white-space: normal;
   word-break: break-word;
-  opacity: 1;
-  transition: opacity 0.15s;
+  transition: font-size 0.15s ease, padding 0.15s ease;
 }
 
-.titleSlim {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  padding: 6px 12px;
-  font-size: 20px;
-  font-family: IBMPlexSans-bold, sans-serif;
-  color: var(--text_color_focus, #000);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.floatingHeaderScrolled .titleLarge {
-  opacity: 0;
-}
-
-.floatingHeaderScrolled .titleSlim {
-  opacity: 1;
+.floatingHeaderScrolled .title {
+  font-size: 10px;
+  /* padding: 5px 12px 4px; */
 }
 
 
