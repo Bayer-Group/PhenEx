@@ -9,6 +9,7 @@ import { OutlinePanel } from './LeftPanels/OutlinePanel/OutlinePanel';
 import { type Table2Cohort, type TimeToEventCohort } from './GraphsAndTables/OutcomesChart';
 import { HorizontalRowViewer } from './HorizontalRowViewer/HorizontalRowViewer';
 import { SingleRowContentHorizontalRowViewer } from './HorizontalRowViewer/SingleRowContentHorizontalRowViewer';
+import { TogglePanel } from './TogglePanel/TogglePanel';
 import { BreadcrumbTitle } from './BreadcrumbTitle';
 import { ReportStoreMenu } from './ReportStoreMenu';
 import leftPanelIcon from '../../assets/icons/left_panel.svg';
@@ -85,8 +86,17 @@ export interface ReportViewerProps {
 
 // ── Layout constants ────────────────────────────────────────────────────
 
-const LEFT_BORDER_SIZE = 300;
-const LEFT_BORDER_MIN = 250;
+/** Expanded widths of the two left sub-panels and the collapsed-strip width. */
+const COHORT_PANEL_WIDTH = 250;
+const OUTLINE_PANEL_WIDTH = 300;
+const COLLAPSED_PANEL_WIDTH = 40;
+const PANEL_MIN_WIDTH = 120;
+const INNER_SPLITTER = 4;
+
+/** The left border always spans exactly the two sub-panels (+ their splitter),
+ *  so collapsing a panel shrinks the border rather than widening its sibling. */
+const LEFT_BORDER_SIZE = COHORT_PANEL_WIDTH + OUTLINE_PANEL_WIDTH + INNER_SPLITTER;
+const LEFT_BORDER_MIN = COLLAPSED_PANEL_WIDTH * 2 + INNER_SPLITTER;
 
 /** Stable empty set for building the (never-expanded) main viewer cells. */
 const EMPTY_KEYS: Set<string> = new Set();
@@ -522,16 +532,33 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         children: [
           {
             type: 'tabset',
+            id: 'cohortSelectorTabset',
+            enableTabStrip: false,
+            width: COHORT_PANEL_WIDTH,
+            minWidth: COHORT_PANEL_WIDTH,
+            maxWidth: COHORT_PANEL_WIDTH,
             children: [{ type: 'tab', id: 'cohortSelector', name: 'Cohorts', component: 'cohortSelector', enableClose: false }],
           },
           {
             type: 'tabset',
+            id: 'outlineTabset',
+            enableTabStrip: false,
+            weight: OUTLINE_PANEL_WIDTH,
+            minWidth: PANEL_MIN_WIDTH,
             children: [{ type: 'tab', id: 'outline', name: 'Outline', component: 'outline', enableClose: false }],
           },
         ],
       },
     } as Parameters<typeof Model.fromJson>[0]);
   }
+
+  // Per-panel collapse state for the two left sub-panels (Cohorts / Outline).
+  const [panelCollapsed, setPanelCollapsed] = useState({ cohortSelector: false, outline: false });
+  const togglePanel = useCallback(
+    (panel: 'cohortSelector' | 'outline') =>
+      setPanelCollapsed((prev) => ({ ...prev, [panel]: !prev[panel] })),
+    [],
+  );
 
   const lastBorderSizeRef = useRef(LEFT_BORDER_SIZE);
   const lastSelectedTabRef = useRef(0);
@@ -544,6 +571,37 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   );
 
   const isBorderOpen = useCallback((border: BorderNode) => border.getSelected() !== -1, []);
+
+  // Apply collapse state: a collapsed panel becomes a fixed strip; the visible
+  // panel keeps its width (the sibling, if expanded, absorbs the remainder),
+  // and the whole left border shrinks/grows so nothing balloons.
+  useEffect(() => {
+    const inner = leftPanelModelRef.current;
+    if (!inner) return;
+    const { cohortSelector: cohortDown, outline: outlineDown } = panelCollapsed;
+    const cohortW = cohortDown ? COLLAPSED_PANEL_WIDTH : COHORT_PANEL_WIDTH;
+    const outlineW = outlineDown ? COLLAPSED_PANEL_WIDTH : OUTLINE_PANEL_WIDTH;
+
+    const pin = (w: number) => ({ width: w, minWidth: w, maxWidth: w });
+    // Expanded absorber: fixed pixel width but allowed to fill leftover space.
+    const fill = (w: number) => ({ width: w, minWidth: PANEL_MIN_WIDTH, maxWidth: undefined, weight: w });
+
+    inner.doAction(Actions.updateNodeAttributes('cohortSelectorTabset',
+      cohortDown ? pin(COLLAPSED_PANEL_WIDTH) : outlineDown ? fill(cohortW) : pin(cohortW)));
+    inner.doAction(Actions.updateNodeAttributes('outlineTabset',
+      outlineDown ? pin(COLLAPSED_PANEL_WIDTH) : fill(outlineW)));
+
+    // Resize the outer left border to exactly the two panels' combined width.
+    const borderSize = cohortW + outlineW + INNER_SPLITTER;
+    lastBorderSizeRef.current = borderSize;
+    const border = getLeftBorder();
+    if (border && isBorderOpen(border)) {
+      layoutModelRef.current.doAction(
+        // flexlayout's typings omit `size` for border nodes, though it is valid.
+        Actions.updateNodeAttributes(border.getId(), { size: borderSize } as unknown as Parameters<typeof Actions.updateNodeAttributes>[1]),
+      );
+    }
+  }, [panelCollapsed, getLeftBorder, isBorderOpen]);
 
   // Sync collapse context → FlexLayout border
   useEffect(() => {
@@ -771,30 +829,42 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       switch (component) {
         case 'cohortSelector':
           return (
-            <FullCohortSelector
-              groups={groups}
-              selections={selections}
-              onReplace={handleReplace}
-              onAdd={handleAdd}
-              onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
-              cohortDescriptions={cohortDescriptions}
-              finalCohortSizes={finalCohortSizes}
-              colorOverrides={colorOverrides}
-              onSetColor={handleSetColor}
-            />
+            <TogglePanel
+              title="Cohorts"
+              collapsed={panelCollapsed.cohortSelector}
+              onToggle={() => togglePanel('cohortSelector')}
+            >
+              <FullCohortSelector
+                groups={groups}
+                selections={selections}
+                onReplace={handleReplace}
+                onAdd={handleAdd}
+                onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
+                cohortDescriptions={cohortDescriptions}
+                finalCohortSizes={finalCohortSizes}
+                colorOverrides={colorOverrides}
+                onSetColor={handleSetColor}
+              />
+            </TogglePanel>
           );
         case 'outline':
           return (
-            <OutlinePanelConnected
-              entries={outlineEntries}
-              onNavigate={handleOutlineNavigate}
-              expandedKeys={expandedKeys}
-              onToggleExpand={handleToggleExpand}
-              onMovePhenotype={handleMovePhenotype}
-              onRenamePhenotype={handleRenamePhenotype}
-              onRenameSection={handleRenameSection}
-              cohortCount={selections.length}
-            />
+            <TogglePanel
+              title="Outline"
+              collapsed={panelCollapsed.outline}
+              onToggle={() => togglePanel('outline')}
+            >
+              <OutlinePanelConnected
+                entries={outlineEntries}
+                onNavigate={handleOutlineNavigate}
+                expandedKeys={expandedKeys}
+                onToggleExpand={handleToggleExpand}
+                onMovePhenotype={handleMovePhenotype}
+                onRenamePhenotype={handleRenamePhenotype}
+                onRenameSection={handleRenameSection}
+                cohortCount={selections.length}
+              />
+            </TogglePanel>
           );
         case 'figureLegend':
           return (
@@ -818,6 +888,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       expandedKeys, handleToggleExpand, legendItems, handleLegendChange, OutlinePanelConnected,
       colorOverrides, handleSetColor, handleReplaceColorOverrides, _runId,
       handleMovePhenotype, handleRenamePhenotype, handleRenameSection,
+      panelCollapsed, togglePanel,
     ],
   );
 
