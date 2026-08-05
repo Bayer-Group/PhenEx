@@ -17,7 +17,7 @@
   overflow: hidden;
   max-height: 200px;
   background: var(--background_color_dark, #fff);
-  transition: max-height 0.2s ease;
+  /* transition: max-height 0.2s ease; */
 }
 
 .floatingHeaderScrolled {
@@ -213,7 +213,8 @@
 
 .scrollBarThumb {
   background-color: rgba(101, 96, 96, 0.2) !important;
-  width: 10px;
+  width: 8px;
+  border-radius: 0px;
 }
 
 .scrollBarTrack:hover {
