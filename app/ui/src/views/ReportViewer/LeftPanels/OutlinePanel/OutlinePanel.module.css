@@ -1,19 +1,68 @@
 .panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   overflow-y: hidden;
   height: 100%;
   margin-left:var(--left_panel_margin_left, 0px);
-
-  /* height: calc(100% - 5px); */
-  /* background-color: white !important; */
-  /* border-radius:8px;
-  margin-top:5px; */
-  /* border: var(--border); */
-  /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.); */
-
 }
+
+.floatingHeader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  overflow: hidden;
+  max-height: 200px;
+  background: var(--background_color_dark, #fff);
+  transition: max-height 0.2s ease;
+}
+
+.floatingHeaderScrolled {
+  max-height: 28px;
+}
+
+/* titleLarge is in normal flow — the container grows to fit it */
+.titleLarge {
+  display: block;
+  padding: 10px 12px 8px;
+  font-size: var(--font_size_pagetitle, 18px);
+  font-family: IBMPlexSans-bold, sans-serif;
+  color: var(--text_color_focus, #000);
+  line-height: 1.2;
+  white-space: normal;
+  word-break: break-word;
+  opacity: 1;
+  transition: opacity 0.15s;
+}
+
+.titleSlim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 12px;
+  font-size: var(--font_size_breadcrumbs, 11px);
+  font-family: IBMPlexSans-bold, sans-serif;
+  color: var(--text_color_focus, #000);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.floatingHeaderScrolled .titleLarge {
+  opacity: 0;
+}
+
+.floatingHeaderScrolled .titleSlim {
+  opacity: 1;
+}
+
 
 .row {
   position: relative;
@@ -107,12 +156,11 @@
   color: #666;
 }
 
-.scrollContent{
+.scrollContent {
   scrollbar-width: none;
   overflow-y: auto;
-  padding-top: 20px;
+  padding-top: 96px;
   padding-bottom: 100px;
-
 }
 
 

@@ -1,4 +1,4 @@
-import { FC, memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { FC, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import EyeSolidIcon from '../../../../assets/icons/eye-solid.svg';
 import EyeClosedIcon from '../../../../assets/icons/eye-closed.svg';
 import {
@@ -72,6 +72,8 @@ interface OutlinePanelProps {
   onRenameSection: (sectionId: string, displayName: string) => void;
   /** Number of selected cohorts, used to size fresh grid tiles. */
   cohortCount: number;
+  /** Study title shown at the top of the panel. */
+  studyTitle?: string;
 }
 
 /** Which item (if any) is being renamed inline. */
@@ -135,13 +137,34 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
   onRenamePhenotype,
   onRenameSection,
   cohortCount,
+  studyTitle,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const [dragName, setDragName] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ key: string; pos: 'before' | 'after' | 'into' } | null>(null);
   const [renaming, setRenaming] = useState<Renaming | null>(null);
   const [menu, setMenu] = useState<Menu | null>(null);
   const [hoveredRowKey, setHoveredRowKey] = useState<string | null>(null);
+
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el || !studyTitle) return;
+    setHeaderHeight(el.scrollHeight);
+    const ro = new ResizeObserver(() => setHeaderHeight(el.scrollHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [studyTitle]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !studyTitle) return;
+    const onScroll = () => setScrolled(el.scrollTop > 40);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [studyTitle]);
 
   /** Maps each row.name to the sectionLayoutId of its parent section. */
   const rowSectionMap = useMemo(() => {
@@ -402,7 +425,17 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
 
   return (
     <div className={styles.panel}>
-      <div ref={scrollRef} className={styles.scrollContent}>
+      {studyTitle && (
+        <div
+          ref={headerRef}
+          className={`${styles.floatingHeader}${scrolled ? ` ${styles.floatingHeaderScrolled}` : ''}`}
+          style={!scrolled && headerHeight ? { maxHeight: headerHeight } : undefined}
+        >
+          <span className={styles.titleLarge}>{studyTitle}</span>
+          <span className={styles.titleSlim}>{studyTitle}</span>
+        </div>
+      )}
+      <div ref={scrollRef} className={styles.scrollContent} style={headerHeight ? { paddingTop: headerHeight } : undefined}>
         {entries.map((entry) => {
           if (entry.kind === 'category') {
             return renderPlainItem(

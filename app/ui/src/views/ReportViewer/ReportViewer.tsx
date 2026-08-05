@@ -814,7 +814,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       onRenamePhenotype: (name: string, displayName: string) => void;
       onRenameSection: (sectionId: string, displayName: string) => void;
       cohortCount: number;
-    }> = ({ entries, onNavigate, expandedKeys: ek, onToggleExpand: ote, onMovePhenotype, onRenamePhenotype, onRenameSection, cohortCount }) => {
+      studyTitle?: string;
+    }> = ({ entries, onNavigate, expandedKeys: ek, onToggleExpand: ote, onMovePhenotype, onRenamePhenotype, onRenameSection, cohortCount, studyTitle }) => {
       const activeKey = useSyncExternalStore(store.subscribe, store.getSnapshot);
       const currentIndex = entries.findIndex((e) => e.key === activeKey);
       return (
@@ -828,6 +829,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           onRenamePhenotype={onRenamePhenotype}
           onRenameSection={onRenameSection}
           cohortCount={cohortCount}
+          studyTitle={studyTitle}
         />
       );
     };
@@ -875,6 +877,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
                 onRenamePhenotype={handleRenamePhenotype}
                 onRenameSection={handleRenameSection}
                 cohortCount={selections.length}
+                studyTitle={displayTitle}
               />
             </TogglePanel>
           );
