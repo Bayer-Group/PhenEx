@@ -2,7 +2,7 @@ import { FC, useState, useEffect, useCallback, useMemo, useRef, useSyncExternalS
 import { Layout, Model, IJsonModel, Actions, BorderNode, DockLocation, type Action } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import styles from './ReportViewer.module.css';
-import { FloatingPanel } from '../../components/FloatingPanel';
+
 import { FullCohortSelector } from './LeftPanels/CohortSelector/FullCohortSelector';
 import { FigureLegend } from './LeftPanels/FigureLegend/FigureLegend';
 import { OutlinePanel } from './LeftPanels/OutlinePanel/OutlinePanel';
@@ -91,21 +91,7 @@ const LEFT_BORDER_MIN = 250;
 /** Stable empty set for building the (never-expanded) main viewer cells. */
 const EMPTY_KEYS: Set<string> = new Set();
 
-/** Left-panel component id → floating-window title. */
-const LEFT_PANEL_TITLES: Record<string, string> = {
-  cohortSelector: 'Cohorts',
-  outline: 'Outline',
-  figureLegend: 'Legend',
-};
 
-/** Left-panel tabs, in display order. Ids are stable so a tab can be removed
- *  from the tabset when floated and re-inserted (in order) when docked. */
-const LEFT_TABSET_ID = 'leftTabset';
-const LEFT_PANEL_TABS: { id: string; name: string }[] = [
-  { id: 'cohortSelector', name: 'Cohorts' },
-  { id: 'outline', name: 'Outline' },
-  { id: 'figureLegend', name: 'Legend' },
-];
 
 function createLayoutModel(): Model {
   const json: IJsonModel = {
@@ -133,8 +119,8 @@ function createLayoutModel(): Model {
         location: 'right',
         size: 300,
         minSize: 200,
-        selected: -1,
-        children: [{ type: 'tab', name: 'Interact', component: 'rightStacked', enableClose: false }],
+        selected: 0,
+        children: [{ type: 'tab', name: 'Legend', component: 'figureLegend', enableClose: false }],
       },
     ],
     layout: {
@@ -536,11 +522,11 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
         children: [
           {
             type: 'tabset',
-            id: LEFT_TABSET_ID,
-            enableDeleteWhenEmpty: false,
-            children: LEFT_PANEL_TABS.map((t) => ({
-              type: 'tab', id: t.id, name: t.name, component: t.id, enableClose: false,
-            })),
+            children: [{ type: 'tab', id: 'cohortSelector', name: 'Cohorts', component: 'cohortSelector', enableClose: false }],
+          },
+          {
+            type: 'tabset',
+            children: [{ type: 'tab', id: 'outline', name: 'Outline', component: 'outline', enableClose: false }],
           },
         ],
       },
@@ -551,34 +537,6 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   const lastSelectedTabRef = useRef(0);
   const syncingBorderRef = useRef(false);
 
-  // ── Custom floating popouts (Cohorts / Outline / Legend) ─────────────
-  // Instead of FlexLayout's popout (which is bound to its Layout container),
-  // a "floated" component is rendered in a FloatingPanel portaled to the body
-  // so it can be dragged anywhere in the viewport. Floating removes the tab
-  // from the tabset entirely; docking re-inserts it at its original position.
-  const [floatingComponents, setFloatingComponents] = useState<string[]>([]);
-  const floatComponent = useCallback((component: string) => {
-    const model = leftPanelModelRef.current;
-    if (model?.getNodeById(component)) {
-      model.doAction(Actions.deleteTab(component));
-    }
-    setFloatingComponents((prev) => (prev.includes(component) ? prev : [...prev, component]));
-  }, []);
-  const dockComponent = useCallback((component: string) => {
-    const model = leftPanelModelRef.current;
-    const originalIndex = LEFT_PANEL_TABS.findIndex((t) => t.id === component);
-    if (model && originalIndex >= 0 && !model.getNodeById(component)) {
-      // Insert after any earlier-ordered tabs that are currently docked.
-      const insertIndex = LEFT_PANEL_TABS.filter(
-        (t, idx) => idx < originalIndex && model.getNodeById(t.id),
-      ).length;
-      model.doAction(Actions.addTab(
-        { type: 'tab', id: component, name: LEFT_PANEL_TABS[originalIndex].name, component, enableClose: false },
-        LEFT_TABSET_ID, DockLocation.CENTER, insertIndex, true,
-      ));
-    }
-    setFloatingComponents((prev) => prev.filter((c) => c !== component));
-  }, []);
 
   const getLeftBorder = useCallback(
     () => layoutModelRef.current.getBorderSet().getBorderMap().get(DockLocation.LEFT),
@@ -773,35 +731,6 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     '</ol>',
   ].join('');
 
-  // ── Nested layout model for right border ──
-  const rightPanelModel = useMemo(() => {
-    const json: IJsonModel = {
-      global: { tabEnableClose: false, tabEnableRename: false, tabEnableDrag: true, tabSetEnableMaximize: true, tabSetEnableDrop: true },
-      borders: [],
-      layout: {
-        type: 'row',
-        children: [
-          {
-            type: 'tabset',
-            children: [{ type: 'tab', name: 'AI', component: 'ai' }],
-          },
-        ],
-      },
-    };
-    return Model.fromJson(json);
-  }, []);
-
-  const rightPanelFactory = useCallback(
-    (node: { getComponent: () => string | undefined }) => {
-      switch (node.getComponent()) {
-        case 'ai':
-          return <div className={styles.rightPanel} />;
-        default:
-          return null;
-      }
-    },
-    [],
-  );
 
   // Wrapper that subscribes to the active cell key without factory recreation
   const OutlinePanelConnected = useMemo(() => {
@@ -836,10 +765,9 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Renders a single left-panel component (Cohorts / Outline / Legend). Shared
-  // by both the docked FlexLayout tab and the floating popout window.
-  const renderLeftComponent = useCallback(
-    (component: string, isFloating = false) => {
+  // Renders a single component (Cohorts / Outline / Legend).
+  const renderComponent = useCallback(
+    (component: string) => {
       switch (component) {
         case 'cohortSelector':
           return (
@@ -878,8 +806,6 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               onSetColor={handleSetColor}
               onReplaceColorOverrides={handleReplaceColorOverrides}
               runId={_runId ?? undefined}
-              isFloating={isFloating}
-              onToggleFloat={() => (isFloating ? dockComponent('figureLegend') : floatComponent('figureLegend'))}
             />
           );
         default:
@@ -892,20 +818,16 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       expandedKeys, handleToggleExpand, legendItems, handleLegendChange, OutlinePanelConnected,
       colorOverrides, handleSetColor, handleReplaceColorOverrides, _runId,
       handleMovePhenotype, handleRenamePhenotype, handleRenameSection,
-      floatComponent, dockComponent,
     ],
   );
 
-  // Factory for the inner left-panel layout. Floated components are removed
-  // from the tabset, so the factory only ever renders docked content.
   const leftPanelFactory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       const component = node.getComponent();
-      return component ? renderLeftComponent(component) : null;
+      return component ? renderComponent(component) : null;
     },
-    [renderLeftComponent],
+    [renderComponent],
   );
-  console.log(" waterfalldata", waterfallData);
   const factory = useCallback(
     (node: { getComponent: () => string | undefined }) => {
       switch (node.getComponent()) {
@@ -942,8 +864,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
               />
             </div>
           );
-        case 'rightStacked':
-          return <Layout model={rightPanelModel} factory={rightPanelFactory} />;
+        case 'figureLegend':
+          return renderComponent('figureLegend');
         default:
           return null;
       }
@@ -953,8 +875,8 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       handleNavigateToRow, handleOutlineNavigate,
       handleRenamePhenotype,
       finalCohortSizes, cohortDataMap, barChartSpacers,
-      tteCohorts, table2Cohorts, studyDescription, rightPanelModel, rightPanelFactory,
-      leftPanelFactory,
+      tteCohorts, table2Cohorts, studyDescription,
+      leftPanelFactory, renderComponent,
     ],
   );
 
@@ -1007,19 +929,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           onSetColor={handleSetColor}
         />
       )}
-      {floatingComponents.map((component, i) => (
-        <FloatingPanel
-          key={component}
-          title={LEFT_PANEL_TITLES[component] ?? component}
-          initialX={window.innerWidth - 250 - 35 - i * 32}
-          initialY={30}
-          onClose={() => dockComponent(component)}
-          // The legend provides its own dock control in its top-right actions.
-          showDockButton={component !== 'figureLegend'}
-        >
-          {renderLeftComponent(component, true)}
-        </FloatingPanel>
-      ))}
+
     </div>
     </CellLayoutStoreProvider>
   );
