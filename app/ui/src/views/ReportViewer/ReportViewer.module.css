@@ -293,10 +293,10 @@
 .page :global(.flexlayout__layout_main + .flexlayout__splitter_border) {
   position: relative;
   z-index: 3;
-  background-color: var(--background_color_dark) !important;
-  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.08);
-  clip-path: inset(0 0 0 -15px);
-  border-left: 1px solid var(--line-color);
+  background-color: var(--background_color_light) !important;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.08);
+  clip-path: inset(0 -15px 0 0);
+  border-right: 1px solid var(--line-color);
 }
 
 .page :global(.flexlayout__layout_main + .flexlayout__splitter_border:hover) {
@@ -329,8 +329,8 @@
   background-color: var(--background_color_dark) !important;
   /* border-bottom: var(--border) !important; */
   border-top: var(--border) !important;
-  padding-bottom: 0px;
-  padding-top: 5px;
+  /* padding-bottom: 0px;
+  padding-top: 5px; */
   padding-left:30px;
 }
 :global(.flexlayout__tabset_tabbar_outer_top) {
