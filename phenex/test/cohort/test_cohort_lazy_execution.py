@@ -28,9 +28,11 @@ from phenex.filters import (
 from phenex.ibis_connect import DuckDBConnector
 from phenex.phenotypes import (
     AgePhenotype,
+    BinPhenotype,
     CodelistPhenotype,
     SexPhenotype,
     MeasurementPhenotype,
+    TimeRangePhenotype,
 )
 from phenex.reporting import TimeToEvent
 from phenex.test.cohort.test_mappings import (
@@ -343,6 +345,13 @@ class TestCohortLazyExecution(unittest.TestCase):
         cls._db_path = os.path.join(cls._tmpdir, "test_lazy.duckdb")
         cls._meta_db = os.path.join(cls._tmpdir, "phenex.db")
 
+        # Isolate node state
+        from phenex.node import Node
+        from phenex.node_manager import NodeManager
+
+        cls._orig_node_manager = Node._node_manager
+        Node._node_manager = NodeManager(db_name=cls._meta_db)
+
         cls.con = DuckDBConnector(DUCKDB_DEST_DATABASE=cls._db_path)
         cls.tables = _build_test_tables(cls.con)
         cls.cohort, cls.right_censor = _build_cohort(cls.tables)
@@ -350,6 +359,12 @@ class TestCohortLazyExecution(unittest.TestCase):
 
         # Enable debug logging so we can track execution
         logging.getLogger("phenex").setLevel(logging.DEBUG)
+
+    @classmethod
+    def tearDownClass(cls):
+        from phenex.node import Node
+
+        Node._node_manager = cls._orig_node_manager
 
     def test_01_first_execution_computes_everything(self):
         """First execution with lazy_execution=True should compute all nodes."""
@@ -497,12 +512,25 @@ class TestSubcohortLazyExecution(unittest.TestCase):
         cls._tmpdir = tempfile.mkdtemp()
         cls._db_path = os.path.join(cls._tmpdir, "test_lazy_subcohort.duckdb")
 
+        # Isolate node state from other test modules in the same session
+        from phenex.node import Node
+        from phenex.node_manager import NodeManager
+
+        cls._orig_node_manager = Node._node_manager
+        Node._node_manager = NodeManager(db_name=os.path.join(cls._tmpdir, "phenex.db"))
+
         cls.con = DuckDBConnector(DUCKDB_DEST_DATABASE=cls._db_path)
         cls.tables = _build_test_tables(cls.con)
         cls.cohort, cls.right_censor = _build_cohort(cls.tables)
         cls.subcohort = _build_subcohort(cls.cohort)
 
         logging.getLogger("phenex").setLevel(logging.DEBUG)
+
+    @classmethod
+    def tearDownClass(cls):
+        from phenex.node import Node
+
+        Node._node_manager = cls._orig_node_manager
 
     def test_01_parent_then_subcohort_first_run(self):
         """First run: parent cohort and subcohort should both fully execute."""
@@ -564,6 +592,140 @@ class TestSubcohortLazyExecution(unittest.TestCase):
             tracker.print_summary("Subcohort - second run (cached)")
 
         self.assertIsNotNone(self.subcohort.index_table)
+
+
+class TestCohortLazyReporterIndexChange(unittest.TestCase):
+    """When an inclusion is added between two lazy executions, the
+    index shrinks, and the baseline-characteristic tables must be
+    recomputed against the new index."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmpdir = tempfile.mkdtemp()
+        cls.con = DuckDBConnector(
+            DUCKDB_DEST_DATABASE=os.path.join(cls._tmpdir, "test_reporter_idx.duckdb")
+        )
+        cls.tables = _build_test_tables(cls.con)
+
+        from phenex.node import Node
+        from phenex.node_manager import NodeManager
+
+        cls._orig_node_manager = Node._node_manager
+        Node._node_manager = NodeManager(db_name=os.path.join(cls._tmpdir, "phenex.db"))
+        logging.getLogger("phenex").setLevel(logging.WARNING)
+
+    @classmethod
+    def tearDownClass(cls):
+        from phenex.node import Node
+
+        Node._node_manager = cls._orig_node_manager
+
+    def _make_cohort(self, with_extra_inclusion):
+        """Same entry + characteristics every time; only the inclusion list differs."""
+        entry = CodelistPhenotype(
+            name="entry_drug",
+            return_date="first",
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+        )
+        inclusions = [
+            TimeRangePhenotype(
+                name="continuous_coverage",
+                relative_time_range=RelativeTimeRangeFilter(
+                    min_days=GreaterThanOrEqualTo(365), anchor_phenotype=entry
+                ),
+            )
+        ]
+        if with_extra_inclusion:
+            # Only patients P0-P6 have cond1, so adding this shrinks the cohort.
+            inclusions.append(
+                CodelistPhenotype(
+                    name="has_cond1",
+                    codelist=Codelist(["cond1"]).copy(use_code_type=False),
+                    domain="CONDITION_OCCURRENCE",
+                    relative_time_range=RelativeTimeRangeFilter(
+                        when="before",
+                        min_days=GreaterThanOrEqualTo(0),
+                        anchor_phenotype=entry,
+                    ),
+                )
+            )
+        age = AgePhenotype(name="age_", anchor_phenotype=entry)
+        return Cohort(
+            name="reporter_idx_cohort",  # SAME name both runs -> lazy matches node identities
+            entry_criterion=entry,
+            inclusions=inclusions,
+            exclusions=[],
+            characteristics=[age, BinPhenotype(name="age_category", phenotype=age)],
+            write_subset_tables_entry=False,
+            write_subset_tables_index=False,
+        )
+
+    @staticmethod
+    def _row_N(df, name):
+        for _, row in df.iterrows():
+            if str(row["Name"]).strip().lower() == name:
+                return int(str(row["N"]).replace(",", ""))
+        return None
+
+    def test_characteristics_recompute_when_index_changes(self):
+        # RUN 1: entry + coverage (all patients qualify)
+        c1 = self._make_cohort(with_extra_inclusion=False)
+        c1.execute(
+            tables=self.tables, con=self.con, overwrite=True, lazy_execution=True
+        )
+        n1 = self._row_N(c1.table1, "cohort")
+        age1 = self._row_N(c1.table1, "age")
+        self.assertEqual(
+            age1, n1, "RUN 1: everyone has an age, so Age count should equal N."
+        )
+
+        # RUN 2: add an inclusion that shrinks the cohort, re-execute lazily
+        c2 = self._make_cohort(with_extra_inclusion=True)
+        c2.execute(
+            tables=self.tables, con=self.con, overwrite=True, lazy_execution=True
+        )
+        n2 = self._row_N(c2.table1, "cohort")
+        age2 = self._row_N(c2.table1, "age")
+
+        self.assertLess(n2, n1, "adding the inclusion should shrink the cohort.")
+        # The bug leaves age2 == n1 (stale), so Age% = 100 * n1 / n2 > 100.
+        self.assertEqual(
+            age2,
+            n2,
+            f"Stale characteristic: Age count {age2} != new cohort N {n2}. "
+            f"Table1 Age% would be {100 * age2 / n2:.1f}% instead of 100%.",
+        )
+
+        # The invalidation must not touch the entry criterion
+        entry_tbl = next(
+            t
+            for t in self.con.dest_connection.list_tables()
+            if t.endswith("ENTRY_DRUG")
+        )
+        entry_n = self.con.dest_connection.table(entry_tbl).count().execute()
+        self.assertEqual(
+            entry_n,
+            n1,
+            f"Entry table poisoned: {entry_tbl} holds {entry_n} rows, expected {n1}. "
+            f"The cache invalidation recomputed the entry criterion against the "
+            f"index-restricted tables.",
+        )
+
+        # RUN 3: remove the inclusion again the cohort must grow back to n1.
+        c3 = self._make_cohort(with_extra_inclusion=False)
+        c3.execute(
+            tables=self.tables, con=self.con, overwrite=True, lazy_execution=True
+        )
+        n3 = self._row_N(c3.table1, "cohort")
+        age3 = self._row_N(c3.table1, "age")
+        self.assertEqual(
+            n3,
+            n1,
+            f"Cohort cannot grow back: N {n3} != {n1} after removing the inclusion. "
+            f"The entry population was permanently narrowed by the invalidation.",
+        )
+        self.assertEqual(age3, n3, "RUN 3: Age count should match restored cohort N.")
 
 
 if __name__ == "__main__":

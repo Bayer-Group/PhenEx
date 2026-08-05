@@ -853,6 +853,10 @@ class Cohort:
 
         logger.info(f"Cohort '{self.name}': executing index stage ...")
 
+        index_membership_changed = lazy_execution and Node._node_manager.node_changed(
+            self.index_table_node, con
+        )
+
         self.index_stage.execute(
             tables=self.subset_tables_entry,
             con=con,
@@ -902,6 +906,34 @@ class Cohort:
                     self.subset_tables_index[node.name] = type(entry_tbl)(filtered_ibis)
 
         if self.reporting_stage:
+            # If the index population changed, clear characteristics/outcomes
+            if index_membership_changed:
+                logger.info(
+                    f"Cohort '{self.name}': index population changed; invalidating cached "
+                    f"characteristics/outcomes so they recompute against the new index."
+                )
+                # Clear only reporting-only nodes. Entry/index-stage nodes
+                # don't depend on the index, so their caches are still valid
+                _protected = set()
+                for _stage in (self.entry_stage, self.index_stage):
+                    if _stage is not None:
+                        _protected.add(_stage.name)
+                        _protected.update(n.name for n in _stage.dependencies)
+
+                _seen = set()
+
+                def _clear_reporting_only(node):
+                    if node.name in _protected or node.name in _seen:
+                        return
+                    _seen.add(node.name)
+                    Node._node_manager.clear_cache(node, con=con, recursive=False)
+                    for _child in node.children:
+                        _clear_reporting_only(_child)
+
+                for _node in list(self.characteristics or []) + list(
+                    self.outcomes or []
+                ):
+                    _clear_reporting_only(_node)
             logger.info(f"Cohort '{self.name}': executing reporting stage ...")
             self.reporting_stage.execute(
                 tables=self.subset_tables_index,
