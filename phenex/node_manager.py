@@ -58,16 +58,7 @@ class NodeManager:
         """
         reasons = []
 
-        # Get current execution context
-        current_execution_params = self._get_execution_params(con)
-
-        # Get current node hash
-        current_hash = self._get_node_hash(node)
-
-        # Look up previous run with same name and execution context
-        last_hash = self._getlasthash(
-            node.name, execution_params=current_execution_params
-        )
+        current_hash, last_hash = self._compare_to_last_run(node, con)
 
         # Determine if node should rerun
         node_changed = current_hash != last_hash
@@ -88,6 +79,36 @@ class NodeManager:
             logger.info(f"Node '{node.name}': unchanged, using cached result")
 
         return should_rerun
+
+    def node_changed(self, node, con) -> bool:
+        """Return True if the node's definition differs from its last cached run."""
+        current_hash, last_hash = self._compare_to_last_run(node, con)
+        return current_hash != last_hash
+
+    def _compare_to_last_run(self, node, con):
+        """
+        Look up the node's current hash and the hash of its last cached run.
+
+        Single source of truth for how a node is compared against its cache:
+        both should_rerun() and node_changed() go through here, so the two can
+        never disagree about what counts as changed. Returns both hashes rather
+        than a bool because should_rerun() distinguishes "never executed"
+        (last_hash is None) from "definition changed" when it logs.
+
+        Parameters:
+            node: The Node object to look up
+            con: Database connector object (determines execution context)
+
+        Returns:
+            tuple: (current_hash, last_hash); last_hash is None if this node has
+            never run in this execution context.
+        """
+        return (
+            self._get_node_hash(node),
+            self._getlasthash(
+                node.name, execution_params=self._get_execution_params(con)
+            ),
+        )
 
     def update_run_params(self, node, con) -> bool:
         """
