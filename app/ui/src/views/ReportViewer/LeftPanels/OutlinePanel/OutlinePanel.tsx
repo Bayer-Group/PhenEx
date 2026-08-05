@@ -153,9 +153,6 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
     const el = headerRef.current;
     if (!el || !studyTitle) return;
     setHeaderHeight(el.scrollHeight);
-    const ro = new ResizeObserver(() => setHeaderHeight(el.scrollHeight));
-    ro.observe(el);
-    return () => ro.disconnect();
   }, [studyTitle]);
 
   useEffect(() => {
