@@ -130,8 +130,8 @@
 
 .scrollBarThumb{
   background-color: rgba(101, 96, 96, 0.2) !important;
-  /* border-radius: 0px; */
-  width:10px;
+  border-radius: 0px;
+  width:8px;
 }
 
 .scrollBarTrack:hover {

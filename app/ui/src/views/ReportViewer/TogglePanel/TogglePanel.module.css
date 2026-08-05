@@ -1,57 +1,44 @@
 .togglePanel {
-  --toggle-panel-header-height: 40px;
   position: relative;
   height: 100%;
   width: 100%;
   overflow: hidden;
 }
 
-.header {
+.chevronButton {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 10px;
   right: 0;
-  z-index: 1;
+  transform: translateY(-50%);
+  z-index: 100;
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: var(--toggle-panel-header-height);
-  padding: 0 10px;
+  justify-content: center;
+  width: 20px;
+  height: 40px;
+  padding: 0;
   border: none;
-  border-bottom: 1px solid var(--line-color, #e5e2e0);
-  background: transparent;
+  border-radius: 4px 0 0 4px;
+  background: var(--surface-color, #f5f3f1);
+  box-shadow: -2px 0 6px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  font: inherit;
-  font-weight: 600;
-  color: var(--text-color, #333);
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.header:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-.header:focus {
-  outline: none;
-}
-
-.chevron {
-  flex: 0 0 auto;
   font-size: 16px;
-  line-height: 1;
+  color: var(--text-color, #555);
   opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s;
 }
 
-.title {
-  overflow: hidden;
-  text-overflow: ellipsis;
+.chevronButton:hover {
+  opacity: 1;
+  background: var(--surface-hover-color, #ebe8e6);
+}
+
+.chevronButton:focus {
+  outline: none;
 }
 
 .content {
   position: absolute;
   inset: 0;
   overflow: auto;
-  padding-top: var(--toggle-panel-header-height);
 }

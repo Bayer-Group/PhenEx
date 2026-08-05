@@ -435,7 +435,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
           <span className={styles.titleSlim}>{studyTitle}</span>
         </div>
       )}
-      <div ref={scrollRef} className={styles.scrollContent} style={headerHeight ? { paddingTop: headerHeight } : undefined}>
+      <div ref={scrollRef} className={styles.scrollContent} style={headerHeight ? { paddingTop: headerHeight + 40 } : undefined}>
         {entries.map((entry) => {
           if (entry.kind === 'category') {
             return renderPlainItem(

@@ -18,20 +18,17 @@ export interface TogglePanelProps {
  */
 export const TogglePanel: FC<TogglePanelProps> = ({ title, collapsed, onToggle, children }) => (
   <div className={styles.togglePanel}>
+    <div className={styles.content} hidden={collapsed}>
+      {children}
+    </div>
     <button
       type="button"
-      className={styles.header}
+      className={styles.chevronButton}
       onClick={onToggle}
       title={collapsed ? `Expand ${title}` : `Collapse ${title}`}
       aria-expanded={!collapsed}
     >
-      <span className={styles.chevron} aria-hidden="true">
-        {collapsed ? '›' : '‹'}
-      </span>
-      {!collapsed && <span className={styles.title}>{title}</span>}
+      <span aria-hidden="true">{collapsed ? '›' : '‹'}</span>
     </button>
-    <div className={styles.content} hidden={collapsed}>
-      {children}
-    </div>
   </div>
 );
