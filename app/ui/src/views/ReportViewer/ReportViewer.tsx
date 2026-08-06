@@ -129,6 +129,7 @@ function createLayoutModel(): Model {
         location: 'right',
         size: 300,
         minSize: 200,
+        maxSize: 400,
         selected: 0,
         children: [{ type: 'tab', name: 'Legend', component: 'figureLegend', enableClose: false }],
       },

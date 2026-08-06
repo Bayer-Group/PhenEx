@@ -32,8 +32,29 @@
   padding-top: 10px;
   padding-left: 20px;
   padding-right: 20px;
+  margin-bottom:100px;
   /* margin-left: -12px;
   margin-right: -12px; */
+}
+
+.breadcrumbHeader {
+  position: absolute;
+  top: 0;
+  z-index: 10;
+  background: var(--background_color_light, #fff);
+  padding: 4px 0 2px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: var(--font_size_phenotypename, 14px);
+  padding-top:20px;
+  padding-bottom:5px;
+}
+
+.breadcrumbHeaderVisible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .verticalWrapper::-webkit-scrollbar {
@@ -64,6 +85,7 @@
   flex: 1;
   position: relative;
   min-height: 0;
+  padding-bottom: 100px;
 }
 
 /* ── Section (multi-row) cell ─────────────────────────────────────────── */
@@ -74,6 +96,8 @@
 
 .cardContentSection {
   position: relative;
+  padding-bottom: 100px;
+
 }
 
 /* ── Category (overview) cell ─────────────────────────────────────────── */
@@ -141,6 +165,10 @@
   opacity: 0;
   transition: opacity 0.15s;
   pointer-events: none;
+}
+
+.scrollBarTrack:hover {
+  background-color: transparent;
 }
 
 .cardColumnInner:hover .scrollBarTrack {

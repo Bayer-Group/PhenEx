@@ -1,4 +1,4 @@
-import { forwardRef, memo, useMemo, useRef } from 'react';
+import { forwardRef, memo, useMemo, useRef, useState, useEffect } from 'react';
 import { type CohortClassified, type CohortGroup, type KdeCurve, type CohortDescriptions, type ColorOverrides } from '../types';
 import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow, type ViewerEntry, CATEGORY_DESCRIPTIONS, getCategoryLabel } from '../studyRegistryUtils';
@@ -12,6 +12,7 @@ import { LayoutControls } from '../SectionLayouts/LayoutControls';
 import { getSectionLayoutId } from '../SectionLayouts/sectionLayoutStore';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
+import { BreadcrumbTitle } from '../BreadcrumbTitle';
 import styles from './HorizontalCell.module.css';
 import { AttritionChart } from '../GraphsAndTables/AttritionChart';
 
@@ -45,7 +46,7 @@ export interface HorizontalCellProps {
 // ── HorizontalCell ──────────────────────────────────────────────────────
 
 const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
-  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, onRenameRow, initialScrollTop, studyTitle = '', studyDescription, waterfallData, groups, cohortDescriptions, onSetColor }, ref) => {
+  ({ entry, entries, rows, isFocused, nearby, cohortDataMap, finalCohortSizes, spacers, tteCohorts, table2Cohorts, onNavigate, onNavigateToRow, onRenameRow, onVerticalScroll, initialScrollTop, studyTitle = '', studyDescription, waterfallData, groups, cohortDescriptions, onSetColor }, ref) => {
     const isSection = entry.kind === 'section';
     const isCategory = entry.kind === 'category';
     const reporter = entry.kind === 'row' ? entry.row.reporter : entry.reporter;
@@ -62,6 +63,20 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const initialScrollTopRef = useRef(initialScrollTop ?? 0);
     initialScrollTopRef.current = initialScrollTop ?? 0;
+    const [isScrolled, setIsScrolled] = useState(() => (initialScrollTop ?? 0) > 0);
+
+    useEffect(() => {
+      const el = verticalScrollRef.current;
+      if (!el) return;
+      const onScroll = () => {
+        const top = el.scrollTop;
+        setIsScrolled(top > 0);
+        onVerticalScroll?.(top, 50);
+      };
+      el.addEventListener('scroll', onScroll, { passive: true });
+      return () => el.removeEventListener('scroll', onScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
 
     const availableTteOutcomes = useMemo(
@@ -167,6 +182,15 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
 
     return (
       <div ref={ref} className={styles.cell}>
+            <div className={`${styles.breadcrumbHeader} ${isScrolled ? styles.breadcrumbHeaderVisible : ''}`}>
+              <BreadcrumbTitle
+                entries={entries}
+                currentIndex={entry.index}
+                studyTitle={''}
+                onNavigate={onNavigate}
+              />
+            </div>
+
         <div className={styles.cardColumnInner}>
           <div ref={verticalScrollRef} className={styles.verticalWrapper}>
             <div

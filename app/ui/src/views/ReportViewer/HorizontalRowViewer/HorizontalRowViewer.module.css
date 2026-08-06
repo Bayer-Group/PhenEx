@@ -142,7 +142,7 @@
 .navPillContainer {
   position: absolute;
   bottom: 30px;
-  right: 200px;
+  right: 5%;
   z-index: 10;
 }
 
