@@ -50,11 +50,26 @@
   font-size: var(--font_size_phenotypename, 14px);
   padding-top:20px;
   padding-bottom:5px;
+  width:100%;
 }
 
 .breadcrumbHeaderVisible {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* these are the top right controls*/
+.controls{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 30;
+  background-color: var(--background_color_light, #fff);
+  border-radius: 8px;
+  padding: 2px;
 }
 
 .verticalWrapper::-webkit-scrollbar {

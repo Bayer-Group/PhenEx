@@ -59,7 +59,7 @@ export const DatabaseFields: FC<DatabaseFieldsProps> = ({ mode, contentMode = 's
   const [availableSchemas, setAvailableSchemas] = useState<string[]>([]);
 
   const createDefaultDestinationDb = () => {
-    return `IEG_PROJECTS.PXUI_${studyDataService.study_data?.id ?? cohortDataService.cohort_data?.id ?? 'id'}`;
+    return `PROJECTS_IEG.PXUI_${studyDataService.study_data?.id ?? cohortDataService.cohort_data?.id ?? 'id'}`;
   };
 
   const [snowflakeConfig, setSnowflakeConfig] = useState({

@@ -191,19 +191,23 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
               />
             </div>
 
+
         <div className={styles.cardColumnInner}>
-          <div ref={verticalScrollRef} className={styles.verticalWrapper}>
-            <div
-              className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
-              onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(entry.index); }}
-            >
-              {isFocused && isSection && entry.kind === 'section' && (
+                    <div className={styles.controls}>
+                {isFocused && isSection && entry.kind === 'section' && (
                 <LayoutControls
                   sectionId={getSectionLayoutId(entry)}
                   rowKeys={cellRows.map((r) => r.name)}
                   cohortCount={cohortData.length}
                 />
               )}
+            </div>
+          <div ref={verticalScrollRef} className={styles.verticalWrapper}>
+            <div
+              className={`${styles.card} ${isFocused ? styles.cardFocused : styles.cardNeighbour}`}
+              onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(entry.index); }}
+            >
+
               <div
                 className={`${styles.cardTitle} ${isSection || isCategory ? styles.cardTitleSection : ''}`}
               >
