@@ -48,9 +48,11 @@
   transition: opacity 0.15s;
   font-family: "IBMPlexSans-bold", sans-serif;
   font-size: var(--font_size_phenotypename, 14px);
-  padding-top:20px;
-  padding-bottom:5px;
+  padding-top:8px;
+  padding-bottom:30px;
   width:100%;
+  z-index: 30;
+  background: linear-gradient(to bottom, var(--background_color_light) 40px, transparent 60px);
 }
 
 .breadcrumbHeaderVisible {
@@ -60,16 +62,13 @@
 
 /* these are the top right controls*/
 .controls{
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  background-color: transparent;
+  width: 100px;
+  height:50px;
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 0px;
+  right:0px;
   z-index: 30;
-  background-color: var(--background_color_light, #fff);
-  border-radius: 8px;
-  padding: 2px;
 }
 
 .verticalWrapper::-webkit-scrollbar {
