@@ -131,7 +131,7 @@ export const FigureLegendSets: FC<FigureLegendSetsProps> = ({
         >
           <path d="M2 0 L6 4 L2 8 Z" />
         </svg>
-        <span>Legend sets</span>
+        <span>Cohort Sets</span>
       </button>
 
       {!collapsed && (

@@ -253,7 +253,7 @@
 .page :global(.flexlayout__border_right) {
   z-index: 1;
   border-left: none;
-  background-color: var(--background_color_dark);
+  background-color: var(--background_color_light);
   width: 0px;
 }
 
