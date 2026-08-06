@@ -24,7 +24,7 @@ import {
 type SectionEntry = Extract<ViewerEntry, { kind: 'section' }>;
 
 /** Pixels of indentation per nesting level — matches chevron width. */
-const INDENT = 18;
+const INDENT = 10;
 
 /** Eye toggle shown on hover: reflects + controls visibility of a row in the active layout. */
 const RowEyeToggle: FC<{ sectionLayoutId: string; itemKey: string; leftOffset?: number }> = memo(({ sectionLayoutId, itemKey, leftOffset }) => {
@@ -153,9 +153,10 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
   const [menu, setMenu] = useState<Menu | null>(null);
   const [hoveredRowKey, setHoveredRowKey] = useState<string | null>(null);
 
+  // Measure once at full-size title height; never update (scroll shrinks the title but padding stays fixed).
   useLayoutEffect(() => {
     const el = headerRef.current;
-    if (!el || !studyTitle) return;
+    if (!el) return;
     setHeaderHeight(el.scrollHeight);
   }, [studyTitle]);
 
