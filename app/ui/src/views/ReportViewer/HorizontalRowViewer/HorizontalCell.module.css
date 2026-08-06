@@ -30,10 +30,10 @@
   overflow-x: hidden;
   scrollbar-width: none;
   padding-top: 10px;
-  padding-left: 12px;
+  padding-left: 20px;
   padding-right: 20px;
-  margin-left: -12px;
-  margin-right: -12px;
+  /* margin-left: -12px;
+  margin-right: -12px; */
 }
 
 .verticalWrapper::-webkit-scrollbar {

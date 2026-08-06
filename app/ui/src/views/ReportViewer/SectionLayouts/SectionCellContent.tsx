@@ -1,11 +1,10 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { type CohortClassified } from '../types';
 import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
-import { SectionListContent } from './SectionListContent';
 import { SectionGridContent } from './SectionGridContent';
-import { useSectionLayouts } from './sectionLayoutStore';
+import { useSectionLayouts, buildDefaultLayoutItems, type SectionLayout } from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -23,19 +22,28 @@ export interface SectionCellContentProps {
 }
 
 /**
- * Chooses between the two mutually-exclusive section views based on the
- * section's active layout: no active layout ⇒ list view; an active grid layout
- * ⇒ grid view. The two views are fully separate components sharing only the
- * chart renderers.
+ * Always renders a grid view. Falls back to a default layout derived from the
+ * current rows when no persisted layout exists for this section.
  */
 export const SectionCellContent = memo<SectionCellContentProps>((props) => {
-  const { sectionId, rows, ...rest } = props;
+  const { sectionId, rows, cohortData, ...rest } = props;
   const { activeLayout, hiddenKeys } = useSectionLayouts(sectionId);
 
   const visibleRows = hiddenKeys.size > 0 ? rows.filter((r) => !hiddenKeys.has(r.name)) : rows;
 
-  if (activeLayout) {
-    return <SectionGridContent sectionId={sectionId} layout={activeLayout} rows={visibleRows} {...rest} />;
-  }
-  return <SectionListContent rows={visibleRows} {...rest} />;
+  const defaultLayout = useMemo<SectionLayout>(
+    () => ({
+      id: '__default__',
+      name: 'Default',
+      items: buildDefaultLayoutItems(rows.map((r) => r.name), cohortData.length, 3),
+      columnsPerRow: 3,
+    }),
+    // Rebuild only when the row set or cohort count changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows.map((r) => r.name).join('\0'), cohortData.length],
+  );
+
+  const layout = activeLayout ?? defaultLayout;
+
+  return <SectionGridContent sectionId={sectionId} layout={layout} rows={visibleRows} cohortData={cohortData} {...rest} />;
 });
