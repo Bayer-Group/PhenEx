@@ -124,6 +124,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     layoutItems: layout.items,
     displayVariants,
     cohortCount: cohortData.length,
+    columnsPerRow: layout.columnsPerRow,
     editable: true,
     createGroup,
     ungroup,

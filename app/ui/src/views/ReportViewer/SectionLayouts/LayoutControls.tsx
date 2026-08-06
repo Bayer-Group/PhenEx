@@ -2,6 +2,8 @@ import { memo, useEffect, useRef, useState } from 'react';
 import styles from './LayoutControls.module.css';
 import { useSectionLayouts, buildDefaultLayoutItems } from './sectionLayoutStore';
 
+const COLUMN_OPTIONS = [1, 2, 3, 4, 5] as const;
+
 interface LayoutControlsProps {
   /** Stable section id (same one passed to SectionCellContent). */
   sectionId: string;
@@ -17,7 +19,7 @@ interface LayoutControlsProps {
  * layouts, create a new grid, or delete an existing one.
  */
 export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount }: LayoutControlsProps) => {
-  const { layouts, activeLayout, activeLayoutId, setActiveLayout, createLayout, renameLayout, deleteLayout } =
+  const { layouts, activeLayout, activeLayoutId, setActiveLayout, createLayout, renameLayout, deleteLayout, setColumnsPerRow } =
     useSectionLayouts(sectionId);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,7 +42,7 @@ export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount }: LayoutC
 
   const handleNewGrid = () => {
     const name = `Grid ${layouts.length + 1}`;
-    const id = createLayout(name, buildDefaultLayoutItems(rowKeys, cohortCount));
+    const id = createLayout(name, buildDefaultLayoutItems(rowKeys, cohortCount, 3), 3);
     setActiveLayout(id);
     setOpen(false);
   };
@@ -56,6 +58,22 @@ export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount }: LayoutC
 
   return (
     <div className={styles.container} ref={containerRef}>
+      {activeLayout && (
+        <select
+          className={styles.colSelect}
+          value={activeLayout.columnsPerRow ?? 3}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            e.stopPropagation();
+            setColumnsPerRow(activeLayout.id, Number(e.target.value), rowKeys, cohortCount);
+          }}
+          title="Columns per row"
+        >
+          {COLUMN_OPTIONS.map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+      )}
       <button
         type="button"
         className={styles.trigger}

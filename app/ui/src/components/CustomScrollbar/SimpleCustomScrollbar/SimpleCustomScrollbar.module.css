@@ -6,7 +6,7 @@
   border-radius: 8px;
   transition: width 0.2s ease, opacity 0.2s ease;
   cursor: pointer;
-  z-index: 10;
+  z-index: 100;
   opacity: 0.5;
   /* Remove any conflicting top/bottom positioning - let React handle it */
 }
@@ -53,7 +53,7 @@
   border-radius: 8px;
   transition: height 0.2s ease, opacity 0.2s ease;
   cursor: pointer;
-  z-index: 10;
+  z-index: 100;
   opacity: 0.5;
   /* Remove conflicting bottom positioning - let React handle it */
 }

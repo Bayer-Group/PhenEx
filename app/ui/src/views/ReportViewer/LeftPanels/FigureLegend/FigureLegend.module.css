@@ -39,9 +39,9 @@
   flex-direction: column;
   overflow-y: auto;
   scrollbar-width: none;
-  padding-right: var(--left_panel_margin_right, 0px);
+  padding-right: 8px;
   padding-top:30px;
-  margin-left:var(--left_panel_margin_left, 0px);
+  margin-left: 0px;
 
 }
 
@@ -100,7 +100,7 @@
   flex-direction: column;
   flex-shrink: 0;
   background-color: var(--background_color_light, #f5f5f5);
-  border: 1px solid var(--line-color, #ddd);
+  /* border: 1px solid var(--line-color, #ddd); */
   border-radius: 10px;
   padding: 4px;
 }

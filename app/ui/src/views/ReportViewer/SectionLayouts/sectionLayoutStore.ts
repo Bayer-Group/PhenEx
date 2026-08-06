@@ -46,6 +46,8 @@ export interface SectionLayout {
   hiddenKeys?: string[];
   /** Group cells defined in this layout. */
   groups?: CellGroup[];
+  /** Number of item columns in this grid layout (1–5). */
+  columnsPerRow?: number;
 }
 
 /** Per-section persisted state. `activeLayoutId === null` ⇒ list view. */
@@ -62,7 +64,7 @@ type PersistedState = Record<string, SectionState>;
 
 // ── Grid constants ───────────────────────────────────────────────────────
 
-export const GRID_COLUMNS = 10;
+export const GRID_COLUMNS = 60;
 /** Vertical grid pitch: one cohort-row step (px per grid row). */
 export const GRID_ROW_HEIGHT = 12;
 /** Horizontal gutter between tiles. */
@@ -87,7 +89,7 @@ export const ROWS_PER_COHORT = 1;
 
 // ── Persistence ──────────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'phenex.sectionLayouts.v1';
+const STORAGE_KEY = 'phenex.sectionLayouts.v2';
 
 function loadState(): PersistedState {
   try {
@@ -150,15 +152,33 @@ class SectionLayoutStore {
     this.update(sectionId, { ...section, activeLayoutId: layoutId });
   }
 
-  createLayout(sectionId: string, name: string, items: GridItem[]): string {
+  createLayout(sectionId: string, name: string, items: GridItem[], columnsPerRow = 5): string {
     const section = this.getSection(sectionId);
     const id = `layout_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
-    const layout: SectionLayout = { id, name, items };
+    const layout: SectionLayout = { id, name, items, columnsPerRow };
     this.update(sectionId, {
       layouts: [...section.layouts, layout],
       activeLayoutId: id,
     });
     return id;
+  }
+
+  setColumnsPerRow(sectionId: string, layoutId: string, nCols: number, rowKeys: string[], cohortCount: number) {
+    const section = this.getSection(sectionId);
+    const w = Math.floor(GRID_COLUMNS / nCols);
+    const h = defaultTileRows(cohortCount);
+    const layouts = section.layouts.map((l) => {
+      if (l.id !== layoutId) return l;
+      const items = rowKeys.map((key, i) => ({
+        key,
+        x: (i % nCols) * w,
+        y: Math.floor(i / nCols) * h,
+        w,
+        h,
+      }));
+      return { ...l, columnsPerRow: nCols, items, groups: [], hiddenKeys: [] };
+    });
+    this.update(sectionId, { ...section, layouts });
   }
 
   updateLayoutItems(sectionId: string, layoutId: string, items: GridItem[]) {
@@ -286,18 +306,16 @@ export function defaultTileRows(cohortCount: number): number {
 }
 
 /**
- * Build a default flow-packed grid layout for a set of item keys: each item is
- * a 2-column tile whose height scales with `cohortCount`, laid left-to-right
- * and wrapping to the next band.
+ * Build a default flow-packed grid layout for a set of item keys.
+ * `nCols` items per row, each spanning `GRID_COLUMNS / nCols` grid columns.
  */
-export function buildDefaultLayoutItems(keys: string[], cohortCount = 1): GridItem[] {
-  const w = 2;
+export function buildDefaultLayoutItems(keys: string[], cohortCount = 1, nCols = 3): GridItem[] {
+  const w = Math.floor(GRID_COLUMNS / nCols);
   const h = defaultTileRows(cohortCount);
-  const perRow = Math.max(1, Math.floor(GRID_COLUMNS / w));
   return keys.map((key, i) => ({
     key,
-    x: (i % perRow) * w,
-    y: Math.floor(i / perRow) * h,
+    x: (i % nCols) * w,
+    y: Math.floor(i / nCols) * h,
     w,
     h,
   }));
@@ -316,7 +334,7 @@ export interface UseSectionLayouts {
   /** Per-row display variant map (row key → variant id). */
   displayVariants: Record<string, string>;
   setActiveLayout: (layoutId: string | null) => void;
-  createLayout: (name: string, items: GridItem[]) => string;
+  createLayout: (name: string, items: GridItem[], columnsPerRow?: number) => string;
   updateLayoutItems: (layoutId: string, items: GridItem[]) => void;
   renameLayout: (layoutId: string, name: string) => void;
   deleteLayout: (layoutId: string) => void;
@@ -324,6 +342,7 @@ export interface UseSectionLayouts {
   createGroup: (memberKeys: string[], height: number) => string;
   ungroup: (groupId: string) => void;
   setDisplayVariant: (rowKey: string, variantId: string) => void;
+  setColumnsPerRow: (layoutId: string, nCols: number, rowKeys: string[], cohortCount: number) => void;
 }
 
 export function useSectionLayouts(sectionId: string): UseSectionLayouts {
@@ -333,7 +352,7 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
   );
 
   const setActiveLayout = useCallback((layoutId: string | null) => store.setActiveLayout(sectionId, layoutId), [sectionId]);
-  const createLayout = useCallback((name: string, items: GridItem[]) => store.createLayout(sectionId, name, items), [sectionId]);
+  const createLayout = useCallback((name: string, items: GridItem[], columnsPerRow?: number) => store.createLayout(sectionId, name, items, columnsPerRow), [sectionId]);
   const updateLayoutItems = useCallback((layoutId: string, items: GridItem[]) => store.updateLayoutItems(sectionId, layoutId, items), [sectionId]);
   const renameLayout = useCallback((layoutId: string, name: string) => store.renameLayout(sectionId, layoutId, name), [sectionId]);
   const deleteLayout = useCallback((layoutId: string) => store.deleteLayout(sectionId, layoutId), [sectionId]);
@@ -341,6 +360,7 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
   const createGroup = useCallback((memberKeys: string[], height: number) => store.createGroup(sectionId, store.getSection(sectionId).activeLayoutId ?? '', memberKeys, height), [sectionId]);
   const ungroup = useCallback((groupId: string) => store.ungroup(sectionId, store.getSection(sectionId).activeLayoutId ?? '', groupId), [sectionId]);
   const setDisplayVariant = useCallback((rowKey: string, variantId: string) => store.setDisplayVariant(sectionId, rowKey, variantId), [sectionId]);
+  const setColumnsPerRow = useCallback((layoutId: string, nCols: number, rowKeys: string[], cohortCount: number) => store.setColumnsPerRow(sectionId, layoutId, nCols, rowKeys, cohortCount), [sectionId]);
 
   const activeLayout = section.layouts.find((l) => l.id === section.activeLayoutId) ?? null;
   const hiddenKeys = useMemo(() => new Set(store.getHiddenKeys(sectionId, section.activeLayoutId)), [sectionId, section]);
@@ -363,6 +383,7 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
     createGroup,
     ungroup,
     setDisplayVariant,
+    setColumnsPerRow,
   };
 }
 

@@ -22,6 +22,8 @@ export interface UseMultiSelectActionsParams {
   displayVariants: Record<string, string>;
   /** Cohort count, used to size fresh/reset tiles. */
   cohortCount: number;
+  /** Columns per row in the active grid layout (used for reset tile width). */
+  columnsPerRow?: number;
   editable: boolean;
   createGroup: (memberKeys: string[], height: number) => void;
   ungroup: (groupId: string) => void;
@@ -75,6 +77,7 @@ export function useMultiSelectActions({
   layoutItems,
   displayVariants,
   cohortCount,
+  columnsPerRow = 3,
   editable,
   createGroup,
   ungroup,
@@ -135,7 +138,7 @@ export function useMultiSelectActions({
       const grp = groupById.get(it.key);
       return grp
         ? { ...it, w: GRID_COLUMNS, h: groupRows(grp.memberKeys.length, cohortCount) }
-        : { ...it, w: Math.min(2, GRID_COLUMNS), h: defaultTileRows(cohortCount) };
+        : { ...it, w: Math.floor(GRID_COLUMNS / columnsPerRow), h: defaultTileRows(cohortCount) };
     });
     setLayoutItems(next);
   }, [selection.selected, layoutItems, groupById, cohortCount, setLayoutItems]);

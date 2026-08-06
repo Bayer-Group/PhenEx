@@ -8,6 +8,26 @@
   gap: 8px;
 }
 
+.colSelect {
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 13px;
+  color: black;
+  background: rgba(255, 255, 255, 0.9);
+  border: var(--border);
+  border-radius: 8px;
+  padding: 5px 8px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  appearance: none;
+  text-align: center;
+  width: 44px;
+}
+
+.colSelect:hover {
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+
 .trigger {
   display: inline-flex;
   align-items: center;

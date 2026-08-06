@@ -2,10 +2,12 @@
   display: flex;
   height: 100%;
   position: relative;
-  width: calc(100% - 60px);
-  margin-left:30px;
+  width: 100%;
+  margin-left:0px;
   padding-top: 0px;
+  /* padding-right:20px; */
   overflow: visible;
+  /* background-color: red; */
 }
 
 .cell {
@@ -29,7 +31,7 @@
   scrollbar-width: none;
   padding-top: 10px;
   padding-left: 12px;
-  padding-right: 12px;
+  padding-right: 20px;
   margin-left: -12px;
   margin-right: -12px;
 }
@@ -46,6 +48,7 @@
   background-color: transparent !important;
   border-radius: 8px;
   transition: opacity 0.2s;
+  margin-right: 15px;
 }
 
 .cardTitle {
@@ -135,15 +138,20 @@
 .scrollBarTrack {
   background-color: transparent;
   border-radius: 0px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+
+.cardColumnInner:hover .scrollBarTrack {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .scrollBarThumb {
   background-color: rgba(0, 0, 0, 0.2) !important;
-  width: 10px;
-}
-
-.scrollBarTrack:hover {
-  background-color: transparent;
+  width: 8px;
+  border-radius: 0px;
 }
 
 /* Nested left-panel splitters */
