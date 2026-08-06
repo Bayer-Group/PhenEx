@@ -33,7 +33,7 @@ import {
 } from './types';
 import { type BarChartSpacer } from './GraphsAndTables/RowRenderers/barChartShared';
 import { loadSpacers, saveSpacers, loadColorOverrides, saveColorOverrides, type StoredSpacer } from './reportCache';
-import { buildSequentialRowList, buildAccordionEntries, type SequentialRow, type ViewerEntry, type StudyRegistry } from './studyRegistryUtils';
+import { buildSequentialRowList, buildAccordionEntries, categoryKey, STUDY_INFO_CATEGORY, type SequentialRow, type ViewerEntry, type StudyRegistry } from './studyRegistryUtils';
 import {
   deriveOutlineModel,
   reconcileOutlineModel,
@@ -97,9 +97,6 @@ const INNER_SPLITTER = 4;
  *  so collapsing a panel shrinks the border rather than widening its sibling. */
 const LEFT_BORDER_SIZE = COHORT_PANEL_WIDTH + OUTLINE_PANEL_WIDTH + INNER_SPLITTER;
 const LEFT_BORDER_MIN = COLLAPSED_PANEL_WIDTH * 2 + INNER_SPLITTER;
-
-/** Stable empty set for building the (never-expanded) main viewer cells. */
-const EMPTY_KEYS: Set<string> = new Set();
 
 
 
@@ -396,10 +393,24 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   );
 
   // ── Outline accordion entries ─────────────────────────────────────────
-  // `expandedKeys` drives ONLY the outline's accordion (which sections are
-  // expanded into individual phenotype rows). The main viewer no longer shows
-  // individual rows, so it is independent of this state.
+  // `expandedKeys` drives the outline accordion. Categories with named sections
+  // start expanded (sections visible); individual rows expand on user interaction.
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => new Set());
+  const [categoryExpansionInitialized, setCategoryExpansionInitialized] = useState(false);
+  useEffect(() => {
+    if (categoryExpansionInitialized || effectiveRows.length === 0) return;
+    const catKeys = new Set<string>();
+    for (const row of effectiveRows) {
+      if (row.section !== null && row.category !== STUDY_INFO_CATEGORY) {
+        catKeys.add(categoryKey(row.category));
+      }
+    }
+    if (catKeys.size > 0) {
+      setExpandedKeys(catKeys);
+      setCategoryExpansionInitialized(true);
+    }
+  }, [effectiveRows, categoryExpansionInitialized]);
+
   const outlineEntries = useMemo(
     () => buildAccordionEntries(effectiveRows, expandedKeys),
     [effectiveRows, expandedKeys],
@@ -407,11 +418,19 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
 
   // ── Main viewer cells ─────────────────────────────────────────────────
   // The horizontal viewer only ever displays category and (multi-row) section
-  // cells — never individual rows. Building with an empty expanded-set yields
-  // exactly that, independent of the outline's accordion state.
+  // cells — never individual rows. We pass all category keys as expanded so
+  // every section is visible, but omit section keys so no individual rows appear.
+  const viewerCategoryKeys = useMemo(() => {
+    const keys = new Set<string>();
+    for (const row of effectiveRows) {
+      if (row.category !== STUDY_INFO_CATEGORY) keys.add(categoryKey(row.category));
+    }
+    return keys;
+  }, [effectiveRows]);
+
   const viewerCells = useMemo(
-    () => buildAccordionEntries(effectiveRows, EMPTY_KEYS),
-    [effectiveRows],
+    () => buildAccordionEntries(effectiveRows, viewerCategoryKeys),
+    [effectiveRows, viewerCategoryKeys],
   );
 
   // Edit operations mutate the stored model, seeding it from the current

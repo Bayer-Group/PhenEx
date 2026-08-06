@@ -23,8 +23,11 @@ import {
 
 type SectionEntry = Extract<ViewerEntry, { kind: 'section' }>;
 
+/** Pixels of indentation per nesting level — matches chevron width. */
+const INDENT = 18;
+
 /** Eye toggle shown on hover: reflects + controls visibility of a row in the active layout. */
-const RowEyeToggle: FC<{ sectionLayoutId: string; itemKey: string }> = memo(({ sectionLayoutId, itemKey }) => {
+const RowEyeToggle: FC<{ sectionLayoutId: string; itemKey: string; leftOffset?: number }> = memo(({ sectionLayoutId, itemKey, leftOffset }) => {
   const isHidden = useSyncExternalStore(
     subscribeSectionLayouts,
     () => getHiddenKeys(sectionLayoutId, getSectionState(sectionLayoutId).activeLayoutId).includes(itemKey),
@@ -33,6 +36,7 @@ const RowEyeToggle: FC<{ sectionLayoutId: string; itemKey: string }> = memo(({ s
     <button
       type="button"
       className={styles.eyeBtn}
+      style={leftOffset !== undefined ? { left: leftOffset } : undefined}
       title={isHidden ? 'Show in current layout' : 'Hide in current layout'}
       onClick={(e) => {
         e.stopPropagation();
@@ -287,6 +291,11 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
     );
   };
 
+  const renderIndentGuides = (depth: number) =>
+    Array.from({ length: depth }, (_, i) => (
+      <span key={i} className={styles.indentGuide} style={{ left: i * INDENT + INDENT / 2 }} />
+    ));
+
   const renderPlainItem = (
     key: string,
     label: string,
@@ -302,17 +311,18 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
       <div
         key={key}
         className={styles.row}
-        style={{ paddingLeft: level * 8 }}
+        style={{ paddingLeft: level * INDENT }}
         onMouseEnter={eyeConfig ? () => setHoveredRowKey(eyeConfig.itemKey) : undefined}
         onMouseLeave={eyeConfig ? () => setHoveredRowKey(null) : undefined}
       >
+        {renderIndentGuides(level)}
         {renderChevron(toggleKey, isExpanded)}
         {eyeConfig
           ? <RowHiddenDim sectionLayoutId={eyeConfig.sectionLayoutId} itemKey={eyeConfig.itemKey}>{renderLabel(label, level, entryIndex, isActive, false, () => {}, onContextMenu)}</RowHiddenDim>
           : renderLabel(label, level, entryIndex, isActive, false, () => {}, onContextMenu)
         }
         {eyeConfig && hoveredRowKey === eyeConfig.itemKey && (
-          <RowEyeToggle sectionLayoutId={eyeConfig.sectionLayoutId} itemKey={eyeConfig.itemKey} />
+          <RowEyeToggle sectionLayoutId={eyeConfig.sectionLayoutId} itemKey={eyeConfig.itemKey} leftOffset={level * INDENT} />
         )}
       </div>
     );
@@ -331,7 +341,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
       <div
         key={entry.key}
         className={`${styles.row} ${isDropTarget ? styles.dropInto : ''}`}
-        style={{ paddingLeft: 8 }}
+        style={{ paddingLeft: INDENT }}
         onDragOver={sectionId ? (e) => { e.preventDefault(); setDropTarget({ key: entry.key, pos: 'into' }); } : undefined}
         onDrop={sectionId ? (e) => {
           e.preventDefault();
@@ -339,6 +349,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
           clearDrag();
         } : undefined}
       >
+        {renderIndentGuides(1)}
         {renderChevron(toggleKey, isExpanded)}
         {renderLabel(
           entry.section,
@@ -364,7 +375,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
       <div
         key={entry.key}
         className={`${styles.row} ${styles.rowDraggable} ${dropClass}`}
-        style={{ paddingLeft: 16 }}
+        style={{ paddingLeft: INDENT * 2 }}
         draggable={!editing}
         onMouseEnter={() => setHoveredRowKey(row.name)}
         onMouseLeave={() => setHoveredRowKey(null)}
@@ -396,6 +407,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
           clearDrag();
         }}
       >
+        {renderIndentGuides(2)}
         <span className={styles.chevronSpacer} />
         {sectionLayoutId
           ? <RowHiddenDim sectionLayoutId={sectionLayoutId} itemKey={row.name}>{renderLabel(
@@ -414,7 +426,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
             )
         }
         {hoveredRowKey === row.name && sectionLayoutId && (
-          <RowEyeToggle sectionLayoutId={sectionLayoutId} itemKey={row.name} />
+          <RowEyeToggle sectionLayoutId={sectionLayoutId} itemKey={row.name} leftOffset={INDENT * 2} />
         )}
       </div>
     );
@@ -439,7 +451,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
               getCategoryLabel(entry.category),
               0,
               entry.index,
-              entry.hasSectionlessRows ? categoryKey(entry.category) : null,
+              categoryKey(entry.category),
             );
           }
           if (entry.kind === 'section') {

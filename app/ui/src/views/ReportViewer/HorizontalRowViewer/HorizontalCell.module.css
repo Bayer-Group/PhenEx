@@ -84,16 +84,18 @@
   border-radius: 8px;
   transition: opacity 0.2s;
   margin-right: 15px;
-  padding-top: 100px;
+  padding-top: 20px;
 }
 
 .cardTitle {
   font-family: "IBMPlexSans-bold", sans-serif;
   color: black;
-  font-size: var(--font_size_pagetitle, 18px);
-  padding: 5px 5px ;
+  font-size: var(--font_size_pagetitle, 18px) !important;
+  line-height: 1.1;
+  padding: 5px 0px ;
   flex-shrink: 0;
   transition: opacity 0.15s;
+  margin-bottom:40px;
 }
 
 .cardContent {

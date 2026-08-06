@@ -192,33 +192,35 @@ export function buildAccordionEntries(
       .filter((s) => s.section === null)
       .flatMap((s) => s.rows);
 
+    const catKey = categoryKey(group.category);
+    const catExpanded = expandedKeys.has(catKey);
+
     push({
       kind: 'category',
-      key: categoryKey(group.category),
+      key: catKey,
       category: group.category,
       reporter: group.reporter,
       sectionNames: namedSections.map((s) => s.section),
       hasSectionlessRows: sectionlessRows.length > 0,
     });
 
-    for (const section of namedSections) {
-      const key = sectionKey(group.category, section.section);
-      push({
-        kind: 'section',
-        key,
-        section: section.section,
-        sectionId: section.rows[0].sectionId,
-        rows: section.rows,
-        reporter: section.rows[0].reporter,
-        category: group.category,
-      });
-      // Sections expand into individual row cells when expanded.
-      if (section.rows.length >= 1 && expandedKeys.has(key)) {
-        for (const row of section.rows) push({ kind: 'row', key: rowKey(row), row });
+    if (catExpanded) {
+      for (const section of namedSections) {
+        const key = sectionKey(group.category, section.section);
+        push({
+          kind: 'section',
+          key,
+          section: section.section,
+          sectionId: section.rows[0].sectionId,
+          rows: section.rows,
+          reporter: section.rows[0].reporter,
+          category: group.category,
+        });
+        if (section.rows.length >= 1 && expandedKeys.has(key)) {
+          for (const row of section.rows) push({ kind: 'row', key: rowKey(row), row });
+        }
       }
-    }
 
-    if (sectionlessRows.length > 0 && expandedKeys.has(categoryKey(group.category))) {
       for (const row of sectionlessRows) push({ kind: 'row', key: rowKey(row), row });
     }
   }

@@ -145,7 +145,7 @@
 
 .eyeBtn {
   position: absolute;
-  left: 16px;
+  left: 36px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -197,6 +197,15 @@
 
 .rowDraggable {
   cursor: grab;
+}
+
+.indentGuide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.10);
+  pointer-events: none;
 }
 
 .rowDraggable:active {
