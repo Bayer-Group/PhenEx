@@ -291,17 +291,21 @@ class TestReporterDefaultMethods:
         reporter = SimpleReporter(decimal_places=1)
         reporter.execute()
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            # Use relative path
-            relative_path = "test.csv"
-            full_path = os.path.join(tmpdir, relative_path)
+        original_cwd = os.getcwd()
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                # Use relative path
+                relative_path = "test.csv"
+                full_path = os.path.join(tmpdir, relative_path)
 
-            os.chdir(tmpdir)
-            filepath = reporter.to_csv(relative_path)
+                os.chdir(tmpdir)
+                filepath = reporter.to_csv(relative_path)
 
-            # Should return absolute path
-            assert os.path.isabs(filepath)
-            assert os.path.exists(filepath)
+                # Should return absolute path
+                assert os.path.isabs(filepath)
+                assert os.path.exists(filepath)
+        finally:
+            os.chdir(original_cwd)
 
 
 class TestReporterSubclassMustImplementExecute:

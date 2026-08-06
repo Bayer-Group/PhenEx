@@ -108,6 +108,7 @@ class MeasurementPhenotype(CodelistPhenotype):
         # perform value and dateaggregation
         code_table = tables[self.domain]
         code_table = self._perform_codelist_filtering(code_table, tables)
+        code_table = code_table.resolve_event_date(tables)
         code_table = self._perform_categorical_filtering(code_table, tables)
         code_table = self._perform_null_value_filtering(code_table)
         code_table = self._perform_value_casting(code_table)

@@ -1,7 +1,11 @@
 import pytest
 import time
+import os
+import tempfile
+from datetime import datetime
 from unittest.mock import Mock, patch, PropertyMock
 import pandas as pd
+import ibis
 
 
 from phenex.node import (
@@ -9,6 +13,7 @@ from phenex.node import (
     NodeGroup,
     NODE_STATES_TABLE_NAME,
 )
+from phenex.node_manager import NodeManager
 
 
 class MockTable:
@@ -722,6 +727,244 @@ class TestPhenexNodeGroup:
         assert hash(grp1) != hash(
             grp2
         ), "NodeGroup hash must change when child fraction changes"
+
+
+# Node.to_sql() tests
+
+
+class IbisConcreteNode(Node):
+    """Node that returns a real ibis expression - required for to_sql() tests."""
+
+    def _execute(self, tables):
+        t = ibis.memtable({"PERSON_ID": [1, 2, 3], "VALUE": [10, 20, 30]})
+        return t.filter(t.PERSON_ID > 0)
+
+
+class IbisNoneNode(Node):
+    """Node whose `_execute()` returns None - simulates NodeGroup-like behaviour."""
+
+    def _execute(self, tables):
+        return None
+
+
+class IbisSourceNode(Node):
+    """Reads directly from a named source table in `tables`; models a source-reading phenotype."""
+
+    def _execute(self, tables):
+        t = tables["CONDITION_OCCURRENCE"]
+        return t.filter(t.PERSON_ID > 0)
+
+
+class IbisDependentNode(Node):
+    """Builds its expression from an upstream node's materialized `.table`; models a chained phenotype."""
+
+    def __init__(self, name, upstream):
+        super().__init__(name=name)
+        self.upstream = upstream
+        self.add_children(upstream)
+
+    def _execute(self, tables):
+        up = self.upstream.table
+        return up.filter(up.PERSON_ID > 0)
+
+
+def _source_tables():
+    """An unbound source table whose name shows up verbatim in compiled SQL."""
+    return {
+        "CONDITION_OCCURRENCE": ibis.table(
+            {"PERSON_ID": "int64", "CODE": "string"}, name="CONDITION_OCCURRENCE"
+        )
+    }
+
+
+def _materializing_con():
+    """Mock connector: `get_dest_table(name)` returns an unbound table named after the request."""
+    con = Mock()
+    con.create_table.return_value = None
+    con.get_dest_table.side_effect = lambda db_name: ibis.table(
+        {"PERSON_ID": "int64"}, name=db_name
+    )
+    return con
+
+
+class TestGetSqlFilename:
+    """Filesystem-safe filenames: special chars sanitized, overlong names truncated
+    to 250 chars, both disambiguated with a short hash of the original table name."""
+
+    def test_short_clean_name_unchanged(self):
+        node = Node("simple_name")
+        assert node.get_sql_filename() == "SIMPLE_NAME.sql"
+
+    def test_special_chars_sanitized_with_hash(self):
+        node = Node("bad/name")
+        fname = node.get_sql_filename()
+        assert "/" not in fname
+        assert fname.startswith("BAD_NAME__")
+        assert fname.endswith(".sql")
+
+    def test_long_name_truncated_to_250(self):
+        node = Node("N" * 300)
+        fname = node.get_sql_filename()
+        assert len(fname) <= 250
+        assert fname.endswith(".sql")
+
+    def test_exactly_250_not_truncated(self):
+        stem = "N" * 246  # 246 + len(".sql") = 250, at the limit
+        node = Node(stem)
+        assert node.get_sql_filename() == f"{stem}.sql"
+
+    def test_long_names_sharing_prefix_stay_unique(self):
+        a = Node("N" * 300 + "A")
+        b = Node("N" * 300 + "B")
+        assert a.get_sql_filename() != b.get_sql_filename()
+
+    def test_long_name_with_special_chars_truncated_and_unique(self):
+        a = Node("bad/" + "N" * 300 + "A")
+        b = Node("bad/" + "N" * 300 + "B")
+        fa, fb = a.get_sql_filename(), b.get_sql_filename()
+        assert len(fa) <= 250 and len(fb) <= 250
+        assert "/" not in fa and "/" not in fb
+        assert fa != fb
+
+
+class TestToSql:
+    """Tests Node.to_sql(sql_dir=...) resolution order: in-memory `_expression`, saved
+    `{sql_dir}/{name}.sql` file, then auto-collect deps and recompile."""
+
+    # invariant
+
+    def test_expression_initialized_to_none(self):
+        node = IbisConcreteNode("test")
+        assert node._expression is None
+
+    # before execute
+
+    def test_leaf_to_sql_before_execute(self, tmp_path):
+        # leaf: no deps -> auto-collect {} -> compiles even before execute()
+        node = IbisConcreteNode("test")
+        sql = node.to_sql(sql_dir=str(tmp_path))
+        assert isinstance(sql, str)
+        assert "SELECT" in sql.upper()
+
+    def test_context_dep_to_sql_before_execute_raises(self, tmp_path):
+        upstream = IbisConcreteNode("up")
+        dep = IbisDependentNode("dep", upstream)
+        with pytest.raises(RuntimeError):
+            dep.to_sql(sql_dir=str(tmp_path))
+
+    # after execute, cache miss, no connector
+
+    def test_expression_set_after_execute_no_con(self):
+        node = IbisConcreteNode("test")
+        node.execute({})
+        assert node._expression is not None
+
+    # lazy cache hit (simulated: _expression cleared after execute)
+
+    def test_to_sql_reads_file_on_lazy_cache_hit(self, tmp_path):
+        node = IbisConcreteNode("test")
+        node.execute({})
+        (tmp_path / "TEST.sql").write_text("SELECT 'from_file'")
+        node._expression = None  # simulate cache hit: no in-memory expression
+        assert node.to_sql(sql_dir=str(tmp_path)) == "SELECT 'from_file'"
+
+    # invariants / round-trip
+
+    def test_to_sql_roundtrip(self, tmp_path):
+        node = IbisConcreteNode("test")
+        node.execute({})
+        sql_from_expr = node.to_sql()  # step 1
+        (tmp_path / "TEST.sql").write_text(sql_from_expr)
+        node._expression = None
+        assert node.to_sql(sql_dir=str(tmp_path)) == sql_from_expr  # step 2
+
+    # explicit target dialect via connector (read paths become dialect-aware)
+
+    def test_to_sql_connector_skips_wrong_dialect_file(self, tmp_path):
+        # A file stamped for another backend is skipped when a target connector is given.
+        node = IbisConcreteNode("test")  # fresh: _expression is None
+        (tmp_path / "TEST.sql").write_text(
+            "-- phenex-dialect: snowflake\nSELECT 'stale_snowflake_copy'"
+        )
+        con = Mock()
+        con.dest_connection.name = "duckdb"
+        con.source_connection.name = "duckdb"
+        sql = node.to_sql(sql_dir=str(tmp_path), connector=con)
+        assert "stale_snowflake_copy" not in sql  # mismatched file was skipped
+        assert "SELECT" in sql.upper()  # fell through to a fresh recompile
+
+    def test_to_sql_none_returning_node_raises(self, tmp_path):
+        # _execute returns None -> reaches step 3 -> ibis.to_sql(None) raises
+        node = IbisNoneNode("test")
+        node.execute({})
+        with pytest.raises(Exception):
+            node.to_sql(sql_dir=str(tmp_path))
+
+
+class TestToSqlDbCacheAndPrecedence:
+    """Covers the phenex.db cache layer (step 3) and precedence between all four to_sql()
+    resolution layers: memory > file > db > recompile."""
+
+    def setup_method(self):
+        self._prev_manager = Node._node_manager
+        self._dbfile = tempfile.mktemp(suffix=".db")
+        Node._node_manager = NodeManager(db_name=self._dbfile)
+
+    def teardown_method(self):
+        Node._node_manager = self._prev_manager
+        try:
+            os.unlink(self._dbfile)
+        except OSError:
+            pass
+
+    @staticmethod
+    def _mock_duckdb_con():
+        con = Mock()
+        con.__class__.__name__ = "DuckDBConnector"
+        con.DUCKDB_SOURCE_DATABASE = "source.db"
+        con.DUCKDB_DEST_DATABASE = "dest.db"
+        return con
+
+    @staticmethod
+    def _marker_expr(marker):
+        """Ibis expression whose compiled SQL contains `marker` verbatim as a column alias."""
+        t = ibis.memtable({"PERSON_ID": [1]})
+        return t.select(**{marker: t.PERSON_ID})
+
+    def _seed_db_sql(self, node, marker):
+        """Store SQL for `node` in phenex.db as a real execute() would, tagged with `marker`;
+        leaves `_expression = None` to simulate a lazy cache hit."""
+        node._expression = self._marker_expr(marker)
+        node.lastexecution_start_time = datetime(2020, 1, 1)
+        node.lastexecution_end_time = datetime(2020, 1, 1)
+        node.lastexecution_duration = 0.01
+        Node._node_manager.update_run_params(node, self._mock_duckdb_con())
+        node._expression = None
+        assert marker in (
+            Node._node_manager.get_sql(node) or ""
+        ), "precondition: marker SQL was not stored/retrievable from phenex.db"
+
+    # step 3: db cache hit reached through to_sql()
+
+    def test_db_cache_hit_returns_stored_sql_leaf(self, tmp_path):
+        # No expression, no file: a leaf could recompile (step 4) but the db cache (step 3) wins.
+        node = IbisConcreteNode("cache_leaf")
+        self._seed_db_sql(node, "DBCACHE_MARK")
+        sql = node.to_sql(sql_dir=str(tmp_path))  # empty dir -> no file
+        assert "DBCACHE_MARK" in sql
+
+    # precedence: memory > file > db > recompile
+
+    def test_file_beats_db_cache(self, tmp_path):
+        # Both a saved file (step 2) and db SQL (step 3) exist; the file wins.
+        node = IbisConcreteNode("prec_fd")
+        self._seed_db_sql(node, "DBCACHE_MARK")
+        (tmp_path / f"{node.get_table_name()}.sql").write_text(
+            "SELECT 'FROM_FILE_MARK'"
+        )
+        sql = node.to_sql(sql_dir=str(tmp_path))
+        assert "FROM_FILE_MARK" in sql
+        assert "DBCACHE_MARK" not in sql
 
 
 if __name__ == "__main__":

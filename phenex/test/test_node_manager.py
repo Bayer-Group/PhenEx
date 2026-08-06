@@ -244,6 +244,107 @@ class TestNodeManager(unittest.TestCase):
         result = self.node_manager.should_rerun(node, mock_con)
         self.assertTrue(result)  # Should return True for never executed
 
+    # NODE_SQL column and get_sql()
+
+    def _make_mock_con(self):
+        con = Mock()
+        con.__class__.__name__ = "DuckDBConnector"
+        con.DUCKDB_SOURCE_DATABASE = "source.db"
+        con.DUCKDB_DEST_DATABASE = "dest.db"
+        return con
+
+    def _node_with_expression(self, name="test_node", **kwargs):
+        """MockNode with _expression set and timing populated."""
+        node = MockNode(name, **kwargs)
+        node._expression = node._execute()
+        node.lastexecution_start_time = datetime.now()
+        node.lastexecution_end_time = datetime.now()
+        node.lastexecution_duration = 0.01
+        return node
+
+    def test_update_run_params_stores_node_sql(self):
+        """NODE_SQL is written to the DB when node._expression is set."""
+        node = self._node_with_expression()
+        self.node_manager.update_run_params(node, self._make_mock_con())
+
+        result = self.node_manager.get_run_params(node)
+        self.assertIsNotNone(result)
+        sql_val = result.iloc[0]["NODE_SQL"]
+        self.assertIsNotNone(sql_val)
+        self.assertIsInstance(sql_val, str)
+        self.assertIn("SELECT", sql_val.upper())
+
+    def test_get_sql_returns_none_when_no_db(self):
+        """phenex.db has never been written -> get_sql returns None."""
+        node = MockNode("test_node")
+        result = self.node_manager.get_sql(node)
+        self.assertIsNone(result)
+
+    def test_get_sql_returns_none_when_hash_mismatch(self):
+        """Name matches but hash changed (param changed) -> get_sql returns None."""
+        node = self._node_with_expression("test_node", param1="v1")
+        self.node_manager.update_run_params(node, self._make_mock_con())
+
+        node.param1 = "v2"  # changes the hash
+        result = self.node_manager.get_sql(node)
+        self.assertIsNone(result)
+
+    def test_get_sql_returns_sql_on_hash_match(self):
+        """Name + hash match -> get_sql returns the stored SQL string."""
+        node = self._node_with_expression("test_node", param1="v1")
+        self.node_manager.update_run_params(node, self._make_mock_con())
+
+        result = self.node_manager.get_sql(node)
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result, str)
+        self.assertIn("SELECT", result.upper())
+
+    def test_lazy_hit_preserves_existing_sql(self):
+        """update_run_params with _expression=None must not overwrite stored NODE_SQL."""
+        node = self._node_with_expression("test_node")
+        mock_con = self._make_mock_con()
+        self.node_manager.update_run_params(node, mock_con)
+        original_sql = self.node_manager.get_sql(node)
+        self.assertIsNotNone(original_sql)
+
+        # Simulate lazy cache hit: expression is cleared (node was skipped)
+        node._expression = None
+        self.node_manager.update_run_params(node, mock_con)
+
+        preserved_sql = self.node_manager.get_sql(node)
+        self.assertEqual(preserved_sql, original_sql)
+
+    def test_cache_write_stamps_connector_dialect_even_when_expr_unbindable(self):
+        """Cached SQL is compiled and stamped for the connector's dialect even when the expression can't self-identify a backend."""
+        import ibis
+
+        from phenex.ibis_connect import ibis_dialect_of_expr, read_dialect_stamp
+
+        node = MockNode("unbindable_node")
+        node._expression = ibis.table(
+            {"X": "int"}, name="T"
+        )  # unbound: can't self-identify
+        node.lastexecution_start_time = datetime.now()
+        node.lastexecution_end_time = datetime.now()
+        node.lastexecution_duration = 0.01
+        # precondition: dialect inference fails for this expression
+        self.assertIsNone(ibis_dialect_of_expr(node._expression))
+
+        con = self._make_mock_con()
+        con.dest_connection.name = "snowflake"  # the connector knows its one backend
+
+        self.node_manager.update_run_params(node, con)
+
+        stored = self.node_manager.get_sql(node)
+        self.assertIsNotNone(
+            stored, "SQL must be cached in the connector's dialect, not blanked"
+        )
+        self.assertEqual(
+            read_dialect_stamp(stored),
+            "snowflake",
+            f"cached SQL must carry the connector's dialect stamp; got head={stored[:60]!r}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
