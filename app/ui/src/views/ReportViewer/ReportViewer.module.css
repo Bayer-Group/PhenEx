@@ -20,7 +20,7 @@
   font-family: Arial, Helvetica, sans-serif;
   background-color:white; /* BACKGROUND COLOR */
   user-select: none;
-  background-color: var(--background_color_dark);
+  background-color: var(--background_color_light);
 }
 
 .runSelector {

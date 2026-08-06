@@ -87,6 +87,11 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
   const mountY = useRef(lastClickY);
   const sharedScrollTopRef = useRef(0);
   const cachedScrollerWidth = useRef(0);
+  const scrollAnimFrame = useRef<number | undefined>(undefined);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const resizeDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // Skip the initial ResizeObserver callback (fires on observe, not a real resize).
+  const isFirstResizeRef = useRef(true);
 
   // Sync external navigation requests (e.g. from OutlinePanel)
   const prevExternalIndex = useRef(initialIndex);
@@ -111,6 +116,11 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
   const centerOnCard = useCallback((idx: number, mode: 'instant' | 'smooth' | 'fast') => {
     const scroller = scrollRef.current;
     if (!scroller) return;
+    // Cancel any in-flight fast animation before starting a new scroll
+    if (scrollAnimFrame.current !== undefined) {
+      cancelAnimationFrame(scrollAnimFrame.current);
+      scrollAnimFrame.current = undefined;
+    }
     // Use cached width to avoid forced reflow; fallback to reading if not yet set
     const cellWidth = cachedScrollerWidth.current || scroller.clientWidth;
     if (cellWidth === 0) return;
@@ -129,9 +139,13 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
       const step = (now: number) => {
         const p = Math.min((now - t0) / duration, 1);
         scroller.scrollLeft = start + dist * (1 - (1 - p) * (1 - p));
-        if (p < 1) requestAnimationFrame(step);
+        if (p < 1) {
+          scrollAnimFrame.current = requestAnimationFrame(step);
+        } else {
+          scrollAnimFrame.current = undefined;
+        }
       };
-      requestAnimationFrame(step);
+      scrollAnimFrame.current = requestAnimationFrame(step);
     }
   }, []);
 
@@ -199,6 +213,16 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
       const roEntry = roEntries[0];
       if (roEntry) cachedScrollerWidth.current = roEntry.contentRect.width;
       centerOnCard(currentIndexRef.current, 'instant');
+      if (!isFirstResizeRef.current) {
+        // Immediately zero opacity before the reflow is painted.
+        const el = overlayRef.current;
+        if (el) { el.style.transition = 'none'; el.style.opacity = '0'; }
+        clearTimeout(resizeDebounceRef.current);
+        resizeDebounceRef.current = setTimeout(() => {
+          if (el) { el.style.transition = 'opacity 0.25s ease-out'; el.style.opacity = '1'; }
+        }, 180);
+      }
+      isFirstResizeRef.current = false;
     });
     ro.observe(scroller);
     // Initialize cached width
@@ -297,6 +321,7 @@ export const HorizontalRowViewer = memo<HorizontalRowViewerProps>(({
 
   return (
     <div
+      ref={overlayRef}
       className={`${styles.overlay} ${closing ? styles.closing : ''}`}
       onMouseDown={() => { mouseDownOnOverlay.current = true; }}
       // onClick={handleOverlayClick}

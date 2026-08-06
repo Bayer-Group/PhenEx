@@ -6,9 +6,8 @@
   box-sizing: border-box;
   padding:0px 0px 0px 0px;
   overflow: hidden;
-  background-color: transparent !important;
+  background-color: var(--background_color_dark) !important;
   border-right: var(--border);
-
 }
 
 /* .tabRegion{

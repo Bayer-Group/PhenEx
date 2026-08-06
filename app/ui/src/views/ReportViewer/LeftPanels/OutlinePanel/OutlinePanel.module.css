@@ -5,7 +5,7 @@
   box-sizing: border-box;
   overflow-y: hidden;
   height: 100%;
-  margin-left:var(--left_panel_margin_left, 0px);
+  margin-left:0px;
 }
 
 .floatingHeader {
@@ -14,7 +14,6 @@
   left: 0;
   right: 0;
   z-index: 10;
-  background: var(--background_color_dark, #fff);
 }
 
 /* title transitions font-size so the header naturally hugs content height */
@@ -28,6 +27,9 @@
   white-space: normal;
   word-break: break-word;
   transition: font-size 0.15s ease, padding 0.15s ease;
+  padding-bottom:30px;
+  background: linear-gradient(to bottom, var(--background_color_light) 60%, transparent 100%);
+
 }
 
 .floatingHeaderScrolled .title {
