@@ -10,6 +10,7 @@ import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../
 import { SectionCellContent } from '../SectionLayouts/SectionCellContent';
 import { LayoutControls } from '../SectionLayouts/LayoutControls';
 import { getSectionLayoutId } from '../SectionLayouts/sectionLayoutStore';
+import { useResponsiveColumns } from '../SectionLayouts/useResponsiveColumns';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { BreadcrumbTitle } from '../BreadcrumbTitle';
@@ -60,6 +61,8 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
     const cohortData = isAttrition
       ? (cohortDataMap['table1'] ?? [])
       : cohortDataMap[reporter] ?? [];
+    const cardColumnInnerRef = useRef<HTMLDivElement>(null);
+    const defaultColumns = useResponsiveColumns(cardColumnInnerRef);
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const initialScrollTopRef = useRef(initialScrollTop ?? 0);
     initialScrollTopRef.current = initialScrollTop ?? 0;
@@ -176,6 +179,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
           table2Cohorts={table2Cohorts}
           onNavigateToRow={onNavigateToRow}
           onRenameRow={onRenameRow}
+          defaultColumns={defaultColumns}
         />
       );
     };
@@ -192,13 +196,14 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
             </div>
 
 
-        <div className={styles.cardColumnInner}>
-                    <div className={styles.controls}>
+        <div className={styles.cardColumnInner} ref={cardColumnInnerRef}>
+              <div className={styles.controls}>
                 {isFocused && isSection && entry.kind === 'section' && (
                 <LayoutControls
                   sectionId={getSectionLayoutId(entry)}
                   rowKeys={cellRows.map((r) => r.name)}
                   cohortCount={cohortData.length}
+                  defaultColumns={defaultColumns}
                 />
               )}
             </div>

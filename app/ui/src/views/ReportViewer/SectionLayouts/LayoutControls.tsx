@@ -11,6 +11,8 @@ interface LayoutControlsProps {
   rowKeys: string[];
   /** Number of selected cohorts, used to size fresh grid tiles. */
   cohortCount: number;
+  /** Responsive default column count derived from the card width. */
+  defaultColumns?: number;
 }
 
 /**
@@ -18,11 +20,26 @@ interface LayoutControlsProps {
  * panel's right-click menu: switch between the List view and named grid
  * layouts, create a new grid, or delete an existing one.
  */
-export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount }: LayoutControlsProps) => {
+export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount, defaultColumns = 3 }: LayoutControlsProps) => {
   const { layouts, activeLayout, activeLayoutId, setActiveLayout, createLayout, renameLayout, deleteLayout, setColumnsPerRow } =
     useSectionLayouts(sectionId);
   const [open, setOpen] = useState(false);
+  const [locked, setLocked] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Keep latest values accessible without adding them as effect deps.
+  const liveRef = useRef({ activeLayout, rowKeys, cohortCount, setColumnsPerRow });
+  liveRef.current = { activeLayout, rowKeys, cohortCount, setColumnsPerRow };
+  const mountedRef = useRef(false);
+
+  useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return; }
+    if (locked) return;
+    const { activeLayout: al, rowKeys: rk, cohortCount: cc, setColumnsPerRow: fn } = liveRef.current;
+    if (!al) return;
+    fn(al.id, defaultColumns, rk, cc);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultColumns, locked]);
 
   useEffect(() => {
     if (!open) return;
@@ -38,11 +55,11 @@ export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount }: LayoutC
     };
   }, [open]);
 
-  const triggerLabel = activeLayout ? activeLayout.name : 'List';
+  const triggerLabel = activeLayout?.name ?? 'Default';
 
   const handleNewGrid = () => {
     const name = `Grid ${layouts.length + 1}`;
-    const id = createLayout(name, buildDefaultLayoutItems(rowKeys, cohortCount, 3), 3);
+    const id = createLayout(name, buildDefaultLayoutItems(rowKeys, cohortCount, defaultColumns), defaultColumns);
     setActiveLayout(id);
     setOpen(false);
   };
@@ -76,6 +93,14 @@ export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount }: LayoutC
       )}
       <button
         type="button"
+        className={`${styles.lockBtn} ${locked ? styles.lockBtnLocked : ''}`}
+        onClick={(e) => { e.stopPropagation(); setLocked((l) => !l); }}
+        title={locked ? 'Unlock: columns fixed, click to follow resize' : 'Unlocked: columns follow resize, click to fix'}
+      >
+        {locked ? '🔒' : '🔓'}
+      </button>
+      <button
+        type="button"
         className={styles.trigger}
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
       >
@@ -85,15 +110,6 @@ export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount }: LayoutC
 
       {open && (
         <div className={styles.menu} onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            className={`${styles.item} ${activeLayoutId === null ? styles.itemActive : ''}`}
-            onClick={() => { setActiveLayout(null); setOpen(false); }}
-          >
-            <span className={styles.check}>{activeLayoutId === null ? '●' : ''}</span>
-            <span className={styles.itemLabel}>List</span>
-          </button>
-
           {layouts.map((l) => (
             <div key={l.id} className={`${styles.item} ${activeLayoutId === l.id ? styles.itemActive : ''}`}>
               <span className={styles.check}>{activeLayoutId === l.id ? '●' : ''}</span>

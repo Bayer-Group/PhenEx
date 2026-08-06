@@ -138,3 +138,26 @@
 .addItem {
   color: var(--color_accent, #2f6fed);
 }
+
+.lockBtn {
+  font-size: 14px;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.9);
+  border: var(--border);
+  border-radius: 8px;
+  padding: 5px 8px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  opacity: 0.5;
+  transition: opacity 0.15s, background-color 0.1s;
+}
+
+.lockBtn:hover {
+  background: #fff;
+  opacity: 1;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+
+.lockBtnLocked {
+  opacity: 1;
+}

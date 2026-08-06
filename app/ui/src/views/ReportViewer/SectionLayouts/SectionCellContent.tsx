@@ -19,6 +19,8 @@ export interface SectionCellContentProps {
   table2Cohorts?: Table2Cohort[];
   onNavigateToRow?: (row: SequentialRow) => void;
   onRenameRow?: (name: string, displayName: string) => void;
+  /** Responsive default column count derived from the card width. */
+  defaultColumns?: number;
 }
 
 /**
@@ -26,7 +28,7 @@ export interface SectionCellContentProps {
  * current rows when no persisted layout exists for this section.
  */
 export const SectionCellContent = memo<SectionCellContentProps>((props) => {
-  const { sectionId, rows, cohortData, ...rest } = props;
+  const { sectionId, rows, cohortData, defaultColumns = 3, ...rest } = props;
   const { activeLayout, hiddenKeys } = useSectionLayouts(sectionId);
 
   const visibleRows = hiddenKeys.size > 0 ? rows.filter((r) => !hiddenKeys.has(r.name)) : rows;
@@ -35,12 +37,12 @@ export const SectionCellContent = memo<SectionCellContentProps>((props) => {
     () => ({
       id: '__default__',
       name: 'Default',
-      items: buildDefaultLayoutItems(rows.map((r) => r.name), cohortData.length, 3),
-      columnsPerRow: 3,
+      items: buildDefaultLayoutItems(rows.map((r) => r.name), cohortData.length, defaultColumns),
+      columnsPerRow: defaultColumns,
     }),
-    // Rebuild only when the row set or cohort count changes.
+    // Rebuild only when the row set, cohort count, or responsive columns change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows.map((r) => r.name).join('\0'), cohortData.length],
+    [rows.map((r) => r.name).join('\0'), cohortData.length, defaultColumns],
   );
 
   const layout = activeLayout ?? defaultLayout;

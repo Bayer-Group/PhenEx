@@ -84,6 +84,7 @@
   border-radius: 8px;
   transition: opacity 0.2s;
   margin-right: 15px;
+  padding-top: 100px;
 }
 
 .cardTitle {
