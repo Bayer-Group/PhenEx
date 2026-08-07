@@ -22,7 +22,9 @@ type Interaction =
        *  multi-drag, else just the grabbed cell). All move by the same delta. */
       group: { key: string; x: number; y: number }[];
     }
-  | { type: 'resize'; edge: 'right' | 'bottom' | 'corner'; key: string; origin: GridItem; startX: number; startY: number; pointerId: number };
+  | { type: 'resize'; edge: 'right' | 'bottom' | 'corner'; key: string; origin: GridItem; startX: number; startY: number; pointerId: number;
+      /** Original w/h of every item being resized (grabbed cell + selected peers). */
+      group: { key: string; w: number; h: number }[] };
 
 export interface UseGridInteractionParams {
   items: readonly { key: string }[];
@@ -189,12 +191,14 @@ export function useGridInteraction({
             if (cur) map.set(g.key, { ...cur, x: g.x + dCol, y: g.y + dRow });
           }
         } else {
-          const cur = map.get(it.key);
-          if (cur) {
-            const minH = minHMap?.get(it.key) ?? 1;
-            const w = it.edge === 'bottom' ? cur.w : Math.max(1, it.origin.w + dCol);
-            const h = it.edge === 'right' ? cur.h : Math.max(minH, it.origin.h + dRow);
-            map.set(it.key, { ...cur, w, h });
+          for (const g of it.group) {
+            const cur = map.get(g.key);
+            if (cur) {
+              const minH = minHMap?.get(g.key) ?? 1;
+              const w = it.edge === 'bottom' ? cur.w : Math.max(1, g.w + dCol);
+              const h = it.edge === 'right' ? cur.h : Math.max(minH, g.h + dRow);
+              map.set(g.key, { ...cur, w, h });
+            }
           }
         }
         return Array.from(map.values());
@@ -266,7 +270,12 @@ export function useGridInteraction({
     e.preventDefault();
     e.stopPropagation();
     bringToFront(key);
-    interactionRef.current = { type: 'resize', edge, key, origin, startX: e.clientX, startY: e.clientY, pointerId: e.pointerId };
+    const sel = selectionRef.current;
+    const groupKeys = sel.isSelected(key) && sel.selected.size > 1 ? [...sel.selected] : [key];
+    const group = groupKeys
+      .map((k) => { const o = layoutMap.get(k); return o ? { key: k, w: o.w, h: o.h } : null; })
+      .filter((g): g is { key: string; w: number; h: number } => g !== null);
+    interactionRef.current = { type: 'resize', edge, key, origin, startX: e.clientX, startY: e.clientY, pointerId: e.pointerId, group };
   }, [editable, layoutMap, bringToFront]);
 
   return {
