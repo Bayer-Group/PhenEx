@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import styles from './LayoutControls.module.css';
-import { useSectionLayouts, buildDefaultLayoutItems } from './sectionLayoutStore';
+import { useSectionLayouts, buildDefaultLayoutItems, useLayoutEditing } from './sectionLayoutStore';
 
 const COLUMN_OPTIONS = [1, 2, 3, 4, 5] as const;
 
@@ -24,7 +24,7 @@ export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount, defaultCo
   const { layouts, activeLayout, activeLayoutId, setActiveLayout, createLayout, renameLayout, deleteLayout, setColumnsPerRow } =
     useSectionLayouts(sectionId);
   const [open, setOpen] = useState(false);
-  const [locked, setLocked] = useState(false);
+  const [isEditing, setEditing] = useLayoutEditing(sectionId);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Keep latest values accessible without adding them as effect deps.
@@ -34,12 +34,12 @@ export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount, defaultCo
 
   useEffect(() => {
     if (!mountedRef.current) { mountedRef.current = true; return; }
-    if (locked) return;
+    if (isEditing) return;
     const { activeLayout: al, rowKeys: rk, cohortCount: cc, setColumnsPerRow: fn } = liveRef.current;
     if (!al) return;
     fn(al.id, defaultColumns, rk, cc);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultColumns, locked]);
+  }, [defaultColumns, isEditing]);
 
   useEffect(() => {
     if (!open) return;
@@ -91,14 +91,16 @@ export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount, defaultCo
           ))}
         </select>
       )}
-      <button
-        type="button"
-        className={`${styles.lockBtn} ${locked ? styles.lockBtnLocked : ''}`}
-        onClick={(e) => { e.stopPropagation(); setLocked((l) => !l); }}
-        title={locked ? 'Unlock: columns fixed, click to follow resize' : 'Unlocked: columns follow resize, click to fix'}
-      >
-        {locked ? '🔒' : '🔓'}
-      </button>
+      {activeLayout && activeLayout.id !== '__default__' && (
+        <button
+          type="button"
+          className={`${styles.lockBtn} ${isEditing ? styles.lockBtnLocked : ''}`}
+          onClick={(e) => { e.stopPropagation(); setEditing(!isEditing); }}
+          title={isEditing ? 'Lock layout: exit drag/resize mode' : 'Unlock layout: enable drag and resize'}
+        >
+          {isEditing ? '🔓' : '🔒'}
+        </button>
+      )}
       <button
         type="button"
         className={styles.trigger}
@@ -110,6 +112,18 @@ export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount, defaultCo
 
       {open && (
         <div className={styles.menu} onClick={(e) => e.stopPropagation()}>
+          <div className={`${styles.item} ${activeLayoutId === null ? styles.itemActive : ''}`}>
+            <span className={styles.check}>{activeLayoutId === null ? '●' : ''}</span>
+            <button
+              type="button"
+              className={styles.itemLabel}
+              style={{ border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', font: 'inherit', color: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              onClick={() => { setActiveLayout(null); setOpen(false); }}
+            >
+              Default
+            </button>
+          </div>
+          {layouts.length > 0 && <div className={styles.divider} />}
           {layouts.map((l) => (
             <div key={l.id} className={`${styles.item} ${activeLayoutId === l.id ? styles.itemActive : ''}`}>
               <span className={styles.check}>{activeLayoutId === l.id ? '●' : ''}</span>

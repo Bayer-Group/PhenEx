@@ -469,3 +469,28 @@ export function exportSectionLayouts(): PersistedState {
 export function importSectionLayouts(state: PersistedState): void {
   store.replaceState(state ?? {});
 }
+
+// ── Session-only editing state (not persisted) ───────────────────────────
+
+const editingSet = new Set<string>();
+const editingListeners = new Set<() => void>();
+
+function notifyEditingListeners() {
+  editingListeners.forEach((l) => l());
+}
+
+export function setLayoutEditing(sectionId: string, editing: boolean): void {
+  if (editing) editingSet.add(sectionId);
+  else editingSet.delete(sectionId);
+  notifyEditingListeners();
+}
+
+/** Returns [isEditing, setEditing] for the given section's layout edit mode. */
+export function useLayoutEditing(sectionId: string): [boolean, (v: boolean) => void] {
+  const isEditing = useSyncExternalStore(
+    (listener) => { editingListeners.add(listener); return () => editingListeners.delete(listener); },
+    () => editingSet.has(sectionId),
+  );
+  const setEditing = useCallback((v: boolean) => setLayoutEditing(sectionId, v), [sectionId]);
+  return [isEditing, setEditing];
+}

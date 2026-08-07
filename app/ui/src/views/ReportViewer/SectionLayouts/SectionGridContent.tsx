@@ -10,7 +10,7 @@ import { MultiSelectControls } from './MultiSelectControls';
 import { useGridSelection } from './GridSelection';
 import { useMultiSelectActions } from './useMultiSelectActions';
 import { restackByCohortDelta } from './CleanupGridLayout';
-import { type SectionLayout, type GridItem, defaultTileRows, useSectionLayouts, lockedChartHeight } from './sectionLayoutStore';
+import { type SectionLayout, type GridItem, defaultTileRows, useSectionLayouts, lockedChartHeight, useLayoutEditing } from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -56,6 +56,10 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     setDisplayVariant,
     toggleItemVisibility,
   } = useSectionLayouts(sectionId);
+
+  const [isEditing] = useLayoutEditing(sectionId);
+  // Default layout is always locked; named layouts can be unlocked via the lock button.
+  const editable = layout.id !== '__default__' && isEditing;
 
   const rowByKey = useMemo(() => {
     const map = new Map<string, SequentialRow>();
@@ -138,7 +142,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     displayVariants,
     cohortCount: cohortData.length,
     columnsPerRow: layout.columnsPerRow,
-    editable: true,
+    editable,
     createGroup,
     ungroup,
     setDisplayVariant,
@@ -177,7 +181,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
         items={gridItems}
         layout={layout.items}
         selection={selection}
-        editable={false}
+        editable={editable}
         columnsPerRow={layout.columnsPerRow}
         onLayoutChange={handleLayoutChange}
         onItemClick={handleItemClick}
