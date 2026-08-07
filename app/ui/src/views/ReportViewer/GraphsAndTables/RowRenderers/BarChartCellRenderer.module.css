@@ -495,7 +495,7 @@
 .containerFillHeight .cohortRow {
   flex: 1 1 0;
   height: auto;
-  min-height: 10px;
+  min-height: 4px;
 }
 
 /* Spacers must not flex-grow. */

@@ -79,24 +79,23 @@ export const GRID_GAP = 14;
 export const GRID_ROW_GAP = 14;
 
 /**
- * A fresh grid tile reserves a fixed `TILE_HEADER_ROWS` block for the title /
- * chrome / bottom padding, plus `ROWS_PER_COHORT` grid rows for **each** cohort
- * it must show. Adding one cohort therefore grows the tile by `ROWS_PER_COHORT`
- * rows (≈ `ROWS_PER_COHORT` × `GRID_ROW_HEIGHT`px). Bump `ROWS_PER_COHORT` to give
- * each cohort more vertical space; bump `TILE_HEADER_ROWS` for a taller fixed header.
+ * Minimum grid-row span for a tile that has no chart (i.e. just title +
+ * description). Used as the floor in cohort-delta restacking and as the fixed
+ * overhead when sizing group tiles.
  */
 export const TILE_HEADER_ROWS = 8;
-/** Grid rows allotted per cohort in a tile's body. */
-export const ROWS_PER_COHORT = 1;
+
+/** Fixed pixel overhead of a tile's non-chart chrome: header + description + body padding. */
+const TILE_CHROME_PX = 60;
 
 // ── Locked-mode chart heights ────────────────────────────────────────────
 
 /** Chart height (px) per cohort for boolean rows (locked view). */
-export const PX_PER_COHORT = 24;
+export const PX_PER_COHORT = 12;
 /** Fixed overhead (px) added to boolean chart height: header + body margin + buffer. */
 export const BOOLEAN_CHART_OVERHEAD_PX = 52;
 /** Extra pixels added to the numeric chart height over the boolean baseline. */
-export const NUMERIC_EXTRA_HEIGHT_PX = 30;
+export const NUMERIC_EXTRA_HEIGHT_PX = 120;
 /** Fixed chart height (px) for categorical rows (locked mode). */
 export const CATEGORICAL_CHART_HEIGHT_PX = 150;
 
@@ -330,12 +329,17 @@ const EMPTY_VARIANTS: Record<string, string> = {};
 // ── Default layout generation ────────────────────────────────────────────
 
 /**
- * Grid-row span for a fresh tile given how many cohorts it must show: a fixed
- * header block plus `ROWS_PER_COHORT` rows per cohort, so each cohort added
- * grows the tile by `ROWS_PER_COHORT` rows.
+ * Convert a chart's pixel height to the grid-row span that fits it exactly,
+ * accounting for the tile's fixed chrome (header + description + body padding)
+ * and the per-tile row-gap inset.
  */
+export function tileRowsFromPx(chartHeightPx: number): number {
+  return Math.ceil((chartHeightPx + TILE_CHROME_PX + GRID_ROW_GAP) / GRID_ROW_HEIGHT);
+}
+
+/** Grid-row span for a fresh boolean tile with `cohortCount` cohorts — matches the locked-mode height. */
 export function defaultTileRows(cohortCount: number): number {
-  return TILE_HEADER_ROWS + Math.max(1, cohortCount) * ROWS_PER_COHORT;
+  return tileRowsFromPx(lockedChartHeight('boolean', cohortCount));
 }
 
 /**

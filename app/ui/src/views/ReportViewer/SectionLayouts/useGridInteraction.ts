@@ -58,6 +58,8 @@ export interface UseGridInteractionParams {
   editable: boolean;
   /** Multi-cell selection, owned by the caller so it can drive a toolbar. */
   selection: GridSelection;
+  /** Minimum grid-row span per item key; enforced during resize. */
+  minHMap?: ReadonlyMap<string, number>;
   onLayoutChange: (items: GridItem[]) => void;
   onItemClick?: (key: string) => void;
 }
@@ -114,6 +116,7 @@ export function useGridInteraction({
   rowGap,
   editable,
   selection,
+  minHMap,
   onLayoutChange,
   onItemClick,
 }: UseGridInteractionParams): GridInteraction {
@@ -260,12 +263,12 @@ export function useGridInteraction({
         } else if (it.edge === 'right') {
           next = { ...cur, w: clamp(it.origin.w + dCol, 1, columns - it.origin.x) };
         } else if (it.edge === 'bottom') {
-          next = { ...cur, h: Math.max(1, it.origin.h + dRow) };
+          next = { ...cur, h: Math.max(minHMap?.get(it.key) ?? 1, it.origin.h + dRow) };
         } else {
           next = {
             ...cur,
             w: clamp(it.origin.w + dCol, 1, columns - it.origin.x),
-            h: Math.max(1, it.origin.h + dRow),
+            h: Math.max(minHMap?.get(it.key) ?? 1, it.origin.h + dRow),
           };
         }
         map.set(it.key, next);
