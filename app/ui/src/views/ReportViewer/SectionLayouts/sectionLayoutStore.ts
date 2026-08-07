@@ -58,6 +58,8 @@ interface SectionState {
   listHiddenKeys?: string[];
   /** Per-row chart display variant (row key → variant id). */
   displayVariants?: Record<string, string>;
+  /** Per-item descriptions shown below the title in locked grid view. */
+  descriptions?: Record<string, string>;
 }
 
 type PersistedState = Record<string, SectionState>;
@@ -86,6 +88,29 @@ export const GRID_ROW_GAP = 14;
 export const TILE_HEADER_ROWS = 8;
 /** Grid rows allotted per cohort in a tile's body. */
 export const ROWS_PER_COHORT = 1;
+
+// ── Locked-mode chart heights ────────────────────────────────────────────
+
+/** Chart height (px) per cohort for boolean rows (locked view). */
+export const PX_PER_COHORT = 24;
+/** Fixed overhead (px) added to boolean chart height: header + body margin + buffer. */
+export const BOOLEAN_CHART_OVERHEAD_PX = 52;
+/** Extra pixels added to the numeric chart height over the boolean baseline. */
+export const NUMERIC_EXTRA_HEIGHT_PX = 30;
+/** Fixed chart height (px) for categorical rows (locked mode). */
+export const CATEGORICAL_CHART_HEIGHT_PX = 150;
+
+/**
+ * Chart height (px) for a locked-mode cell given its row type and cohort count.
+ * `spacersPx` is the total pixel height of any spacers interleaved in the bar chart.
+ */
+export function lockedChartHeight(rowType: string, cohortCount: number, spacersPx = 0): number {
+  switch (rowType) {
+    case 'categorical': return CATEGORICAL_CHART_HEIGHT_PX;
+    case 'numeric': return Math.max(1, cohortCount) * PX_PER_COHORT + NUMERIC_EXTRA_HEIGHT_PX;
+    default: return Math.max(1, cohortCount) * PX_PER_COHORT + BOOLEAN_CHART_OVERHEAD_PX + spacersPx;
+  }
+}
 
 // ── Persistence ──────────────────────────────────────────────────────────
 
@@ -267,6 +292,14 @@ class SectionLayoutStore {
     });
   }
 
+  setItemDescription(sectionId: string, key: string, description: string) {
+    const section = this.getSection(sectionId);
+    this.update(sectionId, {
+      ...section,
+      descriptions: { ...(section.descriptions ?? {}), [key]: description },
+    });
+  }
+
   deleteLayout(sectionId: string, layoutId: string) {
     const section = this.getSection(sectionId);
     const layouts = section.layouts.filter((l) => l.id !== layoutId);
@@ -333,6 +366,8 @@ export interface UseSectionLayouts {
   groups: CellGroup[];
   /** Per-row display variant map (row key → variant id). */
   displayVariants: Record<string, string>;
+  /** Per-item descriptions shown below the title in locked grid view. */
+  descriptions: Record<string, string>;
   setActiveLayout: (layoutId: string | null) => void;
   createLayout: (name: string, items: GridItem[], columnsPerRow?: number) => string;
   updateLayoutItems: (layoutId: string, items: GridItem[]) => void;
@@ -342,6 +377,7 @@ export interface UseSectionLayouts {
   createGroup: (memberKeys: string[], height: number) => string;
   ungroup: (groupId: string) => void;
   setDisplayVariant: (rowKey: string, variantId: string) => void;
+  setDescription: (key: string, description: string) => void;
   setColumnsPerRow: (layoutId: string, nCols: number, rowKeys: string[], cohortCount: number) => void;
 }
 
@@ -360,12 +396,14 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
   const createGroup = useCallback((memberKeys: string[], height: number) => store.createGroup(sectionId, store.getSection(sectionId).activeLayoutId ?? '', memberKeys, height), [sectionId]);
   const ungroup = useCallback((groupId: string) => store.ungroup(sectionId, store.getSection(sectionId).activeLayoutId ?? '', groupId), [sectionId]);
   const setDisplayVariant = useCallback((rowKey: string, variantId: string) => store.setDisplayVariant(sectionId, rowKey, variantId), [sectionId]);
+  const setDescription = useCallback((key: string, description: string) => store.setItemDescription(sectionId, key, description), [sectionId]);
   const setColumnsPerRow = useCallback((layoutId: string, nCols: number, rowKeys: string[], cohortCount: number) => store.setColumnsPerRow(sectionId, layoutId, nCols, rowKeys, cohortCount), [sectionId]);
 
   const activeLayout = section.layouts.find((l) => l.id === section.activeLayoutId) ?? null;
   const hiddenKeys = useMemo(() => new Set(store.getHiddenKeys(sectionId, section.activeLayoutId)), [sectionId, section]);
   const groups = useMemo(() => store.getGroups(sectionId, section.activeLayoutId), [sectionId, section]);
   const displayVariants = section.displayVariants ?? EMPTY_VARIANTS;
+  const descriptions = section.descriptions ?? EMPTY_VARIANTS;
 
   return {
     layouts: section.layouts,
@@ -374,6 +412,7 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
     hiddenKeys,
     groups,
     displayVariants,
+    descriptions,
     setActiveLayout,
     createLayout,
     updateLayoutItems,
@@ -383,6 +422,7 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
     createGroup,
     ungroup,
     setDisplayVariant,
+    setDescription,
     setColumnsPerRow,
   };
 }

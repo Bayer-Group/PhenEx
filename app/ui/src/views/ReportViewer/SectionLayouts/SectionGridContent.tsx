@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { type CohortClassified } from '../types';
-import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartShared';
+import { type BarChartSpacer, SPACER_UNIT_PX } from '../GraphsAndTables/RowRenderers/barChartShared';
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { SectionRowRenderer, SectionRowTitle, sectionRowTitle } from './SectionRowRenderer';
@@ -10,7 +10,7 @@ import { MultiSelectControls } from './MultiSelectControls';
 import { useGridSelection } from './GridSelection';
 import { useMultiSelectActions } from './useMultiSelectActions';
 import { restackByCohortDelta } from './CleanupGridLayout';
-import { type SectionLayout, type GridItem, defaultTileRows, useSectionLayouts } from './sectionLayoutStore';
+import { type SectionLayout, type GridItem, defaultTileRows, useSectionLayouts, lockedChartHeight } from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -49,6 +49,8 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     updateLayoutItems,
     groups,
     displayVariants,
+    descriptions,
+    setDescription,
     createGroup,
     ungroup,
     setDisplayVariant,
@@ -64,6 +66,12 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
   // Rows bundled into a group are rendered inside the group card, never loose.
   const groupedKeys = useMemo(() => new Set(groups.flatMap((g) => g.memberKeys)), [groups]);
   const looseRows = useMemo(() => rows.filter((r) => !groupedKeys.has(r.name)), [rows, groupedKeys]);
+
+  // Total px height of all bar-chart spacers (cohort group separators), shared across rows.
+  const spacersPx = useMemo(
+    () => (spacers ?? []).reduce((sum, s) => sum + 10 + (s.size - 1) * SPACER_UNIT_PX, 0),
+    [spacers],
+  );
 
   const gridItems = useMemo<SectionGridRenderItem[]>(() => {
     const rowItems: SectionGridRenderItem[] = looseRows.map((row) => ({
@@ -84,6 +92,9 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
           fillHeight={row.rowType === 'boolean' || row.rowType === 'numeric' || row.rowType === 'categorical'}
         />
       ),
+      chartHeightPx: lockedChartHeight(row.rowType, cohortData.length, spacersPx),
+      description: descriptions[row.name] ?? '',
+      onDescriptionChange: (value: string) => setDescription(row.name, value),
     }));
 
     const groupItems: SectionGridRenderItem[] = groups.map((group) => {
@@ -108,7 +119,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     });
 
     return [...rowItems, ...groupItems];
-  }, [looseRows, groups, rowByKey, cohortData, finalCohortSizes, spacers, tteCohorts, table2Cohorts, displayVariants, onNavigateToRow, onRenameRow]);
+  }, [looseRows, groups, rowByKey, cohortData, finalCohortSizes, spacers, spacersPx, tteCohorts, table2Cohorts, displayVariants, descriptions, setDescription, onNavigateToRow, onRenameRow]);
 
   const itemKeys = useMemo(() => gridItems.map((it) => it.key), [gridItems]);
   const selection = useGridSelection(itemKeys, true);
@@ -164,6 +175,8 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
         items={gridItems}
         layout={layout.items}
         selection={selection}
+        editable={false}
+        columnsPerRow={layout.columnsPerRow}
         onLayoutChange={handleLayoutChange}
         onItemClick={handleItemClick}
       />
