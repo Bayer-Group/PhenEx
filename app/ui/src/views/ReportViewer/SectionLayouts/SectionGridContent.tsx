@@ -90,9 +90,11 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
           table2Cohorts={table2Cohorts}
           variant={displayVariants[row.name]}
           fillHeight={row.rowType === 'boolean' || row.rowType === 'numeric' || row.rowType === 'categorical'}
+          autoHeight={row.rowType === 'categorical'}
         />
       ),
-      chartHeightPx: lockedChartHeight(row.rowType, cohortData.length, spacersPx),
+      // Categorical self-sizes (bar area fixed in its own CSS); others get a computed fixed height.
+      chartHeightPx: row.rowType === 'categorical' ? undefined : lockedChartHeight(row.rowType, cohortData.length, spacersPx),
       description: descriptions[row.name] ?? '',
       onDescriptionChange: (value: string) => setDescription(row.name, value),
     }));

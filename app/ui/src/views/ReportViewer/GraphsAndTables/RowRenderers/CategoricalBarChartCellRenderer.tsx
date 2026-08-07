@@ -15,6 +15,8 @@ interface CategoricalBarChartCellRendererProps {
   breadcrumbs?: string[];
   /** Expand to fill the available width (grid / fill-height context). */
   fillWidth?: boolean;
+  /** When true, bar area has a fixed min-height and label row is additive (locked grid mode). */
+  autoHeight?: boolean;
 }
 
 interface CategoryData {
@@ -28,6 +30,7 @@ export const CategoricalBarChartCellRenderer: FC<CategoricalBarChartCellRenderer
   finalCohortSizes = {},
   orientation = 'horizontal',
   fillWidth = false,
+  autoHeight = false,
 }) => {
 
   const { activeIndex } = useBarHoverStore();
@@ -68,7 +71,7 @@ export const CategoricalBarChartCellRenderer: FC<CategoricalBarChartCellRenderer
   if (orientation === 'vertical') {
     return (
       <>
-        <VerticalChart categories={categories} activeIndex={activeIndex} fillWidth={fillWidth} onBarHover={setTooltipHover} />
+        <VerticalChart categories={categories} activeIndex={activeIndex} fillWidth={fillWidth} autoHeight={autoHeight} onBarHover={setTooltipHover} />
         {tooltipHover && <CohortNameTooltip cohortData={cohortData} index={tooltipHover.index} x={tooltipHover.x} top={tooltipHover.top} />}
       </>
     );
@@ -132,8 +135,9 @@ const VerticalChart: FC<{
   categories: CategoryData[];
   activeIndex: number | null;
   fillWidth?: boolean;
+  autoHeight?: boolean;
   onBarHover: (info: { index: number; x: number; top: number } | null) => void;
-}> = ({ categories, activeIndex, fillWidth = false, onBarHover }) => {
+}> = ({ categories, activeIndex, fillWidth = false, autoHeight = false, onBarHover }) => {
   const ceiling = 100;
   const ticks = [0, 20, 40, 60, 80, 100];
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -175,9 +179,9 @@ const VerticalChart: FC<{
     : Math.min(maxChartWidth, Math.max(minChartWidth, availableWidth));
 
   return (
-    <div className={styles.vSizer}>
+    <div className={`${styles.vSizer}${autoHeight ? ` ${styles.vSizerAutoHeight}` : ''}`}>
     <div
-      className={styles.vertical}
+      className={`${styles.vertical}${autoHeight ? ` ${styles.vAutoHeight}` : ''}`}
       style={{ ['--label-row-height' as string]: `${labelRowHeight}px` }}
     >
       <div className={styles.vChartRow}>

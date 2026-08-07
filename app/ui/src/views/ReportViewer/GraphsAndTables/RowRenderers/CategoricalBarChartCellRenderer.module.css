@@ -221,9 +221,36 @@
   transition: height 0.2s ease, opacity 0.15s ease;
 }
 
-/* Label row — grows to fit full (wrapping) labels; the measured height is fed
-   back as --label-row-height so the plot area shrinks and the Y-axis stays
-   aligned. Scrolls horizontally with the bars. */
+/* ── Auto-height mode (locked grid): bar area is fixed, label row is additive ── */
+
+/* Override the sizer's min-height so the cell wraps content naturally. */
+.vSizerAutoHeight {
+  min-height: 0;
+}
+
+/* Switch the chart to auto sizing — bar area has explicit height, labels grow below. */
+.vAutoHeight {
+  height: auto;
+}
+
+.vAutoHeight .vChartRow {
+  flex: none;
+  height: auto;
+}
+
+.vAutoHeight .vScrollInner {
+  height: auto;
+}
+
+.vAutoHeight .vChartArea {
+  flex: none;
+  height: 150px;
+}
+
+/* Y-axis inner must match the fixed bar-area height. */
+.vAutoHeight .vYAxisInner {
+  height: 150px;
+}
 .vLabelRow {
   flex-shrink: 0;
   min-height: var(--label-row-height);

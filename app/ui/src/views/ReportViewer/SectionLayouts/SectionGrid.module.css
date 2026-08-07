@@ -237,5 +237,9 @@
 
 .lockedItemChart > * {
   width: 100%;
+}
+
+/* When chartHeightPx is set the container has an explicit height; children must fill it. */
+.lockedItemChartFixed > * {
   height: 100%;
 }

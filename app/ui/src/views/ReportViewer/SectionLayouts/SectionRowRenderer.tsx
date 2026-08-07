@@ -27,6 +27,8 @@ export interface SectionRowRendererProps {
   fillHeight?: boolean;
   /** Chart display variant id (see rowVariants); falls back to the default. */
   variant?: string;
+  /** Categorical chart: bar area has fixed min-height, label row is additive (locked grid). */
+  autoHeight?: boolean;
 }
 
 /**
@@ -44,6 +46,7 @@ export const SectionRowRenderer = memo<SectionRowRendererProps>(({
   hideBarChartHeader = false,
   fillHeight = false,
   variant,
+  autoHeight = false,
 }) => {
   switch (row.rowType) {
     case 'boolean':
@@ -63,6 +66,7 @@ export const SectionRowRenderer = memo<SectionRowRendererProps>(({
           finalCohortSizes={finalCohortSizes}
           orientation={variant === 'horizontal' ? 'horizontal' : 'vertical'}
           fillWidth={fillHeight}
+          autoHeight={autoHeight}
         />
       );
     case 'numeric': {

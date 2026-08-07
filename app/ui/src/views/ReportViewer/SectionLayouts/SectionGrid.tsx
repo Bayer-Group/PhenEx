@@ -81,7 +81,7 @@ const LockedGridItem = memo<{ item: SectionGridRenderItem }>(({ item }) => {
       )}
 
       <div
-        className={styles.lockedItemChart}
+        className={`${styles.lockedItemChart}${item.chartHeightPx != null ? ` ${styles.lockedItemChartFixed}` : ''}`}
         style={item.chartHeightPx != null ? { height: item.chartHeightPx } : undefined}
       >
         <GridItemContext.Provider value={{ cols: 1 }}>
