@@ -1,20 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GridItem } from './sectionLayoutStore';
-import { cleanupGridLayout } from './CleanupGridLayout';
-import { dropSelectionIntoGrid } from './DropSelectionLayout';
-import { computeDropHint, resolveSingleDrop, type DropHint } from './GridDropHint';
 import { type GridSelection } from './GridSelection';
 
 // ── Tunables ───────────────────────────────────────────────────────────────
 
 /** Pointer travel (px) before a press becomes a drag rather than a click. */
 const DRAG_THRESHOLD = 4;
-/** Distance from the scroll container edge (px) at which auto-scroll kicks in. */
-const EDGE_SCROLL_ZONE = 64;
-/** Maximum auto-scroll speed in px per frame. */
-const EDGE_SCROLL_SPEED = 22;
-/** Per-card offset (px) of the animated multi-drag stack. */
-export const STACK_OFFSET = 7;
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -25,28 +16,13 @@ type Interaction =
       origin: GridItem;
       startX: number;
       startY: number;
-      startScrollTop: number;
       moved: boolean;
       pointerId: number;
-      /** Present when the grabbed cell is part of the selection (multi-drag). */
-      multi: {
-        keys: string[];
-        originLeft: number;
-        originTop: number;
-        curLeft: number;
-        curTop: number;
-      } | null;
+      /** Start positions of every dragged cell (the whole selection for a
+       *  multi-drag, else just the grabbed cell). All move by the same delta. */
+      group: { key: string; x: number; y: number }[];
     }
-  | { type: 'resize'; edge: 'right' | 'bottom' | 'corner'; key: string; origin: GridItem; startX: number; startY: number; startScrollTop: number; pointerId: number };
-
-/** Live position of the animated multi-card drag stack. */
-export interface MultiStack {
-  primaryKey: string;
-  /** Selected keys other than the primary, in stack order (bottom→top). */
-  trailing: string[];
-  left: number;
-  top: number;
-}
+  | { type: 'resize'; edge: 'right' | 'bottom' | 'corner'; key: string; origin: GridItem; startX: number; startY: number; pointerId: number };
 
 export interface UseGridInteractionParams {
   items: readonly { key: string }[];
@@ -62,6 +38,9 @@ export interface UseGridInteractionParams {
   minHMap?: ReadonlyMap<string, number>;
   /** Current pan-zoom scale of the grid, so pointer deltas map to content cells. */
   scale?: number;
+  /** Reference width (px) that sizes the grid columns — the card/viewport width,
+   *  independent of how wide the free canvas has grown. */
+  viewportWidth?: number;
   onLayoutChange: (items: GridItem[]) => void;
   onItemClick?: (key: string) => void;
 }
@@ -74,9 +53,12 @@ export interface GridInteraction {
   cellWidth: number;
   colSpan: number;
   rowSpan: number;
-  displayHeight: number;
-  dropHint: DropHint | null;
-  multiStack: MultiStack | null;
+  /** Canvas size (px), sized to the item bounding box (min. the viewport). */
+  canvasWidth: number;
+  canvasHeight: number;
+  /** Canvas origin in grid cells (≤ 0); items render at (x−originX, y−originY). */
+  originX: number;
+  originY: number;
   zOrder: string[];
   draggingKey: string | null;
   selection: GridSelection;
@@ -86,28 +68,15 @@ export interface GridInteraction {
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-
 /** Map layout array to a lookup by key. */
 function toMap(layout: GridItem[]): Map<string, GridItem> {
   return new Map(layout.map((it) => [it.key, it]));
 }
 
-/** Nearest vertically scrollable ancestor of `el` (falls back to null). */
-function getScrollParent(el: HTMLElement | null): HTMLElement | null {
-  let node = el?.parentElement ?? null;
-  while (node) {
-    const overflowY = getComputedStyle(node).overflowY;
-    if (/(auto|scroll|overlay)/.test(overflowY) && node.scrollHeight > node.clientHeight) return node;
-    node = node.parentElement;
-  }
-  return null;
-}
-
 /**
- * All pointer/drag/drop state and geometry for a {@link SectionGrid}. Owns the
- * measurement, drag drafts, auto-scroll, multi-drag stack and drop affordance,
- * exposing only what the component needs to render.
+ * All pointer/drag/resize state and geometry for a {@link SectionGrid}'s
+ * editable canvas. Items hold a free (x, y) position; drag and resize snap to
+ * grid cells and commit raw — there is no collision resolution or reflow.
  */
 export function useGridInteraction({
   items,
@@ -120,6 +89,7 @@ export function useGridInteraction({
   selection,
   minHMap,
   scale = 1,
+  viewportWidth = 0,
   onLayoutChange,
   onItemClick,
 }: UseGridInteractionParams): GridInteraction {
@@ -127,16 +97,8 @@ export function useGridInteraction({
   // Read live so pointer-effect closures see the current zoom without re-binding.
   const scaleRef = useRef(scale);
   scaleRef.current = scale;
-  const [containerWidth, setContainerWidth] = useState(0);
   const [draft, setDraft] = useState<GridItem[] | null>(null);
-  const [interacting, setInteracting] = useState(false);
   const interactionRef = useRef<Interaction | null>(null);
-  const scrollParentRef = useRef<HTMLElement | null>(null);
-  const pointerRef = useRef({ x: 0, y: 0 });
-  const autoScrollRef = useRef<number | null>(null);
-  // Container height captured at drag start; the grid must not grow mid-drag.
-  const frozenHeightRef = useRef(0);
-  const gridHeightRef = useRef(0);
   // Keys ordered bottom→top; last entry has highest z-index.
   const [zOrder, setZOrder] = useState<string[]>(() => items.map((i) => i.key));
 
@@ -144,29 +106,8 @@ export function useGridInteraction({
   const selectionRef = useRef<GridSelection>(selection);
   selectionRef.current = selection;
 
-  // Animated drag stack for a multi-cell selection (null when not multi-dragging).
-  const [multiStack, setMultiStack] = useState<MultiStack | null>(null);
-
-  // Where the current drag is hovering (drives the drop indicator + action).
-  const [dropHint, setDropHint] = useState<DropHint | null>(null);
-  const dropHintRef = useRef<DropHint | null>(null);
-  dropHintRef.current = dropHint;
-
   const bringToFront = useCallback((key: string) => {
     setZOrder((prev) => [...prev.filter((k) => k !== key), key]);
-  }, []);
-
-  // Measure available width (drives cell size).
-  useLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width;
-      if (w) setContainerWidth(w);
-    });
-    ro.observe(el);
-    setContainerWidth(el.clientWidth);
-    return () => ro.disconnect();
   }, []);
 
   // Ensure every item has a placement; append missing ones after the last row.
@@ -189,27 +130,39 @@ export function useGridInteraction({
 
   const layoutMap = useMemo(() => toMap(effectiveLayout), [effectiveLayout]);
 
-  const cellWidth = containerWidth > 0 ? (containerWidth - gap * (columns - 1)) / columns : 0;
+  const cellWidth = viewportWidth > 0 ? (viewportWidth - gap * (columns - 1)) / columns : 0;
   const colSpan = cellWidth + gap;
   // Vertical pitch is the bare row height; the gutter (rowGap) is a fixed inset
   // subtracted from each tile's rendered height, so it never accumulates across
   // the many rows a tall tile spans.
   const rowSpan = rowHeight;
 
-  const totalRows = useMemo(
-    () => effectiveLayout.reduce((max, it) => Math.max(max, it.y + it.h), 0),
-    [effectiveLayout],
-  );
-  const gridHeight = totalRows > 0 ? totalRows * rowSpan - rowGap : 0;
-  gridHeightRef.current = gridHeight;
-  // While dragging, pin the height to its pre-drag value so the container never
-  // grows under the pointer; auto-scroll reveals space via the padding instead.
-  const displayHeight = interacting ? frozenHeightRef.current : gridHeight;
+  // Origin comes from the *committed* layout so it stays fixed during a drag (no
+  // mid-gesture reflow); the draft may push the canvas right/down so it grows
+  // live. On drop the committed layout changes and the origin renormalises, so
+  // any item dragged into negative space returns to positive coordinates.
+  const { originX, originY } = useMemo(() => {
+    let minX = 0, minY = 0;
+    for (const it of layout) { minX = Math.min(minX, it.x); minY = Math.min(minY, it.y); }
+    return { originX: minX, originY: minY };
+  }, [layout]);
+
+  const { maxRight, maxBottom } = useMemo(() => {
+    let maxRight = 0, maxBottom = 0;
+    for (const it of effectiveLayout) {
+      maxRight = Math.max(maxRight, it.x + it.w);
+      maxBottom = Math.max(maxBottom, it.y + it.h);
+    }
+    return { maxRight, maxBottom };
+  }, [effectiveLayout]);
+
+  const canvasWidth = Math.max(viewportWidth, (maxRight - originX) * colSpan - gap);
+  const canvasHeight = Math.max(0, (maxBottom - originY) * rowSpan - rowGap);
 
   // ── Pointer interaction ─────────────────────────────────────────────────
 
   const commit = useCallback((next: GridItem[]) => {
-    // Persist placements only for items that still exist.
+    // Persist raw placements for items that still exist — no collision cleanup.
     const keys = new Set(items.map((i) => i.key));
     onLayoutChange(next.filter((it) => keys.has(it.key)));
   }, [items, onLayoutChange]);
@@ -217,113 +170,43 @@ export function useGridInteraction({
   useEffect(() => {
     if (!editable) return;
 
-    // Fractional grid cell under the pointer, then the matching drop hint.
-    const hintAt = (clientX: number, clientY: number, draggedKey: string, allowSwap: boolean): DropHint => {
-      const el = containerRef.current;
-      if (!el) return { kind: 'free' };
-      const r = el.getBoundingClientRect();
-      const s = scaleRef.current;
-      return computeDropHint(effectiveLayout, (clientX - r.left) / s / colSpan, (clientY - r.top) / s / rowSpan, draggedKey, allowSwap);
-    };
-
-    // Translate a pointer position into a draft placement. Includes any scroll
-    // that happened since drag start so the item keeps following the cursor
-    // while the container auto-scrolls.
+    // Translate the pointer into a draft. Every cell in the drag group moves by
+    // the same snapped (dCol, dRow) delta; resize adjusts only the grabbed cell.
+    // Nothing is clamped — items may enter negative space or run past the right
+    // edge, and the canvas grows to fit.
     const applyDrag = (clientX: number, clientY: number) => {
       const it = interactionRef.current;
       if (!it) return;
-      const scrollTop = scrollParentRef.current?.scrollTop ?? 0;
-      const scrollDelta = scrollTop - it.startScrollTop;
-
-      // Multi-cell drag: cards collapse into an animated stack that follows the
-      // pointer. No grid draft is produced until drop.
-      if (it.type === 'move' && it.multi) {
-        const s = scaleRef.current;
-        const left = it.multi.originLeft + (clientX - it.startX) / s;
-        const top = it.multi.originTop + (clientY - it.startY) / s + scrollDelta;
-        it.multi.curLeft = left;
-        it.multi.curTop = top;
-        setMultiStack({
-          primaryKey: it.key,
-          trailing: it.multi.keys.filter((k) => k !== it.key),
-          left,
-          top,
-        });
-        // Multi-drag only ever inserts (never swaps).
-        setDropHint(hintAt(clientX, clientY, it.key, false));
-        return;
-      }
-
       const s = scaleRef.current;
       const dCol = Math.round((clientX - it.startX) / s / colSpan);
-      const dRow = Math.round(((clientY - it.startY) / s + scrollDelta) / rowSpan);
+      const dRow = Math.round((clientY - it.startY) / s / rowSpan);
 
       setDraft(() => {
         const map = toMap(effectiveLayout);
-        const cur = map.get(it.key);
-        if (!cur) return effectiveLayout;
-        let next: GridItem;
         if (it.type === 'move') {
-          next = {
-            ...cur,
-            x: clamp(it.origin.x + dCol, 0, columns - it.origin.w),
-            y: Math.max(0, it.origin.y + dRow),
-          };
-        } else if (it.edge === 'right') {
-          next = { ...cur, w: clamp(it.origin.w + dCol, 1, columns - it.origin.x) };
-        } else if (it.edge === 'bottom') {
-          next = { ...cur, h: Math.max(minHMap?.get(it.key) ?? 1, it.origin.h + dRow) };
+          for (const g of it.group) {
+            const cur = map.get(g.key);
+            if (cur) map.set(g.key, { ...cur, x: g.x + dCol, y: g.y + dRow });
+          }
         } else {
-          next = {
-            ...cur,
-            w: clamp(it.origin.w + dCol, 1, columns - it.origin.x),
-            h: Math.max(minHMap?.get(it.key) ?? 1, it.origin.h + dRow),
-          };
+          const cur = map.get(it.key);
+          if (cur) {
+            const minH = minHMap?.get(it.key) ?? 1;
+            const w = it.edge === 'bottom' ? cur.w : Math.max(1, it.origin.w + dCol);
+            const h = it.edge === 'right' ? cur.h : Math.max(minH, it.origin.h + dRow);
+            map.set(it.key, { ...cur, w, h });
+          }
         }
-        map.set(it.key, next);
         return Array.from(map.values());
       });
-
-      // Update the drop affordance for a single-item move (resize shows none).
-      if (it.type === 'move') setDropHint(hintAt(clientX, clientY, it.key, true));
-    };
-
-    // rAF loop: while the pointer sits near a scroll edge, keep scrolling and
-    // re-applying the drag so the item tracks the cursor even when it's still.
-    const tick = () => {
-      autoScrollRef.current = requestAnimationFrame(tick);
-      const sp = scrollParentRef.current;
-      if (!sp || !interactionRef.current) return;
-      const rect = sp.getBoundingClientRect();
-      const { x, y } = pointerRef.current;
-      let dy = 0;
-      if (y < rect.top + EDGE_SCROLL_ZONE) {
-        dy = -EDGE_SCROLL_SPEED * Math.min(1, (rect.top + EDGE_SCROLL_ZONE - y) / EDGE_SCROLL_ZONE);
-      } else if (y > rect.bottom - EDGE_SCROLL_ZONE) {
-        dy = EDGE_SCROLL_SPEED * Math.min(1, (y - (rect.bottom - EDGE_SCROLL_ZONE)) / EDGE_SCROLL_ZONE);
-      }
-      if (dy !== 0) {
-        const before = sp.scrollTop;
-        sp.scrollTop = before + dy;
-        if (sp.scrollTop !== before) applyDrag(x, y);
-      }
-    };
-
-    const stopAutoScroll = () => {
-      if (autoScrollRef.current != null) {
-        cancelAnimationFrame(autoScrollRef.current);
-        autoScrollRef.current = null;
-      }
     };
 
     const handleMove = (e: PointerEvent) => {
       const it = interactionRef.current;
       if (!it || e.pointerId !== it.pointerId) return;
-      pointerRef.current = { x: e.clientX, y: e.clientY };
       if (it.type === 'move' && (Math.abs(e.clientX - it.startX) > DRAG_THRESHOLD || Math.abs(e.clientY - it.startY) > DRAG_THRESHOLD)) {
         it.moved = true;
       }
-      if (autoScrollRef.current == null) autoScrollRef.current = requestAnimationFrame(tick);
       applyDrag(e.clientX, e.clientY);
     };
 
@@ -331,46 +214,13 @@ export function useGridInteraction({
       const it = interactionRef.current;
       if (!it || e.pointerId !== it.pointerId) return;
       interactionRef.current = null;
-      stopAutoScroll();
-      setInteracting(false);
-      const hint = dropHintRef.current;
-      setDropHint(null);
-
-      // Multi-cell drop: land the primary at the pointer cell, flow the rest.
-      if (it.type === 'move' && it.multi) {
-        setMultiStack(null);
-        if (it.moved) {
-          const target = {
-            x: Math.round(it.multi.curLeft / colSpan),
-            y: Math.round(it.multi.curTop / rowSpan),
-          };
-          commit(dropSelectionIntoGrid({
-            layout: effectiveLayout,
-            columns,
-            draggedKeys: it.multi.keys,
-            primaryKey: it.key,
-            target,
-          }));
-          selectionRef.current.clear();
-        } else {
-          // A pure click toggles this cell's selection.
-          selectionRef.current.toggle(it.key);
-        }
-        return;
-      }
 
       setDraft((current) => {
-        if (current) {
-          if (it.type === 'move' && it.moved) {
-            commit(resolveSingleDrop(current, it.key, it.origin, hint, columns));
-          } else {
-            // Resize: just resolve any overlap the grown item introduced.
-            commit(cleanupGridLayout(current, columns));
-          }
-        }
+        // Commit exactly where things landed — a resize, or a real move.
+        if (current && (it.type === 'resize' || it.moved)) commit(current);
         return null;
       });
-      // A pure click (no drag) toggles selection.
+      // A press without movement is a click: toggle this cell's selection.
       if (it.type === 'move' && !it.moved) selectionRef.current.toggle(it.key);
     };
 
@@ -379,9 +229,8 @@ export function useGridInteraction({
     return () => {
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
-      stopAutoScroll();
     };
-  }, [editable, effectiveLayout, colSpan, rowSpan, columns, commit]);
+  }, [editable, effectiveLayout, colSpan, rowSpan, minHMap, commit]);
 
   const startMove = useCallback((e: React.PointerEvent, key: string) => {
     if (!editable) { onItemClick?.(key); return; }
@@ -389,22 +238,14 @@ export function useGridInteraction({
     if (!origin) return;
     e.preventDefault();
     bringToFront(key);
-    scrollParentRef.current = getScrollParent(containerRef.current);
-    frozenHeightRef.current = gridHeightRef.current;
-    pointerRef.current = { x: e.clientX, y: e.clientY };
-    setInteracting(true);
 
-    // Grabbing a selected cell drags the whole selection as an animated stack.
+    // Grabbing a selected cell drags the whole selection; each member keeps its
+    // relative position and moves by the same delta.
     const sel = selectionRef.current;
-    const multi = sel.isSelected(key)
-      ? {
-          keys: [...sel.selected],
-          originLeft: origin.x * colSpan,
-          originTop: origin.y * rowSpan,
-          curLeft: origin.x * colSpan,
-          curTop: origin.y * rowSpan,
-        }
-      : null;
+    const groupKeys = sel.isSelected(key) && sel.selected.size > 1 ? [...sel.selected] : [key];
+    const group = groupKeys
+      .map((k) => { const o = layoutMap.get(k); return o ? { key: k, x: o.x, y: o.y } : null; })
+      .filter((g): g is { key: string; x: number; y: number } => g !== null);
 
     interactionRef.current = {
       type: 'move',
@@ -412,12 +253,11 @@ export function useGridInteraction({
       origin,
       startX: e.clientX,
       startY: e.clientY,
-      startScrollTop: scrollParentRef.current?.scrollTop ?? 0,
       moved: false,
       pointerId: e.pointerId,
-      multi,
+      group,
     };
-  }, [editable, layoutMap, onItemClick, bringToFront, colSpan, rowSpan]);
+  }, [editable, layoutMap, onItemClick, bringToFront]);
 
   const startResize = useCallback((e: React.PointerEvent, key: string, edge: 'right' | 'bottom' | 'corner') => {
     if (!editable) return;
@@ -426,24 +266,21 @@ export function useGridInteraction({
     e.preventDefault();
     e.stopPropagation();
     bringToFront(key);
-    scrollParentRef.current = getScrollParent(containerRef.current);
-    frozenHeightRef.current = gridHeightRef.current;
-    pointerRef.current = { x: e.clientX, y: e.clientY };
-    setInteracting(true);
-    interactionRef.current = { type: 'resize', edge, key, origin, startX: e.clientX, startY: e.clientY, startScrollTop: scrollParentRef.current?.scrollTop ?? 0, pointerId: e.pointerId };
+    interactionRef.current = { type: 'resize', edge, key, origin, startX: e.clientX, startY: e.clientY, pointerId: e.pointerId };
   }, [editable, layoutMap, bringToFront]);
 
   return {
     containerRef,
-    containerWidth,
+    containerWidth: viewportWidth,
     effectiveLayout,
     layoutMap,
     cellWidth,
     colSpan,
     rowSpan,
-    displayHeight,
-    dropHint,
-    multiStack,
+    canvasWidth,
+    canvasHeight,
+    originX,
+    originY,
     zOrder,
     draggingKey: interactionRef.current?.key ?? null,
     selection,

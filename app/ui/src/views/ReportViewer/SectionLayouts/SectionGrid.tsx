@@ -1,7 +1,7 @@
 import { ReactNode, memo, useEffect, useRef, useState } from 'react';
 import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP, GRID_ROW_GAP } from './sectionLayoutStore';
 import { GridItemContext } from './GridItemContext';
-import { useGridInteraction, STACK_OFFSET } from './useGridInteraction';
+import { useGridInteraction } from './useGridInteraction';
 import { type GridSelection } from './GridSelection';
 import styles from './SectionGrid.module.css';
 
@@ -33,6 +33,8 @@ export interface SectionGridProps {
   columnsPerRow?: number;
   /** Current pan-zoom scale, so tile drag/resize stays accurate when zoomed. */
   scale?: number;
+  /** Card/viewport width (px) that sizes the grid columns on the free canvas. */
+  viewportWidth?: number;
   onLayoutChange: (items: GridItem[]) => void;
   onItemClick?: (key: string) => void;
 }
@@ -120,7 +122,7 @@ function MasonrySectionGrid({
   for (const item of items) {
     const pos = layoutMap.get(item.key);
     if (!pos) continue;
-    const colIdx = Math.min(Math.floor(pos.x / colWidth + 0.5), nCols - 1);
+    const colIdx = Math.max(0, Math.min(Math.floor(pos.x / colWidth + 0.5), nCols - 1));
     buckets[colIdx].push(item);
   }
   for (const bucket of buckets) {
@@ -143,13 +145,13 @@ function MasonrySectionGrid({
 // ── Editable (drag/resize) mode ──────────────────────────────────────────
 
 /**
- * A self-contained widget grid. Items are placed on an n-column grid; each
- * spans a whole number of columns/rows. Items can be moved (drag the header)
- * and resized (drag the right / bottom / corner handles); all changes snap to
- * grid units and are reported through `onLayoutChange`.
+ * A self-contained widget canvas. Items hold a free (x, y) position; each spans
+ * a whole number of columns/rows. Items can be moved (drag the header) and
+ * resized (drag the right / bottom / corner handles); changes snap to grid
+ * units, commit raw (no collision/reflow) and are reported via `onLayoutChange`.
  *
- * All drag/drop/resize behaviour lives in {@link useGridInteraction}; this
- * component is purely presentational.
+ * All drag/resize behaviour lives in {@link useGridInteraction}; this component
+ * is purely presentational.
  */
 function EditableSectionGrid({
   items,
@@ -160,6 +162,7 @@ function EditableSectionGrid({
   gap = GRID_GAP,
   rowGap = GRID_ROW_GAP,
   scale = 1,
+  viewportWidth = 0,
   onLayoutChange,
   onItemClick,
 }: SectionGridProps) {
@@ -170,18 +173,19 @@ function EditableSectionGrid({
     cellWidth,
     colSpan,
     rowSpan,
-    displayHeight,
-    dropHint,
-    multiStack,
+    canvasWidth,
+    canvasHeight,
+    originX,
+    originY,
     zOrder,
     draggingKey,
     selection,
     startMove,
     startResize,
-  } = useGridInteraction({ items, layout, columns, rowHeight, gap, rowGap, editable: true, selection: selectionProp, scale, onLayoutChange, onItemClick });
+  } = useGridInteraction({ items, layout, columns, rowHeight, gap, rowGap, editable: true, selection: selectionProp, scale, viewportWidth, onLayoutChange, onItemClick });
 
   return (
-    <div ref={containerRef} className={styles.grid} style={{ height: displayHeight }}>
+    <div ref={containerRef} className={styles.grid} style={{ width: canvasWidth, height: canvasHeight }}>
       {containerWidth > 0 && items.map((item) => {
         const pos = layoutMap.get(item.key);
         if (!pos) return null;
@@ -190,34 +194,16 @@ function EditableSectionGrid({
         const isDragging = draggingKey === item.key;
         const isSelected = selection.isSelected(item.key);
 
-        // Layout position; overridden below when this cell is part of an animated multi-drag stack.
-        let left = pos.x * colSpan;
-        let top = pos.y * rowSpan;
-        let zIndex = zOrder.indexOf(item.key) + 1;
-        let stacked = false;
-        if (multiStack) {
-          if (item.key === multiStack.primaryKey) {
-            left = multiStack.left;
-            top = multiStack.top;
-            zIndex = 1000;
-          } else {
-            const i = multiStack.trailing.indexOf(item.key);
-            if (i !== -1) {
-              const depth = multiStack.trailing.length - i;
-              left = multiStack.left + depth * STACK_OFFSET;
-              top = multiStack.top + depth * STACK_OFFSET;
-              zIndex = 900 - depth;
-              stacked = true;
-            }
-          }
-        }
+        // Free position, offset by the canvas origin so negative-space items and
+        // the leftmost/topmost tiles render within the visible canvas.
+        const left = (pos.x - originX) * colSpan;
+        const top = (pos.y - originY) * rowSpan;
+        const zIndex = zOrder.indexOf(item.key) + 1;
 
         const className = [
           styles.item,
           isSelected ? styles.itemSelected : '',
           isDragging ? styles.itemDragging : '',
-          stacked ? styles.itemStacked : '',
-          dropHint?.kind === 'swap' && dropHint.targetKey === item.key ? styles.itemSwapTarget : '',
         ]
           .filter(Boolean)
           .join(' ');
@@ -241,19 +227,6 @@ function EditableSectionGrid({
           </div>
         );
       })}
-      {dropHint?.kind === 'insert' && (() => {
-        const l = dropHint.line;
-        const style =
-          l.orientation === 'vertical'
-            ? { left: l.cellX * colSpan - gap / 2, top: l.cellY * rowSpan, height: l.length * rowSpan - rowGap }
-            : { left: l.cellX * colSpan, top: l.cellY * rowSpan - rowGap / 2, width: l.length * colSpan - gap };
-        return (
-          <div
-            className={`${styles.insertLine} ${l.orientation === 'vertical' ? styles.insertLineV : styles.insertLineH}`}
-            style={style}
-          />
-        );
-      })()}
     </div>
   );
 }

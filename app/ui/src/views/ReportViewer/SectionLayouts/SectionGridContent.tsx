@@ -10,7 +10,7 @@ import { GroupCard } from './GroupCard';
 import { MultiSelectControls } from './MultiSelectControls';
 import { useGridSelection } from './GridSelection';
 import { useMultiSelectActions } from './useMultiSelectActions';
-import { restackByCohortDelta } from './CleanupGridLayout';
+import { restackByCohortDelta } from './restackLayout';
 import { type SectionLayout, type GridItem, defaultTileRows, useSectionLayouts, lockedChartHeight, useLayoutEditing } from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
@@ -129,7 +129,8 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
   }, [looseRows, groups, rowByKey, cohortData, finalCohortSizes, spacers, spacersPx, tteCohorts, table2Cohorts, displayVariants, descriptions, setDescription, onNavigateToRow, onRenameRow]);
 
   const itemKeys = useMemo(() => gridItems.map((it) => it.key), [gridItems]);
-  const selection = useGridSelection(itemKeys, true);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const selection = useGridSelection(itemKeys, true, containerRef);
 
   const setLayoutItems = useCallback((items: GridItem[]) => {
     updateLayoutItems(layout.id, items);
@@ -144,6 +145,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     cohortCount: cohortData.length,
     columnsPerRow: layout.columnsPerRow,
     editable,
+    containerRef,
     createGroup,
     ungroup,
     setDisplayVariant,
@@ -178,17 +180,19 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
 
   return (
     <>
-      <ZoomableSectionGrid
-        storageKey={`phenex.sectionZoom.${sectionId}.${layout.id}`}
-        measureKey={layout.items}
-        items={gridItems}
-        layout={layout.items}
-        selection={selection}
-        editable={editable}
-        columnsPerRow={layout.columnsPerRow}
-        onLayoutChange={handleLayoutChange}
-        onItemClick={handleItemClick}
-      />
+      <div ref={containerRef}>
+        <ZoomableSectionGrid
+          storageKey={`phenex.sectionZoom.${sectionId}.${layout.id}`}
+          measureKey={layout.items}
+          items={gridItems}
+          layout={layout.items}
+          selection={selection}
+          editable={editable}
+          columnsPerRow={layout.columnsPerRow}
+          onLayoutChange={handleLayoutChange}
+          onItemClick={handleItemClick}
+        />
+      </div>
       <MultiSelectControls
         count={actions.count}
         canGroup={actions.canGroup}

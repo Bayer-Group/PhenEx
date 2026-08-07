@@ -1,4 +1,4 @@
-import { memo, useEffect } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { usePanZoom } from '../../../hooks/usePanZoom';
 import { PanZoomScaleProvider } from '../../../hooks/PanZoomScaleContext';
 import { PanZoomScrollbar } from '../../../components/CustomScrollbar/PanZoomScrollbar/PanZoomScrollbar';
@@ -40,6 +40,21 @@ export const ZoomableSectionGrid = memo(function ZoomableSectionGrid({
     storageKey,
   });
 
+  // Card/viewport width drives the grid's column sizing — kept separate from the
+  // (potentially much wider) free canvas so columns don't grow as items spread.
+  const [viewportWidth, setViewportWidth] = useState(0);
+  useEffect(() => {
+    const el = pz.viewportRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w) setViewportWidth(w);
+    });
+    ro.observe(el);
+    setViewportWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, [pz.viewportRef]);
+
   // Re-clamp pan bounds whenever the grid's content dimensions may have changed.
   useEffect(() => {
     pz.remeasure();
@@ -49,7 +64,7 @@ export const ZoomableSectionGrid = memo(function ZoomableSectionGrid({
     <div className={styles.viewport} ref={pz.viewportRef}>
       <div className={styles.content} ref={pz.contentRef}>
         <PanZoomScaleProvider value={pz.scale}>
-          <SectionGrid {...gridProps} scale={pz.scale} />
+          <SectionGrid {...gridProps} scale={pz.scale} viewportWidth={viewportWidth} />
         </PanZoomScaleProvider>
       </div>
 

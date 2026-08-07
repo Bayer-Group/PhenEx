@@ -31,11 +31,10 @@ We have two states, the locked state and the unlocked state
 Key files:
 
 - [sectionLayoutStore.ts](sectionLayoutStore.ts) — state, persistence, types, sizing math, default-layout generation.
-- [useGridInteraction.ts](useGridInteraction.ts) — pointer handling: drag, resize, auto-scroll, drop hints.
-- [CleanupGridLayout.ts](CleanupGridLayout.ts) — overlap resolution and cohort-delta restacking.
-- [GridDropHint.ts](GridDropHint.ts) / [DropSelectionLayout.ts](DropSelectionLayout.ts) — drop intent and reflow.
+- [useGridInteraction.ts](useGridInteraction.ts) — pointer handling: free-canvas drag & resize.
+- [restackLayout.ts](restackLayout.ts) — cohort-delta restacking (tile heights follow the cohort count).
 - [LayoutControls.tsx](LayoutControls.tsx) — per-section dropdown (switch/create/rename/delete/lock, column count).
-- [SectionGrid.tsx](SectionGrid.tsx) — renders the locked (masonry) or editable grid.
+- [SectionGrid.tsx](SectionGrid.tsx) — renders the locked (masonry) or editable (free-canvas) grid.
 - [ZoomableSectionGrid.tsx](ZoomableSectionGrid.tsx) — wraps a grid in a pan/zoom viewport (see §12).
 
 ---
@@ -206,87 +205,78 @@ to a padding-only sliver.
 
 ---
 
-## 6. Positioning & resizing (editable mode)
+## 6. Positioning & resizing (editable free canvas)
 
-All pointer interaction lives in
-[useGridInteraction.ts](useGridInteraction.ts). It measures the container with a
-`ResizeObserver`, converts pixel deltas to cell deltas, maintains a live
-**draft** layout during the gesture, and commits on pointer-up.
+When a named layout is unlocked, the grid becomes a **free canvas**: every item
+holds an arbitrary `(x, y)` position (in grid cells) that is dragged, resized,
+and saved verbatim. Initial/locked rendering is unchanged (see §5, masonry) —
+only the unlocked editable view uses the canvas. All pointer handling lives in
+[useGridInteraction.ts](useGridInteraction.ts): it converts pixel deltas to
+cell deltas, keeps a live **draft** during the gesture, and commits **raw** on
+pointer-up. There is **no collision resolution, no reflow, and no drop hints** —
+items land exactly where dropped and may overlap.
 
 ### Geometry
 
-- `colSpan` = `cellWidth + gap`, `rowSpan` = `rowHeight + rowGap` — the pixel
-  pitch of one grid step, used to convert pointer travel → cell deltas.
-- A press only becomes a drag after `DRAG_THRESHOLD = 4` px of travel;
-  below that it is treated as a click (`onItemClick`).
+- `cellWidth = (viewportWidth − gap·(columns−1)) / columns` — sized from the
+  **card/viewport width** (`viewportWidth`, passed down from
+  [ZoomableSectionGrid](ZoomableSectionGrid.tsx)), *not* the grown canvas, so
+  columns keep their size as items spread out.
+- `colSpan = cellWidth + gap`, `rowSpan = rowHeight`.
+- A press becomes a drag only after `DRAG_THRESHOLD = 4` px of travel; below
+  that it is a click (`onItemClick` / selection toggle).
 
-### Move (drag)
+### Move (drag) — free, unclamped
 
-- `startMove(e, key)` records the origin. During move:
-  - `dCol = round((clientX - startX) / colSpan)`,
-    `dRow = round((clientY - startY + scrollDelta) / rowSpan)`.
-  - New position is clamped so the tile stays on-grid:
-    `x = clamp(origin.x + dCol, 0, columns - origin.w)`,
-    `y = max(0, origin.y + dRow)`.
-- Live `dropHint` (see §7) previews where the tile will land (swap / insert / free).
+- `dCol = round((clientX − startX) / scale / colSpan)`,
+  `dRow = round((clientY − startY) / scale / rowSpan)`.
+- `x = origin.x + dCol`, `y = origin.y + dRow` — **no clamping**. Items may move
+  far left/right, into **negative** coordinates, and past the old column count.
+
+### Multi-drag — relational delta (no stack)
+
+- Grabbing a **selected** cell drags the whole selection. Each member keeps its
+  relative position and is translated by the **same** `(dCol, dRow)` delta —
+  there is no animated stacked deck. Start positions are captured on
+  pointer-down so the group moves rigidly.
 
 ### Resize
 
-- `startResize(e, key, edge)` with `edge ∈ { 'right', 'bottom', 'corner' }`,
-  exposing three grips per tile.
-- Width: `w = clamp(origin.w + dCol, 1, columns - origin.x)` — at least 1 cell,
-  never past the right edge.
-- Height: `h = max(minHMap?.get(key) ?? 1, origin.h + dRow)` — floored by the
-  per-item minimum row span (`minHMap`), which prevents a tile from being shrunk
-  below its header/chart minimum.
-- Resize shows **no** drop hint; on commit it only calls `cleanupGridLayout` to
-  resolve any overlap the grown tile introduced.
+- `startResize(e, key, edge)` with `edge ∈ { right, bottom, corner }`.
+- Width: `w = max(1, origin.w + dCol)` (no upper clamp — tiles can exceed the
+  old grid width). Height: `h = max(minH, origin.h + dRow)`, floored by
+  `minHMap`. No overlap cleanup afterwards.
 
-### Commit & overlap resolution
+### Canvas growth & origin
 
-On pointer-up the draft is finalized:
+The editable grid sizes itself to the **bounding box** of all items so the
+pan/zoom viewport (§12) can reach every tile:
 
-- **Single move** → `resolveSingleDrop(...)` applies swap / insert / free.
-- **Multi move** → `dropSelectionIntoGrid(...)` re-inserts the whole selection.
-- **Resize** → `cleanupGridLayout(current, columns)`.
+- `originX = min(0, min itemX)`, `originY = min(0, min itemY)` — taken from the
+  **committed** layout so it stays fixed *during* a drag (no mid-gesture
+  reflow). Items render at `(x − originX)·colSpan, (y − originY)·rowSpan`.
+- `canvasWidth = max(viewportWidth, (maxRight − originX)·colSpan − gap)`,
+  `canvasHeight = (maxBottom − originY)·rowSpan − rowGap`, computed from the
+  live draft so the canvas grows right/down as you drag.
+- On drop the committed layout changes and the origin **renormalises**, so an
+  item dragged into negative space snaps back into positive coordinates and the
+  canvas widens to include it.
 
-`cleanupGridLayout` guarantees zero overlaps with one rule: an item may only
-move **down or right**, never up/left, and reading order (top→bottom,
-left→right) is preserved so React reconciliation stays stable. `placeFreely`
-pins a dropped tile exactly where it landed and only displaces the tiles it
-actually overlaps (pushing them `'right'` with wrap, or `'down'`).
+### Commit & persistence
 
-The committed items are handed to `onLayoutChange` → `updateLayoutItems`, which
-persists them (§3).
-
-### Auto-scroll
-
-While dragging near a scroll-container edge (`EDGE_SCROLL_ZONE = 64` px), a
-`requestAnimationFrame` loop scrolls (up to `EDGE_SCROLL_SPEED = 22` px/frame)
-and keeps re-applying the drag, so the tile tracks the cursor even when the
-pointer is held still.
-
-### Multi-drag
-
-When the grabbed tile is part of the selection, the selected tiles animate into
-a stacked deck (`STACK_OFFSET = 7` px per card). A multi-drag only ever
-**inserts** (never swaps); on drop, `dropSelectionIntoGrid` flow-packs the whole
-selection at the target.
+On pointer-up the draft is committed **as-is** (`onLayoutChange` →
+`updateLayoutItems` → `saveState` → `localStorage`, §3). A press without
+movement toggles the cell's selection instead.
 
 ---
 
-## 7. Drop hints (drag affordance)
+## 7. Drop hints — removed
 
-`computeDropHint(layout, gx, gy, draggedKey, allowSwap)` in
-[GridDropHint.ts](GridDropHint.ts) classifies the pointer's grid cell into one
-of three intents that drive the visual indicator and the commit:
-
-- **swap** — over the middle of another tile → the two tiles exchange positions.
-- **insert** — over an edge/gap → snap to a boundary line and push neighbors.
-- **free** — over empty cells → drop exactly there, only pushing overlaps.
-
-`resolveSingleDrop(layout, hint, draggedKey)` applies the chosen intent and runs
-collision resolution.
+The old swap / insert / free drop-hint system and its post-drop collision
+resolution (`GridDropHint`, `DropSelectionLayout`, `cleanupGridLayout`,
+`placeFreely`) have been **removed**. Drag & drop now simply writes the raw
+position; overlaps are allowed. Alignment guides / snap lines could be added
+later as a purely visual aid without reintroducing reflow.
 
 ---
 
@@ -325,13 +315,13 @@ HorizontalCell (ReportViewer)
       ├─ ZoomableSectionGrid     ── pan/zoom viewport (usePanZoom + scrollbar + scrubber)
       │  └─ SectionGrid          ── chooser:
       │      ├─ MasonrySectionGrid  ──   locked: content-sized columns, read-only
-      │      └─ EditableSectionGrid ──   editable: uses useGridInteraction()
-      │          └─ (draggable tiles + resize grips + drop indicator)
+      │      └─ EditableSectionGrid ──   editable: free canvas via useGridInteraction()
+      │          └─ (free-positioned tiles + resize grips)
       ├─ GroupCard               ── renders a group tile's stacked members
       │   └─ SectionRowRenderer  ── dispatches to the right chart renderer
       ├─ MultiSelectControls     ── floating toolbar (portal) for the selection
-      ├─ useMultiSelectActions   ── group / change type / reset size / hide
-      └─ useGridSelection        ── selected keys + Esc / Cmd-A shortcuts
+      ├─ useMultiSelectActions   ── group / change type / reset size / hide (g/t/r/h)
+      └─ useGridSelection        ── selected keys + Esc / Cmd-A shortcuts (scoped to hovered section)
 ```
 
 State flows down from `useSectionLayouts(sectionId)`; user gestures flow back up
@@ -343,18 +333,16 @@ through `onLayoutChange` → `updateLayoutItems` → the persisted store.
 
 ```
 pointerdown on header ─► useGridInteraction.startMove()
-        │                    ├─ in selection? → multi-drag (stacked deck)
-        │                    └─ else          → single-drag
-pointermove (rAF) ─────► apply cell delta → draft layout
-        │                    ├─ auto-scroll near edges
-        │                    └─ computeDropHint() → preview
-pointerup ─────────────► commit()
-                             ├─ single → resolveSingleDrop()  (swap/insert/free)
-                             ├─ multi  → dropSelectionIntoGrid()
-                             └─ resize → cleanupGridLayout()
+        │                    ├─ grabbed cell selected? → drag whole selection
+        │                    └─ else                    → drag one cell
+pointermove ───────────► apply same (dCol,dRow) delta → draft (no clamp)
+                             canvas grows right/down to fit the draft
+pointerup ─────────────► commit(draft) verbatim  (no collision / reflow)
                         onLayoutChange() → store.updateLayoutItems()
                                          → saveState() → localStorage
 ```
+
+(Resize follows the same path, adjusting only the grabbed tile's w/h.)
 
 ---
 
@@ -365,8 +353,8 @@ pointerup ─────────────► commit()
   `GRID_ROW_HEIGHT`, `GRID_COLUMNS`, `colSpan`/`rowSpan`.
 - **Don't mutate store state in place.** All mutations replace objects and go
   through `update()` so `saveState`/`notify` fire.
-- **Overlap invariant:** after any free-form gesture, always run through
-  `cleanupGridLayout` / `placeFreely`. Items only move down/right.
+- **Free canvas: no collision resolution.** Drag/resize commit raw positions;
+  overlaps are allowed and positions (incl. negative) are persisted as-is.
 - **Editing mode is ephemeral** (session `Set`), deliberately not persisted.
 - **Column change is destructive to groups/hidden keys** — `setColumnsPerRow`
   regenerates items and clears both. Warn users if you surface it elsewhere.
@@ -374,6 +362,13 @@ pointerup ─────────────► commit()
   per key or tiles can be shrunk below their content.
 - Persistence is best-effort: `localStorage` failures are swallowed, so don't
   rely on writes throwing on quota errors.
+- **Keyboard shortcuts are section-scoped.** `Cmd/Ctrl+A`, `Esc`, and the
+  editable shortcuts (`G`, `T`, `R`, `H`) only fire for the section the pointer
+  is currently hovering. `SectionGridContent` passes a `containerRef` (wrapping
+  `ZoomableSectionGrid`) to both `useGridSelection` and `useMultiSelectActions`;
+  each handler checks `containerRef.current?.matches(':hover')` before acting.
+  The wrapper div is non-positioned so the absolute viewport still fills
+  `.cardContentSection` as its containing block.
 
 ---
 
@@ -422,18 +417,24 @@ unchanged).
 
 ---
 
-## 13. Planned: infinite canvas (free xy positioning)
+## 13. Infinite canvas — implemented
 
-> **Status: design only — not yet implemented.**
+> **Status: implemented (see §6).** The editable state is now a free canvas:
+> items hold an arbitrary `(x, y)` saved in the layout, drag/resize commit raw
+> (no packing / collision), items may enter negative space, and the canvas
+> grows to fit. Pan/zoom (§12) moves around it.
 
-**Goal.** In the unlocked (editable) state, treat a layout as an *infinite
-canvas*: every item/cell holds an arbitrary `(x, y)` position that is saved in
-the layout, and the user pans/zooms (§12) to move around. No auto-packing —
-items stay exactly where they are dropped; overlaps are allowed.
+**Two deviations from the original design below:**
 
-`GridItem` already carries `x, y, w, h`; the change is about **relaxing the grid
-constraints** (clamping, collision cleanup, viewport-relative units) rather than
-adding fields.
+1. **No `freeform` flag / no `CANVAS_UNIT_PX`.** The editable view *is* the free
+   canvas; the cell unit stays **viewport-relative** (`viewportWidth / columns`)
+   so initial/locked rendering is pixel-identical to before. Columns are sized
+   from the card width, decoupled from the grown canvas.
+2. **Negative space is supported** via a render-time origin offset
+   (`originX/originY = min(0, …)`), not by forbidding it.
+
+The masonry locked/default view is unchanged. The subsections below are kept as
+the original design record.
 
 ### 13.1 What blocks "free xy" today
 

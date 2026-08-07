@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react';
 
 /**
  * Multi-cell selection for the section grid.
@@ -38,7 +38,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
 }
 
-export function useGridSelection(allKeys: string[], enabled = true): GridSelection {
+export function useGridSelection(allKeys: string[], enabled = true, containerRef?: RefObject<Element | null>): GridSelection {
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
   // Drop keys that no longer exist so a stale selection can't linger.
@@ -80,11 +80,13 @@ export function useGridSelection(allKeys: string[], enabled = true): GridSelecti
     if (!enabled) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if (containerRef && !containerRef.current?.matches(':hover')) return;
         clear();
         return;
       }
       if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) {
         if (isTypingTarget(e.target)) return;
+        if (containerRef && !containerRef.current?.matches(':hover')) return;
         e.preventDefault();
         selectAll();
       }

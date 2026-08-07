@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, type RefObject } from 'react';
 import type { SequentialRow } from '../studyRegistryUtils';
 import type { GridSelection } from './GridSelection';
 import {
@@ -25,6 +25,7 @@ export interface UseMultiSelectActionsParams {
   /** Columns per row in the active grid layout (used for reset tile width). */
   columnsPerRow?: number;
   editable: boolean;
+  containerRef?: RefObject<Element | null>;
   createGroup: (memberKeys: string[], height: number) => void;
   ungroup: (groupId: string) => void;
   setDisplayVariant: (rowKey: string, variantId: string) => void;
@@ -79,6 +80,7 @@ export function useMultiSelectActions({
   cohortCount,
   columnsPerRow = 3,
   editable,
+  containerRef,
   createGroup,
   ungroup,
   setDisplayVariant,
@@ -163,6 +165,7 @@ export function useMultiSelectActions({
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (isTypingTarget(e.target)) return;
+      if (containerRef && !containerRef.current?.matches(':hover')) return;
       switch (e.key.toLowerCase()) {
         case 'g': e.preventDefault(); onGroup(); break;
         case 't': e.preventDefault(); onChangeType(); break;
