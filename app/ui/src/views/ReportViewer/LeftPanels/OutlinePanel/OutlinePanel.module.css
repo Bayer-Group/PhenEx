@@ -70,9 +70,10 @@
 
 .chevronIcon {
   display: inline-block;
-  font-size: 10px;
+  font-size: 16px;
   line-height: 1;
   transition: transform 0.12s ease;
+  margin-left:4px;
 }
 
 .chevronOpen {

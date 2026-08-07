@@ -25,6 +25,8 @@ type SectionEntry = Extract<ViewerEntry, { kind: 'section' }>;
 
 /** Pixels of indentation per nesting level — matches chevron width. */
 const INDENT = 10;
+/** Fixed chevron element width — guide lines are centred on this, independent of INDENT. */
+const CHEVRON_WIDTH = 18;
 
 /** Eye toggle shown on hover: reflects + controls visibility of a row in the active layout. */
 const RowEyeToggle: FC<{ sectionLayoutId: string; itemKey: string; leftOffset?: number }> = memo(({ sectionLayoutId, itemKey, leftOffset }) => {
@@ -259,7 +261,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
         aria-label={isExpanded ? 'Collapse' : 'Expand'}
         onClick={() => onToggleExpand(toggleKey)}
       >
-        <span className={`${styles.chevronIcon} ${isExpanded ? styles.chevronOpen : ''}`}>▸</span>
+        <span className={`${styles.chevronIcon} ${isExpanded ? styles.chevronOpen : ''}`} aria-hidden="true">›</span>
       </button>
     ) : (
       <span className={styles.chevronSpacer} />
@@ -294,7 +296,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
 
   const renderIndentGuides = (depth: number) =>
     Array.from({ length: depth }, (_, i) => (
-      <span key={i} className={styles.indentGuide} style={{ left: i * INDENT + INDENT / 2 }} />
+      <span key={i} className={styles.indentGuide} style={{ left: i * INDENT + CHEVRON_WIDTH / 2 }} />
     ));
 
   const renderPlainItem = (
