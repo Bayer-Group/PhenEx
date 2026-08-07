@@ -10,6 +10,9 @@ This document is both a human-oriented overview and a development reference. Use
 it to understand the data model, the persistence ("memory") system, how tiles
 are sized/positioned/resized, and how the layout controls tie it together.
 
+# Purpose
+We have two states, the locked state and the unlocked state
+
 ---
 
 ## 1. Core concepts
@@ -33,6 +36,7 @@ Key files:
 - [GridDropHint.ts](GridDropHint.ts) / [DropSelectionLayout.ts](DropSelectionLayout.ts) — drop intent and reflow.
 - [LayoutControls.tsx](LayoutControls.tsx) — per-section dropdown (switch/create/rename/delete/lock, column count).
 - [SectionGrid.tsx](SectionGrid.tsx) — renders the locked (masonry) or editable grid.
+- [ZoomableSectionGrid.tsx](ZoomableSectionGrid.tsx) — wraps a grid in a pan/zoom viewport (see §12).
 
 ---
 
@@ -318,10 +322,11 @@ HorizontalCell (ReportViewer)
 └─ SectionCellContent            ── wrapper; always grid, seeds a default if none
    └─ SectionGridContent         ── orchestrator: selection, visibility, actions
       ├─ LayoutControls          ── switch / create / lock / column count
-      ├─ SectionGrid             ── chooser:
-      │   ├─ MasonrySectionGrid  ──   locked: content-sized columns, read-only
-      │   └─ EditableSectionGrid ──   editable: uses useGridInteraction()
-      │       └─ (draggable tiles + resize grips + drop indicator)
+      ├─ ZoomableSectionGrid     ── pan/zoom viewport (usePanZoom + scrollbar + scrubber)
+      │  └─ SectionGrid          ── chooser:
+      │      ├─ MasonrySectionGrid  ──   locked: content-sized columns, read-only
+      │      └─ EditableSectionGrid ──   editable: uses useGridInteraction()
+      │          └─ (draggable tiles + resize grips + drop indicator)
       ├─ GroupCard               ── renders a group tile's stacked members
       │   └─ SectionRowRenderer  ── dispatches to the right chart renderer
       ├─ MultiSelectControls     ── floating toolbar (portal) for the selection
@@ -369,3 +374,156 @@ pointerup ─────────────► commit()
   per key or tiles can be shrunk below their content.
 - Persistence is best-effort: `localStorage` failures are swallowed, so don't
   rely on writes throwing on quota errors.
+
+---
+
+## 12. Pan & zoom (implemented)
+
+Every section grid is wrapped in a pan/zoom viewport by
+[ZoomableSectionGrid.tsx](ZoomableSectionGrid.tsx), which drives the shared
+[usePanZoom](../../../hooks/usePanZoom.ts) hook.
+
+**Behavior** (matches the StudyViewer canvas):
+
+- Plain wheel → pan up/down (i.e. normal scroll); `shift`+wheel → horizontal.
+- `Cmd`/`Ctrl`+wheel and trackpad **pinch** → zoom around the cursor.
+- Drag the background → pan. Tiles carry `data-no-pan`, so dragging a tile still
+  moves/resizes it instead of panning.
+- 200 ms guard after a zoom suppresses inertial pan.
+
+**Chrome:**
+
+- [PanZoomScrollbar](../../../components/CustomScrollbar/PanZoomScrollbar/PanZoomScrollbar.tsx)
+  renders the custom H/V scrollbars. Each track is `display:none` unless the
+  *scaled* content overflows the viewport, so scrollbars appear purely as a
+  function of the zoom/scroll state.
+- A `ZoomScrubber` + a `reset view` button (shown only when not at home).
+
+**Scale correctness:**
+
+- The live `scale` is threaded `ZoomableSectionGrid → SectionGrid →
+  useGridInteraction`. Every pointer delta is divided by `scale` (via
+  `scaleRef`), so tile drag / resize / drop-hints stay pixel-accurate at any
+  zoom.
+- Descendant charts read the scale via `PanZoomScaleProvider` / `--pz-scale`.
+
+**Persistence & layout:**
+
+- The pan/zoom transform is persisted per section+layout under
+  `phenex.sectionZoom.<sectionId>.<layoutId>` — separate from the layout store.
+- [HorizontalCell.module.css](../HorizontalRowViewer/HorizontalCell.module.css)
+  `.cardContentSection` is a bounded flex box (`flex:1; min-height:0`) so the
+  viewport (`position:absolute; inset:0`) fills it and owns scrolling/zooming.
+
+**Caveat:** because section cells now scroll via the pan viewport rather than the
+native `.verticalWrapper`, the breadcrumb-header-on-scroll reveal
+(`onVerticalScroll`) no longer fires for section cells (non-section cells are
+unchanged).
+
+---
+
+## 13. Planned: infinite canvas (free xy positioning)
+
+> **Status: design only — not yet implemented.**
+
+**Goal.** In the unlocked (editable) state, treat a layout as an *infinite
+canvas*: every item/cell holds an arbitrary `(x, y)` position that is saved in
+the layout, and the user pans/zooms (§12) to move around. No auto-packing —
+items stay exactly where they are dropped; overlaps are allowed.
+
+`GridItem` already carries `x, y, w, h`; the change is about **relaxing the grid
+constraints** (clamping, collision cleanup, viewport-relative units) rather than
+adding fields.
+
+### 13.1 What blocks "free xy" today
+
+| Constraint | Where | Change for canvas |
+| --- | --- | --- |
+| `x` clamped to `columns - w`, `w` clamped to `columns` | `useGridInteraction` move/resize | Drop the clamp in canvas mode (allow x/w past 60). |
+| Overlap cleanup (down/right reflow) on every commit | `cleanupGridLayout` / `resolveSingleDrop` in `handleUp` | Skip in canvas mode — commit raw positions. |
+| Cell width is **viewport-relative** (`containerWidth / columns`) | `useGridInteraction` `cellWidth` | Use a **fixed** `CANVAS_UNIT_PX` so xy are absolute, not viewport-dependent. |
+| Grid width is fixed to the viewport; only height grows | `SectionGrid` / `displayHeight` | Size the content to the **bounding box** of all items (grows right & down). |
+| Cohort-delta restacking shifts `y` of tiles below | `restackByCohortDelta` | In canvas mode grow each tile's height in place; do not shift `y`. |
+| Masonry locked view ignores exact xy | `MasonrySectionGrid` | Locked canvas layout renders items at their saved xy (read-only). |
+
+### 13.2 Data model
+
+- Add an opt-in flag on the layout so packed layouts keep working:
+  ```ts
+  interface SectionLayout {
+    /* … */
+    freeform?: boolean;   // true ⇒ infinite-canvas, no packing/clamping
+  }
+  ```
+  The `__default__` layout stays packed/masonry; new grids can default to
+  `freeform: true`.
+- `x, y, w, h` keep their meaning (grid cells) but in canvas mode are **absolute
+  canvas cells** at a fixed pixel unit, independent of viewport width.
+- Pan/zoom transform already persists per section+layout (§12). Optionally move
+  it into `SectionState` if we want it to travel with export/import.
+
+### 13.3 Coordinate units (the key decision)
+
+Today `cellWidth = (containerWidth − gaps) / columns`, so `x` is viewport-relative
+— resizing the card would move items. For a canvas, define a **fixed** unit
+(e.g. reuse `GRID_ROW_HEIGHT = 12` for both axes, or a dedicated
+`CANVAS_UNIT_PX`). Then `colSpan = rowSpan = CANVAS_UNIT_PX`, and
+`left = x * unit`, `top = y * unit` are stable absolute coordinates.
+Keep round-to-unit snapping on drag; a "free/snap" toggle can come later.
+
+Origin stays at top-left `(0, 0)` and the canvas grows right/down (all
+coordinates ≥ 0) — simpler than supporting negative space; recenter is handled
+by pan.
+
+### 13.4 Rendering
+
+- Introduce a canvas branch (either a `CanvasSectionGrid` or a `freeform` mode in
+  `EditableSectionGrid`) that:
+  - positions each tile absolutely at `x*unit, y*unit`, size `w*unit × h*unit`;
+  - sets the content size to `maxRight = max(x+w)*unit`,
+    `maxBottom = max(y+h)*unit` (+ margin), so `usePanZoom.measure()` derives
+    correct pan bounds and scrollbars;
+  - calls `pz.remeasure()` whenever the bounding box changes (already wired via
+    `measureKey`, extend to include width).
+
+### 13.5 Interaction (`useGridInteraction`)
+
+- **Move:** `x = origin.x + dCol`, `y = origin.y + dRow` (no clamp, snap by
+  round). Commit the draft **directly** — skip `resolveSingleDrop` /
+  `cleanupGridLayout`.
+- **Resize:** unchanged math, but no overlap cleanup afterwards.
+- **Multi-drag:** translate every selected item by the same `(dCol, dRow)` delta
+  (a new "translate" commit path) instead of `dropSelectionIntoGrid` flow-pack.
+- **Drop hints:** disabled in canvas mode (no swap/insert). Optional later:
+  alignment guides / snap lines instead.
+- **Edge behavior:** replace the scroll-parent auto-scroll with **edge-pan** —
+  when a tile is dragged near a viewport edge, pan the canvas via a small
+  imperative `panBy(dx, dy)` added to `usePanZoom` (keep the drag tracking the
+  cursor as the canvas moves).
+
+### 13.6 Controls & migration
+
+- `LayoutControls`: "New grid" creates a `freeform` layout by default; add a
+  toggle to convert an existing packed layout to canvas (keep current positions
+  as the starting xy — packed layouts are already a valid free arrangement).
+- Column selector becomes a *seed* for initial placement only (no longer clamps).
+
+### 13.7 Suggested phases
+
+1. `freeform` flag + fixed-unit coordinates + bounding-box content sizing
+   (render only; still uses existing commit).
+2. Free move/resize commit (drop clamp + cleanup in canvas mode).
+3. Multi-drag translate.
+4. `usePanZoom.panBy` + edge-pan while dragging.
+5. `LayoutControls` toggle + cohort-delta "grow in place".
+6. Optional: alignment guides, snap toggle, persist canvas transform in
+   `SectionState`.
+
+### 13.8 Open decisions
+
+- Allow overlapping tiles? (assumed **yes** for a canvas.)
+- Snap-to-unit vs fully free positioning (assumed **snap**, with a later toggle).
+- Non-negative coordinates only, or allow negative space + recenter? (assumed
+  **non-negative**.)
+- Keep masonry as the locked/default rendering, canvas only for `freeform`
+  named layouts? (assumed **yes**.)
