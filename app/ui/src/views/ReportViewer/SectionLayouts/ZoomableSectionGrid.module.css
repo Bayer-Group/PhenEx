@@ -1,0 +1,50 @@
+/* Pan-and-zoom viewport wrapping a section grid. */
+
+.viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* The background is the pan surface; tiles opt out via [data-no-pan]. */
+  cursor: grab;
+  touch-action: none;
+}
+
+.viewport:active {
+  cursor: grabbing;
+}
+
+.content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* Fill the viewport at scale 1 so the grid's columns size to the card width. */
+  width: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.zoomControls {
+  position: absolute;
+  top: 8px;
+  right: 26px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 30;
+}
+
+.resetBtn {
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: #333;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.resetBtn:hover {
+  background: rgba(0, 0, 0, 0.12);
+}

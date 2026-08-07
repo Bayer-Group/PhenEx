@@ -31,6 +31,8 @@ export interface SectionGridProps {
   editable?: boolean;
   /** Number of display columns; used for masonry grouping in locked mode. */
   columnsPerRow?: number;
+  /** Current pan-zoom scale, so tile drag/resize stays accurate when zoomed. */
+  scale?: number;
   onLayoutChange: (items: GridItem[]) => void;
   onItemClick?: (key: string) => void;
 }
@@ -157,6 +159,7 @@ function EditableSectionGrid({
   rowHeight = GRID_ROW_HEIGHT,
   gap = GRID_GAP,
   rowGap = GRID_ROW_GAP,
+  scale = 1,
   onLayoutChange,
   onItemClick,
 }: SectionGridProps) {
@@ -175,7 +178,7 @@ function EditableSectionGrid({
     selection,
     startMove,
     startResize,
-  } = useGridInteraction({ items, layout, columns, rowHeight, gap, rowGap, editable: true, selection: selectionProp, onLayoutChange, onItemClick });
+  } = useGridInteraction({ items, layout, columns, rowHeight, gap, rowGap, editable: true, selection: selectionProp, scale, onLayoutChange, onItemClick });
 
   return (
     <div ref={containerRef} className={styles.grid} style={{ height: displayHeight }}>
@@ -220,7 +223,7 @@ function EditableSectionGrid({
           .join(' ');
 
         return (
-          <div key={item.key} className={className} style={{ left, top, width, height, zIndex }}>
+          <div key={item.key} className={className} style={{ left, top, width, height, zIndex }} data-no-pan>
             <div className={styles.itemHeader} onPointerDown={(e) => startMove(e, item.key)} title={item.title}>
               {item.titleNode ?? item.title}
             </div>

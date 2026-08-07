@@ -60,6 +60,8 @@ export interface UseGridInteractionParams {
   selection: GridSelection;
   /** Minimum grid-row span per item key; enforced during resize. */
   minHMap?: ReadonlyMap<string, number>;
+  /** Current pan-zoom scale of the grid, so pointer deltas map to content cells. */
+  scale?: number;
   onLayoutChange: (items: GridItem[]) => void;
   onItemClick?: (key: string) => void;
 }
@@ -117,10 +119,14 @@ export function useGridInteraction({
   editable,
   selection,
   minHMap,
+  scale = 1,
   onLayoutChange,
   onItemClick,
 }: UseGridInteractionParams): GridInteraction {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Read live so pointer-effect closures see the current zoom without re-binding.
+  const scaleRef = useRef(scale);
+  scaleRef.current = scale;
   const [containerWidth, setContainerWidth] = useState(0);
   const [draft, setDraft] = useState<GridItem[] | null>(null);
   const [interacting, setInteracting] = useState(false);
@@ -216,7 +222,8 @@ export function useGridInteraction({
       const el = containerRef.current;
       if (!el) return { kind: 'free' };
       const r = el.getBoundingClientRect();
-      return computeDropHint(effectiveLayout, (clientX - r.left) / colSpan, (clientY - r.top) / rowSpan, draggedKey, allowSwap);
+      const s = scaleRef.current;
+      return computeDropHint(effectiveLayout, (clientX - r.left) / s / colSpan, (clientY - r.top) / s / rowSpan, draggedKey, allowSwap);
     };
 
     // Translate a pointer position into a draft placement. Includes any scroll
@@ -231,8 +238,9 @@ export function useGridInteraction({
       // Multi-cell drag: cards collapse into an animated stack that follows the
       // pointer. No grid draft is produced until drop.
       if (it.type === 'move' && it.multi) {
-        const left = it.multi.originLeft + (clientX - it.startX);
-        const top = it.multi.originTop + (clientY - it.startY + scrollDelta);
+        const s = scaleRef.current;
+        const left = it.multi.originLeft + (clientX - it.startX) / s;
+        const top = it.multi.originTop + (clientY - it.startY) / s + scrollDelta;
         it.multi.curLeft = left;
         it.multi.curTop = top;
         setMultiStack({
@@ -246,8 +254,9 @@ export function useGridInteraction({
         return;
       }
 
-      const dCol = Math.round((clientX - it.startX) / colSpan);
-      const dRow = Math.round((clientY - it.startY + scrollDelta) / rowSpan);
+      const s = scaleRef.current;
+      const dCol = Math.round((clientX - it.startX) / s / colSpan);
+      const dRow = Math.round(((clientY - it.startY) / s + scrollDelta) / rowSpan);
 
       setDraft(() => {
         const map = toMap(effectiveLayout);

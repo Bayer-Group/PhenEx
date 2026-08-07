@@ -4,7 +4,8 @@ import { type BarChartSpacer, SPACER_UNIT_PX } from '../GraphsAndTables/RowRende
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { SectionRowRenderer, SectionRowTitle, sectionRowTitle } from './SectionRowRenderer';
-import { SectionGrid, type SectionGridRenderItem } from './SectionGrid';
+import { type SectionGridRenderItem } from './SectionGrid';
+import { ZoomableSectionGrid } from './ZoomableSectionGrid';
 import { GroupCard } from './GroupCard';
 import { MultiSelectControls } from './MultiSelectControls';
 import { useGridSelection } from './GridSelection';
@@ -177,7 +178,9 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
 
   return (
     <>
-      <SectionGrid
+      <ZoomableSectionGrid
+        storageKey={`phenex.sectionZoom.${sectionId}.${layout.id}`}
+        measureKey={layout.items}
         items={gridItems}
         layout={layout.items}
         selection={selection}

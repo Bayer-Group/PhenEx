@@ -29,9 +29,9 @@
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: none;
-  padding-top: 10px;
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-top: 0px;
+  padding-left: 0;
+  padding-right: 0;
   margin-bottom:100px;
   /* margin-left: -12px;
   margin-right: -12px; */
@@ -81,10 +81,9 @@
   flex-direction: column;
   height: 100%;
   background-color: transparent !important;
-  border-radius: 8px;
   transition: opacity 0.2s;
-  margin-right: 15px;
-  padding-top: 50px;
+  margin-right: 0px;
+  padding-top: 0px;
 }
 
 .cardTitle {
@@ -113,8 +112,10 @@
 
 .cardContentSection {
   position: relative;
-  padding-bottom: 100px;
-
+  /* Bounded, non-scrolling box: the pan-zoom viewport (absolute inset:0) fills
+     it and owns scrolling/zooming, so the native wrapper scroll stays inert. */
+  flex: 1;
+  min-height: 0;
 }
 
 /* ── Category (overview) cell ─────────────────────────────────────────── */

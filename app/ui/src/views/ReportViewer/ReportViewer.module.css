@@ -285,9 +285,9 @@
   clip-path: inset(0 -15px 0 0);
   border-right: 1px solid var(--line-color); */
   background-color: var(--background_color_light) !important;
-  box-shadow: -4px 0 8px rgba(191, 182, 180, 0.08);
-  clip-path: inset(0 0 0 -15px);
-  border-left: 1px solid var(--line-color);
+  /* box-shadow: -4px 0 8px rgba(191, 182, 180, 0.08);
+  clip-path: inset(0 0 0 -15px); */
+  border-right: 1px solid var(--line-color);
 }
 
 /* Border between left panel and center panel hover */
