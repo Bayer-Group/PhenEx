@@ -79,9 +79,7 @@
   padding: 8px 10px 4px;
   cursor: grab;
   line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
 }
 
 .itemDragging .itemHeader {

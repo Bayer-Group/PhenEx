@@ -35,62 +35,67 @@ export interface SectionGridProps {
   onItemClick?: (key: string) => void;
 }
 
-// ── Locked (masonry) mode ────────────────────────────────────────────────
+// ── Shared sub-components ────────────────────────────────────────────────
 
-const LockedGridItem = memo<{ item: SectionGridRenderItem }>(({ item }) => {
-  const [editingDesc, setEditingDesc] = useState(false);
+const ItemDescription = memo<{ item: SectionGridRenderItem }>(({ item }) => {
+  const [editing, setEditing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (!editingDesc) return;
+    if (!editing) return;
     const el = textareaRef.current;
     if (!el) return;
     el.focus();
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
-  }, [editingDesc]);
+  }, [editing]);
 
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
   };
 
+  if (editing) {
+    return (
+      <textarea
+        ref={textareaRef}
+        className={styles.itemDescriptionInput}
+        defaultValue={item.description ?? ''}
+        placeholder="Add a description..."
+        onInput={(e) => autoResize(e.currentTarget)}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); setEditing(false); } }}
+        onBlur={(e) => { item.onDescriptionChange?.(e.target.value); setEditing(false); }}
+      />
+    );
+  }
   return (
-    <div className={styles.lockedItem}>
-      <div className={styles.lockedItemHeader}>{item.titleNode ?? item.title}</div>
-
-      {editingDesc ? (
-        <textarea
-          ref={textareaRef}
-          className={styles.itemDescriptionInput}
-          defaultValue={item.description ?? ''}
-          placeholder="Add a description..."
-          onInput={(e) => autoResize(e.currentTarget)}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); setEditingDesc(false); } }}
-          onBlur={(e) => { item.onDescriptionChange?.(e.target.value); setEditingDesc(false); }}
-        />
-      ) : (
-        <div
-          className={item.description ? styles.itemDescription : styles.itemDescriptionPlaceholder}
-          onDoubleClick={(e) => { if (!item.onDescriptionChange) return; e.stopPropagation(); setEditingDesc(true); }}
-        >
-          {item.description || (item.onDescriptionChange ? 'Add a description...' : null)}
-        </div>
-      )}
-
-      <div
-        className={`${styles.lockedItemChart}${item.chartHeightPx != null ? ` ${styles.lockedItemChartFixed}` : ''}`}
-        style={item.chartHeightPx != null ? { height: item.chartHeightPx } : undefined}
-      >
-        <GridItemContext.Provider value={{ cols: 1 }}>
-          {item.content}
-        </GridItemContext.Provider>
-      </div>
+    <div
+      className={item.description ? styles.itemDescription : styles.itemDescriptionPlaceholder}
+      onDoubleClick={(e) => { if (!item.onDescriptionChange) return; e.stopPropagation(); setEditing(true); }}
+    >
+      {item.description || (item.onDescriptionChange ? 'Add a description...' : null)}
     </div>
   );
 });
+
+// ── Locked (masonry) mode ────────────────────────────────────────────────
+
+const LockedGridItem = memo<{ item: SectionGridRenderItem }>(({ item }) => (
+  <div className={styles.lockedItem}>
+    <div className={styles.lockedItemHeader}>{item.titleNode ?? item.title}</div>
+    <ItemDescription item={item} />
+    <div
+      className={`${styles.lockedItemChart}${item.chartHeightPx != null ? ` ${styles.lockedItemChartFixed}` : ''}`}
+      style={item.chartHeightPx != null ? { height: item.chartHeightPx } : undefined}
+    >
+      <GridItemContext.Provider value={{ cols: 1 }}>
+        {item.content}
+      </GridItemContext.Provider>
+    </div>
+  </div>
+));
 
 function MasonrySectionGrid({
   items,
@@ -219,6 +224,7 @@ function EditableSectionGrid({
             <div className={styles.itemHeader} onPointerDown={(e) => startMove(e, item.key)} title={item.title}>
               {item.titleNode ?? item.title}
             </div>
+            <ItemDescription item={item} />
             <div className={styles.itemBody}>
               <GridItemContext.Provider value={{ cols: pos.w }}>
                 {item.content}
