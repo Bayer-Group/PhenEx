@@ -1,4 +1,4 @@
-import { ReactNode, memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ReactNode, memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP, GRID_ROW_GAP } from './sectionLayoutStore';
 import { GridItemContext } from './GridItemContext';
 import { useGridInteraction } from './useGridInteraction';
@@ -35,6 +35,8 @@ export interface SectionGridProps {
   scale?: number;
   /** Card/viewport width (px) that sizes the grid columns on the free canvas. */
   viewportWidth?: number;
+  /** Auto-stack columns from measured heights so tiles never overlap (defaults). */
+  autoStack?: boolean;
   onLayoutChange: (items: GridItem[]) => void;
   onItemClick?: (key: string) => void;
 }
@@ -161,17 +163,21 @@ const EditableGridItem = memo<{
   className: string;
   onStartMove: (e: React.PointerEvent) => void;
   onStartResize: (e: React.PointerEvent, edge: 'right' | 'bottom' | 'corner') => void;
-}>(({ item, cols, left, top, width, baseHeight, zIndex, className, onStartMove, onStartResize }) => {
+  onChromeMeasure?: (key: string, chromeHeight: number) => void;
+}>(({ item, cols, left, top, width, baseHeight, zIndex, className, onStartMove, onStartResize, onChromeMeasure }) => {
   const chromeRef = useRef<HTMLDivElement>(null);
   const [chromeH, setChromeH] = useState(0);
+  const measureRef = useRef(onChromeMeasure);
+  measureRef.current = onChromeMeasure;
   useLayoutEffect(() => {
     const el = chromeRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setChromeH(el.offsetHeight));
+    const report = () => { setChromeH(el.offsetHeight); measureRef.current?.(item.key, el.offsetHeight); };
+    const ro = new ResizeObserver(report);
     ro.observe(el);
-    setChromeH(el.offsetHeight);
+    report();
     return () => ro.disconnect();
-  }, []);
+  }, [item.key]);
 
   // Definite height: at least the stored span, but never less than the wrapped
   // chrome plus the chart's intended height, so the figure is never clipped.
@@ -199,6 +205,44 @@ const EditableGridItem = memo<{
 EditableGridItem.displayName = 'EditableGridItem';
 
 /**
+ * Re-stack default columns from measured chrome heights: each tile grows to its
+ * measured content height, and tiles below in the same column are pushed down so
+ * they never overlap (the row-gap falls out of the grid math). Columns are keyed
+ * by `x`; ordering follows the current `y`. Unmeasured tiles keep their span.
+ */
+function restackWithChrome(
+  layout: GridItem[],
+  items: SectionGridRenderItem[],
+  chromeHeights: ReadonlyMap<string, number>,
+  rowHeight: number,
+  rowGap: number,
+): GridItem[] {
+  const chartByKey = new Map(items.map((it) => [it.key, it.chartHeightPx]));
+  const effRows = (it: GridItem): number => {
+    const chrome = chromeHeights.get(it.key);
+    const chart = chartByKey.get(it.key);
+    if (chrome == null || chart == null) return it.h;
+    return Math.max(it.h, Math.ceil((chrome + chart + rowGap) / rowHeight));
+  };
+  const cols = new Map<number, GridItem[]>();
+  for (const it of layout) {
+    const arr = cols.get(it.x);
+    if (arr) arr.push(it); else cols.set(it.x, [it]);
+  }
+  const next = new Map<string, GridItem>();
+  for (const arr of cols.values()) {
+    arr.sort((a, b) => a.y - b.y);
+    let run = 0;
+    for (const it of arr) {
+      const h = effRows(it);
+      next.set(it.key, { ...it, h, y: run });
+      run += h;
+    }
+  }
+  return layout.map((it) => next.get(it.key) ?? it);
+}
+
+/**
  * A self-contained widget canvas. Items hold a free (x, y) position; each spans
  * a whole number of columns/rows. Items can be moved (drag the header) and
  * resized (drag the right / bottom / corner handles); changes snap to grid
@@ -217,9 +261,20 @@ function EditableSectionGrid({
   rowGap = GRID_ROW_GAP,
   scale = 1,
   viewportWidth = 0,
+  autoStack = false,
   onLayoutChange,
   onItemClick,
 }: SectionGridProps) {
+  // Measured header/description height per tile, used to re-stack default columns.
+  const [chromeHeights, setChromeHeights] = useState<ReadonlyMap<string, number>>(new Map());
+  const handleChromeMeasure = useCallback((key: string, h: number) => {
+    setChromeHeights((prev) => (prev.get(key) === h ? prev : new Map(prev).set(key, h)));
+  }, []);
+  const resolvedLayout = useMemo(
+    () => (autoStack ? restackWithChrome(layout, items, chromeHeights, rowHeight, rowGap) : layout),
+    [autoStack, layout, items, chromeHeights, rowHeight, rowGap],
+  );
+
   const {
     containerRef,
     containerWidth,
@@ -236,7 +291,7 @@ function EditableSectionGrid({
     selection,
     startMove,
     startResize,
-  } = useGridInteraction({ items, layout, columns, rowHeight, gap, rowGap, editable: true, selection: selectionProp, scale, viewportWidth, onLayoutChange, onItemClick });
+  } = useGridInteraction({ items, layout: resolvedLayout, columns, rowHeight, gap, rowGap, editable: true, selection: selectionProp, scale, viewportWidth, onLayoutChange, onItemClick });
 
   return (
     <div ref={containerRef} className={styles.grid} style={{ width: canvasWidth, height: canvasHeight }}>
@@ -275,6 +330,7 @@ function EditableSectionGrid({
             className={className}
             onStartMove={(e) => startMove(e, item.key)}
             onStartResize={(e, edge) => startResize(e, item.key, edge)}
+            onChromeMeasure={handleChromeMeasure}
           />
         );
       })}

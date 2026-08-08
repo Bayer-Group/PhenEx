@@ -232,6 +232,13 @@ height is definite the chart fills it (percentage heights need a definite
 parent), and a long wrapped title grows the tile **downward** instead of
 stealing height from the figure.
 
+**Default columns never overlap.** For the default views (`autoStack`), the tile
+reports its measured chrome height up to `SectionGrid`, which re-stacks each
+column (`restackWithChrome`): every tile is grown to its measured content height
+and the tiles below it are pushed down so they sit under the one above + the
+row-gap. This runs only for defaults; edited/draft layouts keep their free
+(overlap-allowed) positions.
+
 **Cohort-count changes** (`restackByHeights` in
 [restackLayout.ts](restackLayout.ts)): when the cohort count changes, every tile
 is resized to its **recomputed content height** for the new count (the chart

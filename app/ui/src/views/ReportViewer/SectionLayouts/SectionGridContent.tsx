@@ -219,6 +219,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
           selection={selection}
           editable={editable}
           columnsPerRow={layout.columnsPerRow}
+          autoStack={isDefault}
           onLayoutChange={handleLayoutChange}
           onItemClick={handleItemClick}
         />
