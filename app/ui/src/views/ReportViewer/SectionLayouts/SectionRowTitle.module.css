@@ -1,5 +1,6 @@
 .title {
-  cursor: text;
+  cursor: inherit;
+  user-select: none;
   font-size: var(--font_size_phenotypename, 11px);
 }
 

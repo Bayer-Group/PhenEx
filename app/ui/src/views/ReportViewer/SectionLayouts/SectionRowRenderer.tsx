@@ -183,8 +183,6 @@ export const SectionRowTitle = memo<SectionRowTitleProps>(({ row, className, onR
       <span
         className={`${titleStyles.title}${className ? ` ${className}` : ''}`}
         title={label}
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
         onDoubleClick={(e) => { e.stopPropagation(); if (onRename) setEditing(true); }}
         onContextMenu={(e) => {
           if (menuItems.length === 0) return;

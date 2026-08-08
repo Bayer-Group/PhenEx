@@ -370,6 +370,11 @@ pointerup ─────────────► commit(draft) verbatim  (no
 
 (Resize follows the same path, adjusting only the grabbed tile's w/h.)
 
+The **entire header region** (including the title text) is the drag handle:
+`SectionRowTitle` lets pointer events pass through to the header's `startMove`,
+so a press-drag moves the tile, a click selects the cell, and a double-click
+starts an inline rename. Only the rename `<input>` stops propagation.
+
 ---
 
 ## 11. Development notes / gotchas

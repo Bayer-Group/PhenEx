@@ -196,8 +196,8 @@ function EditableSectionGrid({
 
         // Free position, offset by the canvas origin so negative-space items and
         // the leftmost/topmost tiles render within the visible canvas.
-        const left = (pos.x - originX) * colSpan;
-        const top = (pos.y - originY) * rowSpan;
+        const left = (pos.x - originX) * colSpan + 10;
+        const top = (pos.y - originY) * rowSpan + 100;
         const zIndex = zOrder.indexOf(item.key) + 1;
 
         const className = [
