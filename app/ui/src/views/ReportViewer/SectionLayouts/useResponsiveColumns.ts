@@ -24,3 +24,24 @@ export function useResponsiveColumns(ref: RefObject<HTMLElement | null>): number
 
   return columns;
 }
+
+/**
+ * Observed content width (px) of an element, quantized to 20px steps so it does
+ * not churn on sub-pixel resizes. Used to size default tile heights (title wrap).
+ */
+export function useMeasuredWidth(ref: RefObject<HTMLElement | null>): number {
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setWidth(Math.round(entry.contentRect.width / 20) * 20);
+    });
+    observer.observe(el);
+    setWidth(Math.round(el.clientWidth / 20) * 20);
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return width;
+}

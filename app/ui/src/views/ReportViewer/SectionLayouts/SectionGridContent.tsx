@@ -10,8 +10,8 @@ import { GroupCard } from './GroupCard';
 import { MultiSelectControls } from './MultiSelectControls';
 import { useGridSelection } from './GridSelection';
 import { useMultiSelectActions } from './useMultiSelectActions';
-import { restackByCohortDelta } from './restackLayout';
-import { type SectionLayout, type GridItem, defaultTileRows, useSectionLayouts, lockedChartHeight, isDefaultLayoutId } from './sectionLayoutStore';
+import { restackByHeights } from './restackLayout';
+import { type SectionLayout, type GridItem, defaultTileRows, contentTileRows, TILE_HEADER_ROWS, GRID_COLUMNS, GRID_GAP, useSectionLayouts, lockedChartHeight, isDefaultLayoutId } from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -26,6 +26,8 @@ export interface SectionGridContentProps {
   table2Cohorts?: Table2Cohort[];
   onNavigateToRow?: (row: SequentialRow) => void;
   onRenameRow?: (name: string, displayName: string) => void;
+  /** Measured card width (px), used to recompute tile heights on cohort change. */
+  contentWidth?: number;
 }
 
 /**
@@ -45,6 +47,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
   table2Cohorts,
   onNavigateToRow,
   onRenameRow,
+  contentWidth = 0,
 }) => {
   const {
     updateLayoutItems,
@@ -175,12 +178,10 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
 
   const handleLayoutChange = commitItems;
 
-  // Tiles react only to a *change* in the cohort count. On such a change every
-  // tile keeps its own (possibly manually resized) height and is grown/shrunk
-  // by the per-cohort row delta, so each cell holds its vertical scale relative
-  // to the 1-cohort baseline. Between changes the stored layout is untouched,
-  // leaving manual moves and resizes free. Synthetic defaults are rebuilt from
-  // the current cohort count on render, so they need no restacking here.
+  // On a cohort-count change, resize every tile to its content height for the
+  // new count (chart grows/shrinks with cohorts; title/description unchanged),
+  // preserving the free arrangement via a per-tile restack. Synthetic defaults
+  // are rebuilt from the current count on render, so they need no restack here.
   const prevCohortCountRef = useRef(cohortData.length);
   useEffect(() => {
     const prev = prevCohortCountRef.current;
@@ -188,10 +189,19 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     if (prev === next) return;
     prevCohortCountRef.current = next;
     if (isDefault) return;
-    const deltaRows = defaultTileRows(next) - defaultTileRows(prev);
-    if (deltaRows === 0) return;
-    updateLayoutItems(layout.id, restackByCohortDelta(layout.items, deltaRows));
-  }, [cohortData.length, isDefault, layout.id, layout.items, updateLayoutItems]);
+    const nCols = layout.columnsPerRow ?? 3;
+    const tileWidthPx = contentWidth > 0
+      ? (contentWidth - GRID_GAP * (nCols - 1)) * (Math.floor(GRID_COLUMNS / nCols) / GRID_COLUMNS)
+      : 0;
+    const heights = new Map<string, number>();
+    for (const row of rows) {
+      heights.set(row.name, contentTileRows(row.rowType, next, sectionRowTitle(row), tileWidthPx, spacersPx));
+    }
+    for (const g of groups) {
+      heights.set(g.id, TILE_HEADER_ROWS + Math.max(1, g.memberKeys.length) * defaultTileRows(next));
+    }
+    updateLayoutItems(layout.id, restackByHeights(layout.items, heights));
+  }, [cohortData.length, isDefault, layout.id, layout.items, layout.columnsPerRow, rows, groups, spacersPx, contentWidth, updateLayoutItems]);
 
   const handleItemClick = useCallback((key: string) => {
     const row = rowByKey.get(key);

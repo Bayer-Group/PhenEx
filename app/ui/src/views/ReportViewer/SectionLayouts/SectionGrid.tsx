@@ -1,4 +1,4 @@
-import { ReactNode, memo, useEffect, useRef, useState } from 'react';
+import { ReactNode, memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { type GridItem, GRID_COLUMNS, GRID_ROW_HEIGHT, GRID_GAP, GRID_ROW_GAP } from './sectionLayoutStore';
 import { GridItemContext } from './GridItemContext';
 import { useGridInteraction } from './useGridInteraction';
@@ -145,6 +145,60 @@ function MasonrySectionGrid({
 // ── Editable (drag/resize) mode ──────────────────────────────────────────
 
 /**
+ * One editable tile. Measures its own header/description chrome so the tile
+ * gets a *definite* height (chrome + the chart's intended height), which both
+ * lets the chart fill (percentage heights need a definite parent) and grows the
+ * tile downward for a tall wrapped title instead of squeezing the figure.
+ */
+const EditableGridItem = memo<{
+  item: SectionGridRenderItem;
+  cols: number;
+  left: number;
+  top: number;
+  width: number;
+  baseHeight: number;
+  zIndex: number;
+  className: string;
+  onStartMove: (e: React.PointerEvent) => void;
+  onStartResize: (e: React.PointerEvent, edge: 'right' | 'bottom' | 'corner') => void;
+}>(({ item, cols, left, top, width, baseHeight, zIndex, className, onStartMove, onStartResize }) => {
+  const chromeRef = useRef<HTMLDivElement>(null);
+  const [chromeH, setChromeH] = useState(0);
+  useLayoutEffect(() => {
+    const el = chromeRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setChromeH(el.offsetHeight));
+    ro.observe(el);
+    setChromeH(el.offsetHeight);
+    return () => ro.disconnect();
+  }, []);
+
+  // Definite height: at least the stored span, but never less than the wrapped
+  // chrome plus the chart's intended height, so the figure is never clipped.
+  const height = item.chartHeightPx != null ? Math.max(baseHeight, chromeH + item.chartHeightPx) : baseHeight;
+
+  return (
+    <div className={className} style={{ left, top, width, height, zIndex }} data-no-pan>
+      <div ref={chromeRef} className={styles.itemChrome}>
+        <div className={styles.itemHeader} onPointerDown={onStartMove} title={item.title}>
+          {item.titleNode ?? item.title}
+        </div>
+        <ItemDescription item={item} />
+      </div>
+      <div className={styles.itemBody}>
+        <GridItemContext.Provider value={{ cols }}>
+          {item.content}
+        </GridItemContext.Provider>
+      </div>
+      <div className={styles.handle + ' ' + styles.handleRight} onPointerDown={(e) => onStartResize(e, 'right')} />
+      <div className={styles.handle + ' ' + styles.handleBottom} onPointerDown={(e) => onStartResize(e, 'bottom')} />
+      <div className={styles.handle + ' ' + styles.handleCorner} onPointerDown={(e) => onStartResize(e, 'corner')} />
+    </div>
+  );
+});
+EditableGridItem.displayName = 'EditableGridItem';
+
+/**
  * A self-contained widget canvas. Items hold a free (x, y) position; each spans
  * a whole number of columns/rows. Items can be moved (drag the header) and
  * resized (drag the right / bottom / corner handles); changes snap to grid
@@ -190,7 +244,7 @@ function EditableSectionGrid({
         const pos = layoutMap.get(item.key);
         if (!pos) return null;
         const width = pos.w * cellWidth + (pos.w - 1) * gap;
-        const height = pos.h * rowHeight - rowGap;
+        const baseHeight = pos.h * rowHeight - rowGap;
         const isDragging = draggingKey === item.key;
         const isSelected = selection.isSelected(item.key);
 
@@ -209,22 +263,19 @@ function EditableSectionGrid({
           .join(' ');
 
         return (
-          <div key={item.key} className={className} style={{ left, top, width, height, zIndex }} data-no-pan>
-            <div className={styles.itemHeader} onPointerDown={(e) => startMove(e, item.key)} title={item.title}>
-              {item.titleNode ?? item.title}
-            </div>
-            <ItemDescription item={item} />
-            <div className={styles.itemBody}>
-              <GridItemContext.Provider value={{ cols: pos.w }}>
-                {item.content}
-              </GridItemContext.Provider>
-            </div>
-            <>
-              <div className={styles.handle + ' ' + styles.handleRight} onPointerDown={(e) => startResize(e, item.key, 'right')} />
-              <div className={styles.handle + ' ' + styles.handleBottom} onPointerDown={(e) => startResize(e, item.key, 'bottom')} />
-              <div className={styles.handle + ' ' + styles.handleCorner} onPointerDown={(e) => startResize(e, item.key, 'corner')} />
-            </>
-          </div>
+          <EditableGridItem
+            key={item.key}
+            item={item}
+            cols={pos.w}
+            left={left}
+            top={top}
+            width={width}
+            baseHeight={baseHeight}
+            zIndex={zIndex}
+            className={className}
+            onStartMove={(e) => startMove(e, item.key)}
+            onStartResize={(e, edge) => startResize(e, item.key, edge)}
+          />
         );
       })}
     </div>

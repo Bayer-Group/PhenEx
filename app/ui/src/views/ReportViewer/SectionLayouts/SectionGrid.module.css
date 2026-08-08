@@ -35,6 +35,10 @@
   box-shadow: 0 0 0 1px var(--accent_color, #4a7fff), 0 2px 12px rgba(74, 127, 255, 0.28);
 }
 
+.itemChrome {
+  flex-shrink: 0;
+}
+
 .itemHeader {
   flex-shrink: 0;
   font-family: "IBMPlexSans-bold", sans-serif;

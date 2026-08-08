@@ -10,7 +10,7 @@ import { BooleanCellLayout, CategoricalCellLayout, NumericCellLayout } from '../
 import { SectionCellContent } from '../SectionLayouts/SectionCellContent';
 import { LayoutControls } from '../SectionLayouts/LayoutControls';
 import { getSectionLayoutId } from '../SectionLayouts/sectionLayoutStore';
-import { useResponsiveColumns } from '../SectionLayouts/useResponsiveColumns';
+import { useResponsiveColumns, useMeasuredWidth } from '../SectionLayouts/useResponsiveColumns';
 
 import { SimpleCustomScrollbar } from '../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { BreadcrumbTitle } from '../BreadcrumbTitle';
@@ -63,6 +63,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
       : cohortDataMap[reporter] ?? [];
     const cardColumnInnerRef = useRef<HTMLDivElement>(null);
     const defaultColumns = useResponsiveColumns(cardColumnInnerRef);
+    const contentWidth = useMeasuredWidth(cardColumnInnerRef);
     const verticalScrollRef = useRef<HTMLDivElement>(null);
     const initialScrollTopRef = useRef(initialScrollTop ?? 0);
     initialScrollTopRef.current = initialScrollTop ?? 0;
@@ -180,6 +181,7 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
           onNavigateToRow={onNavigateToRow}
           onRenameRow={onRenameRow}
           defaultColumns={defaultColumns}
+          contentWidth={contentWidth}
         />
       );
     };

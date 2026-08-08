@@ -123,12 +123,24 @@ export const TILE_HEADER_ROWS = 8;
 /** Fixed pixel overhead of a tile's non-chart chrome: header + description + body padding. */
 const TILE_CHROME_PX = 60;
 
+// ── Title / description chrome (for content-aware tile heights) ───────────
+
+/** Rendered height (px) of one wrapped line of the bold tile title. */
+const TILE_TITLE_LINE_PX = 17;
+/** Approx. average glyph width (px) of the title font, for wrap estimation. */
+const TILE_TITLE_CHAR_PX = 6.2;
+/** Height (px) reserved for the (possibly empty) description line. */
+const TILE_DESCRIPTION_PX = 18;
+/** Fixed vertical padding (px) of the tile header + body (non-title, non-chart). */
+const TILE_PADDING_PX = 22;
+
 // ── Locked-mode chart heights ────────────────────────────────────────────
 
 /** Chart height (px) per cohort for boolean rows (locked view). */
 export const PX_PER_COHORT = 12;
-/** Fixed overhead (px) added to boolean chart height: header + body margin + buffer. */
-export const BOOLEAN_CHART_OVERHEAD_PX = 52;
+/** Fixed overhead (px) added to boolean chart height (header/axis/labels/margins);
+ *  matched to the numeric baseline so short barcharts aren't clipped. */
+export const BOOLEAN_CHART_OVERHEAD_PX = 120;
 /** Extra pixels added to the numeric chart height over the boolean baseline. */
 export const NUMERIC_EXTRA_HEIGHT_PX = 120;
 /** Fixed chart height (px) for categorical rows (locked mode). */
@@ -420,6 +432,45 @@ export function buildDefaultLayoutItems(keys: string[], cohortCount = 1, nCols =
     w,
     h,
   }));
+}
+
+/**
+ * Grid-row span for a tile sized to its actual content: the wrapped title, the
+ * description line, and the row-type chart height for `cohortCount` cohorts.
+ * `tileWidthPx` is the tile's rendered pixel width (used to estimate how many
+ * lines a long title wraps to); pass ≤ 0 when unknown to assume a single line.
+ */
+export function contentTileRows(
+  rowType: string,
+  cohortCount: number,
+  label: string,
+  tileWidthPx: number,
+  spacersPx = 0,
+): number {
+  const charsPerLine = tileWidthPx > 0 ? Math.max(6, Math.floor((tileWidthPx - 20) / TILE_TITLE_CHAR_PX)) : Infinity;
+  const titleLines = Math.max(1, Math.ceil((label.length || 1) / charsPerLine));
+  const totalPx =
+    titleLines * TILE_TITLE_LINE_PX +
+    TILE_DESCRIPTION_PX +
+    TILE_PADDING_PX +
+    lockedChartHeight(rowType, cohortCount, spacersPx);
+  return Math.max(TILE_HEADER_ROWS, Math.ceil((totalPx + GRID_ROW_GAP) / GRID_ROW_HEIGHT));
+}
+
+/**
+ * Flow-pack items of *individual* heights into `nCols` columns, stacking each
+ * column independently (round-robin by index) so a tall tile never overlaps or
+ * clips its neighbours. Each entry carries its own row span `h`.
+ */
+export function buildContentLayoutItems(rows: Array<{ key: string; h: number }>, nCols = 3): GridItem[] {
+  const w = Math.floor(GRID_COLUMNS / nCols);
+  const colY = new Array(nCols).fill(0);
+  return rows.map((r, i) => {
+    const col = i % nCols;
+    const y = colY[col];
+    colY[col] += r.h;
+    return { key: r.key, x: col * w, y, w, h: r.h };
+  });
 }
 
 // ── React hook ───────────────────────────────────────────────────────────
