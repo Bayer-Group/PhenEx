@@ -369,6 +369,9 @@ HorizontalCell (ReportViewer)
       └─ useGridSelection        ── selected keys + Esc / Cmd-A shortcuts (scoped to hovered section)
 ```
 
+Clicking a tile toggles its selection; clicking the empty grid **background**
+(`e.target === e.currentTarget` on the canvas) clears the whole selection.
+
 State flows down from `useSectionLayouts(sectionId)`; user gestures flow back up
 through `onLayoutChange` → `commitItems` → the persisted store (forking a draft
 first when the active layout is a synthetic default).

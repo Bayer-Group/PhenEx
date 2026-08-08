@@ -294,7 +294,12 @@ function EditableSectionGrid({
   } = useGridInteraction({ items, layout: resolvedLayout, columns, rowHeight, gap, rowGap, editable: true, selection: selectionProp, scale, viewportWidth, onLayoutChange, onItemClick });
 
   return (
-    <div ref={containerRef} className={styles.grid} style={{ width: canvasWidth, height: canvasHeight }}>
+    <div
+      ref={containerRef}
+      className={styles.grid}
+      style={{ width: canvasWidth, height: canvasHeight }}
+      onClick={(e) => { if (e.target === e.currentTarget) selection.clear(); }}
+    >
       {containerWidth > 0 && items.map((item) => {
         const pos = layoutMap.get(item.key);
         if (!pos) return null;
