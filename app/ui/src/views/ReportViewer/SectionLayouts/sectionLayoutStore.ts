@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import type { ViewerEntry } from '../studyRegistryUtils';
 
+
+
+
 /**
  * Persistent store for section grid layouts.
  *
@@ -48,6 +51,38 @@ export interface SectionLayout {
   groups?: CellGroup[];
   /** Number of item columns in this grid layout (1–5). */
   columnsPerRow?: number;
+  /**
+   * Session-only working copy spawned when a (synthetic) default layout is
+   * edited. Persisted during the session so the store machinery is reused, but
+   * stripped on load so it never survives a reload unless the user saves it.
+   */
+  draft?: boolean;
+}
+
+// ── Synthetic default layouts (one per column count) ─────────────────────
+
+/** Column counts offered as always-available default grid layouts. */
+export const DEFAULT_COLUMN_OPTIONS = [1, 2, 3, 4, 5] as const;
+const DEFAULT_LAYOUT_PREFIX = '__default_';
+
+/** Id of the synthetic default layout for a given column count. */
+export function defaultLayoutId(nCols: number): string {
+  return `${DEFAULT_LAYOUT_PREFIX}${nCols}__`;
+}
+
+/** True for a synthetic default layout id (never stored in `layouts`). */
+export function isDefaultLayoutId(id: string | null): boolean {
+  return id != null && id.startsWith(DEFAULT_LAYOUT_PREFIX);
+}
+
+/** Column count encoded in a synthetic default layout id. */
+export function defaultColumnsFromId(id: string): number {
+  return Number(id.slice(DEFAULT_LAYOUT_PREFIX.length, -2)) || 1;
+}
+
+/** Human label for a default layout of `nCols` columns. */
+export function defaultLayoutName(nCols: number): string {
+  return nCols === 1 ? '1 column' : `${nCols} columns`;
 }
 
 /** Per-section persisted state. `activeLayoutId === null` ⇒ list view. */
@@ -120,10 +155,24 @@ function loadState(): PersistedState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    return typeof parsed === 'object' && parsed !== null ? (parsed as PersistedState) : {};
+    if (typeof parsed !== 'object' || parsed === null) return {};
+    return stripDrafts(parsed as PersistedState);
   } catch {
     return {};
   }
+}
+
+/** Drop unsaved draft layouts so they never survive a reload. */
+function stripDrafts(state: PersistedState): PersistedState {
+  const next: PersistedState = {};
+  for (const [id, section] of Object.entries(state)) {
+    const draft = section.layouts.find((l) => l.draft);
+    if (!draft) { next[id] = section; continue; }
+    const layouts = section.layouts.filter((l) => !l.draft);
+    const activeLayoutId = section.activeLayoutId === draft.id ? null : section.activeLayoutId;
+    next[id] = { ...section, layouts, activeLayoutId };
+  }
+  return next;
 }
 
 function saveState(state: PersistedState) {
@@ -173,7 +222,12 @@ class SectionLayoutStore {
   setActiveLayout(sectionId: string, layoutId: string | null) {
     const section = this.getSection(sectionId);
     if (section.activeLayoutId === layoutId) return;
-    this.update(sectionId, { ...section, activeLayoutId: layoutId });
+    // Switching away from an unsaved draft discards it.
+    const draft = section.layouts.find((l) => l.draft);
+    const layouts = draft && draft.id !== layoutId
+      ? section.layouts.filter((l) => !l.draft)
+      : section.layouts;
+    this.update(sectionId, { ...section, layouts, activeLayoutId: layoutId });
   }
 
   createLayout(sectionId: string, name: string, items: GridItem[], columnsPerRow = 5): string {
@@ -187,21 +241,31 @@ class SectionLayoutStore {
     return id;
   }
 
-  setColumnsPerRow(sectionId: string, layoutId: string, nCols: number, rowKeys: string[], cohortCount: number) {
+  /**
+   * Fork the active (synthetic) default into an editable draft layout carrying
+   * `items`. Any prior unsaved draft is replaced. The draft becomes active and
+   * shows a "save" prompt; it is stripped on reload unless {@link saveDraft} is
+   * called. Returns the new draft id.
+   */
+  createDraftLayout(sectionId: string, columnsPerRow: number, items: GridItem[]): string {
     const section = this.getSection(sectionId);
-    const w = Math.floor(GRID_COLUMNS / nCols);
-    const h = defaultTileRows(cohortCount);
-    const layouts = section.layouts.map((l) => {
-      if (l.id !== layoutId) return l;
-      const items = rowKeys.map((key, i) => ({
-        key,
-        x: (i % nCols) * w,
-        y: Math.floor(i / nCols) * h,
-        w,
-        h,
-      }));
-      return { ...l, columnsPerRow: nCols, items, groups: [], hiddenKeys: [] };
+    const id = `draft_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+    const savedCount = section.layouts.filter((l) => !l.draft).length;
+    const layout: SectionLayout = { id, name: `Layout ${savedCount + 1}`, items, columnsPerRow, draft: true };
+    this.update(sectionId, {
+      ...section,
+      layouts: [...section.layouts.filter((l) => !l.draft), layout],
+      activeLayoutId: id,
     });
+    return id;
+  }
+
+  /** Promote the active draft to a permanent, named layout. */
+  saveDraft(sectionId: string, layoutId: string, name: string) {
+    const section = this.getSection(sectionId);
+    const layouts = section.layouts.map((l) =>
+      l.id === layoutId ? { ...l, name: name.trim() || l.name, draft: false } : l,
+    );
     this.update(sectionId, { ...section, layouts });
   }
 
@@ -374,6 +438,10 @@ export interface UseSectionLayouts {
   descriptions: Record<string, string>;
   setActiveLayout: (layoutId: string | null) => void;
   createLayout: (name: string, items: GridItem[], columnsPerRow?: number) => string;
+  /** Fork the active default into an editable draft carrying `items`. */
+  createDraftLayout: (columnsPerRow: number, items: GridItem[]) => string;
+  /** Promote the active draft to a permanent named layout. */
+  saveDraft: (layoutId: string, name: string) => void;
   updateLayoutItems: (layoutId: string, items: GridItem[]) => void;
   renameLayout: (layoutId: string, name: string) => void;
   deleteLayout: (layoutId: string) => void;
@@ -382,7 +450,6 @@ export interface UseSectionLayouts {
   ungroup: (groupId: string) => void;
   setDisplayVariant: (rowKey: string, variantId: string) => void;
   setDescription: (key: string, description: string) => void;
-  setColumnsPerRow: (layoutId: string, nCols: number, rowKeys: string[], cohortCount: number) => void;
 }
 
 export function useSectionLayouts(sectionId: string): UseSectionLayouts {
@@ -393,6 +460,8 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
 
   const setActiveLayout = useCallback((layoutId: string | null) => store.setActiveLayout(sectionId, layoutId), [sectionId]);
   const createLayout = useCallback((name: string, items: GridItem[], columnsPerRow?: number) => store.createLayout(sectionId, name, items, columnsPerRow), [sectionId]);
+  const createDraftLayout = useCallback((columnsPerRow: number, items: GridItem[]) => store.createDraftLayout(sectionId, columnsPerRow, items), [sectionId]);
+  const saveDraft = useCallback((layoutId: string, name: string) => store.saveDraft(sectionId, layoutId, name), [sectionId]);
   const updateLayoutItems = useCallback((layoutId: string, items: GridItem[]) => store.updateLayoutItems(sectionId, layoutId, items), [sectionId]);
   const renameLayout = useCallback((layoutId: string, name: string) => store.renameLayout(sectionId, layoutId, name), [sectionId]);
   const deleteLayout = useCallback((layoutId: string) => store.deleteLayout(sectionId, layoutId), [sectionId]);
@@ -401,7 +470,6 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
   const ungroup = useCallback((groupId: string) => store.ungroup(sectionId, store.getSection(sectionId).activeLayoutId ?? '', groupId), [sectionId]);
   const setDisplayVariant = useCallback((rowKey: string, variantId: string) => store.setDisplayVariant(sectionId, rowKey, variantId), [sectionId]);
   const setDescription = useCallback((key: string, description: string) => store.setItemDescription(sectionId, key, description), [sectionId]);
-  const setColumnsPerRow = useCallback((layoutId: string, nCols: number, rowKeys: string[], cohortCount: number) => store.setColumnsPerRow(sectionId, layoutId, nCols, rowKeys, cohortCount), [sectionId]);
 
   const activeLayout = section.layouts.find((l) => l.id === section.activeLayoutId) ?? null;
   const hiddenKeys = useMemo(() => new Set(store.getHiddenKeys(sectionId, section.activeLayoutId)), [sectionId, section]);
@@ -419,6 +487,8 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
     descriptions,
     setActiveLayout,
     createLayout,
+    createDraftLayout,
+    saveDraft,
     updateLayoutItems,
     renameLayout,
     deleteLayout,
@@ -427,7 +497,6 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
     ungroup,
     setDisplayVariant,
     setDescription,
-    setColumnsPerRow,
   };
 }
 
@@ -472,29 +541,4 @@ export function exportSectionLayouts(): PersistedState {
 /** Replace the entire section-layout store with imported data. */
 export function importSectionLayouts(state: PersistedState): void {
   store.replaceState(state ?? {});
-}
-
-// ── Session-only editing state (not persisted) ───────────────────────────
-
-const editingSet = new Set<string>();
-const editingListeners = new Set<() => void>();
-
-function notifyEditingListeners() {
-  editingListeners.forEach((l) => l());
-}
-
-export function setLayoutEditing(sectionId: string, editing: boolean): void {
-  if (editing) editingSet.add(sectionId);
-  else editingSet.delete(sectionId);
-  notifyEditingListeners();
-}
-
-/** Returns [isEditing, setEditing] for the given section's layout edit mode. */
-export function useLayoutEditing(sectionId: string): [boolean, (v: boolean) => void] {
-  const isEditing = useSyncExternalStore(
-    (listener) => { editingListeners.add(listener); return () => editingListeners.delete(listener); },
-    () => editingSet.has(sectionId),
-  );
-  const setEditing = useCallback((v: boolean) => setLayoutEditing(sectionId, v), [sectionId]);
-  return [isEditing, setEditing];
 }

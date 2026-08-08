@@ -2,7 +2,7 @@
 
 .hTrack {
   position: absolute;
-  bottom: 4px;
+  bottom: 0px;
   left: 6px;
   right: 0px; /* avoid overlap with vertical track */
   height: 8px;

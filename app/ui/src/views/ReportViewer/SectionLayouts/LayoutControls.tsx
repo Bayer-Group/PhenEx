@@ -1,8 +1,13 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import styles from './LayoutControls.module.css';
-import { useSectionLayouts, buildDefaultLayoutItems, useLayoutEditing } from './sectionLayoutStore';
-
-const COLUMN_OPTIONS = [1, 2, 3, 4, 5] as const;
+import {
+  useSectionLayouts,
+  DEFAULT_COLUMN_OPTIONS,
+  defaultLayoutId,
+  defaultLayoutName,
+  isDefaultLayoutId,
+  defaultColumnsFromId,
+} from './sectionLayoutStore';
 
 interface LayoutControlsProps {
   /** Stable section id (same one passed to SectionCellContent). */
@@ -16,30 +21,25 @@ interface LayoutControlsProps {
 }
 
 /**
- * Floating dropdown shown on a focused section cell. Mirrors the outline
- * panel's right-click menu: switch between the List view and named grid
- * layouts, create a new grid, or delete an existing one.
+ * Floating dropdown shown on a focused section cell. Lets the user switch
+ * between the always-available default views (1–5 columns) and their saved
+ * layouts. When a default is edited a draft is spawned in the background; this
+ * control then surfaces a prominent "save layout?" panel to name and keep it.
  */
-export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount, defaultColumns = 3 }: LayoutControlsProps) => {
-  const { layouts, activeLayout, activeLayoutId, setActiveLayout, createLayout, renameLayout, deleteLayout, setColumnsPerRow } =
+export const LayoutControls = memo(({ sectionId, defaultColumns = 3 }: LayoutControlsProps) => {
+  const { layouts, activeLayout, activeLayoutId, setActiveLayout, saveDraft, renameLayout, deleteLayout } =
     useSectionLayouts(sectionId);
   const [open, setOpen] = useState(false);
-  const [isEditing, setEditing] = useLayoutEditing(sectionId);
+  const [draftName, setDraftName] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Keep latest values accessible without adding them as effect deps.
-  const liveRef = useRef({ activeLayout, rowKeys, cohortCount, setColumnsPerRow });
-  liveRef.current = { activeLayout, rowKeys, cohortCount, setColumnsPerRow };
-  const mountedRef = useRef(false);
+  const draft = activeLayout?.draft ? activeLayout : null;
+  const savedLayouts = layouts.filter((l) => !l.draft);
 
+  // Seed the name field whenever a new draft becomes active.
   useEffect(() => {
-    if (!mountedRef.current) { mountedRef.current = true; return; }
-    if (isEditing) return;
-    const { activeLayout: al, rowKeys: rk, cohortCount: cc, setColumnsPerRow: fn } = liveRef.current;
-    if (!al) return;
-    fn(al.id, defaultColumns, rk, cc);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultColumns, isEditing]);
+    if (draft) setDraftName(draft.name);
+  }, [draft?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!open) return;
@@ -55,13 +55,21 @@ export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount, defaultCo
     };
   }, [open]);
 
-  const triggerLabel = activeLayout?.name ?? 'Default';
+  // Column count of the active default (for the checkmark), else the responsive one.
+  const activeDefaultCols = isDefaultLayoutId(activeLayoutId)
+    ? defaultColumnsFromId(activeLayoutId!)
+    : defaultColumns;
+  const onDefault = draft == null && savedLayouts.every((l) => l.id !== activeLayoutId);
 
-  const handleNewGrid = () => {
-    const name = `Grid ${layouts.length + 1}`;
-    const id = createLayout(name, buildDefaultLayoutItems(rowKeys, cohortCount, defaultColumns), defaultColumns);
-    setActiveLayout(id);
-    setOpen(false);
+  const triggerLabel = draft?.name ?? activeLayout?.name ?? defaultLayoutName(activeDefaultCols);
+
+  const handleSave = () => {
+    if (draft) saveDraft(draft.id, draftName);
+  };
+
+  // Discard the draft and revert to the default (1–5 col) grid it derived from.
+  const handleCancel = () => {
+    if (draft) setActiveLayout(defaultLayoutId(draft.columnsPerRow ?? defaultColumns));
   };
 
   const handleRename = (layoutId: string, current: string) => {
@@ -69,102 +77,90 @@ export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount, defaultCo
     if (name) renameLayout(layoutId, name);
   };
 
-  const handleDelete = (layoutId: string) => {
-    deleteLayout(layoutId);
-  };
-
   return (
     <div className={styles.container} ref={containerRef}>
-      {activeLayout && (
-        <select
-          className={styles.colSelect}
-          value={activeLayout.columnsPerRow ?? 3}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => {
-            e.stopPropagation();
-            setColumnsPerRow(activeLayout.id, Number(e.target.value), rowKeys, cohortCount);
-          }}
-          title="Columns per row"
-        >
-          {COLUMN_OPTIONS.map((n) => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-        </select>
-      )}
-      {activeLayout && activeLayout.id !== '__default__' && (
+      <div className={styles.topRow}>
         <button
           type="button"
-          className={`${styles.lockBtn} ${isEditing ? styles.lockBtnLocked : ''}`}
-          onClick={(e) => { e.stopPropagation(); setEditing(!isEditing); }}
-          title={isEditing ? 'Lock layout: exit drag/resize mode' : 'Unlock layout: enable drag and resize'}
+          className={styles.trigger}
+          onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
         >
-          {isEditing ? '🔓' : '🔒'}
+          <span className={styles.triggerLabel}>{triggerLabel}</span>
+          <span className={styles.caret}>▾</span>
         </button>
-      )}
-      <button
-        type="button"
-        className={styles.trigger}
-        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-      >
-        <span className={styles.triggerLabel}>{triggerLabel}</span>
-        <span className={styles.caret}>▾</span>
-      </button>
 
-      {open && (
-        <div className={styles.menu} onClick={(e) => e.stopPropagation()}>
-          <div className={`${styles.item} ${activeLayoutId === null ? styles.itemActive : ''}`}>
-            <span className={styles.check}>{activeLayoutId === null ? '●' : ''}</span>
-            <button
-              type="button"
-              className={styles.itemLabel}
-              style={{ border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', font: 'inherit', color: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-              onClick={() => { setActiveLayout(null); setOpen(false); }}
-            >
-              Default
-            </button>
+        {open && (
+          <div className={styles.menu} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.menuHeader}>Default views</div>
+            {DEFAULT_COLUMN_OPTIONS.map((n) => {
+              const active = onDefault && activeDefaultCols === n;
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  className={`${styles.item} ${active ? styles.itemActive : ''}`}
+                  onClick={() => { setActiveLayout(defaultLayoutId(n)); setOpen(false); }}
+                >
+                  <span className={styles.check}>{active ? '●' : ''}</span>
+                  <span className={styles.itemLabel}>{defaultLayoutName(n)}</span>
+                </button>
+              );
+            })}
+
+            {savedLayouts.length > 0 && <div className={styles.divider} />}
+            {savedLayouts.map((l) => (
+              <div key={l.id} className={`${styles.item} ${activeLayoutId === l.id ? styles.itemActive : ''}`}>
+                <span className={styles.check}>{activeLayoutId === l.id ? '●' : ''}</span>
+                <button
+                  type="button"
+                  className={styles.itemLabelBtn}
+                  onClick={() => { setActiveLayout(l.id); setOpen(false); }}
+                  onDoubleClick={() => handleRename(l.id, l.name)}
+                  title="Click to switch, double-click to rename"
+                >
+                  {l.name}
+                </button>
+                <button
+                  type="button"
+                  className={styles.itemAction}
+                  onClick={(e) => { e.stopPropagation(); handleRename(l.id, l.name); }}
+                  title="Rename layout"
+                >
+                  ✎
+                </button>
+                <button
+                  type="button"
+                  className={styles.itemAction}
+                  onClick={(e) => { e.stopPropagation(); deleteLayout(l.id); }}
+                  title="Delete layout"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
-          {layouts.length > 0 && <div className={styles.divider} />}
-          {layouts.map((l) => (
-            <div key={l.id} className={`${styles.item} ${activeLayoutId === l.id ? styles.itemActive : ''}`}>
-              <span className={styles.check}>{activeLayoutId === l.id ? '●' : ''}</span>
-              <button
-                type="button"
-                className={styles.itemLabel}
-                style={{ border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', font: 'inherit', color: 'inherit', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                onClick={() => { setActiveLayout(l.id); setOpen(false); }}
-                onDoubleClick={() => handleRename(l.id, l.name)}
-                title="Click to switch, double-click to rename"
-              >
-                {l.name}
-              </button>
-              <button
-                type="button"
-                className={styles.itemAction}
-                onClick={(e) => { e.stopPropagation(); handleRename(l.id, l.name); }}
-                title="Rename layout"
-              >
-                ✎
-              </button>
-              <button
-                type="button"
-                className={styles.itemAction}
-                onClick={(e) => { e.stopPropagation(); handleDelete(l.id); }}
-                title="Delete layout"
-              >
-                ×
-              </button>
-            </div>
-          ))}
+        )}
+      </div>
 
-          <div className={styles.divider} />
-
-          <button
-            type="button"
-            className={`${styles.item} ${styles.addItem}`}
-            onClick={handleNewGrid}
-          >
-            <span className={styles.check} />
-            <span className={styles.itemLabel}>＋ New grid layout</span>
+      {draft && (
+        <div className={styles.savePanel} onClick={(e) => e.stopPropagation()}>
+          <span className={styles.savePrompt}>Save layout?</span>
+          <input
+            className={styles.saveInput}
+            value={draftName}
+            autoFocus
+            onChange={(e) => setDraftName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); handleSave(); }
+              else if (e.key === 'Escape') { e.preventDefault(); handleCancel(); }
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          />
+          <button type="button" className={styles.saveBtn} onClick={handleSave}>
+            Save
+          </button>
+          <button type="button" className={styles.cancelBtn} onClick={handleCancel}>
+            Cancel
           </button>
         </div>
       )}

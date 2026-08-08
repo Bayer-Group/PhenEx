@@ -4,7 +4,15 @@ import { type BarChartSpacer } from '../GraphsAndTables/RowRenderers/barChartSha
 import { type SequentialRow } from '../studyRegistryUtils';
 import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/OutcomesChart';
 import { SectionGridContent } from './SectionGridContent';
-import { useSectionLayouts, buildDefaultLayoutItems, type SectionLayout } from './sectionLayoutStore';
+import {
+  useSectionLayouts,
+  buildDefaultLayoutItems,
+  defaultLayoutId,
+  defaultLayoutName,
+  isDefaultLayoutId,
+  defaultColumnsFromId,
+  type SectionLayout,
+} from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -29,20 +37,26 @@ export interface SectionCellContentProps {
  */
 export const SectionCellContent = memo<SectionCellContentProps>((props) => {
   const { sectionId, rows, cohortData, defaultColumns = 3, ...rest } = props;
-  const { activeLayout, hiddenKeys } = useSectionLayouts(sectionId);
+  const { activeLayout, activeLayoutId, hiddenKeys } = useSectionLayouts(sectionId);
 
   const visibleRows = hiddenKeys.size > 0 ? rows.filter((r) => !hiddenKeys.has(r.name)) : rows;
 
+  // When a default view is active its id encodes the column count; otherwise
+  // fall back to the responsive default. Named/draft layouts ignore this.
+  const activeColumns = isDefaultLayoutId(activeLayoutId)
+    ? defaultColumnsFromId(activeLayoutId!)
+    : defaultColumns;
+
   const defaultLayout = useMemo<SectionLayout>(
     () => ({
-      id: '__default__',
-      name: 'Default',
-      items: buildDefaultLayoutItems(rows.map((r) => r.name), cohortData.length, defaultColumns),
-      columnsPerRow: defaultColumns,
+      id: defaultLayoutId(activeColumns),
+      name: defaultLayoutName(activeColumns),
+      items: buildDefaultLayoutItems(rows.map((r) => r.name), cohortData.length, activeColumns),
+      columnsPerRow: activeColumns,
     }),
-    // Rebuild only when the row set, cohort count, or responsive columns change.
+    // Rebuild only when the row set, cohort count, or active column count change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows.map((r) => r.name).join('\0'), cohortData.length, defaultColumns],
+    [rows.map((r) => r.name).join('\0'), cohortData.length, activeColumns],
   );
 
   const layout = activeLayout ?? defaultLayout;

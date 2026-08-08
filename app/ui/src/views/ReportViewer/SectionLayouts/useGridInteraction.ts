@@ -132,7 +132,7 @@ export function useGridInteraction({
 
   const layoutMap = useMemo(() => toMap(effectiveLayout), [effectiveLayout]);
 
-  const cellWidth = viewportWidth > 0 ? (viewportWidth - gap * (columns - 1)) / columns : 0;
+  const cellWidth = viewportWidth > 0 ? (viewportWidth - gap * (columns +1)) / columns : 0;
   const colSpan = cellWidth + gap;
   // Vertical pitch is the bare row height; the gutter (rowGap) is a fixed inset
   // subtracted from each tile's rendered height, so it never accumulates across

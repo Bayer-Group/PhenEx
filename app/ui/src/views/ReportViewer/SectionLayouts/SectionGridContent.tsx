@@ -11,7 +11,7 @@ import { MultiSelectControls } from './MultiSelectControls';
 import { useGridSelection } from './GridSelection';
 import { useMultiSelectActions } from './useMultiSelectActions';
 import { restackByCohortDelta } from './restackLayout';
-import { type SectionLayout, type GridItem, defaultTileRows, useSectionLayouts, lockedChartHeight, useLayoutEditing } from './sectionLayoutStore';
+import { type SectionLayout, type GridItem, defaultTileRows, useSectionLayouts, lockedChartHeight, isDefaultLayoutId } from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -48,6 +48,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
 }) => {
   const {
     updateLayoutItems,
+    createDraftLayout,
     groups,
     displayVariants,
     descriptions,
@@ -58,9 +59,10 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     toggleItemVisibility,
   } = useSectionLayouts(sectionId);
 
-  const [isEditing] = useLayoutEditing(sectionId);
-  // Default layout is always locked; named layouts can be unlocked via the lock button.
-  const editable = layout.id !== '__default__' && isEditing;
+  // Every layout is directly editable (free canvas). Editing a synthetic
+  // default forks a draft (see `commitItems`), so there is no lock/unlock step.
+  const editable = true;
+  const isDefault = isDefaultLayoutId(layout.id);
 
   const rowByKey = useMemo(() => {
     const map = new Map<string, SequentialRow>();
@@ -132,9 +134,27 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
   const containerRef = useRef<HTMLDivElement>(null);
   const selection = useGridSelection(itemKeys, true, containerRef);
 
-  const setLayoutItems = useCallback((items: GridItem[]) => {
-    updateLayoutItems(layout.id, items);
-  }, [updateLayoutItems, layout.id]);
+  // A geometry edit on a synthetic default forks it into an editable draft;
+  // edits to a real (saved/draft) layout write straight through.
+  const commitItems = useCallback((items: GridItem[]) => {
+    if (isDefault) createDraftLayout(layout.columnsPerRow ?? 3, items);
+    else updateLayoutItems(layout.id, items);
+  }, [isDefault, createDraftLayout, updateLayoutItems, layout.id, layout.columnsPerRow]);
+
+  // Structural edits (group/hide) need a real layout id: fork first if needed.
+  const ensureDraft = useCallback(() => {
+    if (isDefault) createDraftLayout(layout.columnsPerRow ?? 3, layout.items);
+  }, [isDefault, createDraftLayout, layout.columnsPerRow, layout.items]);
+
+  const createGroupForked = useCallback((memberKeys: string[], height: number) => {
+    ensureDraft();
+    return createGroup(memberKeys, height);
+  }, [ensureDraft, createGroup]);
+
+  const toggleItemVisibilityForked = useCallback((key: string) => {
+    ensureDraft();
+    toggleItemVisibility(key);
+  }, [ensureDraft, toggleItemVisibility]);
 
   const actions = useMultiSelectActions({
     selection,
@@ -146,32 +166,32 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     columnsPerRow: layout.columnsPerRow,
     editable,
     containerRef,
-    createGroup,
+    createGroup: createGroupForked,
     ungroup,
     setDisplayVariant,
-    toggleItemVisibility,
-    setLayoutItems,
+    toggleItemVisibility: toggleItemVisibilityForked,
+    setLayoutItems: commitItems,
   });
 
-  const handleLayoutChange = useCallback((items: GridItem[]) => {
-    updateLayoutItems(layout.id, items);
-  }, [updateLayoutItems, layout.id]);
+  const handleLayoutChange = commitItems;
 
   // Tiles react only to a *change* in the cohort count. On such a change every
   // tile keeps its own (possibly manually resized) height and is grown/shrunk
   // by the per-cohort row delta, so each cell holds its vertical scale relative
   // to the 1-cohort baseline. Between changes the stored layout is untouched,
-  // leaving manual moves and resizes free.
+  // leaving manual moves and resizes free. Synthetic defaults are rebuilt from
+  // the current cohort count on render, so they need no restacking here.
   const prevCohortCountRef = useRef(cohortData.length);
   useEffect(() => {
     const prev = prevCohortCountRef.current;
     const next = cohortData.length;
     if (prev === next) return;
     prevCohortCountRef.current = next;
+    if (isDefault) return;
     const deltaRows = defaultTileRows(next) - defaultTileRows(prev);
     if (deltaRows === 0) return;
     updateLayoutItems(layout.id, restackByCohortDelta(layout.items, deltaRows));
-  }, [cohortData.length, layout.id, layout.items, updateLayoutItems]);
+  }, [cohortData.length, isDefault, layout.id, layout.items, updateLayoutItems]);
 
   const handleItemClick = useCallback((key: string) => {
     const row = rowByKey.get(key);

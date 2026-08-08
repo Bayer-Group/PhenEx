@@ -186,11 +186,11 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
 
     return (
       <div ref={ref} className={styles.cell}>
-            <div className={`${styles.breadcrumbHeader} ${isScrolled ? styles.breadcrumbHeaderVisible : ''}`}>
+            <div className={`${styles.breadcrumbHeader}`}>
               <BreadcrumbTitle
                 entries={entries}
                 currentIndex={entry.index}
-                studyTitle={''}
+                studyTitle={studyTitle}
                 onNavigate={onNavigate}
               />
             </div>
@@ -213,11 +213,11 @@ const HorizontalCellInner = forwardRef<HTMLDivElement, HorizontalCellProps>(
               onClick={(e) => { e.stopPropagation(); if (!isFocused) onNavigate(entry.index); }}
             >
 
-              <div
+              {/* <div
                 className={`${styles.cardTitle} ${isSection || isCategory ? styles.cardTitleSection : ''}`}
               >
                 {title=='study_info' ? '' : title}
-              </div>
+              </div> */}
               <div className={isSection ? styles.cardContentSection : styles.cardContent}>
                 {renderContent()}
               </div>

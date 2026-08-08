@@ -43,7 +43,7 @@
   z-index: 10;
   background: var(--background_color_light, #fff);
   padding: 4px 0 2px;
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
   transition: opacity 0.15s;
   font-family: "IBMPlexSans-bold", sans-serif;
@@ -55,10 +55,6 @@
   background: linear-gradient(to bottom, var(--background_color_light) 40px, transparent 60px);
 }
 
-.breadcrumbHeaderVisible {
-  opacity: 1;
-  pointer-events: auto;
-}
 
 /* these are the top right controls*/
 .controls{

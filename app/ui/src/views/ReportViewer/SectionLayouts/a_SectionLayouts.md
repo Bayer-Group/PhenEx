@@ -1,17 +1,21 @@
 # Section Layouts
 
 A grid-layout system for report **sections**. A section is a group of related
-chart rows (e.g. "Demographics", "Diagnoses"). By default a section renders as a
-vertical **list**, but it can also be rendered as one of several named **grid
-layouts** where each row is placed as a resizable, draggable tile on an
-n-column grid. All layout choices are remembered across page reloads.
+chart rows (e.g. "Demographics", "Diagnoses"). Every section renders as a
+resizable, draggable **grid**. Five **default views** (1–5 columns) are always
+available and directly editable; the moment a default is edited it forks into a
+**draft** that the user can name and **save** as a permanent layout. All saved
+layout choices are remembered across page reloads.
 
 This document is both a human-oriented overview and a development reference. Use
 it to understand the data model, the persistence ("memory") system, how tiles
 are sized/positioned/resized, and how the layout controls tie it together.
 
 # Purpose
-We have two states, the locked state and the unlocked state
+Every grid is directly editable (free canvas — no lock step). The five default
+views are generated on the fly; editing one spawns a draft in the background
+with a prominent "save layout?" prompt. If the user saves it, it becomes a named
+layout; otherwise it is discarded on the next reload.
 
 ---
 
@@ -24,8 +28,10 @@ We have two states, the locked state and the unlocked state
 | **Grid** | An n-column arrangement. Each tile spans a whole number of columns and rows. Contrast with the **list** (single vertical stack). |
 | **Tile / cell** | One `GridItem` placement. Renders either a single row or a group of rows. |
 | **Group** | A tile that stacks several member rows inside it. Members are removed from the top-level flow and rendered inside the group card. |
-| **Layout** | A named configuration: item placements + hidden keys + groups + column count. `activeLayoutId === null` means the list view. |
-| **Locked vs. editable** | Locked view has fixed, content-derived heights and no drag/resize. Editable mode adds drag headers and resize grips. The default layout is always locked. |
+| **Layout** | A named configuration: item placements + hidden keys + groups + column count. Saved layouts live in `layouts`; the five defaults and any in-progress draft are synthetic/transient. |
+| **Default view** | One of five always-available synthetic grid layouts (1–5 columns), keyed by id `__default_<n>__`. Never stored in `layouts`; regenerated from the current rows/cohort count. |
+| **Draft** | The session-only working copy spawned when a default view is edited (`SectionLayout.draft === true`). Shown with a "save layout?" prompt; stripped on reload unless saved. |
+| **Editable free canvas** | Every grid is directly draggable/resizable — there is no lock/unlock step. Tiles hold an arbitrary `(x, y)` and commit raw (no reflow). |
 | **Display variant** | An alternate chart type for a row (e.g. numeric → boxplot vs. table). Stored per row key. |
 
 Key files:
@@ -63,12 +69,13 @@ interface SectionLayout {      // one named layout
   hiddenKeys?: string[];       // hidden in this layout
   groups?: CellGroup[];
   columnsPerRow?: number;      // 1–5
+  draft?: boolean;             // session-only working copy (stripped on load)
 }
 
 interface SectionState {       // everything persisted for one section
-  layouts: SectionLayout[];
-  activeLayoutId: string | null;         // null ⇒ list view
-  listHiddenKeys?: string[];             // hidden while in list view
+  layouts: SectionLayout[];              // saved layouts (+ at most one live draft)
+  activeLayoutId: string | null;         // null ⇒ responsive default; `__default_<n>__` ⇒ that default
+  listHiddenKeys?: string[];             // legacy: hidden keys carried per section
   displayVariants?: Record<string,string>; // row key → variant id
   descriptions?: Record<string,string>;    // row key → description text
 }
@@ -110,21 +117,38 @@ route through `getSectionLayoutId`.
 
 - Hook: `useSectionLayouts(sectionId)` returns the current layout data plus
   memoized action callbacks (`setActiveLayout`, `createLayout`,
-  `updateLayoutItems`, `renameLayout`, `deleteLayout`, `toggleItemVisibility`,
-  `createGroup`, `ungroup`, `setDisplayVariant`, `setDescription`,
-  `setColumnsPerRow`).
+  `createDraftLayout`, `saveDraft`, `updateLayoutItems`, `renameLayout`,
+  `deleteLayout`, `toggleItemVisibility`, `createGroup`, `ungroup`,
+  `setDisplayVariant`, `setDescription`).
 - Imperative (outside React render, e.g. building menus): `getSectionState`,
   `sectionLayoutActions`, `getHiddenKeys`, `subscribeSectionLayouts`.
 - Every mutation goes through the private `update()` → `saveState()` → `notify()`
   pipeline, so persistence and re-render are automatic. Do **not** mutate
   `SectionState` objects in place; the store always replaces with a new object.
 
-### Editing mode is NOT persisted
+### Default views & drafts (the edit-to-save flow)
 
-Whether a layout is currently unlocked for drag/resize is *session-only* state,
-held in a separate in-memory `Set` (`editingSet`) and exposed via
-`useLayoutEditing(sectionId) → [isEditing, setEditing]`. It intentionally does
-not survive reload — you always reopen a report in the clean, locked view.
+There is no persisted "list" view any more. When no saved layout is active,
+`activeLayoutId` is either `null` (use the responsive default column count) or
+`__default_<n>__` (an explicit 1–5 column default). [SectionCellContent](SectionCellContent.tsx)
+builds the synthetic default layout for the active column count on every render,
+so it always matches the current rows/cohort count and is never stored.
+
+Because every grid is directly editable, the first geometry/structural edit of a
+default **forks a draft**: `createDraftLayout(columns, items)` pushes a
+`{ draft: true }` layout into `layouts`, makes it active, and replaces any prior
+unsaved draft. [LayoutControls](LayoutControls.tsx) then shows a prominent
+"save layout?" panel (name field + Save). `saveDraft(id, name)` clears the draft
+flag and names it — now it is a permanent saved layout. Switching away from an
+unsaved draft (`setActiveLayout`) discards it, and `loadState()` runs
+`stripDrafts()` so a draft never survives a reload unless saved.
+
+### Editing is always on (no lock)
+
+There is no session-only lock/unlock state. Every layout renders as the editable
+free canvas; the fork-on-edit mechanism above replaces the old "unlock a named
+layout" step. The masonry (content-sized, read-only) renderer still exists in
+[SectionGrid](SectionGrid.tsx) but is no longer selected.
 
 ### Import / export
 
@@ -153,8 +177,9 @@ buildDefaultLayoutItems(keys, cohortCount = 1, nCols = 3): GridItem[]
   the list/locked rendering of that row — no visual jump when switching views.
 - `LayoutControls.handleNewGrid()` calls `buildDefaultLayoutItems(rowKeys,
   cohortCount, defaultColumns)` then `createLayout(...)`.
-- `store.setColumnsPerRow()` regenerates items with the same flow-pack formula
-  and **clears** `groups` and `hiddenKeys` (a column change is a full reflow).
+- Editing a default forks a draft carrying the current items; picking a
+  different default (`setActiveLayout('__default_<n>__')`) simply regenerates a
+  fresh flow-packed grid at that column count.
 
 New group tiles are placed full-width (`w = GRID_COLUMNS`) directly below all
 existing content (`y = max(item.y + item.h)`), so grouping never overlaps.
@@ -207,10 +232,10 @@ to a padding-only sliver.
 
 ## 6. Positioning & resizing (editable free canvas)
 
-When a named layout is unlocked, the grid becomes a **free canvas**: every item
-holds an arbitrary `(x, y)` position (in grid cells) that is dragged, resized,
-and saved verbatim. Initial/locked rendering is unchanged (see §5, masonry) —
-only the unlocked editable view uses the canvas. All pointer handling lives in
+Every grid is a **free canvas** (there is no lock step): each item holds an
+arbitrary `(x, y)` position (in grid cells) that is dragged, resized, and saved
+verbatim. Editing a synthetic default forks a draft first (see §3); thereafter
+edits write straight through. All pointer handling lives in
 [useGridInteraction.ts](useGridInteraction.ts): it converts pixel deltas to
 cell deltas, keeps a live **draft** during the gesture, and commits **raw** on
 pointer-up. There is **no collision resolution, no reflow, and no drop hints** —
@@ -287,21 +312,21 @@ section cell. It mirrors the outline panel's right-click menu.
 
 It offers:
 
-- **Column selector** (`COLUMN_OPTIONS = [1..5]`) — changing it calls
-  `setColumnsPerRow`, which reflows the active layout (full flow-pack, groups &
-  hidden keys cleared).
-- **Lock / unlock button** — toggles `useLayoutEditing` (session-only). Only
-  shown for real layouts, never the `__default__` layout. 🔒 = locked, 🔓 =
-  editable.
-- **Layout menu** — switch to List (`setActiveLayout(null)`) or a named grid,
-  create a **New grid** (`Grid N` via `buildDefaultLayoutItems`), rename
-  (`window.prompt`), or delete a layout.
+- **Default views** (`DEFAULT_COLUMN_OPTIONS = [1..5]`) — selecting one calls
+  `setActiveLayout('__default_<n>__')`, switching to a freshly flow-packed grid
+  at that column count (this replaces the old separate columns dropdown).
+- **Saved layouts** — switch to, rename (`window.prompt` or double-click), or
+  delete a saved layout.
+- **Save panel** — shown only while a draft is active (below the dropdown):
+  a name field + a Save button on a `--color-accent-bright` background with
+  white text. Clicking Save or pressing Enter calls `saveDraft`. A **Cancel**
+  button (or Escape) discards the draft and reverts to the default (1–5 col)
+  grid it was derived from via `setActiveLayout(defaultLayoutId(columns))`.
 
 `defaultColumns` is a *responsive* value: `useResponsiveColumns` maps the card's
 measured width to a column count (breakpoints roughly 500 / 800 / 1000 / 1300
-px → 1–5 columns). A responsive change re-runs `setColumnsPerRow` **only while
-locked** (an effect skips it during active editing so it never fights a user's
-manual layout).
+px → 1–5 columns). It seeds the `null` (responsive) default; once the user picks
+an explicit default or edits, that choice sticks.
 
 ---
 
@@ -309,13 +334,13 @@ manual layout).
 
 ```
 HorizontalCell (ReportViewer)
-└─ SectionCellContent            ── wrapper; always grid, seeds a default if none
-   └─ SectionGridContent         ── orchestrator: selection, visibility, actions
-      ├─ LayoutControls          ── switch / create / lock / column count
+└─ SectionCellContent            ── wrapper; always grid; builds the active default (1–5 col) if no saved/draft layout is active
+   └─ SectionGridContent         ── orchestrator: selection, visibility, actions; forks a draft on first edit of a default
+      ├─ LayoutControls          ── default views (1–5) / saved layouts / draft "save layout?" panel
       ├─ ZoomableSectionGrid     ── pan/zoom viewport (usePanZoom + scrollbar + scrubber)
       │  └─ SectionGrid          ── chooser:
-      │      ├─ MasonrySectionGrid  ──   locked: content-sized columns, read-only
-      │      └─ EditableSectionGrid ──   editable: free canvas via useGridInteraction()
+      │      ├─ MasonrySectionGrid  ──   content-sized, read-only (retained, no longer selected)
+      │      └─ EditableSectionGrid ──   editable: free canvas via useGridInteraction() (always used)
       │          └─ (free-positioned tiles + resize grips)
       ├─ GroupCard               ── renders a group tile's stacked members
       │   └─ SectionRowRenderer  ── dispatches to the right chart renderer
@@ -325,7 +350,8 @@ HorizontalCell (ReportViewer)
 ```
 
 State flows down from `useSectionLayouts(sectionId)`; user gestures flow back up
-through `onLayoutChange` → `updateLayoutItems` → the persisted store.
+through `onLayoutChange` → `commitItems` → the persisted store (forking a draft
+first when the active layout is a synthetic default).
 
 ---
 
@@ -355,9 +381,12 @@ pointerup ─────────────► commit(draft) verbatim  (no
   through `update()` so `saveState`/`notify` fire.
 - **Free canvas: no collision resolution.** Drag/resize commit raw positions;
   overlaps are allowed and positions (incl. negative) are persisted as-is.
-- **Editing mode is ephemeral** (session `Set`), deliberately not persisted.
-- **Column change is destructive to groups/hidden keys** — `setColumnsPerRow`
-  regenerates items and clears both. Warn users if you surface it elsewhere.
+- **Editing is always on** — no lock/unlock state. The first edit of a default
+  view forks a session-only **draft** (`SectionLayout.draft`), surfaced by the
+  "save layout?" panel; drafts are stripped on load unless saved.
+- **Default views are synthetic** (`__default_<n>__`) and never stored — they are
+  rebuilt from the current rows/cohort count. Only saved layouts and the live
+  draft live in `layouts`.
 - **Height on resize is floored by `minHMap`**; supply an accurate minimum span
   per key or tiles can be shrunk below their content.
 - Persistence is best-effort: `localStorage` failures are swallowed, so don't
