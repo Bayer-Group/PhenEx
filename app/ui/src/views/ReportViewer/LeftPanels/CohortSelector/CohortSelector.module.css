@@ -80,6 +80,43 @@
 
 /* ── LegendItem (dot + labels) ───────────────────────────────────────── */
 
+.groupRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 5px;
+  margin-left: var(--left_panel_margin_left, 0px);
+  margin-right: var(--left_panel_margin_right, 0px);
+  border-radius: 8px;
+  cursor: default;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.groupRow:hover {
+  background-color: var(--background_color_dark, #f0f0f0);
+}
+
+.groupRowLabel {
+  font-size: var(--font_size_items, 11px);
+  font-weight: 700;
+  color: var(--text_color_notfocus, #333);
+  flex: 1;
+  min-width: 0;
+}
+
+.groupPopover {
+  width: 280px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background-color: var(--background_color_dark, #f0f0f0);
+  border: 1px solid var(--line-color, #ddd);
+  border-radius: 10px;
+  padding: 6px 0 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  font-family: "IBMPlexSans-regular", sans-serif;
+}
+
 .legendGroup {
   display: flex;
   flex-direction: column;

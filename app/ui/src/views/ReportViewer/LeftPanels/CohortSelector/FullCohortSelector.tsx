@@ -49,6 +49,10 @@ export const FullCohortSelector: FC<FullCohortSelectorProps> = ({
 
   return (
     <div className={styles.container}>
+        <div className={styles.topHeaderLabel}>
+            Results Explorer
+          </div>
+
       <div ref={scrollRegionRef} className={styles.scrollRegion}>
         <div className={`${styles.actionBarRegion} ${showFloatingActions ? styles.actionBarRegionVisible : ''}`}>
           <CohortActionBar

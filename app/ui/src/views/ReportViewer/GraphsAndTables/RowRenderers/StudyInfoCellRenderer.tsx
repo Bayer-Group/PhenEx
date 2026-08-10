@@ -9,7 +9,6 @@ interface StudyInfoCellRendererProps {
 export const StudyInfoCellRenderer: FC<StudyInfoCellRendererProps> = ({ title, description }) => {
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>{title}</h1>
       {description && <div className={styles.description} dangerouslySetInnerHTML={{ __html: description }} />}
     </div>
   );

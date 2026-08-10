@@ -10,6 +10,15 @@
   border-right: var(--border);
 }
 
+.topHeaderLabel{
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: 24px;
+  line-height: 1.2;
+  color: black;
+  padding-top:10px;
+  padding-bottom:10px;
+  padding-left:20px;
+}
 /* .tabRegion{
   position: absolute;
   top: 0;
