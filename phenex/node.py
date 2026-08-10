@@ -118,8 +118,8 @@ class Node:
                 f"Duplicate node found: the node '{child.name}' has already been added to the list of children."
             )
 
-        # Check for circular dependencies: ensure that self is not already a dependency of child
-        if self in child.dependencies:
+        # Check for circular dependencies: ensure that self is not already a dependency of child.
+        if any(dep is self for dep in child.dependencies):
             raise ValueError(
                 f"Circular dependency detected: adding '{child.name}' as a child of '{self.name}' "
                 f"would create a circular dependency because '{self.name}' is already a dependency of '{child.name}'."
