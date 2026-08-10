@@ -52,7 +52,9 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
 
   const computePopoverStyle = useCallback((anchorEl: HTMLElement): React.CSSProperties => {
     const rect = anchorEl.getBoundingClientRect();
-    const top = Math.max(8, Math.min(rect.top, window.innerHeight - 300));
+    const maxHeight = Math.min(window.innerHeight * 0.6, window.innerHeight - 16);
+    const desiredTop = rect.top - 0;
+    const top = Math.max(8, Math.min(desiredTop, window.innerHeight - maxHeight - 8));
     return { position: 'fixed', top, left: rect.right + 8, zIndex: 9999 };
   }, []);
 
@@ -225,7 +227,7 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
         return (
           <div
             key={group.parent}
-            className={styles.groupRow}
+            className={`${styles.groupRow}${hoveredGroup?.gi === gi ? ` ${styles.groupRowActive}` : ''}`}
             onMouseEnter={(e) => handleGroupMouseEnter(gi, e.currentTarget)}
             onMouseLeave={handleGroupMouseLeave}
             onContextMenu={(e) => handleGroupContextMenu(e, gi)}
