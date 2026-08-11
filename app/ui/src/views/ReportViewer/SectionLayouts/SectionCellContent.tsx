@@ -9,10 +9,6 @@ import {
   useSectionLayouts,
   buildContentLayoutItems,
   contentTileRows,
-  defaultLayoutId,
-  defaultLayoutName,
-  isDefaultLayoutId,
-  defaultColumnsFromId,
   GRID_COLUMNS,
   GRID_GAP,
   type SectionLayout,
@@ -50,15 +46,12 @@ function tileWidthPx(contentWidth: number, nCols: number): number {
  */
 export const SectionCellContent = memo<SectionCellContentProps>((props) => {
   const { sectionId, rows, cohortData, defaultColumns = 3, contentWidth = 0, spacers, ...rest } = props;
-  const { activeLayout, activeLayoutId, hiddenKeys } = useSectionLayouts(sectionId);
+  const { activeLayout, activeLayoutId, hiddenKeys, globalColumnCount } = useSectionLayouts(sectionId);
 
   const visibleRows = hiddenKeys.size > 0 ? rows.filter((r) => !hiddenKeys.has(r.name)) : rows;
 
-  // When a default view is active its id encodes the column count; otherwise
-  // fall back to the responsive default. Named/draft layouts ignore this.
-  const activeColumns = isDefaultLayoutId(activeLayoutId)
-    ? defaultColumnsFromId(activeLayoutId!)
-    : defaultColumns;
+  // Named layouts use their own column count; "All" mode uses the shared global count.
+  const activeColumns = activeLayout?.columnsPerRow ?? globalColumnCount ?? defaultColumns;
 
   const spacersPx = useMemo(
     () => (spacers ?? []).reduce((sum, s) => sum + 10 + (s.size - 1) * SPACER_UNIT_PX, 0),
@@ -76,21 +69,22 @@ export const SectionCellContent = memo<SectionCellContentProps>((props) => {
       activeColumns,
     );
     return {
-      id: defaultLayoutId(activeColumns),
-      name: defaultLayoutName(activeColumns),
+      id: '__auto__',
+      name: 'All',
       items,
       columnsPerRow: activeColumns,
     };
-    // Rebuild when rows (name/type/title), cohort count, columns, width or spacers change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows.map((r) => `${r.name}|${r.rowType}|${sectionRowTitle(r)}`).join('\0'), cohortData.length, activeColumns, contentWidth, spacersPx]);
 
+  const isDefault = activeLayoutId === null;
   const layout = activeLayout ?? defaultLayout;
 
   return (
     <SectionGridContent
       sectionId={sectionId}
       layout={layout}
+      isDefault={isDefault}
       rows={visibleRows}
       cohortData={cohortData}
       spacers={spacers}

@@ -11,7 +11,7 @@ import { MultiSelectControls } from './MultiSelectControls';
 import { useGridSelection } from './GridSelection';
 import { useMultiSelectActions } from './useMultiSelectActions';
 import { restackByHeights } from './restackLayout';
-import { type SectionLayout, type GridItem, defaultTileRows, contentTileRows, TILE_HEADER_ROWS, GRID_COLUMNS, GRID_GAP, useSectionLayouts, lockedChartHeight, isDefaultLayoutId } from './sectionLayoutStore';
+import { type SectionLayout, type GridItem, defaultTileRows, contentTileRows, TILE_HEADER_ROWS, GRID_COLUMNS, GRID_GAP, useSectionLayouts, lockedChartHeight } from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -28,6 +28,8 @@ export interface SectionGridContentProps {
   onRenameRow?: (name: string, displayName: string) => void;
   /** Measured card width (px), used to recompute tile heights on cohort change. */
   contentWidth?: number;
+  /** True when no named layout is active (auto-stacked "All" view). */
+  isDefault?: boolean;
 }
 
 /**
@@ -48,6 +50,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
   onNavigateToRow,
   onRenameRow,
   contentWidth = 0,
+  isDefault = false,
 }) => {
   const {
     updateLayoutItems,
@@ -62,10 +65,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     toggleItemVisibility,
   } = useSectionLayouts(sectionId);
 
-  // Every layout is directly editable (free canvas). Editing a synthetic
-  // default forks a draft (see `commitItems`), so there is no lock/unlock step.
   const editable = true;
-  const isDefault = isDefaultLayoutId(layout.id);
 
   const rowByKey = useMemo(() => {
     const map = new Map<string, SequentialRow>();

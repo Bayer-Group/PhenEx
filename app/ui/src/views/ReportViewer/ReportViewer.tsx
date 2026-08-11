@@ -41,6 +41,9 @@ import {
   movePhenotype,
   renamePhenotype,
   renameSection,
+  addSection,
+  isOutcomesRow,
+  OUTCOMES_CATEGORY,
   type OutlineModel,
 } from './LeftPanels/OutlinePanel/outlineModel';
 
@@ -387,9 +390,18 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     () => (storedOutline ? reconcileOutlineModel(storedOutline, sequentialRows) : deriveOutlineModel(sequentialRows)),
     [storedOutline, sequentialRows],
   );
+
+  const [storedOutcomesOutline, setStoredOutcomesOutline] = useState<OutlineModel | null>(null);
+  const outcomesOutlineModel = useMemo(
+    () => (storedOutcomesOutline
+      ? reconcileOutlineModel(storedOutcomesOutline, sequentialRows, isOutcomesRow, 'osecout')
+      : deriveOutlineModel(sequentialRows, isOutcomesRow, 'osecout')),
+    [storedOutcomesOutline, sequentialRows],
+  );
+
   const effectiveRows = useMemo(
-    () => applyOutlineModel(sequentialRows, outlineModel),
-    [sequentialRows, outlineModel],
+    () => applyOutlineModel(applyOutlineModel(sequentialRows, outlineModel), outcomesOutlineModel, isOutcomesRow),
+    [sequentialRows, outlineModel, outcomesOutlineModel],
   );
 
   // ── Outline accordion entries ─────────────────────────────────────────
@@ -435,17 +447,39 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
 
   // Edit operations mutate the stored model, seeding it from the current
   // effective model on first edit.
-  const handleMovePhenotype = useCallback((name: string, targetSectionId: string, beforeName: string | null) => {
-    setStoredOutline((prev) => movePhenotype(prev ?? outlineModel, name, targetSectionId, beforeName));
-  }, [outlineModel]);
+  const handleMovePhenotype = useCallback((name: string, targetSectionId: string, beforeName: string | null, category: string) => {
+    if (category === OUTCOMES_CATEGORY) {
+      setStoredOutcomesOutline((prev) => movePhenotype(prev ?? outcomesOutlineModel, name, targetSectionId, beforeName));
+    } else {
+      setStoredOutline((prev) => movePhenotype(prev ?? outlineModel, name, targetSectionId, beforeName));
+    }
+  }, [outlineModel, outcomesOutlineModel]);
 
-  const handleRenamePhenotype = useCallback((name: string, displayName: string) => {
-    setStoredOutline((prev) => renamePhenotype(prev ?? outlineModel, name, displayName));
-  }, [outlineModel]);
+  const handleRenamePhenotype = useCallback((name: string, displayName: string, category: string) => {
+    if (category === OUTCOMES_CATEGORY) {
+      setStoredOutcomesOutline((prev) => renamePhenotype(prev ?? outcomesOutlineModel, name, displayName));
+    } else {
+      setStoredOutline((prev) => renamePhenotype(prev ?? outlineModel, name, displayName));
+    }
+  }, [outlineModel, outcomesOutlineModel]);
 
-  const handleRenameSection = useCallback((sectionId: string, displayName: string) => {
-    setStoredOutline((prev) => renameSection(prev ?? outlineModel, sectionId, displayName));
-  }, [outlineModel]);
+  const handleRenameSection = useCallback((sectionId: string, displayName: string, category: string) => {
+    if (category === OUTCOMES_CATEGORY) {
+      setStoredOutcomesOutline((prev) => renameSection(prev ?? outcomesOutlineModel, sectionId, displayName));
+    } else {
+      setStoredOutline((prev) => renameSection(prev ?? outlineModel, sectionId, displayName));
+    }
+  }, [outlineModel, outcomesOutlineModel]);
+
+  const handleAddSection = useCallback((category: string) => {
+    const name = 'New Section';
+    if (category === OUTCOMES_CATEGORY) {
+      setStoredOutcomesOutline((prev) => addSection(prev ?? outcomesOutlineModel, name));
+    } else {
+      setStoredOutline((prev) => addSection(prev ?? outlineModel, name));
+    }
+    setExpandedKeys((prev) => new Set([...prev, categoryKey(category)]));
+  }, [outlineModel, outcomesOutlineModel]);
 
 
   // Map of reporter → cohort data so HorizontalRowViewer can render any reporter
@@ -830,12 +864,13 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       onNavigate: (index: number) => void;
       expandedKeys: Set<string>;
       onToggleExpand: (key: string) => void;
-      onMovePhenotype: (name: string, targetSectionId: string, beforeName: string | null) => void;
-      onRenamePhenotype: (name: string, displayName: string) => void;
-      onRenameSection: (sectionId: string, displayName: string) => void;
+      onMovePhenotype: (name: string, targetSectionId: string, beforeName: string | null, category: string) => void;
+      onRenamePhenotype: (name: string, displayName: string, category: string) => void;
+      onRenameSection: (sectionId: string, displayName: string, category: string) => void;
+      onAddSection: (category: string) => void;
       cohortCount: number;
       studyTitle?: string;
-    }> = ({ entries, onNavigate, expandedKeys: ek, onToggleExpand: ote, onMovePhenotype, onRenamePhenotype, onRenameSection, cohortCount, studyTitle }) => {
+    }> = ({ entries, onNavigate, expandedKeys: ek, onToggleExpand: ote, onMovePhenotype, onRenamePhenotype, onRenameSection, onAddSection, cohortCount, studyTitle }) => {
       const activeKey = useSyncExternalStore(store.subscribe, store.getSnapshot);
       const currentIndex = entries.findIndex((e) => e.key === activeKey);
       return (
@@ -848,6 +883,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
           onMovePhenotype={onMovePhenotype}
           onRenamePhenotype={onRenamePhenotype}
           onRenameSection={onRenameSection}
+          onAddSection={onAddSection}
           cohortCount={cohortCount}
           studyTitle={studyTitle}
         />
@@ -896,6 +932,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
                 onMovePhenotype={handleMovePhenotype}
                 onRenamePhenotype={handleRenamePhenotype}
                 onRenameSection={handleRenameSection}
+                onAddSection={handleAddSection}
                 cohortCount={selections.length}
                 studyTitle={displayTitle}
               />
@@ -922,7 +959,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       cohortDescriptions, finalCohortSizes, outlineEntries, handleOutlineNavigate,
       expandedKeys, handleToggleExpand, legendItems, handleLegendChange, OutlinePanelConnected,
       colorOverrides, handleSetColor, handleReplaceColorOverrides, _runId,
-      handleMovePhenotype, handleRenamePhenotype, handleRenameSection,
+      handleMovePhenotype, handleRenamePhenotype, handleRenameSection, handleAddSection,
       panelCollapsed, togglePanel,
     ],
   );
@@ -953,7 +990,10 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
                 navigateToIndex={externalNavIndex}
                 onIndexChange={setViewerIndex}
                 onNavigateToRow={handleNavigateToRow}
-                onRenameRow={handleRenamePhenotype}
+                onRenameRow={(name, displayName) => {
+                  const row = effectiveRows.find((r) => r.name === name);
+                  handleRenamePhenotype(name, displayName, row?.category ?? '');
+                }}
                 onScrolledPastTitle={setShowRowTitle}
                 cohortDataMap={cohortDataMap}
                 finalCohortSizes={finalCohortSizes}

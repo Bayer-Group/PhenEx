@@ -1,13 +1,8 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import styles from './LayoutControls.module.css';
-import {
-  useSectionLayouts,
-  DEFAULT_COLUMN_OPTIONS,
-  defaultLayoutId,
-  defaultLayoutName,
-  isDefaultLayoutId,
-  defaultColumnsFromId,
-} from './sectionLayoutStore';
+import { useSectionLayouts } from './sectionLayoutStore';
+
+const COLUMN_OPTIONS = [1, 2, 3, 4, 5] as const;
 
 interface LayoutControlsProps {
   /** Stable section id (same one passed to SectionCellContent). */
@@ -21,20 +16,27 @@ interface LayoutControlsProps {
 }
 
 /**
- * Floating dropdown shown on a focused section cell. Lets the user switch
- * between the always-available default views (1–5 columns) and their saved
- * layouts. When a default is edited a draft is spawned in the background; this
- * control then surfaces a prominent "save layout?" panel to name and keep it.
+ * Floating control shown on a focused section cell.
+ *
+ * - Column buttons (1–5): reposition the current layout to N columns without
+ *   changing which items are visible. From "All" mode this creates a draft.
+ * - Layout dropdown: switch between "All" (auto-arranged) and saved layouts.
+ * - Save panel: shown when a draft is active so the user can name and keep it.
  */
-export const LayoutControls = memo(({ sectionId, defaultColumns = 3 }: LayoutControlsProps) => {
-  const { layouts, activeLayout, activeLayoutId, setActiveLayout, saveDraft, renameLayout, deleteLayout } =
-    useSectionLayouts(sectionId);
+export const LayoutControls = memo(({ sectionId, rowKeys, cohortCount }: LayoutControlsProps) => {
+  const {
+    layouts, activeLayout, activeLayoutId,
+    setActiveLayout, saveDraft, renameLayout, deleteLayout,
+    applyColumnRestack, hiddenKeys, globalColumnCount,
+  } = useSectionLayouts(sectionId);
   const [open, setOpen] = useState(false);
   const [draftName, setDraftName] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   const draft = activeLayout?.draft ? activeLayout : null;
   const savedLayouts = layouts.filter((l) => !l.draft);
+  // In "All" mode show the global count; in a custom layout show its column count.
+  const activeCols = activeLayoutId === null ? globalColumnCount : (activeLayout?.columnsPerRow ?? null);
 
   // Seed the name field whenever a new draft becomes active.
   useEffect(() => {
@@ -55,21 +57,14 @@ export const LayoutControls = memo(({ sectionId, defaultColumns = 3 }: LayoutCon
     };
   }, [open]);
 
-  // Column count of the active default (for the checkmark), else the responsive one.
-  const activeDefaultCols = isDefaultLayoutId(activeLayoutId)
-    ? defaultColumnsFromId(activeLayoutId!)
-    : defaultColumns;
-  const onDefault = draft == null && savedLayouts.every((l) => l.id !== activeLayoutId);
-
-  const triggerLabel = draft?.name ?? activeLayout?.name ?? defaultLayoutName(activeDefaultCols);
+  const triggerLabel = draft?.name ?? activeLayout?.name ?? 'All';
 
   const handleSave = () => {
     if (draft) saveDraft(draft.id, draftName);
   };
 
-  // Discard the draft and revert to the default (1–5 col) grid it derived from.
   const handleCancel = () => {
-    if (draft) setActiveLayout(defaultLayoutId(draft.columnsPerRow ?? defaultColumns));
+    if (draft) setActiveLayout(null);
   };
 
   const handleRename = (layoutId: string, current: string) => {
@@ -77,9 +72,32 @@ export const LayoutControls = memo(({ sectionId, defaultColumns = 3 }: LayoutCon
     if (name) renameLayout(layoutId, name);
   };
 
+  const handleColumnClick = (n: number) => {
+    const visibleKeys = rowKeys.filter((k) => !hiddenKeys.has(k));
+    applyColumnRestack(n, visibleKeys, cohortCount);
+  };
+
+  const isOnAll = activeLayoutId === null && !draft;
+
   return (
     <div className={styles.container} ref={containerRef}>
       <div className={styles.topRow}>
+        {/* Column-count buttons: positioning tool, not layout selector */}
+        <div className={styles.columnBtns} onClick={(e) => e.stopPropagation()}>
+          {COLUMN_OPTIONS.map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={`${styles.colBtn} ${activeCols === n ? styles.colBtnActive : ''}`}
+              title={`Arrange in ${n} column${n === 1 ? '' : 's'}`}
+              onClick={() => handleColumnClick(n)}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+
+        {/* Layout selector */}
         <button
           type="button"
           className={styles.trigger}
@@ -91,21 +109,15 @@ export const LayoutControls = memo(({ sectionId, defaultColumns = 3 }: LayoutCon
 
         {open && (
           <div className={styles.menu} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.menuHeader}>Default views</div>
-            {DEFAULT_COLUMN_OPTIONS.map((n) => {
-              const active = onDefault && activeDefaultCols === n;
-              return (
-                <button
-                  key={n}
-                  type="button"
-                  className={`${styles.item} ${active ? styles.itemActive : ''}`}
-                  onClick={() => { setActiveLayout(defaultLayoutId(n)); setOpen(false); }}
-                >
-                  <span className={styles.check}>{active ? '●' : ''}</span>
-                  <span className={styles.itemLabel}>{defaultLayoutName(n)}</span>
-                </button>
-              );
-            })}
+            {/* "All" = no custom layout, auto-arranged */}
+            <button
+              type="button"
+              className={`${styles.item} ${isOnAll ? styles.itemActive : ''}`}
+              onClick={() => { setActiveLayout(null); setOpen(false); }}
+            >
+              <span className={styles.check}>{isOnAll ? '●' : ''}</span>
+              <span className={styles.itemLabel}>All</span>
+            </button>
 
             {savedLayouts.length > 0 && <div className={styles.divider} />}
             {savedLayouts.map((l) => (
@@ -169,3 +181,4 @@ export const LayoutControls = memo(({ sectionId, defaultColumns = 3 }: LayoutCon
 });
 
 LayoutControls.displayName = 'LayoutControls';
+

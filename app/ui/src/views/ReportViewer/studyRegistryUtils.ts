@@ -37,7 +37,7 @@ export interface StudyRegistry {
 
 // ── Sequential row list types ───────────────────────────────────────────
 
-export type RowType = CharacteristicType | 'waterfall' | 'table2' | 'time_to_event' | 'study_info';
+export type RowType = CharacteristicType | 'waterfall' | 'table2' | 'time_to_event' | 'study_info' | 'section_placeholder';
 
 export interface SequentialRow {
   /** Global 0-based index in the flat list */
@@ -195,29 +195,32 @@ export function buildAccordionEntries(
     const catKey = categoryKey(group.category);
     const catExpanded = expandedKeys.has(catKey);
 
+    const isLeafCategory = group.category === 'attrition';
+
     push({
       kind: 'category',
       key: catKey,
       category: group.category,
       reporter: group.reporter,
       sectionNames: namedSections.map((s) => s.section),
-      hasSectionlessRows: sectionlessRows.length > 0,
+      hasSectionlessRows: isLeafCategory ? false : sectionlessRows.length > 0,
     });
 
-    if (catExpanded) {
+    if (catExpanded && !isLeafCategory) {
       for (const section of namedSections) {
         const key = sectionKey(group.category, section.section);
+        const realRows = section.rows.filter((r) => r.rowType !== 'section_placeholder');
         push({
           kind: 'section',
           key,
           section: section.section,
           sectionId: section.rows[0].sectionId,
-          rows: section.rows,
+          rows: realRows,
           reporter: section.rows[0].reporter,
           category: group.category,
         });
-        if (section.rows.length >= 1 && expandedKeys.has(key)) {
-          for (const row of section.rows) push({ kind: 'row', key: rowKey(row), row });
+        if (realRows.length >= 1 && expandedKeys.has(key)) {
+          for (const row of realRows) push({ kind: 'row', key: rowKey(row), row });
         }
       }
 

@@ -161,6 +161,17 @@ export function lockedChartHeight(rowType: string, cohortCount: number, spacersP
 // ── Persistence ──────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'phenex.sectionLayouts.v2';
+const COLUMN_COUNT_KEY = 'phenex.globalColumnCount';
+
+const DEFAULT_COLUMN_COUNT = 3;
+
+function loadGlobalColumnCount(): number {
+  try { return Number(localStorage.getItem(COLUMN_COUNT_KEY)) || DEFAULT_COLUMN_COUNT; } catch { return DEFAULT_COLUMN_COUNT; }
+}
+
+function saveGlobalColumnCount(n: number) {
+  try { localStorage.setItem(COLUMN_COUNT_KEY, String(n)); } catch { /* ignore */ }
+}
 
 function loadState(): PersistedState {
   try {
@@ -204,13 +215,22 @@ class SectionLayoutStore {
   private listeners = new Set<Listener>();
   /** Cache of empty section states so getSnapshot returns a stable reference. */
   private emptyCache = new Map<string, SectionState>();
-
   private readonly EMPTY: SectionState = { layouts: [], activeLayoutId: null };
+  private _globalColumnCount: number = loadGlobalColumnCount();
 
   subscribe = (listener: Listener) => {
     this.listeners.add(listener);
     return () => { this.listeners.delete(listener); };
   };
+
+  getGlobalColumnCount(): number { return this._globalColumnCount; }
+
+  setGlobalColumnCount(n: number) {
+    if (this._globalColumnCount === n) return;
+    this._globalColumnCount = n;
+    saveGlobalColumnCount(n);
+    this.notify();
+  }
 
   getSection(sectionId: string): SectionState {
     return this.state[sectionId] ?? this.emptyFor(sectionId);
@@ -339,6 +359,23 @@ class SectionLayoutStore {
     });
     this.update(sectionId, { ...section, layouts });
     return id;
+  }
+
+  /**
+   * Restack the visible items in the active layout to `n` columns.
+   * If no layout is active (list/"All" mode), updates the global column count only — no draft is created.
+   */
+  applyColumnRestack(sectionId: string, n: number, visibleKeys: string[], cohortCount: number) {
+    const section = this.getSection(sectionId);
+    if (section.activeLayoutId === null) {
+      this.setGlobalColumnCount(n);
+    } else {
+      const items = buildDefaultLayoutItems(visibleKeys, cohortCount, n);
+      const layouts = section.layouts.map((l) =>
+        l.id === section.activeLayoutId ? { ...l, items, columnsPerRow: n } : l,
+      );
+      this.update(sectionId, { ...section, layouts });
+    }
   }
 
   /** Dissolve a group; its members flow back into the grid as loose tiles. */
@@ -479,6 +516,8 @@ export interface UseSectionLayouts {
   layouts: SectionLayout[];
   activeLayoutId: string | null;
   activeLayout: SectionLayout | null;
+  /** The globally shared column count applied to all "All" views. */
+  globalColumnCount: number;
   /** Hidden item keys for the currently active layout (or list view). */
   hiddenKeys: Set<string>;
   /** Group cells defined in the currently active layout. */
@@ -497,6 +536,8 @@ export interface UseSectionLayouts {
   renameLayout: (layoutId: string, name: string) => void;
   deleteLayout: (layoutId: string) => void;
   toggleItemVisibility: (key: string) => void;
+  /** Restack visible items to `n` columns; creates a draft when in "All" mode. */
+  applyColumnRestack: (n: number, visibleKeys: string[], cohortCount: number) => void;
   createGroup: (memberKeys: string[], height: number) => string;
   ungroup: (groupId: string) => void;
   setDisplayVariant: (rowKey: string, variantId: string) => void;
@@ -521,17 +562,20 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
   const ungroup = useCallback((groupId: string) => store.ungroup(sectionId, store.getSection(sectionId).activeLayoutId ?? '', groupId), [sectionId]);
   const setDisplayVariant = useCallback((rowKey: string, variantId: string) => store.setDisplayVariant(sectionId, rowKey, variantId), [sectionId]);
   const setDescription = useCallback((key: string, description: string) => store.setItemDescription(sectionId, key, description), [sectionId]);
+  const applyColumnRestack = useCallback((n: number, visibleKeys: string[], cohortCount: number) => store.applyColumnRestack(sectionId, n, visibleKeys, cohortCount), [sectionId]);
 
   const activeLayout = section.layouts.find((l) => l.id === section.activeLayoutId) ?? null;
   const hiddenKeys = useMemo(() => new Set(store.getHiddenKeys(sectionId, section.activeLayoutId)), [sectionId, section]);
   const groups = useMemo(() => store.getGroups(sectionId, section.activeLayoutId), [sectionId, section]);
   const displayVariants = section.displayVariants ?? EMPTY_VARIANTS;
   const descriptions = section.descriptions ?? EMPTY_VARIANTS;
+  const globalColumnCount = useSyncExternalStore(store.subscribe, () => store.getGlobalColumnCount());
 
   return {
     layouts: section.layouts,
     activeLayoutId: section.activeLayoutId,
     activeLayout,
+    globalColumnCount,
     hiddenKeys,
     groups,
     displayVariants,
@@ -548,6 +592,7 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
     ungroup,
     setDisplayVariant,
     setDescription,
+    applyColumnRestack,
   };
 }
 
@@ -582,6 +627,11 @@ export function getHiddenKeys(sectionId: string, layoutId: string | null): strin
 /** Subscribe to store changes (for components that render menus off it). */
 export function subscribeSectionLayouts(listener: () => void): () => void {
   return store.subscribe(listener);
+}
+
+/** Globally shared column count applied to all "All" views. */
+export function getGlobalColumnCount(): number {
+  return store.getGlobalColumnCount();
 }
 
 /** Snapshot of the entire section-layout store, for export. */

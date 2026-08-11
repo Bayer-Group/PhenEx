@@ -1,4 +1,4 @@
-import { FC, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { FC, Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import EyeSolidIcon from '../../../../assets/icons/eye-solid.svg';
 import EyeClosedIcon from '../../../../assets/icons/eye-closed.svg';
 import {
@@ -8,7 +8,7 @@ import {
   getCategoryLabel,
   getEntryLabel,
 } from '../../studyRegistryUtils';
-import { OUTLINE_CATEGORY, isOutlineRow } from './outlineModel';
+import { OUTLINE_CATEGORY, OUTCOMES_CATEGORY, isOutlineRow, isOutcomesRow } from './outlineModel';
 import styles from './OutlinePanel.module.css';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import { RightClickMenu, type RightClickMenuItem } from '../../../../components/RightClickMenu/RightClickMenu';
@@ -62,6 +62,62 @@ const RowHiddenDim: FC<{ sectionLayoutId: string; itemKey: string; children: Rea
 });
 RowHiddenDim.displayName = 'RowHiddenDim';
 
+/** Dropdown + eye toggle rendered as the first row of an expanded section. */
+const SectionLayoutBar: FC<{
+  sectionLayoutId: string;
+  suppressed: boolean;
+  onToggleSuppress: () => void;
+}> = memo(({ sectionLayoutId, suppressed, onToggleSuppress }) => {
+  const { layouts, activeLayoutId } = useSyncExternalStore(
+    subscribeSectionLayouts,
+    () => getSectionState(sectionLayoutId),
+  );
+  const customLayouts = layouts.filter((l) => !l.draft);
+  return (
+    <>
+      <span className={styles.chevronSpacer} />
+      <select
+        className={styles.layoutSelect}
+        value={activeLayoutId ?? ''}
+        onChange={(e) => {
+          const val = e.target.value;
+          sectionLayoutActions.setActiveLayout(sectionLayoutId, val || null);
+        }}
+      >
+        <option value="">All</option>
+        {customLayouts.map((l) => (
+          <option key={l.id} value={l.id}>{l.name}</option>
+        ))}
+      </select>
+      <button
+        type="button"
+        className={`${styles.eyeBtn} ${styles.eyeBtnInline}`}
+        title={suppressed ? 'Show hidden items' : 'Hide hidden items'}
+        onClick={onToggleSuppress}
+      >
+        <img src={suppressed ? EyeClosedIcon : EyeSolidIcon} alt="" className={styles.eyeIcon} />
+      </button>
+    </>
+  );
+});
+SectionLayoutBar.displayName = 'SectionLayoutBar';
+
+/** Returns null when suppressed mode is on and the item is hidden in the active layout. */
+const RowSuppressionGate: FC<{
+  sectionLayoutId: string;
+  itemKey: string;
+  suppressed: boolean;
+  children: React.ReactNode;
+}> = memo(({ sectionLayoutId, itemKey, suppressed, children }) => {
+  const isHidden = useSyncExternalStore(
+    subscribeSectionLayouts,
+    () => getHiddenKeys(sectionLayoutId, getSectionState(sectionLayoutId).activeLayoutId).includes(itemKey),
+  );
+  if (suppressed && isHidden) return null;
+  return <>{children}</>;
+});
+RowSuppressionGate.displayName = 'RowSuppressionGate';
+
 interface OutlinePanelProps {
   /** The exact list of navigable cells currently in the viewer. */
   entries: ViewerEntry[];
@@ -71,11 +127,13 @@ interface OutlinePanelProps {
   expandedKeys: Set<string>;
   onToggleExpand: (key: string) => void;
   /** Move a phenotype into `targetSectionId`, before `beforeName` (or append). */
-  onMovePhenotype: (name: string, targetSectionId: string, beforeName: string | null) => void;
+  onMovePhenotype: (name: string, targetSectionId: string, beforeName: string | null, category: string) => void;
   /** Set a phenotype's editable display label. */
-  onRenamePhenotype: (name: string, displayName: string) => void;
+  onRenamePhenotype: (name: string, displayName: string, category: string) => void;
   /** Set a section's editable display label. */
-  onRenameSection: (sectionId: string, displayName: string) => void;
+  onRenameSection: (sectionId: string, displayName: string, category: string) => void;
+  /** Add a new empty section to the given category's editable model. */
+  onAddSection: (category: string) => void;
   /** Number of selected cohorts, used to size fresh grid tiles. */
   cohortCount: number;
   /** Study title shown at the top of the panel. */
@@ -142,6 +200,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
   onMovePhenotype,
   onRenamePhenotype,
   onRenameSection,
+  onAddSection,
   cohortCount,
   studyTitle,
 }) => {
@@ -150,10 +209,21 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
   const [scrolled, setScrolled] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [dragName, setDragName] = useState<string | null>(null);
+  const [dragCategory, setDragCategory] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ key: string; pos: 'before' | 'after' | 'into' } | null>(null);
   const [renaming, setRenaming] = useState<Renaming | null>(null);
   const [menu, setMenu] = useState<Menu | null>(null);
   const [hoveredRowKey, setHoveredRowKey] = useState<string | null>(null);
+  /** Section layout ids where hidden items are suppressed (not shown) in the outline. */
+  const [hiddenSuppressed, setHiddenSuppressed] = useState<Set<string>>(new Set());
+
+  const toggleSuppressed = (sectionLayoutId: string) =>
+    setHiddenSuppressed((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionLayoutId)) next.delete(sectionLayoutId);
+      else next.add(sectionLayoutId);
+      return next;
+    });
 
   // Measure once at full-size title height; never update (scroll shrinks the title but padding stays fixed).
   useLayoutEffect(() => {
@@ -183,6 +253,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
 
   const clearDrag = () => {
     setDragName(null);
+    setDragCategory(null);
     setDropTarget(null);
   };
 
@@ -338,32 +409,45 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
     const isActive = currentIndex === entry.index;
     const isExpanded = toggleKey ? expandedKeys.has(toggleKey) : false;
     const sectionId = entry.sectionId;
+    const sectionLayoutId = getSectionLayoutId(entry);
     const editing = renaming?.kind === 'section' && renaming.id === sectionId;
-    const isDropTarget = dragName != null && dropTarget?.key === entry.key;
+    const canAcceptDrop = sectionId != null && dragCategory === entry.category;
+    const isDropTarget = canAcceptDrop && dropTarget?.key === entry.key;
     return (
-      <div
-        key={entry.key}
-        className={`${styles.row} ${isDropTarget ? styles.dropInto : ''}`}
-        style={{ paddingLeft: INDENT }}
-        onDragOver={sectionId ? (e) => { e.preventDefault(); setDropTarget({ key: entry.key, pos: 'into' }); } : undefined}
-        onDrop={sectionId ? (e) => {
-          e.preventDefault();
-          if (dragName) onMovePhenotype(dragName, sectionId, null);
-          clearDrag();
-        } : undefined}
-      >
-        {renderIndentGuides(1)}
-        {renderChevron(toggleKey, isExpanded)}
-        {renderLabel(
-          entry.section,
-          1,
-          entry.index,
-          isActive,
-          !!editing,
-          (v) => { if (sectionId) onRenameSection(sectionId, v); setRenaming(null); },
-          (e) => openSectionMenu(e, entry),
+      <Fragment key={entry.key}>
+        <div
+          className={`${styles.row} ${isDropTarget ? styles.dropInto : ''}`}
+          style={{ paddingLeft: INDENT }}
+          onDragOver={canAcceptDrop ? (e) => { e.preventDefault(); setDropTarget({ key: entry.key, pos: 'into' }); } : undefined}
+          onDrop={canAcceptDrop ? (e) => {
+            e.preventDefault();
+            if (dragName) onMovePhenotype(dragName, sectionId!, null, entry.category);
+            clearDrag();
+          } : undefined}
+        >
+          {renderIndentGuides(1)}
+          {renderChevron(toggleKey, isExpanded)}
+          {renderLabel(
+            entry.section,
+            1,
+            entry.index,
+            isActive,
+            !!editing,
+            (v) => { if (sectionId) onRenameSection(sectionId, v, entry.category); setRenaming(null); },
+            (e) => openSectionMenu(e, entry),
+          )}
+        </div>
+        {isExpanded && (
+          <div className={`${styles.row} ${styles.sectionLayoutBar}`} style={{ paddingLeft: INDENT }}>
+            {renderIndentGuides(1)}
+            <SectionLayoutBar
+              sectionLayoutId={sectionLayoutId}
+              suppressed={hiddenSuppressed.has(sectionLayoutId)}
+              onToggleSuppress={() => toggleSuppressed(sectionLayoutId)}
+            />
+          </div>
         )}
-      </div>
+      </Fragment>
     );
   };
 
@@ -392,6 +476,7 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
             setTimeout(() => btn.classList.remove(styles.dragImage), 0);
           }
           setDragName(row.name);
+          setDragCategory(row.category);
         }}
         onDragEnd={clearDrag}
         onDragOver={(e) => {
@@ -402,10 +487,10 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
         }}
         onDrop={(e) => {
           e.preventDefault();
-          if (dragName && dragName !== row.name && row.sectionId) {
+          if (dragName && dragName !== row.name && row.sectionId && dragCategory === row.category) {
             const pos = dropTarget?.key === entry.key ? dropTarget.pos : 'before';
             const beforeName = pos === 'after' ? nextRowNameInSection(entry) : row.name;
-            if (beforeName !== dragName) onMovePhenotype(dragName, row.sectionId, beforeName);
+            if (beforeName !== dragName) onMovePhenotype(dragName, row.sectionId, beforeName, row.category);
           }
           clearDrag();
         }}
@@ -415,14 +500,14 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
         {sectionLayoutId
           ? <RowHiddenDim sectionLayoutId={sectionLayoutId} itemKey={row.name}>{renderLabel(
               getEntryLabel(entry), 2, entry.index, isActive, editing,
-              (v) => { onRenamePhenotype(row.name, v); setRenaming(null); },
+              (v) => { onRenamePhenotype(row.name, v, row.category); setRenaming(null); },
               (e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, kind: 'row', id: row.name, index: entry.index }); },
               () => setRenaming({ kind: 'row', id: row.name }),
               false,
             )}</RowHiddenDim>
           : renderLabel(
               getEntryLabel(entry), 2, entry.index, isActive, editing,
-              (v) => { onRenamePhenotype(row.name, v); setRenaming(null); },
+              (v) => { onRenamePhenotype(row.name, v, row.category); setRenaming(null); },
               (e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, kind: 'row', id: row.name, index: entry.index }); },
               () => setRenaming({ kind: 'row', id: row.name }),
               false,
@@ -449,36 +534,61 @@ export const OutlinePanel: FC<OutlinePanelProps> = ({
       <div ref={scrollRef} className={styles.scrollContent} style={headerHeight ? { paddingTop: headerHeight + 40 } : undefined}>
         {entries.map((entry) => {
           if (entry.kind === 'category') {
-            return renderPlainItem(
-              entry.key,
-              getCategoryLabel(entry.category),
-              0,
-              entry.index,
-              categoryKey(entry.category),
+            const isExpandable = entry.sectionNames.length > 0 || entry.hasSectionlessRows;
+            const isEditable = entry.category === OUTLINE_CATEGORY || entry.category === OUTCOMES_CATEGORY;
+            const toggleKey = isExpandable ? categoryKey(entry.category) : null;
+            return (
+              <div key={entry.key} className={styles.categoryRow}>
+                {renderPlainItem(
+                  entry.key,
+                  getCategoryLabel(entry.category),
+                  0,
+                  entry.index,
+                  toggleKey,
+                )}
+                {isEditable && (
+                  <button
+                    type="button"
+                    className={styles.addSectionBtn}
+                    title="Add new section"
+                    onClick={(e) => { e.stopPropagation(); onAddSection(entry.category); }}
+                  >＋</button>
+                )}
+              </div>
             );
           }
           if (entry.kind === 'section') {
             const toggleKey = entry.rows.length >= 1 ? entry.key : null;
-            return entry.category === OUTLINE_CATEGORY
+            const isEditable = entry.category === OUTLINE_CATEGORY || entry.category === OUTCOMES_CATEGORY;
+            return isEditable
               ? renderEditableSection(entry, toggleKey)
               : renderPlainItem(entry.key, entry.section, 1, entry.index, toggleKey, (e) => openSectionMenu(e, entry));
           }
           // Individual rows: only appear when their parent is expanded. The
           // study_info intro cell has no outline entry.
           if (entry.row.category === STUDY_INFO_CATEGORY) return null;
-          return isOutlineRow(entry.row)
-            ? renderEditableRow(entry)
-            : renderPlainItem(
-                entry.key,
-                getEntryLabel(entry),
-                2,
-                entry.index,
-                null,
-                undefined,
-                rowSectionMap.has(entry.row.name)
-                  ? { sectionLayoutId: rowSectionMap.get(entry.row.name)!, itemKey: entry.row.name }
-                  : undefined,
-              );
+          {
+            const sectionLayoutId = rowSectionMap.get(entry.row.name);
+            const suppressed = sectionLayoutId ? hiddenSuppressed.has(sectionLayoutId) : false;
+            const rowEl = isOutlineRow(entry.row) || isOutcomesRow(entry.row)
+              ? renderEditableRow(entry)
+              : renderPlainItem(
+                  entry.key,
+                  getEntryLabel(entry),
+                  2,
+                  entry.index,
+                  null,
+                  undefined,
+                  sectionLayoutId ? { sectionLayoutId, itemKey: entry.row.name } : undefined,
+                );
+            return sectionLayoutId && suppressed
+              ? (
+                <RowSuppressionGate key={entry.key} sectionLayoutId={sectionLayoutId} itemKey={entry.row.name} suppressed={suppressed}>
+                  {rowEl}
+                </RowSuppressionGate>
+              )
+              : rowEl;
+          }
         })}
       </div>
 

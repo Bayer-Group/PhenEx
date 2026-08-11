@@ -80,6 +80,45 @@
   transform: rotate(90deg);
 }
 
+.categoryRow {
+  position: relative;
+}
+
+.addSectionBtn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.categoryRow:hover .addSectionBtn {
+  opacity: 1;
+}
+
+.addSectionBtn:hover {
+  color: #333;
+  background: var(--background_color_light, #f0f0f0);
+}
+
+.addSectionBtn:focus {
+  outline: none;
+  opacity: 1;
+}
+
 .chevronSpacer {
   flex-shrink: 0;
   width: 18px;
@@ -194,6 +233,40 @@
 
 .scrollBarTrack:hover {
   background-color: transparent;
+}
+
+.sectionLayoutBar {
+  gap: 4px;
+  padding-right: 6px;
+}
+
+/* Resets absolute positioning so the eye sits inline in the flex bar. */
+.eyeBtnInline {
+  position: static;
+  transform: none;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.layoutSelect {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font_size_items, 12px);
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text_color_notfocus, #333);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 2px 4px;
+  cursor: pointer;
+  appearance: auto;
+}
+
+.layoutSelect:hover,
+.layoutSelect:focus {
+  border-color: var(--border_color, #ccc);
+  outline: none;
+  background: var(--background_color_light, #f0f0f0);
 }
 
 .rowDraggable {
