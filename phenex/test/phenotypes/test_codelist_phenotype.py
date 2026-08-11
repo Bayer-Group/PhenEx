@@ -241,11 +241,13 @@ class CodelistPhenotypeAnchorPhenotypeRelativeTimeRangeFilterTestGenerator(
                 "CODE_TYPE": ["ICD10CM"] * N,
                 "INDEX_DATE": [index_date] * N,
                 "EVENT_DATE": phenotype1_eventdates + phenotype2_eventdates,
-                "days_from_anchor": daysdif_p1 + daysdif_p2,
+                # Use a name that does not collide with RelativeTimeRangeFilter's
+                # DAYS_FROM_ANCHOR column — DuckDB identifiers are case-insensitive.
+                "expected_days_from_anchor": daysdif_p1 + daysdif_p2,
             }
         )
 
-        df["days_from_index"] = [
+        df["expected_days_from_index"] = [
             y.days
             for y in (
                 [x - index_date for x in phenotype1_eventdates]

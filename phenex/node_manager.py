@@ -7,7 +7,11 @@ import pandas as pd
 import ibis
 
 from phenex.util import create_logger
-from phenex.ibis_connect import DuckDBConnector
+from phenex.ibis_connect import (
+    DuckDBConnector,
+    compile_sql,
+    ibis_dialect_of_connector,
+)
 
 logger = create_logger(__name__)
 
@@ -54,16 +58,7 @@ class NodeManager:
         """
         reasons = []
 
-        # Get current execution context
-        current_execution_params = self._get_execution_params(con)
-
-        # Get current node hash
-        current_hash = self._get_node_hash(node)
-
-        # Look up previous run with same name and execution context
-        last_hash = self._getlasthash(
-            node.name, execution_params=current_execution_params
-        )
+        current_hash, last_hash = self._compare_to_last_run(node, con)
 
         # Determine if node should rerun
         node_changed = current_hash != last_hash
@@ -85,6 +80,36 @@ class NodeManager:
 
         return should_rerun
 
+    def node_changed(self, node, con) -> bool:
+        """Return True if the node's definition differs from its last cached run."""
+        current_hash, last_hash = self._compare_to_last_run(node, con)
+        return current_hash != last_hash
+
+    def _compare_to_last_run(self, node, con):
+        """
+        Look up the node's current hash and the hash of its last cached run.
+
+        Single source of truth for how a node is compared against its cache:
+        both should_rerun() and node_changed() go through here, so the two can
+        never disagree about what counts as changed. Returns both hashes rather
+        than a bool because should_rerun() distinguishes "never executed"
+        (last_hash is None) from "definition changed" when it logs.
+
+        Parameters:
+            node: The Node object to look up
+            con: Database connector object (determines execution context)
+
+        Returns:
+            tuple: (current_hash, last_hash); last_hash is None if this node has
+            never run in this execution context.
+        """
+        return (
+            self._get_node_hash(node),
+            self._getlasthash(
+                node.name, execution_params=self._get_execution_params(con)
+            ),
+        )
+
     def update_run_params(self, node, con) -> bool:
         """
         Update the run parameters for a node after execution.
@@ -100,6 +125,11 @@ class NodeManager:
         """
         execution_params = self._get_execution_params(con)
         last_hash = self._getlasthash(node.name, execution_params=execution_params)
+        execution_params_json = (
+            json.dumps(execution_params, sort_keys=True)
+            if execution_params is not None
+            else None
+        )
 
         with self._lock:
             duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=self.db_name)
@@ -107,66 +137,140 @@ class NodeManager:
             # Get current node hash
             current_hash = self._get_node_hash(node)
 
-            # Create new row data
-            new_row = pd.DataFrame.from_dict(
-                {
-                    "EXECUTION_ID": [str(uuid.uuid4())],
-                    "NODE_NAME": [node.name],
-                    "NODE_HASH": [current_hash],
-                    "NODE_PARAMS": [json.dumps(node.to_dict())],
-                    "EXECUTION_PARAMS": [
-                        (
-                            json.dumps(execution_params, sort_keys=True)
-                            if execution_params is not None
-                            else None
-                        )
-                    ],
-                    "EXECUTION_START_TIME": [node.lastexecution_start_time],
-                    "EXECUTION_END_TIME": [node.lastexecution_end_time],
-                    "EXECUTION_DURATION": [node.lastexecution_duration],
-                }
-            )
+            # Compute the SQL to cache. On a lazy hit _expression is None, keep the existing NODE_SQL.
+            try:
+                # Cache in the connector's dialect (stamped, explicit).
+                node_dialect = ibis_dialect_of_connector(con)
+                new_sql = (
+                    compile_sql(node._expression, dialect=node_dialect)
+                    if node._expression is not None
+                    else None
+                )
+                if new_sql is not None:
+                    # Memo for the .sql file writer, which needs this exact text in this exact dialect
+                    node._compiled_sql = (node._expression, node_dialect, new_sql)
+            except Exception as e:
+                logger.warning(
+                    f"Node '{node.name}': could not compile its SQL, so it was not saved to "
+                    f"the cache. This node's SQL cannot be recovered from phenex.db later. "
+                    f"Reason: {e}"
+                )
+                new_sql = None
+            preserved_sql = new_sql
 
+            state = None
             if NODE_STATES_TABLE_NAME in duckdb_con.dest_connection.list_tables():
-                existing_table = duckdb_con.get_dest_table(
-                    NODE_STATES_TABLE_NAME
-                ).to_pandas()
+                state = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME)
 
-                # Remove matching row if it exists
-                if last_hash is not None:
-                    execution_params_json = (
-                        json.dumps(execution_params, sort_keys=True)
-                        if execution_params is not None
-                        else None
+                if (
+                    new_sql is None
+                    and last_hash is not None
+                    and "NODE_SQL" in state.columns
+                ):
+                    # Read ONLY the matching row's SQL, not the whole table.
+                    matches = (
+                        state.filter(
+                            (state.NODE_NAME == node.name)
+                            & (state.NODE_HASH == last_hash)
+                        )
+                        .select("EXECUTION_PARAMS", "NODE_SQL")
+                        .to_pandas()
                     )
-
                     if execution_params_json is None:
-                        # Remove row with matching node name, hash, and null execution params
-                        mask = (
-                            (existing_table.NODE_NAME == node.name)
-                            & (existing_table.NODE_HASH == last_hash)
-                            & pd.isna(existing_table.EXECUTION_PARAMS)
+                        matches = matches[pd.isna(matches.EXECUTION_PARAMS)]
+                    else:
+                        matches = matches[
+                            matches.EXECUTION_PARAMS == execution_params_json
+                        ]
+                    if len(matches) > 0:
+                        val = matches.iloc[0]["NODE_SQL"]
+                        if val is not None and not (
+                            isinstance(val, float) and pd.isna(val)
+                        ):
+                            preserved_sql = str(val)
+
+            # New row values, in the canonical schema order
+            new_row_values = {
+                "EXECUTION_ID": str(uuid.uuid4()),
+                "NODE_NAME": node.name,
+                "NODE_HASH": current_hash,
+                "NODE_PARAMS": json.dumps(node.to_dict()),
+                "EXECUTION_PARAMS": execution_params_json,
+                "EXECUTION_START_TIME": node.lastexecution_start_time,
+                "EXECUTION_END_TIME": node.lastexecution_end_time,
+                "EXECUTION_DURATION": node.lastexecution_duration,
+                "NODE_SQL": preserved_sql,
+            }
+
+            if state is not None and set(state.columns) == set(new_row_values):
+                # Targeted one-row replace: DELETE the old entry, INSERT the new one.
+                native = duckdb_con.dest_connection.con
+                if last_hash is not None:
+                    if execution_params_json is None:
+                        native.execute(
+                            f'DELETE FROM "{NODE_STATES_TABLE_NAME}" '
+                            f"WHERE NODE_NAME = ? AND NODE_HASH = ? "
+                            f"AND EXECUTION_PARAMS IS NULL",
+                            [node.name, int(last_hash)],
                         )
                     else:
-                        # Remove row with matching node name, hash, and execution params
-                        mask = (
-                            (existing_table.NODE_NAME == node.name)
-                            & (existing_table.NODE_HASH == last_hash)
-                            & (existing_table.EXECUTION_PARAMS == execution_params_json)
+                        native.execute(
+                            f'DELETE FROM "{NODE_STATES_TABLE_NAME}" '
+                            f"WHERE NODE_NAME = ? AND NODE_HASH = ? "
+                            f"AND EXECUTION_PARAMS = ?",
+                            [node.name, int(last_hash), execution_params_json],
                         )
-
-                    existing_table = existing_table[~mask]
-
-                # Add the new row
-                df = pd.concat([existing_table, new_row], ignore_index=True)
+                columns = ", ".join(f'"{c}"' for c in new_row_values)
+                placeholders = ", ".join("?" for _ in new_row_values)
+                native.execute(
+                    f'INSERT INTO "{NODE_STATES_TABLE_NAME}" ({columns}) '
+                    f"VALUES ({placeholders})",
+                    list(new_row_values.values()),
+                )
             else:
-                # No existing table, just use the new row
-                df = new_row
+                # First write, or a phenex.db from an older version whose schema
+                # differs: rebuild the table with the full schema
+                new_row = pd.DataFrame({k: [v] for k, v in new_row_values.items()})
+                if state is not None:
+                    existing_table = state.to_pandas()
+                    if last_hash is not None:
+                        if execution_params_json is None:
+                            mask = (
+                                (existing_table.NODE_NAME == node.name)
+                                & (existing_table.NODE_HASH == last_hash)
+                                & pd.isna(existing_table.EXECUTION_PARAMS)
+                            )
+                        else:
+                            mask = (
+                                (existing_table.NODE_NAME == node.name)
+                                & (existing_table.NODE_HASH == last_hash)
+                                & (
+                                    existing_table.EXECUTION_PARAMS
+                                    == execution_params_json
+                                )
+                            )
+                        existing_table = existing_table[~mask]
+                    df = pd.concat([existing_table, new_row], ignore_index=True)
+                else:
+                    df = new_row
 
-            table = ibis.memtable(df)
-            duckdb_con.create_table(
-                table, name_table=NODE_STATES_TABLE_NAME, overwrite=True
-            )
+                schema = ibis.Schema(
+                    {
+                        "EXECUTION_ID": "string",
+                        "NODE_NAME": "string",
+                        "NODE_HASH": "int64",
+                        "NODE_PARAMS": "string",
+                        "EXECUTION_PARAMS": "string",
+                        "EXECUTION_START_TIME": "timestamp",
+                        "EXECUTION_END_TIME": "timestamp",
+                        "EXECUTION_DURATION": "float64",
+                        "NODE_SQL": "string",
+                    }
+                )
+                table = ibis.memtable(df, schema=schema)
+                duckdb_con.create_table(
+                    table, name_table=NODE_STATES_TABLE_NAME, overwrite=True
+                )
 
         return True
 
@@ -204,6 +308,91 @@ class NodeManager:
                 return table if len(table) > 0 else None
 
             return None
+
+    def get_sql(self, node, con=None) -> Optional[str]:
+        """Return the SQL stored in phenex.db for this node, matched by name + hash.
+
+        With `con` the lookup is dialect-aware (only SQL cached for that backend, else
+        None), without it matches on hash only.
+        """
+        with self._lock:
+            duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=self.db_name)
+            if NODE_STATES_TABLE_NAME not in duckdb_con.dest_connection.list_tables():
+                return None
+            table = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+            if "NODE_SQL" not in table.columns:
+                return None
+            current_hash = self._get_node_hash(node)
+            matches = table[
+                (table.NODE_NAME == node.name) & (table.NODE_HASH == current_hash)
+            ]
+            if con is not None and "EXECUTION_PARAMS" in matches.columns:
+                # Dialect-aware, keep only rows cached for this backend (no match returns None).
+                execution_params = self._get_execution_params(con)
+                execution_params_json = (
+                    json.dumps(execution_params, sort_keys=True)
+                    if execution_params is not None
+                    else None
+                )
+                if execution_params_json is None:
+                    matches = matches[pd.isna(matches.EXECUTION_PARAMS)]
+                else:
+                    matches = matches[matches.EXECUTION_PARAMS == execution_params_json]
+            if len(matches) == 0:
+                return None
+            val = matches.iloc[0]["NODE_SQL"]
+            if val is None or (isinstance(val, float) and pd.isna(val)):
+                return None
+            return str(val)
+
+    def get_sql_bulk(self, nodes, con=None) -> Dict[str, str]:
+        """Return `{node.name: SQL}` for many nodes, reading the state table once.
+
+        Same matching as `get_sql` (name + hash, dialect-aware when `con` is given),
+        but a single database read for the whole list instead of one read per node.
+
+        Nodes with no cached SQL are simply absent from the result.
+        """
+        # Outside the lock: this does no database work and takes no lock itself.
+        execution_params_json = None
+        if con is not None:
+            execution_params = self._get_execution_params(con)
+            execution_params_json = (
+                json.dumps(execution_params, sort_keys=True)
+                if execution_params is not None
+                else None
+            )
+
+        with self._lock:
+            duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=self.db_name)
+            if NODE_STATES_TABLE_NAME not in duckdb_con.dest_connection.list_tables():
+                return {}
+            table = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+
+        if "NODE_SQL" not in table.columns:
+            return {}
+
+        if con is not None and "EXECUTION_PARAMS" in table.columns:
+            # Dialect-aware: keep only rows cached for this backend.
+            if execution_params_json is None:
+                table = table[pd.isna(table.EXECUTION_PARAMS)]
+            else:
+                table = table[table.EXECUTION_PARAMS == execution_params_json]
+
+        # Index by (name, hash); keep the first row per key to match get_sql's iloc[0].
+        by_key = {}
+        for name, node_hash, sql in zip(
+            table.NODE_NAME, table.NODE_HASH, table.NODE_SQL
+        ):
+            by_key.setdefault((name, int(node_hash)), sql)
+
+        found = {}
+        for node in nodes:
+            sql = by_key.get((node.name, self._get_node_hash(node)))
+            if sql is None or (isinstance(sql, float) and pd.isna(sql)):
+                continue
+            found[node.name] = str(sql)
+        return found
 
     def clear_cache(self, node, con=None, recursive=False) -> bool:
         """
@@ -308,7 +497,16 @@ class NodeManager:
         with self._lock:
             duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=self.db_name)
             if NODE_STATES_TABLE_NAME in duckdb_con.dest_connection.list_tables():
-                table = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
+                # Read only the three columns this lookup uses. The table also holds
+                # each node's full SQL text (NODE_SQL, tens of kB per row) so lost
+                # .sql files can be restored from phenex.db.
+                state_table = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME)
+                wanted = [
+                    c
+                    for c in ("NODE_NAME", "NODE_HASH", "EXECUTION_PARAMS")
+                    if c in state_table.columns
+                ]
+                table = state_table.select(*wanted).to_pandas()
                 table = table[table.NODE_NAME == node_name]
 
                 if len(table):

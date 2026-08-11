@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import ibis
 from phenex.phenotypes.phenotype import Phenotype
+from phenex.node import Node
 from phenex.core.cohort import Cohort
 from phenex.reporting import Table1, Waterfall
 from phenex.util import create_logger
@@ -155,6 +156,35 @@ class _PseudoReporterNode:
             self.reporter.to_json(path)
 
 
+class _SubcohortIndexNode(Node):
+    """The subcohort's index query as a real `Node`, so it resolves through the same
+    `Node.to_sql()` path as every other node.
+
+    Built inline and never cached, with no dependencies, so only the live expression
+    or the saved `.sql` resolves it and `_execute` raises.
+    """
+
+    def __init__(self, table_name: str, expression):
+        super().__init__(name=table_name)
+        self._expression = expression
+
+    def get_table_name(self, table_name_prefix: Optional[str] = None) -> str:
+        """Return the node name, which is already the fully qualified table name."""
+        return self.name  # already fully qualified
+
+    def _execute(self, tables=None):
+        """Recompile layer, raises because this node has nothing to rebuild from."""
+        # Reached only if the live expression (layer 1) and the saved file
+        # (layer 2) both missed. This node was never cached (layer 3) and has no
+        # dependencies to recompile from (layer 4).
+        raise RuntimeError(
+            f"Cannot resolve SQL for subcohort index '{self.name}'. It is not "
+            f"cached and has no dependencies to recompile from, its SQL comes "
+            f"only from the live session or the saved '{self.name}.sql'. Re-run "
+            f"subcohort.execute(), or pass sql_dir= pointing at the run's sql folder."
+        )
+
+
 class Subcohort(Cohort):
     """
     A Subcohort derives from a parent cohort and applies additional inclusion /
@@ -235,6 +265,7 @@ class Subcohort(Cohort):
         overwrite=False,
         n_threads=1,
         lazy_execution=False,
+        sql_dir="./sql",
     ):
         """
         Execute the subcohort by applying additional criteria on top of the
@@ -278,7 +309,7 @@ class Subcohort(Cohort):
                     overwrite=overwrite,
                     n_threads=n_threads,
                     lazy_execution=lazy_execution,
-                    table_name_prefix=self.name,
+                    table_name_prefix=self._table_prefix,
                 )
 
         # ------------------------------------------------------------------
@@ -302,8 +333,15 @@ class Subcohort(Cohort):
 
         self.table = index_table
 
-        # Materialise the index table if a connector is provided.
+        # Capture the index query BEFORE materialising it, so its SQL can be
+        # written out (materialising overwrites self.table with a plain table
+        # reference, losing the join expression).
         index_db_name = f"{self.name}__INDEX".upper()
+        self._subcohort_index_node = _SubcohortIndexNode(
+            table_name=index_db_name, expression=index_table
+        )
+
+        # Materialise the index table if a connector is provided.
         if con and self.table is not None:
             con.create_table(self.table, index_db_name, overwrite=overwrite)
             self.table = con.get_dest_table(index_db_name)
@@ -331,6 +369,10 @@ class Subcohort(Cohort):
                     reporter=reporter,
                 )
             )
+
+        # Write the subcohort's OWN SQL: its extra criteria and its index query.
+        # Parent nodes are written by the parent cohort's own execute().
+        self._write_node_sql_files(sql_dir, con, overwrite)
 
         return self.index_table
 
@@ -525,6 +567,57 @@ class Subcohort(Cohort):
     def index_table(self):
         """Return the subcohort's index table directly (no index_table_node)."""
         return self.table
+
+    def _collect_all_nodes(self):
+        """The subcohort's own nodes only, its extra criteria plus their dependencies
+        and its index query. The parent's `execute()` already writes the inherited
+        nodes, so repeating them would copy the parent's SQL into every subcohort
+        folder."""
+        seen = set()
+        ordered = []
+        roots = (
+            self.additional_inclusions
+            + self.additional_exclusions
+            + self.additional_outcomes
+        )
+        for root in roots:
+            if root is None:
+                continue
+            for node in [*root.dependencies, root]:
+                if id(node) not in seen:
+                    seen.add(id(node))
+                    ordered.append(node)
+        index_node = getattr(self, "_subcohort_index_node", None)
+        if index_node is not None and id(index_node) not in seen:
+            ordered.append(index_node)
+        return ordered
+
+    def to_sql(self, sql_dir=None, connector=None):
+        """Lazy, dict-like view of the subcohort's own SQL, its extra criteria plus its
+        index query, keyed by node table name. The inherited parent SQL is in the
+        parent's `to_sql()`. Nodes come from `execute()`, so run the parent then the
+        subcohort first.
+
+        Parameters:
+            sql_dir: Directory of saved `.sql` files, defaults to the last `execute()` run.
+            connector: Pins the SQL dialect, defaults to the subcohort's database connector.
+        """
+        from phenex.core.sql_view import announce_sql_source, build_sql_view
+
+        connector = connector or (
+            self.database.connector if self.database is not None else None
+        )
+        sql_dir = sql_dir or getattr(self, "_last_sql_dir", None)
+        # Complete but scoped to this subcohort, so say where the parent's SQL is.
+        logger.info(
+            f"Subcohort '{self.name}': its own SQL only (extra criteria and index), "
+            f"the inherited parent SQL is in {self.cohort.name}.to_sql()."
+        )
+        # Say up front where the SQL is read from, so a short list is traceable.
+        announce_sql_source(
+            f"Subcohort '{self.name}'", sql_dir, "in-memory nodes only, no sidecars"
+        )
+        return build_sql_view(self._collect_all_nodes(), sql_dir, connector)
 
     # ------------------------------------------------------------------
     # Report helpers — build reporters lazily using _FilteredPhenotypeView

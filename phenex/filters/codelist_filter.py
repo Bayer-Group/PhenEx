@@ -12,9 +12,13 @@ class CodelistFilter(Filter):
     CodelistFilter is a class designed to filter a CodeTable based on a specified codelist.
 
     The filter automatically detects where codes are defined by checking the CodeTable's
-    CODES_DEFINED_IN property. If CODES_DEFINED_IN is set to a domain name (e.g., "concept"),
+    CODES_DEFINED_IN property. If CODES_DEFINED_IN is set to a mapper class name
+    (e.g., "ConceptTable"),
     the filter will use autojoin to reach that table. If CODES_DEFINED_IN is None, codes
     are assumed to be in the current table.
+
+    Event dates defined on another table are handled separately via EVENT_DATE_DEFINED_IN
+    (resolved by EventPhenotype / PhenexTable.resolve_event_date).
 
     Attributes:
         codelist (Codelist): The codelist used for filtering the CodeTable.
@@ -118,7 +122,7 @@ class CodelistFilter(Filter):
 
             # Example 2: Codes in a separate concept table (autojoin pattern)
             class EventWithoutCodesTable(CodeTable):
-                CODES_DEFINED_IN = "CONCEPT"  # NAME_TABLE of table containing codes
+                CODES_DEFINED_IN = "ConceptTable"
                 JOIN_KEYS = {"EventMappingTable": ["EVENTMAPPINGID"]}
                 PATHS = {"ConceptTable": ["EventMappingTable"]}
 
@@ -151,7 +155,7 @@ class CodelistFilter(Filter):
                 )
 
             # Find the target table and perform autojoin
-            target_table = self._find_target_table(codes_domain, tables)
+            target_table = PhenexTable.find_table_in_domains(codes_domain, tables)
             original_columns = table.columns
             table = table.join(target_table, domains=tables)
 
@@ -165,35 +169,3 @@ class CodelistFilter(Filter):
 
         # If CODE/CODE_TYPE already exist, just apply the filter directly
         return self._filter(table)
-
-    def _find_target_table(
-        self, codes_domain: str, tables: Dict[str, PhenexTable]
-    ) -> PhenexTable:
-        """
-        Find the target table containing codes by searching for NAME_TABLE or class name match.
-
-        Parameters:
-            codes_domain: The NAME_TABLE or class name to search for
-            tables: Dictionary of available tables
-
-        Returns:
-            The matching PhenexTable
-
-        Raises:
-            ValueError: If no matching table is found
-        """
-        for domain_key, domain_table in tables.items():
-            table_name = getattr(domain_table, "NAME_TABLE", None)
-            class_name = domain_table.__class__.__name__
-            if table_name == codes_domain or class_name == codes_domain:
-                return domain_table
-
-        # No match found - provide helpful error message
-        available_tables = [
-            f"{t.__class__.__name__} (NAME_TABLE={getattr(t, 'NAME_TABLE', 'N/A')})"
-            for t in tables.values()
-        ]
-        raise ValueError(
-            f"Table required for codelist filter ({codes_domain}) not found. "
-            f"Searched by NAME_TABLE and class name. Available tables: {', '.join(available_tables)}"
-        )

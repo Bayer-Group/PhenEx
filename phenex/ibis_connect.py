@@ -7,6 +7,86 @@ from ibis.backends import BaseBackend
 from ibis.expr.types import Table
 
 
+# SQL dialect helpers
+
+DIALECT_STAMP_PREFIX = "-- phenex-dialect:"
+
+
+def ibis_dialect_of_expr(expr) -> Optional[str]:
+    """Dialect name of a bound ibis expression or None if unbound."""
+    try:
+        return ibis.get_backend(expr).name
+    except Exception:
+        return None
+
+
+def ibis_dialect_of_connector(connector) -> Optional[str]:
+    """Dialect name of a phenex connector's ibis backend."""
+    # Prefer the destination backend (where results are written), fall back to source.
+    for attr in ("dest_connection", "source_connection"):
+        backend = getattr(connector, attr, None)
+        name = getattr(backend, "name", None)
+        # only accept a real dialect string; ignore anything else
+        if isinstance(name, str) and name:
+            return name
+    return None
+
+
+def compile_sql(
+    expr, dialect: Optional[str] = None, stamp: bool = True, pretty: bool = True
+) -> str:
+    """Compile an ibis expression to SQL in `dialect`, prefixed with a `-- phenex-dialect:` stamp.
+
+    `dialect` is used if given, else inferred from the expression, else ibis's DuckDB
+    default (unstamped). `stamp=False` returns bare SQL.
+    """
+    if dialect is None:
+        dialect = ibis_dialect_of_expr(expr)
+    sql = (
+        ibis.to_sql(expr, dialect=dialect, pretty=pretty)
+        if dialect
+        else ibis.to_sql(expr, pretty=pretty)
+    )
+    if stamp and dialect:
+        return f"{DIALECT_STAMP_PREFIX} {dialect}\n{sql}"
+    return sql
+
+
+SQL_FILE_ENCODING = "utf-8"
+
+# Tried in order. utf-8 is what we write, cp1252 decodes files saved before it was pinned.
+SQL_FILE_READ_ENCODINGS = (SQL_FILE_ENCODING, "cp1252")
+
+
+def write_sql_file(path: str, sql: str) -> None:
+    """Write a saved `.sql` in a fixed encoding, so the folder reads back anywhere."""
+    with open(path, "w", encoding=SQL_FILE_ENCODING) as f:
+        f.write(sql)
+
+
+def read_sql_file(path: str) -> str:
+    """Read a saved `.sql`, trying each known encoding. Files saved before the encoding
+    was pinned carry the writer's default, so the last attempt raises for the caller."""
+    for encoding in SQL_FILE_READ_ENCODINGS:
+        try:
+            with open(path, encoding=encoding) as f:
+                return f.read()
+        except UnicodeDecodeError:
+            if encoding == SQL_FILE_READ_ENCODINGS[-1]:
+                raise
+
+
+def read_dialect_stamp(sql: Optional[str]) -> Optional[str]:
+    """Return the dialect recorded in a saved SQL's leading stamp comment, or None if unstamped."""
+    if not sql:
+        return None
+    stripped = sql.lstrip()
+    if stripped.startswith(DIALECT_STAMP_PREFIX):
+        first_line = stripped.splitlines()[0]
+        return first_line[len(DIALECT_STAMP_PREFIX) :].strip() or None
+    return None
+
+
 # Snowflake connection function
 def _check_env_vars(*vars: str) -> None:
     """

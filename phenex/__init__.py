@@ -39,6 +39,10 @@ from .phenotypes import (
     StackableRegimen,
     ISTHMajorBleedPhenotype,
     ISTHBleedComponents,
+    LiverDysfunctionPhenotype,
+    LiverDysfunctionComponents,
+    SexSplitMeasurementPhenotype,
+    SexSplitMeasurementComponents,
 )
 
 # Filters
@@ -113,7 +117,7 @@ from .derived_tables import (
 # Serialization utilities
 from .util.serialization.json import dump, dumps, load, loads
 
-__version__ = "v0.9.0"
+__version__ = "v0.9.1"
 
 __all__ = [
     # Connectors
@@ -159,6 +163,10 @@ __all__ = [
     "StackableRegimen",
     "ISTHMajorBleedPhenotype",
     "ISTHBleedComponents",
+    "LiverDysfunctionPhenotype",
+    "LiverDysfunctionComponents",
+    "SexSplitMeasurementPhenotype",
+    "SexSplitMeasurementComponents",
     # Filters
     "CategoricalFilter",
     "CodelistFilter",

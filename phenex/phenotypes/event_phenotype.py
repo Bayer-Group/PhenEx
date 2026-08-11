@@ -73,6 +73,7 @@ class EventPhenotype(Phenotype):
         return self._execute_from_filtered_table(code_table, tables)
 
     def _execute_from_filtered_table(self, code_table, tables) -> PhenotypeTable:
+        code_table = code_table.resolve_event_date(tables)
         code_table = self._perform_categorical_filtering(code_table, tables)
         code_table = self._perform_time_filtering(code_table)
         code_table = self._perform_date_selection(code_table)
