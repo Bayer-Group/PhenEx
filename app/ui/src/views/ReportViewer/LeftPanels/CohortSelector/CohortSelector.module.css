@@ -84,8 +84,8 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 4px 5px 4px 5px;
-  margin-left: var(--left_panel_margin_left, 0px);
+  padding: 4px 5px 4px 0px;
+  margin-left: 5px;
   margin-right: var(--left_panel_margin_right, 0px);
   border-radius: 8px;
   cursor: default;
