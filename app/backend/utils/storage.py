@@ -35,6 +35,7 @@ def _get_s3_client():
 # URI helpers
 # ---------------------------------------------------------------------------
 
+
 def is_s3(path: str) -> bool:
     return path.startswith("s3://")
 
@@ -73,6 +74,7 @@ def s3_dirname(path: str) -> str:
 # Path helpers that work for both local and s3://
 # ---------------------------------------------------------------------------
 
+
 def join(base: str, *parts: str) -> str:
     if is_s3(base):
         return s3_join(base, *parts)
@@ -94,6 +96,7 @@ def basename(path: str) -> str:
 # ---------------------------------------------------------------------------
 # Filesystem-like operations
 # ---------------------------------------------------------------------------
+
 
 def makedirs(path: str, exist_ok: bool = True) -> None:
     """Create local directory; no-op for S3 (keys imply hierarchy)."""
@@ -144,11 +147,11 @@ def listdir(path: str) -> list[str]:
             resp = client.list_objects_v2(**kwargs)
             for cp in resp.get("CommonPrefixes", []):
                 # e.g. "study_artifacts/study_id/D2026-07-14__T14-12/"
-                child = cp["Prefix"][len(prefix):].rstrip("/")
+                child = cp["Prefix"][len(prefix) :].rstrip("/")
                 if child:
                     results.add(child)
             for obj in resp.get("Contents", []):
-                rel = obj["Key"][len(prefix):]
+                rel = obj["Key"][len(prefix) :]
                 # only immediate children (no further '/')
                 if rel and "/" not in rel:
                     results.add(rel)
@@ -183,10 +186,13 @@ def walk(path: str) -> Iterator[tuple[str, list[str], list[str]]]:
 
         # Group keys by their immediate parent 'directory'
         from collections import defaultdict
-        dir_contents: dict[str, dict] = defaultdict(lambda: {"dirs": set(), "files": set()})
+
+        dir_contents: dict[str, dict] = defaultdict(
+            lambda: {"dirs": set(), "files": set()}
+        )
 
         for key in all_keys:
-            rel = key[len(prefix):]  # relative to root prefix
+            rel = key[len(prefix) :]  # relative to root prefix
             parts = rel.split("/")
             # Build a set of (dir, child) pairs for each level
             for depth in range(len(parts)):
@@ -201,7 +207,9 @@ def walk(path: str) -> Iterator[tuple[str, list[str], list[str]]]:
         def _yield(rel_prefix: str):
             bucket_prefix = prefix + rel_prefix
             root_uri = _make_s3_uri(bucket, bucket_prefix.rstrip("/"))
-            info = dir_contents.get(rel_prefix.rstrip("/"), {"dirs": set(), "files": set()})
+            info = dir_contents.get(
+                rel_prefix.rstrip("/"), {"dirs": set(), "files": set()}
+            )
             dirs = sorted(info["dirs"])
             files = sorted(info["files"])
             yield root_uri, dirs, files
@@ -265,10 +273,14 @@ def read_json(path: str) -> object:
     return json.loads(read_text(path))
 
 
-def write_bytes(path: str, data: bytes, content_type: str = "application/octet-stream") -> None:
+def write_bytes(
+    path: str, data: bytes, content_type: str = "application/octet-stream"
+) -> None:
     if is_s3(path):
         bucket, key = _parse_s3(path)
-        _get_s3_client().put_object(Bucket=bucket, Key=key, Body=data, ContentType=content_type)
+        _get_s3_client().put_object(
+            Bucket=bucket, Key=key, Body=data, ContentType=content_type
+        )
     else:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "wb") as f:

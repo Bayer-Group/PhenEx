@@ -30,18 +30,21 @@ logger = logging.getLogger(__name__)
 
 # ── Request model ─────────────────────────────────────────────────────────────
 
+
 class TLFAnalyzeRequest(BaseModel):
     execution_id: str
     user_instructions: str = ""
-    conversation: List[dict] = []   # prior {role, content} turns for follow-ups
-    force_refresh: bool = False     # if True, ignore cache and re-run agent
+    conversation: List[dict] = []  # prior {role, content} turns for follow-ups
+    force_refresh: bool = False  # if True, ignore cache and re-run agent
 
 
 # ── Agent Context ─────────────────────────────────────────────────────────────
 
+
 @dataclass
 class TLFContext:
     """Context passed to agent tools."""
+
     study_id: str
     execution_id: str
     artifacts_dir: str
@@ -57,7 +60,9 @@ from openai import AsyncAzureOpenAI
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-_http_client = httpx.AsyncClient(timeout=httpx.Timeout(120.0, connect=10.0), verify=False)
+_http_client = httpx.AsyncClient(
+    timeout=httpx.Timeout(120.0, connect=10.0), verify=False
+)
 azure_client = AsyncAzureOpenAI(
     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
     api_version=os.getenv("OPENAI_API_VERSION", "2025-01-01-preview"),
@@ -128,20 +133,20 @@ Organize files by clinical domain:
 @agent.tool
 async def list_files(ctx: RunContext[TLFContext], category: str | None = None) -> str:
     """List all output files from this study execution.
-    
+
     Args:
-        category: Optional filter by category: 'table', 'listing', 'figure', 'report', 
+        category: Optional filter by category: 'table', 'listing', 'figure', 'report',
                   'code', 'log', 'metadata', or 'other'. If None, shows all files.
-    
+
     Returns a formatted list with file paths, categories, and descriptions.
     """
     manifest = ctx.deps.manifest
     raw_files = manifest.get("files", [])
-    
+
     # Handle two manifest formats:
     # 1. Raw manifest (from tlf_import): files is a list of strings (paths)
     # 2. Enriched manifest: files is a list of dicts with {path, category, description}
-    
+
     files = []
     for f in raw_files:
         if isinstance(f, str):
@@ -150,19 +155,19 @@ async def list_files(ctx: RunContext[TLFContext], category: str | None = None) -
         elif isinstance(f, dict):
             # Already enriched
             files.append(f)
-    
+
     if category:
         files = [f for f in files if f.get("category") == category]
-    
+
     if not files:
         return f"No files found" + (f" in category '{category}'" if category else "")
-    
+
     # Group by category
     by_cat = {}
     for f in files:
         cat = f.get("category", "other")
         by_cat.setdefault(cat, []).append(f)
-    
+
     lines = [f"📁 **Available files ({len(files)} total):**\n"]
     for cat, items in sorted(by_cat.items()):
         lines.append(f"\n**{cat.upper()}** ({len(items)} files):")
@@ -170,31 +175,31 @@ async def list_files(ctx: RunContext[TLFContext], category: str | None = None) -
             path = f.get("path", "")
             desc = f.get("description", "")
             lines.append(f"  • `{path}` — {desc}")
-    
+
     # Emit tool feedback
     await ctx.deps.message_queue.put(
         json.dumps({"type": "tool", "message": f"📋 Listed {len(files)} files"})
     )
-    
+
     return "\n".join(lines)
 
 
 @agent.tool
 async def read_file(ctx: RunContext[TLFContext], file_path: str) -> str:
     """Read and summarize a specific output file.
-    
+
     Args:
         file_path: Path to the file (as shown in list_files output)
-    
+
     Returns detailed content summary with statistics for data files.
     """
     artifacts_dir = ctx.deps.artifacts_dir
-    
+
     # Emit tool feedback
     await ctx.deps.message_queue.put(
         json.dumps({"type": "tool", "message": f"📖 Reading {file_path}..."})
     )
-    
+
     try:
         content = _read_file_summary(artifacts_dir, file_path)
         return content
@@ -204,32 +209,31 @@ async def read_file(ctx: RunContext[TLFContext], file_path: str) -> str:
 
 @agent.tool
 async def emit_dashboard_card(
-    ctx: RunContext[TLFContext],
-    card_type: str,
-    data: dict
+    ctx: RunContext[TLFContext], card_type: str, data: dict
 ) -> str:
     """Emit a structured card for the dashboard.
-    
+
     Use this during auto-analysis to send results to the frontend as you discover them.
-    
+
     Args:
         card_type: Type of card - "summary", "insight", "issue"
         data: Card data (structure depends on card_type):
             - summary: {"content": "prose text"}
             - insight: {"text": "Main finding", "supporting_data": {"key": "value", ...}}
             - issue: {"severity": "info|warning|error", "message": "...", "details": "..."}
-    
+
     Returns confirmation message.
     """
     card = {"type": "card", "card_type": card_type, "data": data}
-    
+
     # Emit to frontend
     await ctx.deps.message_queue.put(json.dumps(card))
-    
+
     return f"✓ Emitted {card_type} card"
 
 
 # ── Endpoint ──────────────────────────────────────────────────────────────────
+
 
 @router.post("/study/{study_id}/tlf-analyze", tags=["tlf"])
 async def analyze_tlf_files(request: Request, study_id: str, body: TLFAnalyzeRequest):
@@ -258,7 +262,7 @@ async def analyze_tlf_files(request: Request, study_id: str, body: TLFAnalyzeReq
         raise HTTPException(status_code=404, detail="No manifest for this execution.")
 
     artifacts_dir = _storage.dirname(manifest_path)
-    
+
     # Load full manifest
     try:
         manifest = _storage.read_json(manifest_path)
@@ -267,10 +271,10 @@ async def analyze_tlf_files(request: Request, study_id: str, body: TLFAnalyzeReq
 
     # Build conversation history
     user_message = body.user_instructions or "Please analyze the study outputs."
-    
+
     # Create message queue for tool feedback
     message_queue = asyncio.Queue()
-    
+
     # Create context
     context = TLFContext(
         study_id=study_id,
@@ -291,25 +295,27 @@ async def analyze_tlf_files(request: Request, study_id: str, body: TLFAnalyzeReq
                         await asyncio.sleep(0)
                     except asyncio.QueueEmpty:
                         break
-            
+
             # Stream the agent response
             async with agent.run_stream(
-                user_message, deps=context, model_settings={"max_completion_tokens": 4000}
+                user_message,
+                deps=context,
+                model_settings={"max_completion_tokens": 4000},
             ) as result:
                 async for text_chunk in result.stream_text(delta=True):
                     # Drain tool messages first
                     async for msg in drain_message_queue():
                         yield msg
-                    
+
                     # Then stream AI text
                     if text_chunk:
                         yield f"data: {json.dumps({'type': 'chunk', 'text': text_chunk})}\n\n"
                         await asyncio.sleep(0)
-            
+
             # Final drain
             async for msg in drain_message_queue():
                 yield msg
-                
+
         except Exception as e:
             logger.error("TLF analysis agent failed: %s", e, exc_info=True)
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
@@ -324,13 +330,13 @@ async def analyze_tlf_files(request: Request, study_id: str, body: TLFAnalyzeReq
 async def auto_analyze_tlf(request: Request, study_id: str, body: TLFAnalyzeRequest):
     """
     Auto-analyze study outputs on page load.
-    
+
     The AI agent autonomously:
     1. Lists all files
     2. Identifies key files (demographics, outcomes, safety, etc.)
     3. Reads them and extracts structured metrics
     4. Emits dashboard cards as they're discovered
-    
+
     Returns Server-Sent Events with structured cards for the dashboard.
     """
     user_id = get_authenticated_user_id(request)
@@ -347,14 +353,14 @@ async def auto_analyze_tlf(request: Request, study_id: str, body: TLFAnalyzeRequ
         raise HTTPException(status_code=404, detail="No manifest for this execution.")
 
     artifacts_dir = _storage.dirname(manifest_path)
-    
+
     try:
         manifest = _storage.read_json(manifest_path)
     except Exception:
         manifest = {"files": []}
 
     message_queue = asyncio.Queue()
-    
+
     context = TLFContext(
         study_id=study_id,
         execution_id=body.execution_id,
@@ -413,6 +419,7 @@ Be concise and clinical. Focus on what a researcher needs to know."""
         collected_cards = []
 
         try:
+
             async def drain_message_queue():
                 while True:
                     try:
@@ -423,7 +430,9 @@ Be concise and clinical. Focus on what a researcher needs to know."""
                         break
 
             async with agent.run_stream(
-                auto_prompt, deps=context, model_settings={"max_completion_tokens": 6000}
+                auto_prompt,
+                deps=context,
+                model_settings={"max_completion_tokens": 6000},
             ) as result:
                 async for text_chunk in result.stream_text(delta=True):
                     async for raw_msg in drain_message_queue():
@@ -459,6 +468,7 @@ Be concise and clinical. Focus on what a researcher needs to know."""
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _read_file_summary(artifacts_dir: str, rel_path: str) -> str:
     """Return a concise text summary of a single output file."""
     # Security: no path traversal
@@ -481,12 +491,14 @@ def _read_file_summary(artifacts_dir: str, rel_path: str) -> str:
     try:
         if ext in (".parquet",):
             import pandas as pd
+
             raw = _storage.read_bytes(full_path)
             df = pd.read_parquet(io.BytesIO(raw))
             return _df_summary(df, rel_path)
 
         elif ext == ".csv":
             import pandas as pd
+
             raw = _storage.read_bytes(full_path)
             df = pd.read_csv(io.BytesIO(raw))
             return _df_summary(df, rel_path)
@@ -494,8 +506,9 @@ def _read_file_summary(artifacts_dir: str, rel_path: str) -> str:
         elif ext in (".xlsx", ".xls"):
             try:
                 import pandas as pd
+
                 raw = _storage.read_bytes(full_path)
-                
+
                 # Read all sheets
                 excel_file = pd.ExcelFile(io.BytesIO(raw))
                 summaries = []
@@ -503,7 +516,7 @@ def _read_file_summary(artifacts_dir: str, rel_path: str) -> str:
                     df = pd.read_excel(excel_file, sheet_name=sheet_name)
                     sheet_summary = _df_summary(df, f"{rel_path} (Sheet: {sheet_name})")
                     summaries.append(sheet_summary)
-                
+
                 return "\n\n".join(summaries)
             except Exception as e:
                 return f"[{rel_path}] Excel file (could not parse automatically): {e}"
@@ -511,7 +524,9 @@ def _read_file_summary(artifacts_dir: str, rel_path: str) -> str:
         elif ext == ".json":
             data = _storage.read_json(full_path)
             text = json.dumps(data, indent=2)
-            return f"[{rel_path}] JSON:\n{text[:4000]}" + ("\n…(truncated)" if len(text) > 4000 else "")
+            return f"[{rel_path}] JSON:\n{text[:4000]}" + (
+                "\n…(truncated)" if len(text) > 4000 else ""
+            )
 
         elif ext in (".png", ".jpg", ".jpeg", ".svg", ".pdf"):
             # Binary figure — just note its presence and size
@@ -556,6 +571,7 @@ def _df_summary(df, rel_path: str) -> str:
 
     # Data preview
     preview_rows = min(rows, 15)
-    lines.append(f"\nFirst {preview_rows} rows:\n{df.head(preview_rows).to_string(index=False)}")
+    lines.append(
+        f"\nFirst {preview_rows} rows:\n{df.head(preview_rows).to_string(index=False)}"
+    )
     return "\n".join(lines)
-

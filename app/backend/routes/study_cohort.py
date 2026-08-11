@@ -137,8 +137,8 @@ async def update_cohort_database(
 
     Request Body:
     - database (dict | null): The database configuration object, or null to clear it.
-    
-    Note: Authentication credentials (user, password, account, warehouse, role) are NOT 
+
+    Note: Authentication credentials (user, password, account, warehouse, role) are NOT
     stored in the database config. They are read from environment variables at execution time.
     Any credential fields sent by the client will be stripped for security.
     """
@@ -148,10 +148,12 @@ async def update_cohort_database(
         dest_db = os.environ.get("SNOWFLAKE_DEST_DATABASE")
         if dest_db:
             safe_id = study_id.replace("-", "_")
-            study_version = 1 # TODO implement study versions
+            study_version = 1  # TODO implement study versions
             config = database.setdefault("config", {})
-            config["destination_database"] = f"{dest_db}.PHENEX_{safe_id}_V{study_version:04d}"
-            
+            config["destination_database"] = (
+                f"{dest_db}.PHENEX_{safe_id}_V{study_version:04d}"
+            )
+
             # Strip credential fields for security - these come from environment variables
             for cred_field in ["user", "password", "account", "warehouse", "role"]:
                 config.pop(cred_field, None)

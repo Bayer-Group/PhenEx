@@ -148,7 +148,9 @@ class DomainsMocker:
             )
 
             # Deduplicate death dates per person (take earliest)
-            death_df = death_df.sort_values("DEATH_DATE").drop_duplicates("PERSON_ID", keep="first")
+            death_df = death_df.sort_values("DEATH_DATE").drop_duplicates(
+                "PERSON_ID", keep="first"
+            )
 
             # Create DataFrame with record person IDs for merging
             record_df = pd.DataFrame({"idx": range(count), "PERSON_ID": person_ids})

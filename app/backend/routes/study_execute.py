@@ -29,6 +29,7 @@ _stop_events: dict = {}
 
 _db_cache: dict = {}  # key: n_patients -> Database instance
 
+
 def _get_mock_database(mapper, n_patients: int = 1000):
     """Return a cached Database backed by DatabaseMocker, built once per n_patients value."""
     if n_patients not in _db_cache:
@@ -225,6 +226,7 @@ async def execute_study(request: Request):
 
                 if use_s3:
                     import tempfile
+
                     _tmpdir_obj = tempfile.TemporaryDirectory()
                     local_artifacts_dir = os.path.join(_tmpdir_obj.name, study_id)
                     os.makedirs(local_artifacts_dir, exist_ok=True)

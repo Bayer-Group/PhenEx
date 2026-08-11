@@ -89,7 +89,9 @@ def ui_to_storage_comparator(
     class_name = mapping.get(operator)
 
     if not class_name:
-        raise ValueError(f"Unknown operator '{operator}' for {comparator_type} comparator")
+        raise ValueError(
+            f"Unknown operator '{operator}' for {comparator_type} comparator"
+        )
 
     result = {"class_name": class_name, "value": value}
 
@@ -129,7 +131,9 @@ def ui_to_storage_relative_time_range(ui_value: Dict[str, Any]) -> Dict[str, Any
 
     # Validate at least one is provided
     if storage_value["min_days"] is None and storage_value["max_days"] is None:
-        raise ValueError("RelativeTimeRangeFilter must have at least one of min_days or max_days")
+        raise ValueError(
+            "RelativeTimeRangeFilter must have at least one of min_days or max_days"
+        )
 
     # Handle anchor phenotype
     if ui_value.get("anchor_phenotype"):
@@ -223,7 +227,9 @@ def ui_to_storage_value(constant_type: str, ui_value: Dict[str, Any]) -> Dict[st
 # ============================================================================
 
 
-def storage_to_ui_comparator(field: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+def storage_to_ui_comparator(
+    field: Optional[Dict[str, Any]]
+) -> Optional[Dict[str, Any]]:
     """
     Convert storage format (class_name + value) to UI format (operator + value).
 
@@ -337,7 +343,9 @@ def storage_to_ui_date_filter(storage_value: Dict[str, Any]) -> Dict[str, Any]:
     return ui_value
 
 
-def storage_to_ui_value(constant_type: str, storage_value: Dict[str, Any]) -> Dict[str, Any]:
+def storage_to_ui_value(
+    constant_type: str, storage_value: Dict[str, Any]
+) -> Dict[str, Any]:
     """
     Convert constant value from storage format to UI format.
 

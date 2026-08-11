@@ -33,6 +33,7 @@ STUDY_ARTIFACTS_DIR = os.environ.get("STUDY_ARTIFACTS_DIR", "/data/study_artifac
 
 # ── Response models ───────────────────────────────────────────────────────────
 
+
 class StudyWithExecution(BaseModel):
     study_id: str
     study_name: str
@@ -48,6 +49,7 @@ class TLFImportResponse(BaseModel):
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
 
 @router.get("/studies/private/with-module-status", tags=["study"])
 async def get_studies_with_module_status(request: Request):
@@ -193,9 +195,13 @@ async def get_tlf_manifest(request: Request, study_id: str):
 
     # Fetch latest successful execution
     executions = await db_manager.get_study_executions(study_id, user_id)
-    successful = [e for e in executions if e.get("status") == "success" and e.get("manifest_path")]
+    successful = [
+        e for e in executions if e.get("status") == "success" and e.get("manifest_path")
+    ]
     if not successful:
-        raise HTTPException(status_code=404, detail="No successful execution found for this study")
+        raise HTTPException(
+            status_code=404, detail="No successful execution found for this study"
+        )
 
     latest = successful[0]
     manifest_path = latest["manifest_path"]
@@ -211,13 +217,16 @@ async def get_tlf_manifest(request: Request, study_id: str):
                 status_code=404,
                 detail="Execution output files are no longer available (may have been deleted from storage).",
             )
-        raise HTTPException(status_code=500, detail=f"Could not read manifest: {err_str}")
+        raise HTTPException(
+            status_code=500, detail=f"Could not read manifest: {err_str}"
+        )
 
     study = await db_manager.get_study_for_user(user_id, study_id)
     study_name = (study or {}).get("name", "")
 
     files_with_desc = [
-        _describe_file(f) for f in manifest.get("files", [])
+        _describe_file(f)
+        for f in manifest.get("files", [])
         if not f.endswith("manifest.json")
     ]
 
@@ -234,29 +243,31 @@ async def get_tlf_manifest(request: Request, study_id: str):
 async def serve_plot(request: Request, study_id: str, plot_path: str):
     """
     Serve a generated plot image.
-    
+
     plot_path should be like: "plots/20260120_123456_abc123.png"
     """
     user_id = get_authenticated_user_id(request)
-    
+
     # Verify user has access to this study
     executions = await db_manager.get_study_executions(study_id, user_id)
     if not executions:
         raise HTTPException(status_code=404, detail="Study not found or access denied.")
-    
+
     # Get the first execution's manifest to find artifacts_dir
     execution = executions[0]
     manifest_path = execution.get("manifest_path")
     if not manifest_path:
-        raise HTTPException(status_code=404, detail="No artifacts found for this study.")
-    
+        raise HTTPException(
+            status_code=404, detail="No artifacts found for this study."
+        )
+
     artifacts_dir = storage.dirname(manifest_path)
-    
+
     # Security: no path traversal
     clean_path = plot_path.replace("\\", "/")
     if ".." in clean_path.split("/"):
         raise HTTPException(status_code=400, detail="Invalid plot path.")
-    
+
     # Build full path
     if storage.is_s3(artifacts_dir):
         full_path = storage.join(artifacts_dir, plot_path)
@@ -264,13 +275,14 @@ async def serve_plot(request: Request, study_id: str, plot_path: str):
         full_path = os.path.normpath(os.path.join(artifacts_dir, plot_path))
         if not full_path.startswith(os.path.normpath(artifacts_dir)):
             raise HTTPException(status_code=400, detail="Invalid plot path.")
-    
+
     if not storage.isfile(full_path):
         raise HTTPException(status_code=404, detail="Plot not found.")
-    
+
     # Read and return the image
     try:
         from fastapi.responses import Response
+
         image_bytes = storage.read_bytes(full_path)
         return Response(content=image_bytes, media_type="image/png")
     except Exception as e:
@@ -279,11 +291,13 @@ async def serve_plot(request: Request, study_id: str, plot_path: str):
 
 
 @router.get("/study/{study_id}/tlf-file-preview", tags=["tlf"])
-async def get_file_preview(request: Request, study_id: str, execution_id: str, file_path: str):
+async def get_file_preview(
+    request: Request, study_id: str, execution_id: str, file_path: str
+):
     """
     Return a preview of a single output file from a study execution.
     Used by the TLF viewer's central panel when a user clicks a file.
-    
+
     Returns JSON: {"content": "...", "path": "...", "type": "text"|"html"|"image"|"binary"}
     """
     import io
@@ -293,9 +307,7 @@ async def get_file_preview(request: Request, study_id: str, execution_id: str, f
 
     # Verify execution belongs to user
     executions = await db_manager.get_study_executions(study_id, user_id)
-    record = next(
-        (e for e in executions if e["execution_id"] == execution_id), None
-    )
+    record = next((e for e in executions if e["execution_id"] == execution_id), None)
     if not record:
         raise HTTPException(status_code=404, detail="Execution not found.")
 
@@ -325,6 +337,7 @@ async def get_file_preview(request: Request, study_id: str, execution_id: str, f
     try:
         if ext in (".parquet",):
             import pandas as pd
+
             raw = storage.read_bytes(full_path)
             df = pd.read_parquet(io.BytesIO(raw))
             content = _df_preview(df)
@@ -332,6 +345,7 @@ async def get_file_preview(request: Request, study_id: str, execution_id: str, f
 
         elif ext == ".csv":
             import pandas as pd
+
             raw = storage.read_bytes(full_path)
             df = pd.read_csv(io.BytesIO(raw))
             content = _df_preview(df)
@@ -340,6 +354,7 @@ async def get_file_preview(request: Request, study_id: str, execution_id: str, f
         elif ext in (".xlsx", ".xls"):
             try:
                 import pandas as pd
+
                 raw = storage.read_bytes(full_path)
                 df = pd.read_excel(io.BytesIO(raw))
                 content = _df_preview(df)
@@ -348,7 +363,7 @@ async def get_file_preview(request: Request, study_id: str, execution_id: str, f
                 return {
                     "content": "[Excel file — could not parse for preview]",
                     "path": file_path,
-                    "type": "text"
+                    "type": "text",
                 }
 
         elif ext == ".json":
@@ -362,7 +377,7 @@ async def get_file_preview(request: Request, study_id: str, execution_id: str, f
 
         elif ext in (".png", ".jpg", ".jpeg", ".gif"):
             raw = storage.read_bytes(full_path)
-            b64 = base64.b64encode(raw).decode('utf-8')
+            b64 = base64.b64encode(raw).decode("utf-8")
             mime = {
                 ".png": "image/png",
                 ".jpg": "image/jpeg",
@@ -372,7 +387,7 @@ async def get_file_preview(request: Request, study_id: str, execution_id: str, f
             return {
                 "content": f"data:{mime};base64,{b64}",
                 "path": file_path,
-                "type": "image"
+                "type": "image",
             }
 
         elif ext in (".svg",):
@@ -381,11 +396,11 @@ async def get_file_preview(request: Request, study_id: str, execution_id: str, f
 
         elif ext == ".pdf":
             raw = storage.read_bytes(full_path)
-            b64 = base64.b64encode(raw).decode('utf-8')
+            b64 = base64.b64encode(raw).decode("utf-8")
             return {
                 "content": f"data:application/pdf;base64,{b64}",
                 "path": file_path,
-                "type": "pdf"
+                "type": "pdf",
             }
 
         else:
@@ -396,7 +411,7 @@ async def get_file_preview(request: Request, study_id: str, execution_id: str, f
         return {
             "content": f"Error reading file: {str(e)}",
             "path": file_path,
-            "type": "text"
+            "type": "text",
         }
 
 
@@ -416,6 +431,7 @@ def _df_preview(df) -> str:
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _describe_file(rel_path: str) -> dict:
     """Infer a human-readable category and description from a file path."""
     name = os.path.basename(rel_path)
@@ -429,7 +445,17 @@ def _describe_file(rel_path: str) -> dict:
 
     # ── Category + description rules ──────────────────────────────────────
     if ext in (".png", ".jpg", ".jpeg", ".svg", ".pdf") and any(
-        kw in slug for kw in ("kaplan", "km", "survival", "curve", "forest", "plot", "figure", "fig")
+        kw in slug
+        for kw in (
+            "kaplan",
+            "km",
+            "survival",
+            "curve",
+            "forest",
+            "plot",
+            "figure",
+            "fig",
+        )
     ):
         category = "figure"
         desc = _figure_description(slug, parent)

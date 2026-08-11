@@ -2122,7 +2122,10 @@ class DatabaseManager:
                     date_str = ended_at.strftime("%-d %b %Y") if ended_at else ""
                     cohorts_mod = {"status": "complete", "detail": f"Run {date_str}"}
                 elif exec_status in ("running", "failure"):
-                    cohorts_mod = {"status": "in_progress", "detail": exec_status.capitalize()}
+                    cohorts_mod = {
+                        "status": "in_progress",
+                        "detail": exec_status.capitalize(),
+                    }
                 elif cohort_count > 0:
                     cohorts_mod = {"status": "in_progress", "detail": "Not yet run"}
                 else:
@@ -2135,26 +2138,34 @@ class DatabaseManager:
                 else:
                     tlf_mod = {"status": "none", "detail": None}
 
-                result.append({
-                    "id": row["study_id"],
-                    "name": row["name"],
-                    "description": row["description"],
-                    "is_public": row["is_public"],
-                    "display_order": row["display_order"],
-                    "visible_by": list(row["visible_by"] or []),
-                    "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-                    "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
-                    "cohort_count": cohort_count,
-                    "last_execution_id": row["last_execution_id"],
-                    "modules": {
-                        "cohorts": cohorts_mod,
-                        "tlf": tlf_mod,
-                    },
-                })
+                result.append(
+                    {
+                        "id": row["study_id"],
+                        "name": row["name"],
+                        "description": row["description"],
+                        "is_public": row["is_public"],
+                        "display_order": row["display_order"],
+                        "visible_by": list(row["visible_by"] or []),
+                        "created_at": (
+                            row["created_at"].isoformat() if row["created_at"] else None
+                        ),
+                        "updated_at": (
+                            row["updated_at"].isoformat() if row["updated_at"] else None
+                        ),
+                        "cohort_count": cohort_count,
+                        "last_execution_id": row["last_execution_id"],
+                        "modules": {
+                            "cohorts": cohorts_mod,
+                            "tlf": tlf_mod,
+                        },
+                    }
+                )
 
             return result
         except Exception as e:
-            logger.error(f"Failed to get studies with module status for user {user_id}: {e}")
+            logger.error(
+                f"Failed to get studies with module status for user {user_id}: {e}"
+            )
             raise
         finally:
             if conn:
@@ -2204,7 +2215,9 @@ class DatabaseManager:
                 for row in rows
             ]
         except Exception as e:
-            logger.error(f"Failed to get studies with executions for user {user_id}: {e}")
+            logger.error(
+                f"Failed to get studies with executions for user {user_id}: {e}"
+            )
             raise
         finally:
             if conn:
@@ -2243,7 +2256,7 @@ class DatabaseManager:
         study_id: Optional[str],
         title: Optional[str] = None,
         session_id: Optional[str] = None,
-        app_context: str = 'study',
+        app_context: str = "study",
     ) -> Dict:
         conn = None
         try:
@@ -2290,7 +2303,7 @@ class DatabaseManager:
                 await conn.close()
 
     async def get_chat_sessions(
-        self, user_id: str, study_id: Optional[str], app_context: str = 'study'
+        self, user_id: str, study_id: Optional[str], app_context: str = "study"
     ) -> List[Dict]:
         conn = None
         try:

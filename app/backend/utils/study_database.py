@@ -36,6 +36,7 @@ def _resolve_mapper(database_config: dict):
     mapper_name = (database_config or {}).get("mapper", "OMOP")
     if mapper_name == "OMOP":
         from phenex.mappers import OMOPDomains
+
         return OMOPDomains
     raise ValueError(f"Unsupported mapper '{mapper_name}'. Only 'OMOP' is supported.")
 
@@ -97,7 +98,9 @@ def build_database_from_config(database_config: dict):
         if n_patients not in _mock_db_cache:
             from phenex.sim import DatabaseMocker
 
-            logger.info(f"Building DatabaseMocker with {n_patients} patients (one-time)...")
+            logger.info(
+                f"Building DatabaseMocker with {n_patients} patients (one-time)..."
+            )
             _mock_db_cache[n_patients] = DatabaseMocker(
                 domains_dict=mapper, n_patients=n_patients
             ).get_database()
@@ -126,12 +129,7 @@ def build_database_from_config(database_config: dict):
 def _sample_column_values(ibis_table, column: str, limit: int) -> List[str]:
     """Return up to `limit` distinct, non-null values of a column as strings."""
     try:
-        df = (
-            ibis_table.select(column)
-            .distinct()
-            .limit(limit)
-            .execute()
-        )
+        df = ibis_table.select(column).distinct().limit(limit).execute()
         values = df[column].dropna().tolist()
         return [str(v) for v in values]
     except Exception as e:  # pragma: no cover - defensive; depends on live DB
@@ -230,7 +228,10 @@ def _get_raw_ibis_connection(database_config: dict):
             # just to populate the mocker; the tables are what matter for SQL.
             from phenex.mappers import OMOPDomains
             from phenex.sim import DatabaseMocker
-            logger.info(f"Building DatabaseMocker with {n_patients} patients for SQL access...")
+
+            logger.info(
+                f"Building DatabaseMocker with {n_patients} patients for SQL access..."
+            )
             _mock_db_cache[n_patients] = DatabaseMocker(
                 domains_dict=OMOPDomains, n_patients=n_patients
             ).get_database()
@@ -238,6 +239,7 @@ def _get_raw_ibis_connection(database_config: dict):
 
     if connector_type == "snowflake":
         from phenex.ibis_connect import SnowflakeConnector
+
         con = SnowflakeConnector(
             SNOWFLAKE_SOURCE_DATABASE=db_cfg.get("source_database"),
             SNOWFLAKE_DEST_DATABASE=db_cfg.get("destination_database"),
@@ -305,6 +307,7 @@ def execute_readonly_sql(
     rows = result_df.to_dict(orient="records")
     # Convert non-JSON-serialisable types (dates, decimals, numpy types)
     import math
+
     for row in rows:
         for k, v in row.items():
             if hasattr(v, "isoformat"):
