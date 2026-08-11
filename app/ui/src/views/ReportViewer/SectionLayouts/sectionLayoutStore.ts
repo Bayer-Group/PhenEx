@@ -41,6 +41,13 @@ export interface CellGroup {
   memberKeys: string[];
 }
 
+/** A free-form markdown text tile, placed on the grid like any other item. */
+export interface TextCell {
+  id: string;
+  /** Markdown source, rendered in the tile (edited in place). */
+  content: string;
+}
+
 export interface SectionLayout {
   id: string;
   name: string;
@@ -49,6 +56,8 @@ export interface SectionLayout {
   hiddenKeys?: string[];
   /** Group cells defined in this layout. */
   groups?: CellGroup[];
+  /** Free-form markdown text tiles added to this layout. */
+  textCells?: TextCell[];
   /** Number of item columns in this grid layout (1–5). */
   columnsPerRow?: number;
   /**
@@ -119,6 +128,11 @@ export const GRID_ROW_GAP = 14;
  * overhead when sizing group tiles.
  */
 export const TILE_HEADER_ROWS = 8;
+
+/** Default grid span (columns) for a new text tile — a third of the canvas. */
+export const TEXT_CELL_COLS = 20;
+/** Default grid span (rows) for a new text tile. */
+export const TEXT_CELL_ROWS = 16;
 
 /** Fixed pixel overhead of a tile's non-chart chrome: header + description + body padding. */
 const TILE_CHROME_PX = 60;
@@ -307,6 +321,48 @@ class SectionLayoutStore {
     this.update(sectionId, { ...section, layouts });
   }
 
+  /**
+   * Add an empty markdown text tile to a real layout, placed below the current
+   * content. The tile lives in `items` (placement) + `textCells` (content), so
+   * it moves, resizes and persists exactly like every other grid cell.
+   */
+  addTextCell(sectionId: string, layoutId: string): string {
+    const section = this.getSection(sectionId);
+    const id = `text_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+    const layouts = section.layouts.map((l) => {
+      if (l.id !== layoutId) return l;
+      const nextY = l.items.reduce((m, it) => Math.max(m, it.y + it.h), 0);
+      const item: GridItem = { key: id, x: 0, y: nextY, w: TEXT_CELL_COLS, h: TEXT_CELL_ROWS };
+      return { ...l, items: [...l.items, item], textCells: [...(l.textCells ?? []), { id, content: '' }] };
+    });
+    this.update(sectionId, { ...section, layouts });
+    return id;
+  }
+
+  updateTextCell(sectionId: string, layoutId: string, id: string, content: string) {
+    const section = this.getSection(sectionId);
+    const layouts = section.layouts.map((l) =>
+      l.id === layoutId
+        ? { ...l, textCells: (l.textCells ?? []).map((t) => (t.id === id ? { ...t, content } : t)) }
+        : l,
+    );
+    this.update(sectionId, { ...section, layouts });
+  }
+
+  deleteTextCell(sectionId: string, layoutId: string, id: string) {
+    const section = this.getSection(sectionId);
+    const layouts = section.layouts.map((l) =>
+      l.id === layoutId
+        ? {
+            ...l,
+            items: l.items.filter((it) => it.key !== id),
+            textCells: (l.textCells ?? []).filter((t) => t.id !== id),
+          }
+        : l,
+    );
+    this.update(sectionId, { ...section, layouts });
+  }
+
   renameLayout(sectionId: string, layoutId: string, name: string) {
     const section = this.getSection(sectionId);
     const layouts = section.layouts.map((l) => (l.id === layoutId ? { ...l, name } : l));
@@ -439,6 +495,8 @@ const store = new SectionLayoutStore();
 /** Stable empty reference so the hook doesn't churn when no variants are set. */
 const EMPTY_VARIANTS: Record<string, string> = {};
 
+/** Stable empty reference so the hook doesn't churn when a layout has no text cells. */
+const EMPTY_TEXT_CELLS: TextCell[] = [];
 // ── Default layout generation ────────────────────────────────────────────
 
 /**
@@ -522,6 +580,8 @@ export interface UseSectionLayouts {
   hiddenKeys: Set<string>;
   /** Group cells defined in the currently active layout. */
   groups: CellGroup[];
+  /** Markdown text tiles in the currently active layout. */
+  textCells: TextCell[];
   /** Per-row display variant map (row key → variant id). */
   displayVariants: Record<string, string>;
   /** Per-item descriptions shown below the title in locked grid view. */
@@ -540,6 +600,10 @@ export interface UseSectionLayouts {
   applyColumnRestack: (n: number, visibleKeys: string[], cohortCount: number) => void;
   createGroup: (memberKeys: string[], height: number) => string;
   ungroup: (groupId: string) => void;
+  /** Add an empty markdown text tile to the given layout; returns its id. */
+  addTextCell: (layoutId: string) => string;
+  updateTextCell: (layoutId: string, id: string, content: string) => void;
+  deleteTextCell: (layoutId: string, id: string) => void;
   setDisplayVariant: (rowKey: string, variantId: string) => void;
   setDescription: (key: string, description: string) => void;
 }
@@ -560,6 +624,9 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
   const toggleItemVisibility = useCallback((key: string) => store.toggleItemVisibility(sectionId, store.getSection(sectionId).activeLayoutId, key), [sectionId]);
   const createGroup = useCallback((memberKeys: string[], height: number) => store.createGroup(sectionId, store.getSection(sectionId).activeLayoutId ?? '', memberKeys, height), [sectionId]);
   const ungroup = useCallback((groupId: string) => store.ungroup(sectionId, store.getSection(sectionId).activeLayoutId ?? '', groupId), [sectionId]);
+  const addTextCell = useCallback((layoutId: string) => store.addTextCell(sectionId, layoutId), [sectionId]);
+  const updateTextCell = useCallback((layoutId: string, id: string, content: string) => store.updateTextCell(sectionId, layoutId, id, content), [sectionId]);
+  const deleteTextCell = useCallback((layoutId: string, id: string) => store.deleteTextCell(sectionId, layoutId, id), [sectionId]);
   const setDisplayVariant = useCallback((rowKey: string, variantId: string) => store.setDisplayVariant(sectionId, rowKey, variantId), [sectionId]);
   const setDescription = useCallback((key: string, description: string) => store.setItemDescription(sectionId, key, description), [sectionId]);
   const applyColumnRestack = useCallback((n: number, visibleKeys: string[], cohortCount: number) => store.applyColumnRestack(sectionId, n, visibleKeys, cohortCount), [sectionId]);
@@ -567,6 +634,7 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
   const activeLayout = section.layouts.find((l) => l.id === section.activeLayoutId) ?? null;
   const hiddenKeys = useMemo(() => new Set(store.getHiddenKeys(sectionId, section.activeLayoutId)), [sectionId, section]);
   const groups = useMemo(() => store.getGroups(sectionId, section.activeLayoutId), [sectionId, section]);
+  const textCells = activeLayout?.textCells ?? EMPTY_TEXT_CELLS;
   const displayVariants = section.displayVariants ?? EMPTY_VARIANTS;
   const descriptions = section.descriptions ?? EMPTY_VARIANTS;
   const globalColumnCount = useSyncExternalStore(store.subscribe, () => store.getGlobalColumnCount());
@@ -578,6 +646,7 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
     globalColumnCount,
     hiddenKeys,
     groups,
+    textCells,
     displayVariants,
     descriptions,
     setActiveLayout,
@@ -590,6 +659,9 @@ export function useSectionLayouts(sectionId: string): UseSectionLayouts {
     toggleItemVisibility,
     createGroup,
     ungroup,
+    addTextCell,
+    updateTextCell,
+    deleteTextCell,
     setDisplayVariant,
     setDescription,
     applyColumnRestack,

@@ -2,6 +2,7 @@ import { memo, useEffect, useState } from 'react';
 import { usePanZoom } from '../../../hooks/usePanZoom';
 import { PanZoomScaleProvider } from '../../../hooks/PanZoomScaleContext';
 import { PanZoomScrollbar } from '../../../components/CustomScrollbar/PanZoomScrollbar/PanZoomScrollbar';
+import { RightClickMenu, type RightClickMenuItem } from '../../../components/RightClickMenu/RightClickMenu';
 import { ZoomScrubber } from '../unused/ZoomScrubber';
 import { SectionGrid, type SectionGridProps } from './SectionGrid';
 import styles from './ZoomableSectionGrid.module.css';
@@ -17,6 +18,8 @@ export interface ZoomableSectionGridProps extends SectionGridProps {
    * item count or total height changes). Pan bounds are recomputed from it.
    */
   measureKey?: unknown;
+  /** Items for the background right-click menu (empty/omitted ⇒ no menu). */
+  contextMenuItems?: RightClickMenuItem[];
 }
 
 /**
@@ -30,6 +33,7 @@ export interface ZoomableSectionGridProps extends SectionGridProps {
 export const ZoomableSectionGrid = memo(function ZoomableSectionGrid({
   storageKey,
   measureKey,
+  contextMenuItems,
   ...gridProps
 }: ZoomableSectionGridProps) {
   const pz = usePanZoom({
@@ -39,6 +43,9 @@ export const ZoomableSectionGrid = memo(function ZoomableSectionGrid({
     paddingY: 80,
     storageKey,
   });
+
+  // Background right-click menu position (viewport coords), null when closed.
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
 
   // Card/viewport width drives the grid's column sizing — kept separate from the
   // (potentially much wider) free canvas so columns don't grow as items spread.
@@ -60,8 +67,14 @@ export const ZoomableSectionGrid = memo(function ZoomableSectionGrid({
     pz.remeasure();
   }, [measureKey, pz]);
 
+  const hasMenu = !!contextMenuItems && contextMenuItems.length > 0;
+
   return (
-    <div className={styles.viewport} ref={pz.viewportRef}>
+    <div
+      className={styles.viewport}
+      ref={pz.viewportRef}
+      onContextMenu={hasMenu ? (e) => { e.preventDefault(); setMenuPos({ x: e.clientX, y: e.clientY }); } : undefined}
+    >
       <div className={styles.content} ref={pz.contentRef}>
         <PanZoomScaleProvider value={pz.scale}>
           <SectionGrid {...gridProps} scale={pz.scale} viewportWidth={viewportWidth} />
@@ -78,6 +91,10 @@ export const ZoomableSectionGrid = memo(function ZoomableSectionGrid({
         )}
         <ZoomScrubber percentage={pz.zoomPercentage} onChange={pz.setZoomPercentage} />
       </div>
+
+      {menuPos && hasMenu && (
+        <RightClickMenu items={contextMenuItems!} position={menuPos} onClose={() => setMenuPos(null)} />
+      )}
     </div>
   );
 });

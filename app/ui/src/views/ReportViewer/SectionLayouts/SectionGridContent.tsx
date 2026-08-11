@@ -6,11 +6,13 @@ import { type TimeToEventCohort, type Table2Cohort } from '../GraphsAndTables/Ou
 import { SectionRowRenderer, SectionRowTitle, sectionRowTitle } from './SectionRowRenderer';
 import { type SectionGridRenderItem } from './SectionGrid';
 import { ZoomableSectionGrid } from './ZoomableSectionGrid';
+import { TextCellCard, TextCellTitle } from './TextCellCard';
 import { GroupCard } from './GroupCard';
 import { MultiSelectControls } from './MultiSelectControls';
 import { useGridSelection } from './GridSelection';
 import { useMultiSelectActions } from './useMultiSelectActions';
 import { restackByHeights } from './restackLayout';
+import { type RightClickMenuItem } from '../../../components/RightClickMenu/RightClickMenu';
 import { type SectionLayout, type GridItem, defaultTileRows, contentTileRows, TILE_HEADER_ROWS, GRID_COLUMNS, GRID_GAP, useSectionLayouts, lockedChartHeight } from './sectionLayoutStore';
 
 // ── Props ────────────────────────────────────────────────────────────────
@@ -61,6 +63,9 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     setDescription,
     createGroup,
     ungroup,
+    addTextCell,
+    updateTextCell,
+    deleteTextCell,
     setDisplayVariant,
     toggleItemVisibility,
   } = useSectionLayouts(sectionId);
@@ -133,7 +138,20 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
     return [...rowItems, ...groupItems];
   }, [looseRows, groups, rowByKey, cohortData, finalCohortSizes, spacers, spacersPx, tteCohorts, table2Cohorts, displayVariants, descriptions, setDescription, onNavigateToRow, onRenameRow]);
 
-  const itemKeys = useMemo(() => gridItems.map((it) => it.key), [gridItems]);
+  // Free-form markdown tiles, rendered like any other cell (movable/resizable).
+  const textItems = useMemo<SectionGridRenderItem[]>(() =>
+    (layout.textCells ?? []).map((tc) => ({
+      key: tc.id,
+      title: 'Text',
+      titleNode: <TextCellTitle onDelete={() => deleteTextCell(layout.id, tc.id)} />,
+      content: <TextCellCard content={tc.content} onChange={(value) => updateTextCell(layout.id, tc.id, value)} />,
+    })),
+    [layout.textCells, layout.id, deleteTextCell, updateTextCell],
+  );
+
+  const allGridItems = useMemo(() => [...gridItems, ...textItems], [gridItems, textItems]);
+
+  const itemKeys = useMemo(() => allGridItems.map((it) => it.key), [allGridItems]);
   const containerRef = useRef<HTMLDivElement>(null);
   const selection = useGridSelection(itemKeys, true, containerRef);
 
@@ -178,6 +196,20 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
 
   const handleLayoutChange = commitItems;
 
+  // Adding a text cell to a synthetic default forks it into an editable draft
+  // first (which prompts a save), so the tile is stored with a real layout.
+  const handleAddTextCell = useCallback(() => {
+    const targetId = isDefault
+      ? createDraftLayout(layout.columnsPerRow ?? 3, layout.items)
+      : layout.id;
+    addTextCell(targetId);
+  }, [isDefault, createDraftLayout, addTextCell, layout.columnsPerRow, layout.items, layout.id]);
+
+  const contextMenuItems = useMemo<RightClickMenuItem[]>(
+    () => [{ label: 'Add text cell', onClick: handleAddTextCell }],
+    [handleAddTextCell],
+  );
+
   // On a cohort-count change, resize every tile to its content height for the
   // new count (chart grows/shrinks with cohorts; title/description unchanged),
   // preserving the free arrangement via a per-tile restack. Synthetic defaults
@@ -214,7 +246,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
         <ZoomableSectionGrid
           storageKey={`phenex.sectionZoom.${sectionId}.${layout.id}`}
           measureKey={layout.items}
-          items={gridItems}
+          items={allGridItems}
           layout={layout.items}
           selection={selection}
           editable={editable}
@@ -222,6 +254,7 @@ export const SectionGridContent = memo<SectionGridContentProps>(({
           autoStack={isDefault}
           onLayoutChange={handleLayoutChange}
           onItemClick={handleItemClick}
+          contextMenuItems={contextMenuItems}
         />
       </div>
       <MultiSelectControls

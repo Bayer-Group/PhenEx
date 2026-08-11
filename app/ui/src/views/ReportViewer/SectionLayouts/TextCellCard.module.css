@@ -1,0 +1,86 @@
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.titleLabel {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text_muted, #bbb);
+}
+
+.deleteBtn {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--text_muted, #bbb);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0.5;
+  transition: opacity 0.12s, color 0.12s;
+}
+
+.deleteBtn:hover {
+  opacity: 1;
+  color: var(--text_secondary, #888);
+}
+
+.markdown {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  padding: 2px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: black;
+  cursor: text;
+  word-break: break-word;
+}
+
+.markdown :global(h1),
+.markdown :global(h2),
+.markdown :global(h3) {
+  margin: 0.3em 0 0.2em;
+}
+
+.markdown :global(p) {
+  margin: 0.3em 0;
+}
+
+.markdown :global(ul),
+.markdown :global(ol) {
+  margin: 0.3em 0;
+  padding-left: 1.4em;
+}
+
+.placeholder {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  height: 100%;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text_muted, #bbb);
+  cursor: text;
+}
+
+.editor {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  color: black;
+  background: var(--background_color, #fff);
+  border: 1px solid var(--accent_color, #4a7fff);
+  border-radius: 6px;
+  outline: none;
+}
