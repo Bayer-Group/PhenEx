@@ -82,7 +82,7 @@
 
 .groupRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 4px 5px 4px 5px;
   margin-left: var(--left_panel_margin_left, 0px);
@@ -99,6 +99,7 @@
 .groupRowActive {
   background-color: var(--color-accent-bright) !important;
   color: white !important;
+  --group-checkbox-color: white;
 }
 
 .groupRowLabel {
@@ -160,8 +161,9 @@
 }
 
 .legendGroupDot{
-  margin-top:6px;
+  margin-top:5px;
   margin-left:10px;
+  align-self: flex-start;
 }
 
 

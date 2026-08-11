@@ -1,8 +1,9 @@
 import React, { FC, useState, useCallback, useMemo, useRef } from 'react';
-import { getCohortColor, resolveCohortColor, generateGroupColors, type GroupColorConfig, type CohortGroup, type LegendSelection, type CohortDescriptions, type ColorOverrides } from '../../types';
+import { resolveCohortColor, type CohortGroup, type LegendSelection, type CohortDescriptions, type ColorOverrides } from '../../types';
 import { RightClickMenu } from '../../../../components/RightClickMenu/RightClickMenu';
 import { Portal } from '../../../../components/Portal/Portal';
 import { LegendDot } from './LegendDot';
+import { GroupCheckbox } from './GroupCheckbox';
 import { type ColorUsage } from './ColorPicker';
 import styles from './CohortSelector.module.css';
 
@@ -142,22 +143,6 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
     }
   }, [groups, activeSet, onAdd]);
 
-  /**
-   * When the user picks a color config for a group, generate per-subcohort
-   * colors (alpha-fade for single mode, Lab interpolation for two-color) and
-   * persist each via onSetColor.
-   */
-  const handleSetGroupColor = useCallback(
-    (groupIndex: number, config: GroupColorConfig) => {
-      if (!onSetColor) return;
-      const group = groups[groupIndex];
-      const activeSubs = group.subcohorts.filter((sub) => activeSet.has(sub.fullName));
-      const colors = generateGroupColors(config, activeSubs.length);
-      activeSubs.forEach((sub, si) => onSetColor(sub.fullName, colors[si]));
-    },
-    [groups, activeSet, onSetColor],
-  );
-
   const handleDeselectAll = useCallback(() => {
     for (let i = selections.length - 1; i >= 0; i--) onRemove(i);
     if (!showAll) onToggleShowAll();
@@ -205,21 +190,6 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
       </div>
 
       {groups.map((group, gi) => {
-        const firstSub = group.subcohorts[0];
-        const firstOverride = firstSub ? colorMap.get(firstSub.fullName) : undefined;
-        const groupColor = firstOverride
-          ? firstOverride.replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)[^)]*\)/, 'rgb($1, $2, $3)')
-          : getCohortColor(gi, 0, group.subcohorts.length);
-        const lastSub = group.subcohorts[group.subcohorts.length - 1];
-        const endOverride =
-          group.subcohorts.length > 1 && lastSub ? colorOverrides?.[lastSub.fullName] : undefined;
-        const groupColorValue: GroupColorConfig = {
-          mode: 'two-color',
-          startColor: groupColor,
-          endColor: endOverride
-            ? endOverride.replace(/rgba?\((\d+),\s*(\d+),\s*(\d+)[^)]*\)/, 'rgb($1, $2, $3)')
-            : undefined,
-        };
         const visibleSubs = showAll
           ? group.subcohorts
           : group.subcohorts.filter((sub) => activeSet.has(sub.fullName));
@@ -233,15 +203,10 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
             onContextMenu={(e) => handleGroupContextMenu(e, gi)}
           >
             <div className={styles.legendGroupDot}>
-              <LegendDot
-                color={groupColor}
-                isActive={group.subcohorts.every((s) => activeSet.has(s.fullName))}
-                partiallyActive={group.subcohorts.some((s) => activeSet.has(s.fullName)) && !group.subcohorts.every((s) => activeSet.has(s.fullName))}
+              <GroupCheckbox
+                isSelected={group.subcohorts.every((s) => activeSet.has(s.fullName))}
+                isPartial={group.subcohorts.some((s) => activeSet.has(s.fullName)) && !group.subcohorts.every((s) => activeSet.has(s.fullName))}
                 onClick={() => handleGroupClick(gi)}
-                tooltipLabel={group.subcohorts.every((s) => activeSet.has(s.fullName)) ? 'Click to deselect all' : 'Click to select all'}
-                scale={1.3}
-                onGroupColorChange={onSetColor ? (c) => handleSetGroupColor(gi, c) : undefined}
-                groupColorValue={groupColorValue}
               />
             </div>
             <span className={styles.groupRowLabel}>
@@ -314,8 +279,8 @@ export const CohortSelector: FC<CohortSelectorProps> = ({
                 const color = colorMap.get(sub.fullName);
                 const hasDesc = sub.fullName !== group.parent && !!cohortDescriptions?.[sub.fullName]?.description;
                 return (
-                  <div key={sub.fullName} className={styles.legendItem}>
-                    <div className={styles.subcohortLegendDot}>
+                  <div key={sub.fullName} className={styles.legendItem} onClick={() => handleToggle(sub.fullName)} style={{ cursor: 'pointer' }}>
+                    <div className={styles.subcohortLegendDot} onClick={(e) => e.stopPropagation()}>
                       <LegendDot
                         color={color}
                         isActive={isActive}

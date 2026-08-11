@@ -1,0 +1,24 @@
+.checkbox {
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  border: 1.5px solid var(--group-checkbox-color, var(--text_color_notfocus, #888));
+  cursor: pointer;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.checkbox:hover {
+  border-color: var(--group-checkbox-color, var(--color-accent-bright, #4a90e2));
+}
+
+.selected {
+  background: var(--group-checkbox-color, var(--color-accent-bright, #4a90e2));
+  border-color: var(--group-checkbox-color, var(--color-accent-bright, #4a90e2));
+}
+
+.partial {
+  background: linear-gradient(135deg, var(--group-checkbox-color, var(--color-accent-bright, #4a90e2)) 50%, transparent 50%);
+  border-color: var(--group-checkbox-color, var(--color-accent-bright, #4a90e2));
+}
