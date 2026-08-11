@@ -1,4 +1,4 @@
-import { FC, useMemo, useState, useCallback } from 'react';
+import { FC, useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { type CohortClassified, type CohortGroup, type CohortDescriptions, getCohortColor } from '../types';
 import { AttritionTableCellRenderer, DEFAULT_COLUMNS, type ColumnConfig } from './RowRenderers/AttritionTableCellRenderer';
 import { AttritionControls } from './AttritionControls';
@@ -82,6 +82,28 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
   const selectedSet = useMemo(() => new Set(cohortData.map((cd) => cd.name)), [cohortData]);
   const [tableColumns, setTableColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [hideMainCohortRows, setHideMainCohortRows] = useState(true);
+  const [isNarrow, setIsNarrow] = useState(false);
+  const tableStackRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = tableStackRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? 0;
+      setIsNarrow(width > 0 && width < 500);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const NARROW_HIDDEN = new Set(['delta', 'pctEntry', 'pctSource']);
+  const effectiveColumns = useMemo(
+    () =>
+      isNarrow
+        ? tableColumns.map((c) => (NARROW_HIDDEN.has(c.key) ? { ...c, visible: false } : c))
+        : tableColumns,
+    [tableColumns, isNarrow],
+  );
 
   /** Build per-group chart data, grouping subcohorts under their main cohort. */
   const groupedCharts = useMemo(() => {
@@ -219,14 +241,14 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
   return (
     <div className={styles.wrapper}>
       <div className={styles.infoAndControls}>
-        <div className={styles.infoText}>
+        {/* <div className={styles.infoText}>
             On this page we see how study entry criterion and all inclusion and exclusion criteria affect the final cohort size. <br></br><br></br>
             Each card below is a single cohort or subcohort. The first row is always the study entry criterion, which defines the study entry date for each cohort. 
             The subsequent rows are inclusion criteria (which all patients must fulfill at study entry date) and exclusion criteria (which may not be present at study entry date).
             <br></br><br></br>
             You can customize the columns displayed to the right. To reorder, group, or change colors of cohorts, use the figure legend in the left panel.
             <br></br><br></br>
-        </div>
+        </div> */}
         <AttritionControls
           columns={tableColumns}
           onColumnsChange={setTableColumns}
@@ -236,7 +258,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
       </div>
 
       {/* Table — one row per cohort in legend order, stacked vertically, with spacers */}
-      <div className={styles.tableStack}>
+      <div className={styles.tableStack} ref={tableStackRef}>
         {flatTableEntries.map((entry) => {
           if (entry.kind === 'spacer') {
             return (
@@ -309,7 +331,7 @@ export const AttritionChart: FC<AttritionChartProps> = ({ cohortData, waterfall,
               </div>
               <AttritionTableCellRenderer
                 rows={entry.rows}
-                columns={tableColumns}
+                columns={effectiveColumns}
                 parentRowNames={entry.isParent ? undefined : entry.parentRowNames}
                 color={entry.color}
                 parentColor={entry.parentColor}

@@ -38,7 +38,7 @@
 
 .th.category,  .td.category  { width: var(--col-category); }
 .th.index,     .td.index     { width: var(--col-index); }
-.th.name,      .td.name      { width: auto; min-width: 80px; }
+.th.name,      .td.name      { width: auto; min-width: 100px; }
 .th.pctSource, .td.pctSource { width: var(--col-pctSource); }
 .th.remaining, .td.remaining { width: var(--col-remaining); }
 .th.delta,    .td.delta    { width: var(--col-delta); }

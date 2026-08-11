@@ -2,6 +2,8 @@
   position: relative;
   min-width: 0;
   overflow: visible;
+  padding-right:12px;
+  padding-top: 200px;
 }
 
 .controlsRow {
@@ -10,8 +12,7 @@
 
 .infoAndControls {
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 24px;
   padding-bottom: 16px;
   max-width: 1200px;
@@ -74,7 +75,7 @@
   min-width: 0;
   max-width: 1200px;
   overflow: visible;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); */
 
 }
 

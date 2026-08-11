@@ -8,8 +8,8 @@
   font-family: "IBMPlexSans-regular" !important;
   border: var(--border);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  max-width: 420px;
-  width: fit-content;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .switchRow {
