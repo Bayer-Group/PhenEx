@@ -4,6 +4,7 @@ import { MainView } from './views/MainView/MainView';
 import { ServerReportViewer } from './views/ReportViewer/ServerReportViewer';
 import { TLFReviewerView } from './views/TLFReviewer/TLFReviewerView';
 import { FontLoadingWrapper } from './components/FontLoadingWrapper';
+import { DocViewer } from './views/DocViewer/DocViewer';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/studies/:studyId" element={<MainView />} />
         <Route path="/studies/:studyId/cohorts/:cohortId" element={<MainView />} />
         <Route path="/tlfs/:studyId" element={<TLFReviewerView />} />
+        <Route path="/doc" element={<DocViewer />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </FontLoadingWrapper>
