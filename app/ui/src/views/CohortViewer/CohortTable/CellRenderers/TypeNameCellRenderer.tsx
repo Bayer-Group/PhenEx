@@ -4,10 +4,10 @@ import styles from './TypeNameCellRenderer.module.css';
 import typeStyles from '../../../../styles/study_types.module.css';
 import { getHierarchicalBackgroundColor } from './PhenexCellRenderer';
 import { formatHierarchicalIndexLabel } from './formatHierarchicalIndex';
-import ArrowUpRightIcon from '../../../../components/icons/ArrowUpRightIcon';
 import { CohortDataService } from '../../CohortDataService/CohortDataService';
+import { PhenotypeRowActions } from './PhenotypeRowActions';
 import { DeleteConfirmModal } from '../../../../components/DeleteConfirmModal/DeleteConfirmModal';
-import { createEditHandler, createDeleteHandler } from './cellRendererHandlers';
+import { createEditHandler } from './cellRendererHandlers';
 import ReactMarkdown from 'react-markdown';
 
 /**
@@ -27,7 +27,6 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const labelContainerRef = useRef<HTMLDivElement>(null);
 
   // ── Background / border colours (same logic as TypeSelectionDragCellRenderer) ──
@@ -56,7 +55,6 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
 
   // ── Drag ghost image ──────────────────────────────────────────────────────────
   const handleDragStart = (e: React.DragEvent) => {
-    if (deleteButtonRef.current) deleteButtonRef.current.style.opacity = '0';
     setIsDragging(true);
     if (labelContainerRef.current) {
       const clone = labelContainerRef.current.cloneNode(true) as HTMLElement;
@@ -84,10 +82,7 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
 
   // ── Settings arrow click → open SettingsCellEditor ───────────────────────────
   const handleEdit = createEditHandler(props);
-  const handleDelete = createDeleteHandler(props);
-
-  const handleDirectDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDirectDelete = () => {
     if (!props.data?.id) return;
     setShowDeleteModal(true);
   };
@@ -109,6 +104,14 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
       props.context.toggleRowExpansion(props.data.id);
     } else {
       CohortDataService.getInstance().toggleRowExpansion(props.data.id);
+    }
+  };
+
+  const handleAddPhenotype = (type: string) => {
+    if (props.context?.addPhenotype) {
+      props.context.addPhenotype(type, props.data?.id ?? null);
+    } else {
+      CohortDataService.getInstance().addPhenotype(type, props.data?.id ?? null);
     }
   };
 
@@ -160,10 +163,7 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             onDragStart={handleDragStart}
-            onDragEnd={() => {
-              if (deleteButtonRef.current) deleteButtonRef.current.style.opacity = '';
-              setIsDragging(false);
-            }}
+            onDragEnd={() => setIsDragging(false)}
           >
             <div
               className={styles.nameText}
@@ -208,47 +208,15 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
             </div>
 
             {/* Action buttons */}
-            <div className={styles.actions}>
-              <button
-                ref={deleteButtonRef}
-                className={`${styles.deleteButton} ${fontColor}`}
-                onClick={handleDirectDelete}
-                title="Delete phenotype"
-                style={{
-                  opacity: isHovered && !isDragging ? 1 : 0,
-                  pointerEvents: isHovered && !isDragging ? 'auto' : 'none',
-                }}
-              >
-                <svg
-                  width="14"
-                  className={styles.deleteButtonIcon}
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                  <path d="M10 11v6" />
-                  <path d="M14 11v6" />
-                  <path d="M9 6V4h6v2" />
-                </svg>
-              </button>
-              <ArrowUpRightIcon
-                className={`${styles.expandArrow} ${isSelected ? styles.expandArrowSelected : ''} ${fontColor}`}
-              style={{
-                opacity: isHovered && !isDragging ? 1 : 0,
-                pointerEvents: isHovered && !isDragging ? 'auto' : 'none',
-              }}
-                onClick={(e: React.MouseEvent<SVGSVGElement>) => {
-                  e.stopPropagation();
-                  handleEdit();
-                }}
-              />
-            </div>
+            <PhenotypeRowActions
+              phenotypeId={props.data?.id ?? ''}
+              isHovered={isHovered}
+              isDragging={isDragging}
+              onDelete={handleDirectDelete}
+              onExpand={() => handleEdit()}
+              onAdd={handleAddPhenotype}
+              fontColor={fontColor}
+            />
           </div>
         </div>
       </div>
