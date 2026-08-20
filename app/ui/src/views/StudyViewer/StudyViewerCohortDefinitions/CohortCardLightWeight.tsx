@@ -92,8 +92,8 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
     }
   };
 
-  const handleAddPhenotype = (type: string) => {
-    definitionService.addPhenotype(cohortId, type);
+  const handleAddPhenotype = (type: string, parentId: string | null = null) => {
+    definitionService.addPhenotype(cohortId, type, parentId);
   };
 
   // --- CohortCardViewer wiring: routes every interaction through the study
@@ -282,6 +282,7 @@ export const CohortCardLightWeight: React.FC<CohortCardLightWeightProps> = React
                 canMakeComponent={handleCanMakeComponent}
                 onDeletePhenotype={handleDeletePhenotype}
                 onToggleRowExpansion={handleToggleRowExpansion}
+                onAddPhenotype={handleAddPhenotype}
               />
             </>
           )}

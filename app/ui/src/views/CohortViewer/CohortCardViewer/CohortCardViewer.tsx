@@ -94,6 +94,8 @@ interface CohortCardViewerProps {
   onDeletePhenotype?: (id: string) => void;
   /** Called when the user toggles accordion expand/collapse on a phenotype with children. */
   onToggleRowExpansion?: (id: string) => void;
+  /** Called when the user adds a phenotype via the inline add button. */
+  onAddPhenotype?: (type: string, parentId: string | null) => void;
   /**
    * Override/extend the section title labels keyed by phenotype `type`.
    * Merged over the defaults, e.g. `{ component: 'Components' }` to title the
@@ -149,6 +151,7 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
       canMakeComponent,
       onDeletePhenotype,
       onToggleRowExpansion,
+      onAddPhenotype,
       sectionTitles,
       sectionGroupBy = 'effective_type',
       gridBottomPadding = 0,
@@ -448,14 +451,15 @@ export const CohortCardViewer = forwardRef<any, CohortCardViewerProps>(
           else if (key === 'columnDefs') setColumns(value ?? []);
         },
         context:
-          onDeletePhenotype || onToggleRowExpansion
+          onDeletePhenotype || onToggleRowExpansion || onAddPhenotype
             ? {
                 ...(onDeletePhenotype ? { deletePhenotype: onDeletePhenotype } : {}),
                 ...(onToggleRowExpansion ? { toggleRowExpansion: onToggleRowExpansion } : {}),
+                ...(onAddPhenotype ? { addPhenotype: onAddPhenotype } : {}),
               }
             : undefined,
       }),
-      [startEditingCell, commitEdit, onDeletePhenotype, onToggleRowExpansion]
+      [startEditingCell, commitEdit, onDeletePhenotype, onToggleRowExpansion, onAddPhenotype]
     );
     backingRef.current = backing;
 
