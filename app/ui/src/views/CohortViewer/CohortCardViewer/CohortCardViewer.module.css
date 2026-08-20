@@ -270,13 +270,9 @@
   border: 2px solid var(--color-drop-forbidden, #ef4444);
 }
 
-/* Floating label describing the pending drop operation. */
+/* Floating label describing the pending drop operation — rendered in a portal. */
 .dropLabel {
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  z-index: 5;
+  z-index: 9999;
   pointer-events: none;
   padding: 2px 8px;
   border-radius: 10px;
@@ -289,11 +285,12 @@
   background-color: var(--color-drop-section, #10b981);
 }
 
-.rowDropComponent .dropLabel {
+/* Operation colour is set by the drop-class mirrored onto the portal span. */
+.dropLabel.rowDropComponent {
   background-color: var(--color-drop-component, #8b5cf6);
 }
 
-.rowDropForbidden .dropLabel {
+.dropLabel.rowDropForbidden {
   background-color: var(--color-drop-forbidden, #ef4444);
 }
 

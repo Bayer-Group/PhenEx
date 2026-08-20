@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './CohortCardViewer.module.css';
 import { CohortCardCell } from './CohortCardCell';
 import { ShimApi, ShimBacking } from './gridApiShim';
@@ -64,6 +65,19 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
   onDragEnd,
 }) => {
   const id = rowData?.id ?? String(rowIndex);
+  const rowDivRef = useRef<HTMLDivElement | null>(null);
+  const labelSpanRef = useRef<HTMLSpanElement | null>(null);
+
+  // Write position imperatively so we never call setState inside a layout effect.
+  useLayoutEffect(() => {
+    const span = labelSpanRef.current;
+    const row = rowDivRef.current;
+    if (!span || !row) return;
+    const rect = row.getBoundingClientRect();
+    span.style.left = `${rect.right + 6}px`;
+    span.style.top = `${rect.top + rect.height / 2}px`;
+  });
+
   const backgroundColor = getHierarchicalBackgroundColor(
     rowData?.effective_type,
     rowData?.hierarchical_index
@@ -87,7 +101,7 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
 
   return (
     <div
-      ref={el => registerRowRef(id, el)}
+      ref={el => { rowDivRef.current = el; registerRowRef(id, el); }}
       className={`${styles.row} ${isSelected ? styles.rowSelected : ''} ${
         isDragging ? styles.rowDragging : ''
       } ${dropClass} ${isBlurred ? styles.rowDimmed : ''}`}
@@ -101,7 +115,16 @@ export const CohortCardRow: React.FC<CohortCardRowProps> = ({
       onDrop={e => onDrop(e, rowIndex)}
       onDragEnd={onDragEnd}
     >
-      {dropLabel && <span className={styles.dropLabel}>{dropLabel}</span>}
+      {dropLabel && createPortal(
+        <span
+          ref={labelSpanRef}
+          className={`${styles.dropLabel} ${dropClass}`}
+          style={{ position: 'fixed', transform: 'translateY(-50%)' }}
+        >
+          {dropLabel}
+        </span>,
+        document.body
+      )}
       {columns.map(colDef => (
         <CohortCardCell
           key={colDef.field}
