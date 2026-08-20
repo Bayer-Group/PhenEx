@@ -125,7 +125,7 @@
 /* ── Action buttons (delete + settings arrow) ─────────────────────────────── */
 .actions {
   position: absolute;
-  top: var(--item-margin-top, 6px);
+  top: 3px;
   right: var(--item-margin-horizontal, 8px);
   display: flex;
   align-items: center;
@@ -145,10 +145,12 @@
   align-items: center;
   justify-content: center;
   height: 20px;
-  border-radius: 8px;
+  width:20px;
+  border-radius: 50%;
   flex-shrink: 0;
-  background-color: var(--background_color_hover_over_grid);
-
+  /* background-color: var(--background_color_hover_over_grid); */
+  background-color: var(--background_color_light);
+  border: 1px solid var(--line_color_dark);
 }
 
 .deleteButton:hover {
@@ -159,18 +161,25 @@
   outline: none;
 }
 
+.deleteButtonIcon {
+  stroke: black;
+}
+
 .expandArrow {
   flex-shrink: 0;
   cursor: pointer;
-  width: 20px;
-  height: 20px;
+  width: 15px;
+  height: 15px;
   transition:
     opacity 0.15s ease,
     color 0.15s ease,
     transform 0.15s ease;
   opacity: 1;
   color: var(--line-color);
-  border-radius: 8px;
+  border-radius: 50%;
+  padding: 2.5px;
+  border: 1px solid var(--line_color_dark);
+
 }
 
 :global(.ag-row:hover) .expandArrow {

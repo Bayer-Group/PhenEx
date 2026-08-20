@@ -606,3 +606,93 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ── Section labels ──────────────────────────────────────────────────── */
+.sectionLabel {
+  font-size: var(--font_size_items, 11px);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text_color_notfocus, #888);
+  padding: 6px 5px 4px 15px;
+}
+
+/* ── Stratification radio group ──────────────────────────────────────── */
+.stratSection {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-color, #e2e2e2);
+}
+
+.radioRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 5px 5px 0;
+  margin-left: 5px;
+  margin-right: var(--left_panel_margin_right, 0px);
+  border: none;
+  background: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text_color_notfocus, #333);
+  transition: background 0.15s;
+}
+
+.radioRow:hover {
+  background-color: var(--color-accent-bright) !important;
+  color: white !important;
+}
+
+.radioRow:hover .radio {
+  border-color: white;
+}
+
+.radioRow:focus {
+  outline: none;
+}
+
+.radio {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin-left: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--text_color_notfocus, #999);
+  box-sizing: border-box;
+  position: relative;
+  transition: border-color 0.15s;
+}
+
+.radioSelected {
+  border-color: var(--color-accent-bright, #4a90d9);
+}
+
+.radioSelected::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background-color: var(--color-accent-bright, #4a90d9);
+}
+
+.radioRow:hover .radioSelected::after {
+  background-color: white;
+}
+
+.radioLabel {
+  font-size: var(--font_size_items, 11px);
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+}
+
+.showMainRow {
+  padding: 12px 5px 4px 15px;
+}
+

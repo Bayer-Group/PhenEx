@@ -18,6 +18,8 @@ import { ThreePanelCollapseProvider, useThreePanelCollapse } from '../../context
 import {
   classifyRows,
   parseCohortGroups,
+  computeStratifiedSelection,
+  stratificationKey,
   getSelectionColor,
   type CohortEntry,
   type CohortClassified,
@@ -67,6 +69,38 @@ export function formatRunTimestamp(raw: string): string {
   const [, year, month, day, hour, minute] = m;
   return `${MONTH_NAMES[parseInt(month, 10) - 1]} ${ordinal(parseInt(day, 10))} ${year} @${hour}:${minute} CET`;
 }
+
+/**
+ * Reverse-derive the cohort-selector controls (selected main cohorts, active
+ * stratification, show-main flag) from a flat list of legend selections. Used
+ * to seed / re-sync the selector when selections arrive from persistence.
+ */
+function deriveControls(
+  groups: CohortGroup[],
+  sels: LegendSelection[],
+): { parents: string[]; activeStratification: string | null; showMainCohort: boolean } {
+  const parentOf = new Map<string, string>();
+  groups.forEach((g) => g.subcohorts.forEach((s) => parentOf.set(s.fullName, g.parent)));
+  const parents: string[] = [];
+  const seen = new Set<string>();
+  let activeStratification: string | null = null;
+  let hasMain = false;
+  for (const sel of sels) {
+    const parent = parentOf.get(sel.cohortName) ?? sel.cohortName;
+    if (!seen.has(parent)) {
+      seen.add(parent);
+      parents.push(parent);
+    }
+    if (sel.cohortName === parent) hasMain = true;
+    else if (activeStratification == null) {
+      activeStratification = stratificationKey(sel.cohortName.slice(parent.length + 2));
+    }
+  }
+  return { parents, activeStratification, showMainCohort: activeStratification == null ? true : hasMain };
+}
+
+/** Id prefix for the derived, non-persisted stratification section separators. */
+const STRAT_SEPARATOR_PREFIX = '__strat_sep__';
 
 // ── Props ───────────────────────────────────────────────────────────────
 
@@ -246,8 +280,28 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   useEffect(() => {
     if (initialSelections?.length) {
       setSelections(initialSelections);
+      const c = deriveControls(groups, initialSelections);
+      setSelectedParents(c.parents);
+      setActiveStratification(c.activeStratification);
+      setShowMainCohort(c.showMainCohort);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSelections]);
+
+  // ── Stratification controls ───────────────────────────────────────────
+  // Source of truth for the cohort selector: which main cohorts are selected,
+  // which stratification (if any) is displayed, and whether main cohorts are
+  // shown alongside their stratified subcohorts. `selections` is the derived,
+  // flat list consumed by charts and the figure legend.
+  const [selectedParents, setSelectedParents] = useState<string[]>(
+    () => deriveControls(groups, selections).parents,
+  );
+  const [activeStratification, setActiveStratification] = useState<string | null>(
+    () => deriveControls(groups, selections).activeStratification,
+  );
+  const [showMainCohort, setShowMainCohort] = useState<boolean>(
+    () => deriveControls(groups, selections).showMainCohort,
+  );
 
   // ── Spacers ───────────────────────────────────────────────────────────
   // Spacers live alongside selections. They are stored positionally by the
@@ -746,46 +800,54 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
   );
 
   // ── Interaction handlers ──────────────────────────────────────────────
-  const findGroupInfo = useCallback(
-    (fullName: string) => {
-      for (let gi = 0; gi < groups.length; gi++) {
-        const group = groups[gi];
-        for (let si = 0; si < group.subcohorts.length; si++) {
-          if (group.subcohorts[si].fullName === fullName) {
-            return { groupIndex: gi, subIndex: si, totalSubs: group.subcohorts.length };
-          }
-        }
-      }
-      return { groupIndex: 0, subIndex: 0, totalSubs: 1 };
+  // ── Cohort-selector control handlers ──────────────────────────────────
+  // Every control change recomputes the flat selection list from the three
+  // control values so `selections` (consumed everywhere) stays in sync.
+  const commitControls = useCallback(
+    (parents: string[], strat: string | null, showMain: boolean) => {
+      setSelectedParents(parents);
+      setActiveStratification(strat);
+      setShowMainCohort(showMain);
+      const names = computeStratifiedSelection(groups, parents, strat, showMain);
+      updateSelections(buildSelections(names, groups));
     },
-    [groups],
+    [groups, buildSelections, updateSelections],
   );
 
-  const handleReplace = useCallback(
-    (index: number, fullName: string) => {
-      const info = findGroupInfo(fullName);
-      updateSelections((prev) => {
-        const next = [...prev];
-        next[index] = { ...next[index], cohortName: fullName, ...info };
-        return next;
-      });
+  const handleToggleParent = useCallback(
+    (parent: string) => {
+      const next = selectedParents.includes(parent)
+        ? selectedParents.filter((p) => p !== parent)
+        : [...selectedParents, parent];
+      commitControls(next, activeStratification, showMainCohort);
     },
-    [findGroupInfo, updateSelections],
+    [selectedParents, activeStratification, showMainCohort, commitControls],
   );
 
-  const handleAdd = useCallback(
-    (fullName: string) => {
-      const info = findGroupInfo(fullName);
-      updateSelections((prev) => [
-        ...prev,
-        { cohortName: fullName, colorIndex: info.groupIndex, ...info },
-      ]);
+  const handleSetStratification = useCallback(
+    (strat: string | null) => {
+      const next = strat === activeStratification ? null : strat;
+      commitControls(selectedParents, next, showMainCohort);
     },
-    [findGroupInfo, updateSelections],
+    [selectedParents, activeStratification, showMainCohort, commitControls],
   );
+
+  const handleToggleShowMain = useCallback(() => {
+    commitControls(selectedParents, activeStratification, !showMainCohort);
+  }, [selectedParents, activeStratification, showMainCohort, commitControls]);
+
+  const handleSelectAllParents = useCallback(() => {
+    commitControls(groups.map((g) => g.parent), activeStratification, showMainCohort);
+  }, [groups, activeStratification, showMainCohort, commitControls]);
+
+  const handleDeselectAllParents = useCallback(() => {
+    commitControls([], activeStratification, showMainCohort);
+  }, [activeStratification, showMainCohort, commitControls]);
 
   // Combined, ordered legend list (cohorts + spacers) for the FigureLegend.
-  // Spacers are placed after the cohort named by `afterCohortName`.
+  // Spacers are placed after the cohort named by `afterCohortName`. In
+  // stratification mode a derived, labeled separator is injected above each
+  // main cohort's section (keyed by group, never persisted).
   const legendItems = useMemo<LegendItem[]>(() => {
     const items: LegendItem[] = [];
     const spacerToItem = (s: StoredSpacer): LegendItem => ({ kind: 'spacer', id: s.id, size: s.size, label: s.label });
@@ -793,14 +855,21 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
     const before = spacers.filter((s) => s.afterCohortName === null);
     before.forEach((s) => items.push(spacerToItem(s)));
 
+    let lastGroupIndex = -1;
     for (const sel of selections) {
+      if (activeStratification != null && sel.groupIndex !== lastGroupIndex) {
+        lastGroupIndex = sel.groupIndex;
+        const parentName = groups[sel.groupIndex]?.parent ?? '';
+        const label = (cohortDescriptions?.[parentName]?.display_name || parentName).replace(/_/g, ' ');
+        items.push({ kind: 'spacer', id: `${STRAT_SEPARATOR_PREFIX}${sel.groupIndex}`, size: 2, label });
+      }
       items.push(sel);
       spacers
         .filter((s) => s.afterCohortName === sel.cohortName)
         .forEach((s) => items.push(spacerToItem(s)));
     }
     return items;
-  }, [selections, spacers]);
+  }, [selections, spacers, activeStratification, groups, cohortDescriptions]);
 
   // Bar-chart spacers, positioned by index into the (cohorts-only) display order.
   const barChartSpacers = useMemo<BarChartSpacer[]>(() => {
@@ -824,6 +893,7 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
 
       for (const item of items) {
         if (isSpacer(item)) {
+          if (item.id.startsWith(STRAT_SEPARATOR_PREFIX)) continue; // derived section header
           nextSpacers.push({ id: item.id, size: item.size, afterCohortName: lastCohortName, label: item.label });
         } else {
           nextSelections.push(item);
@@ -906,10 +976,14 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
             >
               <FullCohortSelector
                 groups={groups}
-                selections={selections}
-                onReplace={handleReplace}
-                onAdd={handleAdd}
-                onRemove={(index) => updateSelections((prev) => prev.filter((_, i) => i !== index))}
+                selectedParents={selectedParents}
+                activeStratification={activeStratification}
+                showMainCohort={showMainCohort}
+                onToggleParent={handleToggleParent}
+                onSetStratification={handleSetStratification}
+                onToggleShowMainCohort={handleToggleShowMain}
+                onSelectAllParents={handleSelectAllParents}
+                onDeselectAllParents={handleDeselectAllParents}
                 cohortDescriptions={cohortDescriptions}
                 finalCohortSizes={finalCohortSizes}
                 colorOverrides={colorOverrides}
@@ -955,7 +1029,9 @@ const ReportViewerInner: FC<ReportViewerProps> = ({
       }
     },
     [
-      groups, selections, handleReplace, handleAdd, updateSelections,
+      groups, selections, selectedParents, activeStratification, showMainCohort,
+      handleToggleParent, handleSetStratification, handleToggleShowMain,
+      handleSelectAllParents, handleDeselectAllParents,
       cohortDescriptions, finalCohortSizes, outlineEntries, handleOutlineNavigate,
       expandedKeys, handleToggleExpand, legendItems, handleLegendChange, OutlinePanelConnected,
       colorOverrides, handleSetColor, handleReplaceColorOverrides, _runId,

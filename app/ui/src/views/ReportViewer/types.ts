@@ -288,6 +288,68 @@ export function parseCohortGroups(names: string[]): CohortGroup[] {
   }));
 }
 
+/**
+ * Stratification key for a subcohort label: the first underscore-delimited
+ * token. e.g. "age_40_to_50" -> "age", "male" -> "male".
+ */
+export function stratificationKey(subLabel: string): string {
+  const idx = subLabel.indexOf('_');
+  return idx === -1 ? subLabel : subLabel.substring(0, idx);
+}
+
+/** Human-friendly label for a stratification key (e.g. "age" -> "Age"). */
+export function stratificationLabel(key: string): string {
+  return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
+/**
+ * Derive the ordered, de-duplicated list of stratification categories present
+ * across all groups, based on the first word of each subcohort label.
+ */
+export function deriveStratifications(groups: CohortGroup[]): string[] {
+  const seen = new Set<string>();
+  const order: string[] = [];
+  for (const group of groups) {
+    for (const sub of group.subcohorts) {
+      if (sub.fullName === group.parent) continue; // skip the "main" entry
+      const key = stratificationKey(sub.label);
+      if (!seen.has(key)) {
+        seen.add(key);
+        order.push(key);
+      }
+    }
+  }
+  return order;
+}
+
+/**
+ * Compute the ordered list of cohort directory names to display given the
+ * selected main cohorts, the active stratification (null = main only), and
+ * whether the main cohort should be shown alongside its stratified subcohorts.
+ */
+export function computeStratifiedSelection(
+  groups: CohortGroup[],
+  selectedParents: readonly string[],
+  activeStratification: string | null,
+  showMainCohort: boolean,
+): string[] {
+  const parentSet = new Set(selectedParents);
+  const names: string[] = [];
+  for (const group of groups) {
+    if (!parentSet.has(group.parent)) continue;
+    if (activeStratification == null) {
+      names.push(group.parent);
+      continue;
+    }
+    if (showMainCohort) names.push(group.parent);
+    for (const sub of group.subcohorts) {
+      if (sub.fullName === group.parent) continue;
+      if (stratificationKey(sub.label) === activeStratification) names.push(sub.fullName);
+    }
+  }
+  return names;
+}
+
 export interface Table1Row {
   Name: string;
   N: number;

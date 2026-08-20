@@ -1,65 +1,39 @@
 import { FC, useRef, useState, useMemo } from 'react';
-import EyeSolidIcon from '../../../../assets/icons/eye-solid.svg';
-import EyeClosedIcon from '../../../../assets/icons/eye-closed.svg';
 import { PhenExNavBarTooltip } from '../../../../components/PhenExNavBar/PhenExNavBarTooltip';
-import type { CohortGroup, LegendSelection } from '../../../types';
+import type { CohortGroup } from '../../types';
 import styles from './CohortSelector.module.css';
 
 interface CohortActionBarProps {
   groups: CohortGroup[];
-  selections: LegendSelection[];
-  showAll: boolean;
-  onToggleShowAll: () => void;
-  onAdd: (fullName: string) => void;
-  onRemove: (index: number) => void;
+  selectedParents: string[];
+  onSelectAllParents: () => void;
+  onDeselectAllParents: () => void;
 }
 
 export const CohortActionBar: FC<CohortActionBarProps> = ({
   groups,
-  selections,
-  showAll,
-  onToggleShowAll,
-  onAdd,
-  onRemove,
+  selectedParents,
+  onSelectAllParents,
+  onDeselectAllParents,
 }) => {
-  const eyeRef = useRef<HTMLButtonElement>(null);
   const allRef = useRef<HTMLButtonElement>(null);
   const clearRef = useRef<HTMLButtonElement>(null);
-  const [hoveredBtn, setHoveredBtn] = useState<'eye' | 'all' | 'clear' | null>(null);
+  const [hoveredBtn, setHoveredBtn] = useState<'all' | 'clear' | null>(null);
 
-  const activeSet = useMemo(() => new Set(selections.map((s) => s.cohortName)), [selections]);
-  const totalCount = useMemo(() => groups.reduce((n, g) => n + g.subcohorts.length, 0), [groups]);
+  const parentSet = useMemo(() => new Set(selectedParents), [selectedParents]);
+  const allSelected = groups.length > 0 && groups.every((g) => parentSet.has(g.parent));
 
   return (
     <div className={styles.actionBar}>
       <span className={styles.actionButtons}>
         <span className={styles.actionCount}>
-          {selections.length}/{totalCount}
+          {selectedParents.length}/{groups.length}
         </span>
-        <button
-          ref={eyeRef}
-          className={styles.eyeToggle}
-          onClick={onToggleShowAll}
-          onMouseEnter={() => setHoveredBtn('eye')}
-          onMouseLeave={() => setHoveredBtn(null)}
-        >
-          <img
-            src={showAll ? EyeSolidIcon : EyeClosedIcon}
-            alt={showAll ? 'Showing all' : 'Selected only'}
-            className={styles.eyeIcon}
-          />
-        </button>
         <button
           ref={allRef}
           className={styles.clearBtn}
-          onClick={() => {
-            for (const group of groups) {
-              for (const sub of group.subcohorts) {
-                if (!activeSet.has(sub.fullName)) onAdd(sub.fullName);
-              }
-            }
-          }}
-          disabled={groups.every((g) => g.subcohorts.every((s) => activeSet.has(s.fullName)))}
+          onClick={onSelectAllParents}
+          disabled={allSelected}
           onMouseEnter={() => setHoveredBtn('all')}
           onMouseLeave={() => setHoveredBtn(null)}
         >
@@ -68,18 +42,14 @@ export const CohortActionBar: FC<CohortActionBarProps> = ({
         <button
           ref={clearRef}
           className={styles.clearBtn}
-          onClick={() => {
-            for (let i = selections.length - 1; i >= 0; i--) onRemove(i);
-            if (!showAll) onToggleShowAll();
-          }}
-          disabled={selections.length === 0}
+          onClick={onDeselectAllParents}
+          disabled={selectedParents.length === 0}
           onMouseEnter={() => setHoveredBtn('clear')}
           onMouseLeave={() => setHoveredBtn(null)}
         >
           Clear
         </button>
       </span>
-      <PhenExNavBarTooltip isVisible={hoveredBtn === 'eye'} anchorElement={eyeRef.current} label={showAll ? 'Show selected only' : 'Show all cohorts'} verticalPosition="above" horizontalAlignment="left" />
       <PhenExNavBarTooltip isVisible={hoveredBtn === 'all'} anchorElement={allRef.current} label="Select all cohorts" verticalPosition="above" horizontalAlignment="left" />
       <PhenExNavBarTooltip isVisible={hoveredBtn === 'clear'} anchorElement={clearRef.current} label="Deselect all cohorts" verticalPosition="above" horizontalAlignment="left" />
     </div>

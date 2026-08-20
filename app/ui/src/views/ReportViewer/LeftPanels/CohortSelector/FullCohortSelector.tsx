@@ -2,15 +2,19 @@ import { FC, useRef, useState, useEffect } from 'react';
 import { CohortSelector } from './CohortSelector';
 import { CohortActionBar } from './CohortActionBar';
 import { SimpleCustomScrollbar } from '../../../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
-import type { CohortGroup, LegendSelection, CohortDescriptions, ColorOverrides } from '../../types';
+import type { CohortGroup, CohortDescriptions, ColorOverrides } from '../../types';
 import styles from './FullCohortSelector.module.css';
 
 interface FullCohortSelectorProps {
   groups: CohortGroup[];
-  selections: LegendSelection[];
-  onReplace: (index: number, fullName: string) => void;
-  onAdd: (fullName: string) => void;
-  onRemove: (index: number) => void;
+  selectedParents: string[];
+  activeStratification: string | null;
+  showMainCohort: boolean;
+  onToggleParent: (parent: string) => void;
+  onSetStratification: (strat: string | null) => void;
+  onToggleShowMainCohort: () => void;
+  onSelectAllParents: () => void;
+  onDeselectAllParents: () => void;
   cohortDescriptions?: CohortDescriptions;
   finalCohortSizes?: Record<string, number | null>;
   colorOverrides?: ColorOverrides;
@@ -19,10 +23,14 @@ interface FullCohortSelectorProps {
 
 export const FullCohortSelector: FC<FullCohortSelectorProps> = ({
   groups,
-  selections,
-  onReplace,
-  onAdd,
-  onRemove,
+  selectedParents,
+  activeStratification,
+  showMainCohort,
+  onToggleParent,
+  onSetStratification,
+  onToggleShowMainCohort,
+  onSelectAllParents,
+  onDeselectAllParents,
   cohortDescriptions,
   finalCohortSizes,
   colorOverrides,
@@ -31,7 +39,6 @@ export const FullCohortSelector: FC<FullCohortSelectorProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollRegionRef = useRef<HTMLDivElement>(null);
   const headerActionsRef = useRef<HTMLDivElement>(null);
-  const [showAll, setShowAll] = useState(true);
   const [showFloatingActions, setShowFloatingActions] = useState(false);
 
   useEffect(() => {
@@ -57,22 +64,22 @@ export const FullCohortSelector: FC<FullCohortSelectorProps> = ({
         <div className={`${styles.actionBarRegion} ${showFloatingActions ? styles.actionBarRegionVisible : ''}`}>
           <CohortActionBar
             groups={groups}
-            selections={selections}
-            showAll={showAll}
-            onToggleShowAll={() => setShowAll((v) => !v)}
-            onAdd={onAdd}
-            onRemove={onRemove}
+            selectedParents={selectedParents}
+            onSelectAllParents={onSelectAllParents}
+            onDeselectAllParents={onDeselectAllParents}
           />
         </div>
         <div ref={scrollRef} className={styles.scrollContent}>
           <CohortSelector
             groups={groups}
-            selections={selections}
-            showAll={showAll}
-            onToggleShowAll={() => setShowAll((v) => !v)}
-            onReplace={onReplace}
-            onAdd={onAdd}
-            onRemove={onRemove}
+            selectedParents={selectedParents}
+            activeStratification={activeStratification}
+            showMainCohort={showMainCohort}
+            onToggleParent={onToggleParent}
+            onSetStratification={onSetStratification}
+            onToggleShowMainCohort={onToggleShowMainCohort}
+            onSelectAllParents={onSelectAllParents}
+            onDeselectAllParents={onDeselectAllParents}
             cohortDescriptions={cohortDescriptions}
             finalCohortSizes={finalCohortSizes}
             headerActionsRef={headerActionsRef}
