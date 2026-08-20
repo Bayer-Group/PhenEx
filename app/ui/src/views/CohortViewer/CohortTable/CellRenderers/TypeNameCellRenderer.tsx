@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { ICellRendererParams } from 'ag-grid-community';
 import styles from './TypeNameCellRenderer.module.css';
 import typeStyles from '../../../../styles/study_types.module.css';
@@ -26,8 +26,6 @@ import ReactMarkdown from 'react-markdown';
 const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const labelContainerRef = useRef<HTMLDivElement>(null);
 
   // ── Background / border colours (same logic as TypeSelectionDragCellRenderer) ──
   const colorBackground =
@@ -52,22 +50,6 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
   const hasChildren = !!props.data?._hasChildren;
   const childrenExpanded = !!props.data?._childrenExpanded;
   const phenotypeLevel = Math.max(0, Number(props.data?.level) || 0);
-
-  // ── Drag ghost image ──────────────────────────────────────────────────────────
-  const handleDragStart = (e: React.DragEvent) => {
-    setIsDragging(true);
-    if (labelContainerRef.current) {
-      const clone = labelContainerRef.current.cloneNode(true) as HTMLElement;
-      clone.querySelectorAll('button').forEach(btn => ((btn as HTMLElement).style.opacity = '0'));
-      clone.style.position = 'fixed';
-      clone.style.top = '-9999px';
-      clone.style.left = '-9999px';
-      clone.style.width = `${labelContainerRef.current.offsetWidth}px`;
-      document.body.appendChild(clone);
-      e.dataTransfer.setDragImage(clone, 20, 10);
-      requestAnimationFrame(() => document.body.removeChild(clone));
-    }
-  };
 
   // ── Type widget click → open TypeSelectorCellEditor ──────────────────────────
   const handleTypeClick = () => {
@@ -158,12 +140,9 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
           )}
 
           <div
-            ref={labelContainerRef}
             className={styles.nameArea}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            onDragStart={handleDragStart}
-            onDragEnd={() => setIsDragging(false)}
           >
             <div
               className={styles.nameText}
@@ -211,7 +190,7 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
             <PhenotypeRowActions
               phenotypeId={props.data?.id ?? ''}
               isHovered={isHovered}
-              isDragging={isDragging}
+              isDragging={false}
               onDelete={handleDirectDelete}
               onExpand={() => handleEdit()}
               onAdd={handleAddPhenotype}
