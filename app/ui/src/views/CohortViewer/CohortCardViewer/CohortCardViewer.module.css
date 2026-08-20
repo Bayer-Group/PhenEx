@@ -222,35 +222,52 @@
   transition: opacity 0.1s ease;
 }
 
+/* Drop indicators use ::before so they render above opaque cell backgrounds
+   (an inset box-shadow on .row would be hidden behind the cells). */
+.rowDragOver::before,
+.rowDragOverBottom::before,
+.rowDropSection::before,
+.rowDropSectionBottom::before,
+.rowDropComponent::before,
+.rowDropForbidden::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
 /* Reorder within the same section: blue insertion line above the row. */
-.rowDragOver {
-  box-shadow: inset 0 2px 0 0 var(--color-accent-bright, #3b82f6);
+.rowDragOver::before {
+  border-top: 2px solid var(--color-accent-bright, #3b82f6);
 }
 
 /* Reorder, inserting after the row (e.g. at a section's end): blue line below. */
-.rowDragOverBottom {
-  box-shadow: inset 0 -2px 0 0 var(--color-accent-bright, #3b82f6);
+.rowDragOverBottom::before {
+  border-bottom: 2px solid var(--color-accent-bright, #3b82f6);
 }
 
 /* Move into a different section: green insertion line above the row. */
-.rowDropSection {
-  box-shadow: inset 0 2px 0 0 var(--color-drop-section, #10b981);
+.rowDropSection::before {
+  border-top: 2px solid var(--color-drop-section, #10b981);
 }
 
 /* Move into a different section, inserting after the row: green line below. */
-.rowDropSectionBottom {
-  box-shadow: inset 0 -2px 0 0 var(--color-drop-section, #10b981);
+.rowDropSectionBottom::before {
+  border-bottom: 2px solid var(--color-drop-section, #10b981);
 }
 
 /* Make a component of this phenotype: purple outline around the whole row. */
-.rowDropComponent {
-  box-shadow: inset 0 0 0 2px var(--color-drop-component, #8b5cf6);
+.rowDropComponent::before {
+  border: 2px solid var(--color-drop-component, #8b5cf6);
 }
 
 /* Invalid target (self / own subtree): red outline + not-allowed cursor. */
 .rowDropForbidden {
-  box-shadow: inset 0 0 0 2px var(--color-drop-forbidden, #ef4444);
   cursor: not-allowed;
+}
+.rowDropForbidden::before {
+  border: 2px solid var(--color-drop-forbidden, #ef4444);
 }
 
 /* Floating label describing the pending drop operation. */
