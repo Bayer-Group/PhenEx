@@ -1,10 +1,13 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 import classDefinitionsRaw from '/assets/class_definitions.json?raw';
 import parametersInfoRaw from '/assets/parameters_info.json?raw';
+import phenotypeDescriptionsRaw from '/assets/phenotype_descriptions.json?raw';
 import styles from './DocViewer.module.css';
 
 const classDefinitions: Record<string, any[]> = JSON.parse(classDefinitionsRaw);
 const parametersInfo: Record<string, any> = JSON.parse(parametersInfoRaw);
+const phenotypeDescriptions: Record<string, string> = JSON.parse(phenotypeDescriptionsRaw);
 
 // ─── Section / group structure ───────────────────────────────────────────────
 
@@ -57,21 +60,17 @@ const SECTIONS: SectionDef[] = [
       { root: { class: 'BinPhenotype' } },
       { root: { class: 'EventCountPhenotype' } },
       { root: { class: 'MeasurementChangePhenotype' } },
+      { root: { class: 'FurtherValueFilterPhenotype' } },
       { root: { class: 'WithinSameEncounterPhenotype' } },
     ],
   },
   {
     title: 'Time Range',
     groups: [
-      {
-        root: { class: 'TimeRangePhenotype' },
-        children: [
-          { class: 'TimeRangeCountPhenotype', excludeClasses: ['TimeRangePhenotype'] },
-          { class: 'TimeRangeDayCountPhenotype', excludeClasses: ['TimeRangePhenotype'] },
-          { class: 'TimeRangeDaysToNextRange', excludeClasses: ['TimeRangePhenotype'] },
-        ],
-      },
-      { root: { class: 'FurtherValueFilterPhenotype' } },
+      { root: { class: 'TimeRangePhenotype' } },
+      { root: { class: 'TimeRangeCountPhenotype' } },
+      { root: { class: 'TimeRangeDayCountPhenotype' } },
+      { root: { class: 'TimeRangeDaysToNextRange' } },
     ],
   },
   {
@@ -81,11 +80,6 @@ const SECTIONS: SectionDef[] = [
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function formatClassName(name: string): string {
-  const withoutSuffix = name.endsWith('Phenotype') ? name.slice(0, -9) : name;
-  return withoutSuffix.replace(/([A-Z])/g, ' $1').trim();
-}
 
 function formatParamName(param: string): string {
   return param.split('_').join(' ');
@@ -110,16 +104,10 @@ const ParamRow: React.FC<{ param: any }> = ({ param }) => {
 
   return (
     <div className={styles.paramRow}>
-      <div className={styles.paramLeft}>
-        <span className={`${styles.paramName} ${param.required ? styles.required : ''}`}>
-          {formatParamName(param.display_name ?? param.param)}
-        </span>
-        <span className={styles.paramType}>{param.type}</span>
-        {param.default !== null && param.default !== undefined && (
-          <span className={styles.paramDefault}>default: {String(param.default)}</span>
-        )}
-      </div>
-      {description && <div className={styles.paramDescription}>{description}</div>}
+      <span className={`${styles.paramName} ${param.required ? styles.required : ''}`}>
+        {formatParamName(param.display_name ?? param.param)}
+      </span>
+      <span className={styles.paramDescription}><ReactMarkdown>{description}</ReactMarkdown></span>
     </div>
   );
 };
@@ -133,14 +121,16 @@ interface PhenotypeCardProps {
 
 const PhenotypeCard: React.FC<PhenotypeCardProps> = ({ entry, extendsClass }) => {
   const params = getVisibleParams(entry.class, entry.excludeClasses);
+  const description = phenotypeDescriptions[entry.class] ?? '';
 
   return (
     <div className={styles.card}>
       <div className={styles.cardHeader}>
-        <h3 className={styles.cardTitle}>{formatClassName(entry.class)}</h3>
+        <h3 className={styles.cardTitle}>{entry.class}</h3>
         {extendsClass && (
-          <span className={styles.extendsBadge}>extends {formatClassName(extendsClass)}</span>
+          <span className={styles.extendsBadge}>extends {extendsClass}</span>
         )}
+        {description && <p className={styles.cardDescription}>{description}</p>}
       </div>
       <div className={styles.paramList}>
         {params.length === 0 ? (
@@ -157,27 +147,20 @@ const PhenotypeCard: React.FC<PhenotypeCardProps> = ({ entry, extendsClass }) =>
 
 const GroupView: React.FC<{ group: GroupDef }> = ({ group }) => {
   const { root, children } = group;
-
-  if (!children || children.length === 0) {
-    return (
+  return (
+    <>
       <div className={styles.group}>
         <PhenotypeCard entry={root} />
       </div>
-    );
-  }
-
-  return (
-    <div className={styles.group}>
-      <PhenotypeCard entry={root} />
-      <div className={styles.childrenBox}>
-        {children.map(child => {
-          const immediateParent = child.excludeClasses?.[child.excludeClasses.length - 1];
-          return (
-            <PhenotypeCard key={child.class} entry={child} extendsClass={immediateParent} />
-          );
-        })}
-      </div>
-    </div>
+      {children?.map(child => {
+        const immediateParent = child.excludeClasses?.[child.excludeClasses.length - 1];
+        return (
+          <div key={child.class} className={styles.group}>
+            <PhenotypeCard entry={child} extendsClass={immediateParent} />
+          </div>
+        );
+      })}
+    </>
   );
 };
 

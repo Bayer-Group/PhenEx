@@ -122,6 +122,11 @@
   font-family: 'IBMPlexSans-regular';
 }
 
+.infoText strong {
+  font-family: 'IBMPlexSans-bold';
+  font-weight: 700;
+}
+
 /* ── Action buttons (delete + settings arrow) ─────────────────────────────── */
 .actions {
   position: absolute;

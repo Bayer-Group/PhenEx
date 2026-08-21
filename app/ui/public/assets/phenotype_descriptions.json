@@ -1,0 +1,21 @@
+{
+  "EventPhenotype": "Base class for identifying patients by any clinical event in a database domain.",
+  "CodelistPhenotype": "Identifies patients by matching against a list of medical codes (ICD, NDC, CPT, etc.).",
+  "MeasurementPhenotype": "Identifies patients by numerical measurement values such as lab results or vital signs.",
+  "CategoricalPhenotype": "Identifies patients by categorical values such as sex, ethnicity, or hospitalization type.",
+  "AgePhenotype": "Derives patient age at a specific point in time from birth date data.",
+  "DeathPhenotype": "Identifies patients with a recorded death event.",
+  "LogicPhenotype": "Combines multiple phenotypes using logical operators (AND, OR, NOT).",
+  "ArithmeticPhenotype": "Calculates a numerical value from other numerical phenotypes (e.g., BMI from height and weight).",
+  "ScorePhenotype": "Computes a medical score by combining phenotypes with addition, subtraction, or multiplication.",
+  "BinPhenotype": "Converts a numerically valued phenotype into categorical bins.",
+  "EventCountPhenotype": "Counts the number of distinct days a phenotype event occurs.",
+  "MeasurementChangePhenotype": "Identifies a change in a numerical measurement value between two time points.",
+  "WithinSameEncounterPhenotype": "Filters events to those co-occurring within the same clinical encounter.",
+  "TimeRangePhenotype": "Identifies continuous observation periods such as insurance coverage windows.",
+  "TimeRangeCountPhenotype": "Counts the number of distinct observation periods a patient has.",
+  "TimeRangeDayCountPhenotype": "Counts the total number of days within qualifying observation periods.",
+  "TimeRangeDaysToNextRange": "Calculates the number of days until the next observation period begins.",
+  "FurtherValueFilterPhenotype": "Applies additional value filtering on top of an existing phenotype.",
+  "UserDefinedPhenotype": "Executes a custom user-defined function to identify patients."
+}

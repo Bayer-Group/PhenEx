@@ -10,6 +10,15 @@
             "index": null
         },
         {
+            "param": "domain",
+            "required": false,
+            "default": "PERSON",
+            "type": "str",
+            "user_visible": true,
+            "display_name": "domain",
+            "index": null
+        },
+        {
             "param": "description",
             "required": false,
             "default": null,
@@ -43,15 +52,6 @@
             "type": "Phenotype",
             "user_visible": true,
             "display_name": "anchor_phenotype",
-            "index": null
-        },
-        {
-            "param": "domain",
-            "required": false,
-            "default": "PERSON",
-            "type": "str",
-            "user_visible": true,
-            "display_name": "domain",
             "index": null
         }
     ],
@@ -298,7 +298,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "name",
             "index": null
         },
@@ -316,7 +316,7 @@
             "required": false,
             "default": null,
             "type": "str",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "output_display_type",
             "index": null
         },
@@ -355,7 +355,7 @@
             "required": false,
             "default": null,
             "type": "_empty",
-            "user_visible": true,
+            "user_visible": false,
             "display_name": "return_value",
             "index": null
         },

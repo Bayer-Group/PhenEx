@@ -179,6 +179,11 @@ const TypeNameCellRenderer: React.FC<ICellRendererParams> = props => {
                         {children}
                       </p>
                     ),
+                    strong: ({ children }) => (
+                      <strong style={{ fontFamily: 'IBMPlexSans-bold', fontWeight: 700 }}>
+                        {children}
+                      </strong>
+                    ),
                   }}
                 >
                   {props.data?.description}

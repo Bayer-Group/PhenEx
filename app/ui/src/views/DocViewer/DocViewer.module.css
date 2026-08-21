@@ -1,7 +1,7 @@
 .page {
   min-height: 100vh;
-  background-color: var(--background-color, #0e0e0e);
-  color: var(--text-color, #e0e0e0);
+  background-color: var(--background-color, #f4f4f4);
+  color: var(--text-color, #222);
   padding: 40px 32px;
   box-sizing: border-box;
   font-family: 'IBMPlexSans-regular', sans-serif;
@@ -15,7 +15,7 @@
   font-family: 'IBMPlexSans-bold', sans-serif;
   font-size: 32px;
   margin: 0 0 8px 0;
-  color: var(--text-color, #e0e0e0);
+  color: var(--text-color, #222);
 }
 
 .pageSubtitle {
@@ -24,7 +24,7 @@
   margin: 0;
 }
 
-/* ── Section ─────────────────────────────────────────────────────────────── */
+/* \u2500\u2500 Section \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 
 .section {
   margin-bottom: 56px;
@@ -38,16 +38,16 @@
   color: var(--text-color-secondary, #888);
   margin: 0 0 16px 0;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--line-color, #333);
+  border-bottom: 1px solid var(--line-color, #ddd);
 }
 
-/* Masonry columns — each group breaks as a unit */
+/* Masonry columns \u2014 each group breaks as a unit */
 .sectionColumns {
   columns: 380px auto;
   column-gap: 20px;
 }
 
-/* ── Group ───────────────────────────────────────────────────────────────── */
+/* \u2500\u2500 Group \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 
 .group {
   break-inside: avoid;
@@ -57,11 +57,11 @@
   vertical-align: top;
 }
 
-/* Children container — indented, bordered rectangle below the parent card */
+/* Children container \u2014 indented, bordered rectangle below the parent card */
 .childrenBox {
   margin-top: 8px;
   margin-left: 24px;
-  border: 1px solid var(--line-color, #333);
+  border: 1px solid var(--line-color, #ddd);
   border-radius: 6px;
   padding: 12px;
   display: flex;
@@ -69,50 +69,57 @@
   gap: 12px;
 }
 
-/* Each child card inside childrenBox shrinks to fit content */
 .childrenBox .card {
-  flex: 1 1 200px;
-  min-width: 180px;
+  flex: 1 1 220px;
+  min-width: 200px;
 }
 
-/* ── Card ────────────────────────────────────────────────────────────────── */
+/* \u2500\u2500 Card \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 
 .card {
-  background-color: var(--card-background, #1a1a1a);
-  border: 1px solid var(--line-color, #333);
-  border-radius: 6px;
+  background-color: var(--background_color_light, #fff);
+  border: 1px solid var(--line-color, #e0e0e0);
+  border-radius: 5px;
+  box-shadow: 0px 8px 20px rgba(91, 87, 86, 0.12);
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .cardHeader {
-  padding: 12px 16px 10px;
-  border-bottom: 1px solid var(--line-color, #333);
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex-wrap: wrap;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid var(--line-color, #e8e8e8);
 }
 
 .cardTitle {
   font-family: 'IBMPlexSans-bold', sans-serif;
-  font-size: 15px;
-  margin: 0;
-  color: var(--text-color, #e0e0e0);
+  font-size: var(--font_size_pagetitle, 16px);
+  font-weight: 700;
+  margin: 0 0 2px 0;
+  color: var(--text-color-primary, #222);
+  line-height: 1.3;
+}
+
+.cardDescription {
+  font-size: 11px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text-color-secondary, #666);
+  margin: 4px 0 0 0;
+  line-height: 1.4;
 }
 
 .extendsBadge {
-  font-size: 11px;
+  display: inline-block;
+  font-size: 10px;
   color: var(--text-color-secondary, #888);
   font-family: 'IBMPlexMono', monospace;
-  background-color: var(--background-color-secondary, #252525);
-  border: 1px solid var(--line-color, #333);
+  background-color: var(--background_color_dark, rgba(0,0,0,0.05));
   border-radius: 10px;
   padding: 1px 8px;
+  margin-bottom: 4px;
 }
 
-/* ── Param list ──────────────────────────────────────────────────────────── */
+/* \u2500\u2500 Param list \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 
 .paramList {
   display: flex;
@@ -122,59 +129,51 @@
 .noParams {
   padding: 10px 16px;
   font-size: 12px;
-  color: var(--text-color-secondary, #888);
+  color: var(--text-color-secondary, #aaa);
   font-style: italic;
 }
 
+/* Two-column row: param name right-justified | description left-justified */
 .paramRow {
   display: flex;
-  flex-direction: column;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--line-color, #2a2a2a);
-  gap: 3px;
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line-color, #f0f0f0);
+  gap: 12px;
 }
 
 .paramRow:last-child {
   border-bottom: none;
 }
 
-.paramLeft {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
 .paramName {
+  flex: 0 0 120px;
+  text-align: right;
   font-family: 'IBMPlexMono', monospace;
-  font-size: 12px;
-  color: var(--text-color, #e0e0e0);
+  font-size: 11px;
   font-weight: 600;
+  color: var(--text-color-primary, #222);
+  padding-right: 4px;
+  white-space: normal;
+  word-break: break-word;
+  padding-left: 16px;
 }
 
 .paramName.required::after {
   content: ' *';
-  color: var(--color_entry, #e07070);
-}
-
-.paramType {
-  font-size: 10px;
-  color: var(--text-color-secondary, #888);
-  background-color: var(--background-color-secondary, #252525);
-  border: 1px solid var(--line-color, #333);
-  border-radius: 3px;
-  padding: 0px 5px;
-  font-family: 'IBMPlexMono', monospace;
-}
-
-.paramDefault {
-  font-size: 10px;
-  color: var(--text-color-secondary, #666);
-  font-family: 'IBMPlexMono', monospace;
+  color: var(--color_entry, #c0392b);
 }
 
 .paramDescription {
+  flex: 1;
   font-size: 11px;
-  color: var(--text-color-secondary, #888);
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text-color-secondary, #666);
   line-height: 1.4;
+  padding-right: 16px;
+}
+
+.paramDescription p {
+  margin: 0;
 }
