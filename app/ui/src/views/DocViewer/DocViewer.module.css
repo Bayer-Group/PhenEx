@@ -1,3 +1,19 @@
+.docViewerLayout {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Reference panel scroll container ─────────────────────────────────────── */
+
+.referencePanel {
+  height: 100%;
+  overflow-y: auto;
+  padding: 40px 32px;
+  box-sizing: border-box;
+  background-color: var(--background-color, #f4f4f4);
+}
+
 .page {
   min-height: 100vh;
   background-color: var(--background-color, #f4f4f4);
@@ -6,7 +22,10 @@
   box-sizing: border-box;
   font-family: 'IBMPlexSans-regular', sans-serif;
 }
-
+.pageContent{
+  max-width: 900px;
+  margin: 0 auto;
+}
 .pageHeader {
   margin-bottom: 48px;
 }
@@ -19,27 +38,43 @@
 }
 
 .pageSubtitle {
-  font-size: 14px;
+  font-size: 18px;
   color: var(--text-color-secondary, #888);
   margin: 0;
+  margin-bottom:20px;
 }
 
 /* \u2500\u2500 Section \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 
 .section {
-  margin-bottom: 56px;
+  margin-bottom: 150px;
+}
+
+.sectionHeader {
+  margin-bottom: 20px;
+  padding-top: 12px;
+  /* border-top: 1px solid var(--line-color, #ddd); */
 }
 
 .sectionTitle {
   font-family: 'IBMPlexSans-bold', sans-serif;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-color-secondary, #888);
-  margin: 0 0 16px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line-color, #ddd);
-  margin-bottom:60px;
+  font-size: 28px;
+  color: var(--text-color-primary, #222);
+  margin: 0 0 6px 0;
+  line-height: 1.2;
+}
+
+.sectionTitleSuffix {
+  opacity: 0.2;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+}
+
+.sectionDescription {
+  font-size: 18px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text-color-secondary, #777);
+  margin: 0;
+  line-height: 1.5;
 }
 
 /* Items are absolutely positioned by MasonryGrid */
@@ -51,6 +86,7 @@
 
 .group {
   margin-bottom: 0;
+  margin-left:0px;
 }
 
 /* Children container \u2014 indented, bordered rectangle below the parent card */
@@ -76,18 +112,27 @@
   position: relative;
   background-color: var(--background_color_light, #fff);
   border: 1px solid var(--line-color, #e0e0e0);
-  border-radius: 10px 0px 10px 10px;
+  border-radius: 10px 10px 10px 10px;
   box-shadow: 0px 8px 20px rgba(91, 87, 86, 0.12);
   overflow: visible;
   display: flex;
   flex-direction: column;
-  padding-bottom:20px;
+  transition: box-shadow 0.1s ease, border-color 0.1s ease, opacity 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0px 8px 20px rgba(91, 87, 86, 0.24);
+  border-color: var(--color_accent_bright);
+}
+
+.cardDimmed {
+  opacity: 0.2;
+  transition: opacity 0.2s ease;
 }
 
 .cardHeader {
   position: relative;
   padding: 14px 16px 12px;
-  border-bottom: 1px solid var(--line-color, #e8e8e8);
   border-radius: 5px 5px 0 0;
   overflow: hidden;
 }
@@ -110,20 +155,21 @@
 }
 
 .cardTitle {
-  display: inline;
+  display: block;
   font-family: 'IBMPlexSans-bold', sans-serif;
   font-size: 28px;
   font-weight: 700;
   color: var(--text-color-primary, #222);
   line-height: 1.3;
+  margin: 0;
 }
 
 .cardDescription {
-  display: inline;
-  font-size: 20px;
+  display: block;
+  font-size: 16px;
   font-family: 'IBMPlexSans-regular', sans-serif;
   color: var(--text-color-secondary, #666);
-  margin-left: 8px;
+  margin: 4px 0 0 0;
   line-height: 1.4;
 }
 
@@ -147,54 +193,59 @@
 
 /* \u2500\u2500 Accordion \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 
-.accordionSection {
-  border-top: 1px solid var(--line-color, #e8e8e8);
+.cardFooter {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px 10px;
+  /* border-top: 1px solid var(--line-color, #e8e8e8); */
+  margin-top: auto;
 }
 
-.accordionSection:last-child {
-  border-radius: 0 0 5px 5px;
-  overflow: hidden;
-}
-
-.accordionHeader {
-  width: 100%;
+.cardFooterButton {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 7px 16px;
+  gap: 5px;
+  padding: 3px 10px;
   background: none;
-  border: none;
+  border: 1px solid transparent;
+  border-radius: 20px;
   cursor: pointer;
-  text-align: left;
-}
-
-.accordionHeader:hover {
-  background-color: var(--background_color_dark, rgba(0, 0, 0, 0.04));
-}
-
-.accordionTitle {
   font-size: 10px;
   font-family: 'IBMPlexSans-bold', sans-serif;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  color: var(--text-color-secondary, #888);
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+.cardFooterButton:hover,
+.cardFooterButtonActive {
+  background-color: var(--background_color_dark, rgba(0, 0, 0, 0.06));
+  color: var(--text-color-primary, #333);
+  border-color: var(--text-color-secondary, #aaa);
+}
+
+.cardFooterBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background-color: var(--background_color_dark, rgba(0, 0, 0, 0.08));
+  border-radius: 8px;
+  font-size: 9px;
+  font-family: 'IBMPlexMono', monospace;
   color: var(--text-color-secondary, #888);
 }
 
-.accordionChevron {
-  font-size: 8px;
-  color: var(--text-color-secondary, #aaa);
-  transition: transform 0.15s ease;
-  display: inline-block;
-  transform: rotate(90deg);
-}
-
-.accordionChevronOpen {
-  transform: rotate(270deg);
-}
-
-.accordionBody {
-  padding-bottom: 4px;
+.popoverContent {
+  min-width: 280px;
+  max-width: 480px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 4px 0;
 }
 
 /* \u2500\u2500 Param list \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
