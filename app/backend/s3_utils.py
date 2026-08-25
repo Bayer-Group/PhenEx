@@ -15,8 +15,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DEFAULT_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
-DEFAULT_PREFIX = os.getenv('S3_BUCKET_PREFIX_DEFAULT', 'public/')
+DEFAULT_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+DEFAULT_PREFIX = os.getenv("S3_BUCKET_PREFIX_DEFAULT", "public/")
 
 if not DEFAULT_BUCKET_NAME:
     raise ValueError(
@@ -39,47 +39,57 @@ def main():
     upload_mkdocs()
 
 
-def upload_mkdocs(source_dir='./site', prefix=DEFAULT_PREFIX):
-    #delete_dir_s3(prefix=prefix)
+def upload_mkdocs(source_dir="./site", prefix=DEFAULT_PREFIX):
+    # delete_dir_s3(prefix=prefix)
     upload_dir_s3(source_dir, prefix=prefix)
 
 
 def list_s3(prefix=DEFAULT_PREFIX, bucket=DEFAULT_BUCKET_NAME, client=s3_client):
     keys = []
     dirs = []
-    next_token = ''
+    next_token = ""
     base_kwargs = {
-        'Bucket':bucket,
-        'Prefix':prefix,
+        "Bucket": bucket,
+        "Prefix": prefix,
     }
     total_size = 0
     while next_token is not None:
         kwargs = base_kwargs.copy()
-        if next_token != '':
-            kwargs.update({'ContinuationToken': next_token})
+        if next_token != "":
+            kwargs.update({"ContinuationToken": next_token})
         results = client.list_objects_v2(**kwargs)
-        contents = results.get('Contents')
+        contents = results.get("Contents")
         if contents:
             for i in contents:
-                k = i.get('Key')
-                if k[-1] != '/':
+                k = i.get("Key")
+                if k[-1] != "/":
                     keys.append(k)
-                    total_size += i.get('Size')
+                    total_size += i.get("Size")
                 else:
                     # TODO: bug: this only prints for directories which are empty – e.g. `public/`, `public/_http_errors/`.
                     dirs.append(k)
-        next_token = results.get('NextContinuationToken')
+        next_token = results.get("NextContinuationToken")
 
-    print('Directories: \n'); print(*dirs, sep='\n')
-    print('Keys: \n'); print(*keys, sep='\n')
+    print("Directories: \n")
+    print(*dirs, sep="\n")
+    print("Keys: \n")
+    print(*keys, sep="\n")
 
     # print(f"Directories: \n{'\n'.join(dirs)}")
     # print(f"Keys: \n{'\n'.join(keys)}")
 
-    print(f"\nTotal: {len(dirs)} directories, {len(keys)} files, {sizeof_fmt(total_size)} size.")
+    print(
+        f"\nTotal: {len(dirs)} directories, {len(keys)} files, {sizeof_fmt(total_size)} size."
+    )
 
 
-def download_s3(prefix=DEFAULT_PREFIX, local='s3_public', junk_prefix=True, bucket=DEFAULT_BUCKET_NAME, client=s3_client):
+def download_s3(
+    prefix=DEFAULT_PREFIX,
+    local="s3_public",
+    junk_prefix=True,
+    bucket=DEFAULT_BUCKET_NAME,
+    client=s3_client,
+):
     """
     params:
     - prefix: pattern to match in s3
@@ -89,37 +99,39 @@ def download_s3(prefix=DEFAULT_PREFIX, local='s3_public', junk_prefix=True, buck
     """
     keys = []
     dirs = []
-    next_token = ''
+    next_token = ""
     base_kwargs = {
-        'Bucket':bucket,
-        'Prefix':prefix,
+        "Bucket": bucket,
+        "Prefix": prefix,
     }
     while next_token is not None:
         kwargs = base_kwargs.copy()
-        if next_token != '':
-            kwargs.update({'ContinuationToken': next_token})
+        if next_token != "":
+            kwargs.update({"ContinuationToken": next_token})
         results = client.list_objects_v2(**kwargs)
-        contents = results.get('Contents')
+        contents = results.get("Contents")
         for i in contents:
-            k = i.get('Key')
-            if k[-1] != '/':
+            k = i.get("Key")
+            if k[-1] != "/":
                 keys.append(k)
             else:
                 # if prefix directory/key we skip it
                 if k == prefix:
                     continue
                 dirs.append(k)
-        next_token = results.get('NextContinuationToken')
-        print(f'processed {len(contents)} objects...')
+        next_token = results.get("NextContinuationToken")
+        print(f"processed {len(contents)} objects...")
     # for d in dirs:
     #     dest_pathname = os.path.join(local, _junk_prefix(d, prefix) if junk_prefix else d)
     #     if not os.path.exists(os.path.dirname(dest_pathname)):
     #         os.makedirs(os.path.dirname(dest_pathname))
     for k in keys:
-        dest_pathname = os.path.join(local, _junk_prefix(k, prefix=prefix) if junk_prefix else k)
+        dest_pathname = os.path.join(
+            local, _junk_prefix(k, prefix=prefix) if junk_prefix else k
+        )
         if not os.path.exists(os.path.dirname(dest_pathname)):
             os.makedirs(os.path.dirname(dest_pathname))
-        print(f'downloading {k} -> { os.path.abspath(dest_pathname) }...')
+        print(f"downloading {k} -> { os.path.abspath(dest_pathname) }...")
         client.download_file(bucket, k, dest_pathname)
 
 
@@ -146,21 +158,21 @@ def sizeof_fmt(num, suffix="B"):
 
 def delete_dir_s3(prefix, bucket=DEFAULT_BUCKET_NAME, client=s3_client):
     keys = []
-    next_token = ''
+    next_token = ""
     base_kwargs = {
-        'Bucket': bucket,
-        'Prefix': prefix,
+        "Bucket": bucket,
+        "Prefix": prefix,
     }
 
     while next_token is not None:
         kwargs = base_kwargs.copy()
-        if next_token != '':
-            kwargs.update({'ContinuationToken': next_token})
+        if next_token != "":
+            kwargs.update({"ContinuationToken": next_token})
         results = client.list_objects_v2(**kwargs)
-        contents = results.get('Contents')
+        contents = results.get("Contents")
         for i in contents:
-            keys.append({'Key': i.get('Key')})
-        next_token = results.get('NextContinuationToken')
+            keys.append({"Key": i.get("Key")})
+        next_token = results.get("NextContinuationToken")
 
     if keys:
         print(f"Deleting {len(keys)} items from s3://{bucket}/{prefix}")
@@ -168,11 +180,7 @@ def delete_dir_s3(prefix, bucket=DEFAULT_BUCKET_NAME, client=s3_client):
         for i in range(0, len(keys), 1000):
             delete_responses.append(
                 client.delete_objects(
-                    Bucket=bucket,
-                    Delete={
-                        'Objects': keys[i:i + 1000],
-                        'Quiet': True
-                    }
+                    Bucket=bucket, Delete={"Objects": keys[i : i + 1000], "Quiet": True}
                 )
             )
 
@@ -183,25 +191,33 @@ def delete_dir_s3(prefix, bucket=DEFAULT_BUCKET_NAME, client=s3_client):
     return None
 
 
-def upload_dir_s3(source_dir, bucket=DEFAULT_BUCKET_NAME, prefix=DEFAULT_PREFIX, client=s3_client, regex_filter=None):
-    SKIP_PATTERNS = re.compile(r"(^|/)(\.(git|DS_Store)|__pycache__|\.ipynb_checkpoints)(/|$)")
+def upload_dir_s3(
+    source_dir,
+    bucket=DEFAULT_BUCKET_NAME,
+    prefix=DEFAULT_PREFIX,
+    client=s3_client,
+    regex_filter=None,
+):
+    SKIP_PATTERNS = re.compile(
+        r"(^|/)(\.(git|DS_Store)|__pycache__|\.ipynb_checkpoints)(/|$)"
+    )
     content_type_map = {
-        'css': 'text/css',
-        'csv': 'text/csv',
-        'gz': 'application/gzip',
-        'html': 'text/html',
-        'ico': 'image/x-icon',
-        'js': 'application/javascript',
-        'json': 'application/json',
-        'map': 'application/json',
-        'md': 'text/markdown',
-        'pdf': 'application/pdf',
-        'png': 'image/png',
-        'svg': 'image/svg+xml',
-        'ttf': 'application/x-font-ttf',
-        'txt': 'text/plain',
-        'wasm': 'application/wasm',
-        'xml': 'application/xml',
+        "css": "text/css",
+        "csv": "text/csv",
+        "gz": "application/gzip",
+        "html": "text/html",
+        "ico": "image/x-icon",
+        "js": "application/javascript",
+        "json": "application/json",
+        "map": "application/json",
+        "md": "text/markdown",
+        "pdf": "application/pdf",
+        "png": "image/png",
+        "svg": "image/svg+xml",
+        "ttf": "application/x-font-ttf",
+        "txt": "text/plain",
+        "wasm": "application/wasm",
+        "xml": "application/xml",
     }
     content_type_notmapped = []
     uploaded = 0
@@ -219,9 +235,9 @@ def upload_dir_s3(source_dir, bucket=DEFAULT_BUCKET_NAME, prefix=DEFAULT_PREFIX,
                 continue
 
             _extraArgs = {}
-            ext = filename.rsplit('.', 1)[-1] if '.' in filename else ''
+            ext = filename.rsplit(".", 1)[-1] if "." in filename else ""
             if content_type := content_type_map.get(ext):
-                _extraArgs['ContentType'] = content_type
+                _extraArgs["ContentType"] = content_type
             else:
                 content_type_notmapped.append(ext)
 

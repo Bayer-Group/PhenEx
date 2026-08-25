@@ -513,7 +513,9 @@ def _extract_all_components(top_level_phenotypes: list) -> list:
         for key, value in phenotype.items():
             if key in ("id", "name", "class_name", "type", "logical_expression"):
                 continue
-            _extract_child_components(value, parent_id, effective_type, components, seen)
+            _extract_child_components(
+                value, parent_id, effective_type, components, seen
+            )
 
     return components
 

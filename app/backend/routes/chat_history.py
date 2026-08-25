@@ -15,7 +15,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 class CreateSessionRequest(BaseModel):
     study_id: Optional[str] = None
     title: Optional[str] = None
-    app_context: str = 'study'
+    app_context: str = "study"
     session_id: Optional[str] = None
 
 
@@ -49,7 +49,9 @@ async def create_session(request: Request, body: CreateSessionRequest):
 
 
 @router.get("/sessions")
-async def get_sessions(request: Request, study_id: Optional[str] = None, app_context: str = 'study'):
+async def get_sessions(
+    request: Request, study_id: Optional[str] = None, app_context: str = "study"
+):
     """List chat sessions for a user (optionally filtered by study)."""
     user_id = get_authenticated_user_id(request)
     try:

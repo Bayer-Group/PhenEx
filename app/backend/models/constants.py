@@ -19,7 +19,11 @@ class NumericComparator(BaseModel):
     """Base model for numeric comparators (GreaterThan, LessThan, etc.)"""
 
     class_name: Literal[
-        "GreaterThan", "GreaterThanOrEqualTo", "LessThan", "LessThanOrEqualTo", "EqualTo"
+        "GreaterThan",
+        "GreaterThanOrEqualTo",
+        "LessThan",
+        "LessThanOrEqualTo",
+        "EqualTo",
     ]
     value: float
 
@@ -101,7 +105,9 @@ class CategoricalFilterValue(BaseModel):
     """
 
     class_name: Literal["CategoricalFilter"]
-    column_name: str = Field(default="")  # Allow empty initially, will be filled in editor
+    column_name: str = Field(
+        default=""
+    )  # Allow empty initially, will be filled in editor
     operator: Literal["isin", "notin", "isnull", "notnull"] = "isin"
     allowed_values: List[str] = Field(default_factory=list)
 
@@ -109,7 +115,11 @@ class CategoricalFilterValue(BaseModel):
     def validate_allowed_values(self):
         """Validate that allowed_values is provided when needed"""
         # Only validate if column_name is set (not a new empty constant)
-        if self.column_name and self.operator in ["isin", "notin"] and len(self.allowed_values) == 0:
+        if (
+            self.column_name
+            and self.operator in ["isin", "notin"]
+            and len(self.allowed_values) == 0
+        ):
             raise ValueError(
                 f"allowed_values must be non-empty for operator '{self.operator}'"
             )
@@ -232,7 +242,8 @@ class ConstantUpdate(BaseModel):
     def validate_at_least_one_field(self):
         """Ensure at least one field is being updated"""
         if all(
-            v is None for v in [self.name, self.description, self.value, self.display_order]
+            v is None
+            for v in [self.name, self.description, self.value, self.display_order]
         ):
             raise ValueError("At least one field must be provided for update")
         return self

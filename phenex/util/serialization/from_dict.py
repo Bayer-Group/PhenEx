@@ -82,7 +82,6 @@ def from_dict(data: dict, _node_registry: dict = None):
     all_params = get_phenex_init_params(cls)
     # logger.debug(f"Current params: {all_params}")
 
-
     init_args = {}
     kwargs = {}
     for param in all_params:
@@ -179,7 +178,6 @@ def from_dict(data: dict, _node_registry: dict = None):
     if is_node and node_name is not None:
         _node_registry[node_name] = obj
     return obj
-
 
 
 def convert_null_keys_to_none_in_dictionary(_dict):

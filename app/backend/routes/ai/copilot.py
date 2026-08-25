@@ -165,7 +165,9 @@ class CohortContext(BaseModel):
     cohort_snapshots: Dict = {}  # cohort_id → deep copy before agent runs
     cohort_diffs: Dict = {}  # cohort_id → diff summary (for visualization)
     db_manager: Any = None
-    database_config: Optional[Dict] = None  # study's configured database (connector + config)
+    database_config: Optional[Dict] = (
+        None  # study's configured database (connector + config)
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -2907,11 +2909,15 @@ async def introspect_database(ctx: RunContext[CohortContext]) -> str:
     """
     streaming_ctx = get_streaming_context()
     if streaming_ctx:
-        streaming_ctx.stream_message("tool_call", "🔬 Introspecting database schema and code types…")
+        streaming_ctx.stream_message(
+            "tool_call", "🔬 Introspecting database schema and code types…"
+        )
 
     if not ctx.deps.database_config:
         if streaming_ctx:
-            streaming_ctx.stream_message("tool_error", "❌ No database configured for this study")
+            streaming_ctx.stream_message(
+                "tool_error", "❌ No database configured for this study"
+            )
         return "❌ No database configured for this study. Configure database settings first."
     try:
         try:
@@ -2936,7 +2942,9 @@ async def introspect_database(ctx: RunContext[CohortContext]) -> str:
                 lines.append(f"  CODE_TYPE values: {', '.join(code_types)}")
             sample_codes = info.get("sample_codes")
             if sample_codes:
-                lines.append(f"  Sample CODEs: {', '.join(str(c) for c in sample_codes[:10])}")
+                lines.append(
+                    f"  Sample CODEs: {', '.join(str(c) for c in sample_codes[:10])}"
+                )
             if not code_types and not sample_codes:
                 lines.append("  (no CODE/CODE_TYPE columns or no data sampled)")
         # Non-OMOP fallback: table listing with row counts
@@ -2953,12 +2961,17 @@ async def introspect_database(ctx: RunContext[CohortContext]) -> str:
         result = "\n".join(lines)
         if streaming_ctx:
             n_domains = len(summary.get("available_domains", []))
-            streaming_ctx.stream_message("tool_result", f"✅ Found {n_domains} domains in {summary.get('connector', 'database')}")
+            streaming_ctx.stream_message(
+                "tool_result",
+                f"✅ Found {n_domains} domains in {summary.get('connector', 'database')}",
+            )
         return result
     except Exception as e:
         logger.error(f"Database introspection failed: {e}")
         if streaming_ctx:
-            streaming_ctx.stream_message("tool_error", f"❌ Introspection failed: {str(e)}")
+            streaming_ctx.stream_message(
+                "tool_error", f"❌ Introspection failed: {str(e)}"
+            )
         return f"❌ Could not introspect database: {str(e)}"
 
 
@@ -2988,7 +3001,9 @@ async def execute_sql(ctx: RunContext[CohortContext], sql: str) -> str:
 
     if not ctx.deps.database_config:
         if streaming_ctx:
-            streaming_ctx.stream_message("tool_error", "❌ No database configured for this study")
+            streaming_ctx.stream_message(
+                "tool_error", "❌ No database configured for this study"
+            )
         return "❌ No database configured for this study."
     try:
         try:
@@ -3024,7 +3039,10 @@ async def execute_sql(ctx: RunContext[CohortContext], sql: str) -> str:
         suffix = f"\n\n_(showing {row_count} rows{'— truncated at 200' if truncated else ''})_"
 
         if streaming_ctx:
-            streaming_ctx.stream_message("tool_result", f"✅ Query returned {row_count} row{'s' if row_count != 1 else ''}{' (truncated)' if truncated else ''}")
+            streaming_ctx.stream_message(
+                "tool_result",
+                f"✅ Query returned {row_count} row{'s' if row_count != 1 else ''}{' (truncated)' if truncated else ''}",
+            )
 
         return f"```\n{table}\n```{suffix}"
 
@@ -3611,7 +3629,9 @@ User request: {req_body.user_request}
 
             # Stream the agent response in real-time using Pydantic AI's streaming API
             async with agent.run_stream(
-                user_message, deps=context, model_settings={"max_completion_tokens": 8192}
+                user_message,
+                deps=context,
+                model_settings={"max_completion_tokens": 8192},
             ) as result:
                 # Interleave AI text tokens with tool call messages
                 async for text_chunk in result.stream_text(delta=True):

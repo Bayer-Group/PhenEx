@@ -102,9 +102,7 @@ class UserDefinedPhenotype(Phenotype):
     def __init__(
         self,
         name: str,
-        function: Optional[
-            Callable[[Dict[str, "PhenexTable"]], "PhenexTable"]
-        ] = None,
+        function: Optional[Callable[[Dict[str, "PhenexTable"]], "PhenexTable"]] = None,
         function_string: Optional[str] = None,
         returns_value: bool = False,
         **kwargs,
@@ -165,4 +163,3 @@ class UserDefinedPhenotype(Phenotype):
         _dict.pop("function", None)
         _dict["function_string"] = self.function_string
         return _dict
-
