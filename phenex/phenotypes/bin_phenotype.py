@@ -162,6 +162,7 @@ class BinPhenotype(Phenotype):
             "MeasurementPhenotype",
             "ArithmeticPhenotype",
             "ScorePhenotype",
+            "EventCountPhenotype"
         ]:
             raise ValueError(
                 f"Invalid phenotype type for continuous binning: {self.phenotype.__class__.__name__}"
