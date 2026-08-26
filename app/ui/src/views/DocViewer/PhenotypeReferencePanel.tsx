@@ -1,16 +1,38 @@
 import React, { createContext, useCallback, useContext, useRef, useLayoutEffect, useEffect, useState } from 'react';
+import { SimpleCustomScrollbar } from '../../components/CustomScrollbar/SimpleCustomScrollbar/SimpleCustomScrollbar';
 import ReactMarkdown from 'react-markdown';
 import classDefinitionsRaw from '/assets/class_definitions.json?raw';
 import parametersInfoRaw from '/assets/parameters_info.json?raw';
-import phenotypeDescriptionsRaw from '/assets/phenotype_descriptions.json?raw';
 import phenotypeExamplesRaw from '/assets/phenotype_examples.json?raw';
-import styles from './DocViewer.module.css';
+import styles from './PhenotypeReferencePanel.module.css';
 import { PhenExNavBarMenu } from '../../components/PhenExNavBar/PhenExNavBarMenu';
+import birdIcon from '../../assets/bird_icon.png';
 
 const classDefinitions: Record<string, any[]> = JSON.parse(classDefinitionsRaw);
 const parametersInfo: Record<string, any> = JSON.parse(parametersInfoRaw);
-const phenotypeDescriptions: Record<string, string> = JSON.parse(phenotypeDescriptionsRaw);
 const phenotypeExamples: Record<string, string[]> = JSON.parse(phenotypeExamplesRaw);
+
+const phenotypeDescriptions: Record<string, string> = {
+  EventPhenotype: 'For working with events that occur on a specific date. This provides the base functionality for Codelist and Measurement Phenotype.',
+  CodelistPhenotype: 'Most commonly used Phenotype. For working with medical codelists (ICD diagnoses, NDC drugs, CPT procedures, etc.).',
+  MeasurementPhenotype: 'For working with numerical values such as height, weight, vital signs, or lab test results.',
+  CategoricalPhenotype: 'For working with categorical values such as sex, ethnicity, or hospitalization type.',
+  AgePhenotype: 'For working with birth date data, calculating age at a specific point in time.',
+  DeathPhenotype: 'For working with date of death data, calculating number of days until death from a specific point in time.',
+  LogicPhenotype: 'For combining multiple phenotypes using logical operators (AND, OR, NOT) to build arbitrarily complex phenotypes.',
+  ArithmeticPhenotype: 'For calculating a numerical value from other numerical phenotypes (e.g., BMI from height and weight).',
+  ScorePhenotype: 'For computing medical scores such as CHA2DS2-VASc by combining phenotypes with addition, subtraction, or multiplication.',
+  BinPhenotype: 'For converting numerically valued phenotypes into categorical bins, for example taking age and binning it into decades.',
+  EventCountPhenotype: 'For working with multiple events; count the number of events, or the number of days between events.',
+  MeasurementChangePhenotype: 'For identifying a change in a numerical measurement value between two time points.',
+  WithinSameEncounterPhenotype: 'For identifying events that co-occur within the same clinical encounter.',
+  TimeRangePhenotype: 'For working with a single time range containing an event of interest.',
+  TimeRangeCountPhenotype: 'For counting the number of qualifying time ranges, for example the number of insurance coverage windows or drug exposure periods.',
+  TimeRangeDayCountPhenotype: 'For counting the total number of days within qualifying time periods, for example the total number of days of insurance coverage or drug exposure.',
+  TimeRangeDaysToNextRange: 'For counting the number of days until the next observation period begins.',
+  FurtherValueFilterPhenotype: 'For applying further value filtering to an existing numerically valued phenotype.',
+  UserDefinedPhenotype: 'For incorporating manually written custom user-defined functions, allowing hybrid analyses using PhenEx components and custom coded study elements.',
+};
 
 // ─── Section / group structure ───────────────────────────────────────────────
 
@@ -30,11 +52,11 @@ export type SectionDef = {
 };
 
 const SECTION_DESCRIPTIONS: Record<string, string> = {
-  'Atomic': 'Fundamental phenotypes that map directly to a single concept or measurement in the source data.',
-  'Composite': 'Phenotypes built by combining or aggregating other phenotypes using logic or arithmetic.',
-  'Atomic Extension': 'Wrappers that augment an atomic phenotype with additional filtering or counting logic.',
-  'Time Range': 'Phenotypes that operate over a defined time window, counting or measuring events within it.',
-  'User Defined': 'Custom phenotypes supplied directly by the user without a predefined structure.',
+  'Atomic': 'These act predominantly on a single data source table, filtering them for a specific event or patient characteristic.',
+  'Composite': 'These allow us to combine multiple other phenotypes and allow us to build arbitrarily complex medical definitions using logical and arithmetic operators.',
+  'Extension': 'These augment existing phenotypes with additional filtering or counting logic.',
+  'Time Range': 'These are for working with time ranges with a start and end date, such as insurance coverage windows or drug exposure periods.',
+  'User Defined': 'These allow us to build hybrid analyses that integrate custom code into templated analyses.',
 };
 
 export const SECTIONS: SectionDef[] = [
@@ -62,7 +84,7 @@ export const SECTIONS: SectionDef[] = [
     ],
   },
   {
-    title: 'Atomic Extension',
+    title: 'Extension',
     groups: [
       { root: { class: 'BinPhenotype' } },
       { root: { class: 'EventCountPhenotype' } },
@@ -90,6 +112,7 @@ export const SECTIONS: SectionDef[] = [
 
 const OnExamplesActivateCtx = createContext<(className: string | null) => void>(() => {});
 const ActiveClassCtx = createContext<string | null>(null);
+const RegisterCardRefCtx = createContext<(className: string, el: HTMLElement | null) => void>(() => {});
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -154,6 +177,15 @@ const ClassCard: React.FC<ClassCardProps> = ({
 }) => {
   const onExamplesActivate = useContext(OnExamplesActivateCtx);
   const activeClass = useContext(ActiveClassCtx);
+  const registerCardRef = useContext(RegisterCardRefCtx);
+  const cardDivRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (phenotypeName) {
+      registerCardRef(phenotypeName, cardDivRef.current);
+      return () => { registerCardRef(phenotypeName, null); };
+    }
+  }, [phenotypeName, registerCardRef]);
   const [paramsOpen, setParamsOpen] = useState(false);
   const paramsButtonRef = useRef<HTMLButtonElement>(null);
   const paramsMenuRef = useRef<HTMLDivElement>(null!);
@@ -172,21 +204,20 @@ const ClassCard: React.FC<ClassCardProps> = ({
 
   const dimmed = activeClass !== null && activeClass !== phenotypeName;
   const cardHoverProps = hasExamples && phenotypeName ? {
-    onMouseEnter: () => onExamplesActivate(phenotypeName),
+    onClick: () => onExamplesActivate(phenotypeName),
     onMouseLeave: () => onExamplesActivate(null),
   } : {};
 
   return (
-    <div className={`${styles.card} ${dimmed ? styles.cardDimmed : ''}`} {...cardHoverProps}>
+    <div ref={cardDivRef} className={`${styles.card} ${dimmed ? styles.cardDimmed : ''}`} {...cardHoverProps}>
       <div className={styles.cardHeader}>
         <h3 className={styles.cardTitle}>
           {title}
-          {tag && <span style={{ opacity: 0.1, marginLeft: '6px', fontFamily: 'IBMPlexSans-regular' }}>{tag}</span>}
+          {tag && <span style={{ opacity: 0.3, marginLeft: '6px', fontFamily: 'IBMPlexSans-regular' }}>{tag}</span>}
         </h3>
-        {extendsLabel && <span className={styles.extendsBadge}>extends {extendsLabel}</span>}
         {description && <p className={styles.cardDescription}>{description}</p>}
       </div>
-      <div className={styles.cardFooter}>
+      {/* <div className={styles.cardFooter}>
         <button
           ref={paramsButtonRef}
           className={`${styles.cardFooterButton} ${paramsOpen ? styles.cardFooterButtonActive : ''}`}
@@ -217,7 +248,7 @@ const ClassCard: React.FC<ClassCardProps> = ({
             </div>
           )}
         </div>
-      </PhenExNavBarMenu>
+      </PhenExNavBarMenu> */}
     </div>
   );
 };
@@ -278,6 +309,7 @@ const MasonryGrid: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (!el) return;
     const onResize = () => doLayoutRef.current();
     const ro = new ResizeObserver(onResize);
+    ro.observe(el); // reflow when the flexlayout panel itself resizes
     Array.from(el.children).forEach(child => ro.observe(child));
     window.addEventListener('resize', onResize);
     return () => { ro.disconnect(); window.removeEventListener('resize', onResize); };
@@ -307,11 +339,18 @@ const GroupView: React.FC<{ group: GroupDef }> = ({ group }) => {
   );
 };
 
+function getSectionClasses(section: SectionDef): string[] {
+  return section.groups.flatMap(g => [g.root.class, ...(g.children?.map(c => c.class) ?? [])]);
+}
+
 // ─── Section ──────────────────────────────────────────────────────────────────
 
-const SectionView: React.FC<{ section: SectionDef }> = ({ section }) => (
+const SectionView: React.FC<{ section: SectionDef }> = ({ section }) => {
+  const activeClass = useContext(ActiveClassCtx);
+  const headerDimmed = activeClass !== null && !getSectionClasses(section).includes(activeClass);
+  return (
   <div className={styles.section}>
-    <div className={styles.sectionHeader}>
+    <div className={`${styles.sectionHeader} ${headerDimmed ? styles.sectionHeaderDimmed : ''}`}>
       <h2 className={styles.sectionTitle}>
         {section.title} <span className={styles.sectionTitleSuffix}>Phenotypes</span>
       </h2>
@@ -325,16 +364,49 @@ const SectionView: React.FC<{ section: SectionDef }> = ({ section }) => (
       ))}
     </MasonryGrid>
   </div>
-);
+  );
+};
 
 // ─── Panel ────────────────────────────────────────────────────────────────────
 
 interface PhenotypeReferencePanelProps {
   onExamplesActivate: (className: string | null) => void;
+  onRegisterScroll?: (fn: (className: string | null) => void) => void;
 }
 
-export const PhenotypeReferencePanel: React.FC<PhenotypeReferencePanelProps> = ({ onExamplesActivate }) => {
+export const PhenotypeReferencePanel: React.FC<PhenotypeReferencePanelProps> = ({ onExamplesActivate, onRegisterScroll }) => {
   const [activeClass, setActiveClass] = useState<string | null>(null);
+  const [titleVisible, setTitleVisible] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const panelWrapperRef = useRef<HTMLDivElement>(null);
+  const pageTitleRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  const registerCardRef = useCallback((className: string, el: HTMLElement | null) => {
+    cardRefs.current[className] = el;
+  }, []);
+
+  useEffect(() => {
+    const el = pageTitleRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setTitleVisible(entry.isIntersecting),
+      { root: scrollRef.current, threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    onRegisterScroll?.((className) => {
+      if (className !== null) {
+        setActiveClass(className);
+        cardRefs.current[className]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        setActiveClass(null);
+      }
+    });
+  }, [onRegisterScroll]);
 
   const handleActivate = useCallback((className: string | null) => {
     setActiveClass(className);
@@ -344,21 +416,39 @@ export const PhenotypeReferencePanel: React.FC<PhenotypeReferencePanelProps> = (
   return (
   <ActiveClassCtx.Provider value={activeClass}>
   <OnExamplesActivateCtx.Provider value={handleActivate}>
-    <div className={styles.referencePanel}>
+  <RegisterCardRefCtx.Provider value={registerCardRef}>
+    <div ref={panelWrapperRef} className={styles.panelWrapper}>
+      <div className={`${styles.stickyHeader} ${!titleVisible ? styles.stickyHeaderVisible : ''}`}>
+        <img src={birdIcon} className={styles.stickyBird} alt="" />
+        <span className={styles.stickyTitle}>Phenotypes</span>
+      </div>
+    <div ref={scrollRef} className={styles.referencePanel}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>The PhenEx Phenotypes</h1>
+        <div ref={pageTitleRef} className={styles.pageTitle}><img src={birdIcon} className={styles.pageTitleBird} alt="" />Phenotypes</div>
         <p className={styles.pageSubtitle}>
-          The term computable phenotype, or simply Phenotype (capitalized), is used in PhenEx to define a filtering
-          operation that identifies patients presenting with a clinical feature of interest (a conceptual definition).
-          Thus, each computable Phenotype is a templated database query used to implement operational definitions.
-          Each Phenotype exposes different parameters that can be used to tailor the implementation to the clinical
-          content of an observational study definition.
+          The computable phenotypes, or simply Phenotypes (capitalized), are templated database
+          queries that identify patients or events with clinical significance in real world data sources. They expose parameters that you must define to implement observational studies. Each study element (e.g. cohort eligibility criteria, baseline characteristics, and outcomes) can be defined using one or more Phenotypes. Listed here are all the different Phenotypes. Click on a Phenotype to see examples of how it can be used.
         </p>
       </div>
       {SECTIONS.map(section => (
         <SectionView key={section.title} section={section} />
       ))}
     </div>
+    <div className={styles.scrollbarRegion}>
+      <SimpleCustomScrollbar
+        targetRef={scrollRef}
+        hoverTargetRef={panelWrapperRef}
+        orientation="vertical"
+        marginTop={10}
+        marginBottom={10}
+        marginToEnd={0}
+        classNameTrack={styles.scrollBarTrack}
+        classNameThumb={styles.scrollBarThumb}
+        showOnHover={true}
+      />
+    </div>
+    </div>
+  </RegisterCardRefCtx.Provider>
   </OnExamplesActivateCtx.Provider>
   </ActiveClassCtx.Provider>
   );

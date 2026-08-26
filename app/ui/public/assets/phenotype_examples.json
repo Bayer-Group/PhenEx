@@ -1,11 +1,33 @@
 {
   "EventPhenotype": [
-    "Identify patients with any recorded hospital visit using the `VISIT_OCCURRENCE` domain."
+    "Identify all events in theinpatient hospitalization setting prior to index.",
+    "Identify all drug dispensations in the post index period",
+    ""
   ],
   "CodelistPhenotype": [
-    "Identify patients with **type 2 diabetes** using ICD-10 codes `E11.*`.",
-    "Identify patients prescribed **metformin** using NDC or RxNorm drug codes.",
-    "Identify patients with a **myocardial infarction** procedure using CPT codes."
+    {
+      "subsection": "Filter patients by codelist, or fuzzy match for codes beginning with",
+      "examples": [
+        "Identify patients with **type 2 diabetes** using ICD-10-CM and ICD-9-CM codes from the codelist named `Type 2 Diabetes`.",
+        "Identify patients prescribed **metformin** using NDC or RxNorm drug codes.",
+        "Identify patients with a **myocardial infarction** procedure using CPT codes.",
+        "Identify the patients medical codes starting with `E11.*`."
+      ]
+    },
+    {
+      "subsection": "Add categorical filtering",
+      "examples": [
+        "Identify the first diagnosis of **atrial fibrillation** either in the inpatient setting or the outpatient setting in primary diagnosis position",
+        "Identify all diagnoses of **heart failure** recorded in the inpatient setting."
+      ]
+    },
+    {
+      "subsection": "Return the first event",
+      "examples": [
+        "Identify the first occurrence of a **stroke diagnosis** using ICD codes",
+        "Identify the **earliest recorded diabetes diagnosis** per patient."
+      ]
+    }
   ],
   "MeasurementPhenotype": [
     "Identify patients with **HbA1c > 7.5%** using LOINC measurement codes.",

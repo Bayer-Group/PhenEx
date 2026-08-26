@@ -1,6 +1,6 @@
 .scrollbar {
   position: absolute;
-  right: 10px;
+  right: 0;
   width: 10px;
   background: transparent;
   border-radius: 8px;

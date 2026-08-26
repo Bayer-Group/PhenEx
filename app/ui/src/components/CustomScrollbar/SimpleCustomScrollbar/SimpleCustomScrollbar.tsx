@@ -11,6 +11,7 @@ export interface SimpleCustomScrollbarProps {
   marginBottom?: number | string;
   marginToEnd?: number; // Right margin for vertical, bottom margin for horizontal
   showOnHover?: boolean; // Only show when the target element is hovered
+  hoverTargetRef?: React.RefObject<HTMLElement | null>; // broader container for hover tracking
 }
 
 export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
@@ -23,6 +24,7 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
   marginBottom = 0,
   marginToEnd = 0,
   showOnHover = false,
+  hoverTargetRef,
 }) => {
   const [scrollInfo, setScrollInfo] = useState({
     scrollTop: 0,
@@ -196,16 +198,18 @@ export const SimpleCustomScrollbar: React.FC<SimpleCustomScrollbarProps> = ({
     const handleMouseEnter = () => setIsTargetHovered(true);
     const handleMouseLeave = () => setIsTargetHovered(false);
     if (showOnHover) {
-      element.addEventListener('mouseenter', handleMouseEnter);
-      element.addEventListener('mouseleave', handleMouseLeave);
+      const hoverEl = hoverTargetRef?.current ?? element;
+      hoverEl.addEventListener('mouseenter', handleMouseEnter);
+      hoverEl.addEventListener('mouseleave', handleMouseLeave);
     }
 
     return () => {
       element.removeEventListener('scroll', handleScroll);
       element.classList.remove(styles.hideScrollbars);
       if (showOnHover) {
-        element.removeEventListener('mouseenter', handleMouseEnter);
-        element.removeEventListener('mouseleave', handleMouseLeave);
+        const hoverEl = hoverTargetRef?.current ?? element;
+        hoverEl.removeEventListener('mouseenter', handleMouseEnter);
+        hoverEl.removeEventListener('mouseleave', handleMouseLeave);
       }
       
       if (resizeObserver) {

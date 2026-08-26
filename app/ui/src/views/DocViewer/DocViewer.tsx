@@ -42,6 +42,7 @@ function createModel(): Model {
 export const DocViewer: React.FC = () => {
   const modelRef = useRef(createModel());
   const scrollToPhenotypeRef = useRef<(className: string | null) => void>(() => {});
+  const scrollToCardRef = useRef<(className: string | null) => void>(() => {});
 
   const factory = useCallback((node: { getComponent: () => string | undefined }) => {
     switch (node.getComponent()) {
@@ -49,12 +50,15 @@ export const DocViewer: React.FC = () => {
         return (
           <PhenotypeReferencePanel
             onExamplesActivate={(className) => scrollToPhenotypeRef.current(className)}
+            onRegisterScroll={(fn) => { scrollToCardRef.current = fn; }}
           />
         );
       case 'examples':
         return (
           <PhenotypeExamplesPanel
             onRegisterScroll={(fn) => { scrollToPhenotypeRef.current = fn; }}
+            onSectionClick={(className) => scrollToCardRef.current(className)}
+            onSectionLeave={() => scrollToCardRef.current(null)}
           />
         );
       default:
