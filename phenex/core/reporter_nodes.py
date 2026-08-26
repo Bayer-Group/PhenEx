@@ -246,6 +246,7 @@ class CustomReporterNode(Reporter):
     def df_report(self):
         """Get the formatted report DataFrame."""
         if self.table is not None:
+            self._ensure_reporter_executed()
             if hasattr(self.reporter, "get_pretty_display"):
                 return self.reporter.get_pretty_display()
             if hasattr(self.table, "execute"):
@@ -254,9 +255,17 @@ class CustomReporterNode(Reporter):
         return None
 
     def _ensure_reporter_executed(self):
-        """Run reporter.execute() if the reporter has not yet produced results (e.g. lazy/cached execution)."""
+        """Populate reporter.df, reloading the materialized table when it exists (lazy/cached execution)
+        and re-running the reporter only when there is nothing to reload."""
         if not hasattr(self.reporter, "df") or self.reporter.df is None:
-            self.reporter.execute(self.cohort)
+            if self.table is not None:
+                self.reporter.df = (
+                    self.table.execute()
+                    if hasattr(self.table, "execute")
+                    else self.table
+                )
+            else:
+                self.reporter.execute(self.cohort)
 
     def to_excel(self, path: str):
         """Delegate to the wrapped reporter's to_excel."""
