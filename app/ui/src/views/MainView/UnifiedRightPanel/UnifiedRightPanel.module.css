@@ -1,0 +1,58 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Tab bar ── */
+.tabBar {
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--line-color);
+}
+
+.tab {
+  flex: 1;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-size: 12px;
+  font-family: 'IBMPlexSans-regular';
+  color: var(--text-color-secondary, var(--color-accent-bright));
+  opacity: 0.5;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.tab:hover {
+  opacity: 0.8;
+}
+
+.tabActive {
+  font-family: 'IBMPlexSans-semibold';
+  color: var(--color-accent-bright);
+  opacity: 1;
+  border-bottom-color: var(--color-accent-bright);
+}
+
+/* ── Panel content ── */
+.content {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.paneVisible {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.paneHidden {
+  display: none;
+}

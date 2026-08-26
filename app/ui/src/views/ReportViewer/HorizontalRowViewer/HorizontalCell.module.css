@@ -1,0 +1,219 @@
+.cardColumnInner {
+  display: flex;
+  height: 100%;
+  position: relative;
+  width: 100%;
+  margin-left:0px;
+  padding-top: 0px;
+  /* padding-right:20px; */
+  overflow: visible;
+  /* background-color: red; */
+}
+
+.cell {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 100%;
+  height: 100%;
+  overflow: visible;
+  transition: opacity 0.2s;
+}
+
+.verticalWrapper {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding-top: 0px;
+  padding-left: 0;
+  padding-right: 0;
+  margin-bottom:100px;
+  /* margin-left: -12px;
+  margin-right: -12px; */
+}
+
+.breadcrumbHeader {
+  position: absolute;
+  top: 0;
+  z-index: 10;
+  background: var(--background_color_light, #fff);
+  padding: 4px 0 2px;
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: var(--font_size_phenotypename, 14px);
+  padding-top:8px;
+  padding-bottom:30px;
+  width:100%;
+  z-index: 30;
+  background: linear-gradient(to bottom, var(--background_color_light) 40px, transparent 60px);
+}
+
+
+/* these are the top right controls*/
+.controls{
+  background-color: transparent;
+  width: 100px;
+  height:50px;
+  position: absolute;
+  top: 0px;
+  right:0px;
+  z-index: 30;
+}
+
+.verticalWrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: transparent !important;
+  transition: opacity 0.2s;
+  margin-right: 0px;
+  padding-top: 0px;
+}
+
+.cardTitle {
+  font-family: "IBMPlexSans-bold", sans-serif;
+  color: black;
+  font-size: var(--font_size_pagetitle, 18px) !important;
+  line-height: 1.1;
+  padding: 5px 0px ;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+  margin-bottom:40px;
+}
+
+.cardContent {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  padding-bottom: 100px;
+}
+
+/* ── Section (multi-row) cell ─────────────────────────────────────────── */
+
+.cardTitleSection {
+  font-size: calc(var(--font_size_pagetitle, 18px) + 4px);
+}
+
+.cardContentSection {
+  position: relative;
+  /* Bounded, non-scrolling box: the pan-zoom viewport (absolute inset:0) fills
+     it and owns scrolling/zooming, so the native wrapper scroll stays inert. */
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Category (overview) cell ─────────────────────────────────────────── */
+
+.categoryBody {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px 8px 40px;
+  max-width: 720px;
+}
+
+.categoryDescription {
+  margin: 0;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #444;
+}
+
+.categorySectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.categorySectionLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border: var(--border);
+  background: transparent;
+  padding: 12px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.1s, box-shadow 0.1s;
+}
+
+.categorySectionLink:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.categorySectionName {
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-size: 15px;
+  color: black;
+}
+
+.categorySectionCount {
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: 12px;
+  color: #888;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  padding: 2px 10px;
+}
+
+.scrollBarTrack {
+  background-color: transparent;
+  border-radius: 0px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+
+.scrollBarTrack:hover {
+  background-color: transparent;
+}
+
+.cardColumnInner:hover .scrollBarTrack {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.scrollBarThumb {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  width: 8px;
+  border-radius: 0px;
+}
+
+/* Nested left-panel splitters */
+.cell :global(.flexlayout__splitter) {
+  background-color: aqua;
+
+}
+.cell :global(.flexlayout__splitter:hover) {
+  background-color: gray;
+}
+:global(.flexlayout__splitter_drag) {
+  background-color: gray;
+  z-index: 1000;
+}
+
+
+.cell :global(.flexlayout__tabset){
+  background-color: transparent !important;
+    /* box-shadow: 0 1px 4px rgba(0, 0, 0, .3); */
+    border: var(--border);
+    border-radius: 14px;
+
+}

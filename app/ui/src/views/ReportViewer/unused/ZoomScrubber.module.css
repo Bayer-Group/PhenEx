@@ -1,0 +1,31 @@
+.scrubber {
+  position: relative;
+  width: 80px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border: var(--line-color) 1px solid;
+  border-radius: 10px;
+  cursor: default;
+  box-sizing: border-box;
+  padding: 4px 10px;
+}
+
+.thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 15px;
+  background-color: rgba(100, 100, 100, 0.2);
+  border-radius: 9px;
+  cursor: grab;
+  transition: background-color 0.2s;
+}
+
+.thumb:hover {
+  background-color: rgba(100, 100, 100, 0.4);
+}
+
+.thumb:active {
+  cursor: grabbing;
+}

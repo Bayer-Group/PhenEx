@@ -1,0 +1,23 @@
+.container {
+  width: 100%;
+  padding: 40px;
+  box-sizing: border-box;
+  font-family: "IBMPlexSans-regular", sans-serif;
+}
+
+.title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 0.3em;
+  line-height: 1.1;
+  font-family: "IBMPlexSans-bold", sans-serif;
+}
+
+.description {
+  font-size: 16px;
+  color: #555;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 70%;
+}

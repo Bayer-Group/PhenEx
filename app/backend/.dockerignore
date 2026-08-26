@@ -1,0 +1,10 @@
+.venv
+__pycache__
+.env.example
+.DS_Store
+._*
+.env
+Dockerfile
+.dockerignore
+.python-version
+*.log

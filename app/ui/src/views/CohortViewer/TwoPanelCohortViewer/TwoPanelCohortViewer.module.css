@@ -1,0 +1,145 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.topSection {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  padding-bottom: 10px;
+  padding-top: 5px;
+  padding-left: 70px !important; /* margin for collapse arrow when left panel hidden */
+  background-color: transparent;
+  z-index: 10;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.topSection.leftPanelShown {
+  padding-left: 20px !important;
+}
+
+.topSection > * {
+  transition: transform 0.2s ease, width 0.2s ease;
+  pointer-events: auto;
+}
+
+.contentSection {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  height: 100%;
+}
+
+.leftContentWrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  position: relative;
+}
+
+.leftContentViewer {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Study mode: floating top section - now same as default */
+.studyMode .topSection {
+  /* No additional styles needed - uses default absolute positioning */
+}
+
+.studyMode .topSection > * {
+  /* No additional styles needed */
+}
+
+.studyMode .contentSection {
+  /* No additional styles needed */
+}
+
+.breadcrumbsContainer {
+  min-width: 200px;
+  flex-shrink: 0;
+  line-height: 10px;
+  /* Prevent layout shift during content changes */
+}
+
+
+.breadcrumbItem {
+    font-size: var(--font_size_infotext);
+    line-height: var(--font_size_infotext);
+
+  /* Add any specific breadcrumb item styling */
+}
+
+.breadcrumbLastItem {
+    font-size: var(--font_size_breadcrumbs);
+    line-height: 20px;
+    margin-left:-5px;
+  /* Add any specific last breadcrumb item styling */
+}
+
+.bottomRight{
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 100000;
+}
+
+/* Phenotype detail modal popover */
+.popoverOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  display: flex;
+  opacity: 0;
+  animation: popoverFadeIn 0.2s ease-in forwards;
+  background: hsla(25, 35%, 90%, 0.2);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+}
+
+.popoverContent {
+  width: 600px;
+  height: 600px;
+  background-color: transparent;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  right: 10%;
+  top: 10%;
+  opacity: 0;
+  animation: popoverFadeIn 0.2s ease-in forwards;
+}
+
+.popoverContent > div {
+  height: 100%;
+  width: 100%;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

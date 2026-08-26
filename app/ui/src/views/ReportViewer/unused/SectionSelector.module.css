@@ -1,0 +1,88 @@
+/* ── SectionSelector ──────────────────────────────────────────────────── */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  background: none;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 8px 2px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+
+}
+
+
+.title:hover {
+  color: var(--color_accent_orange);
+}
+
+.title:focus-visible, .title:focus{
+  outline: none;
+  border:none;
+}
+
+.titleActive {
+  color: #222;
+  background-color: rgba(0, 0, 0, 0.06);
+}
+
+.item {
+  background: none;
+  padding: 6px 8px 6px 20px;
+  text-align: left;
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  transition: background-color 0.15s;
+  outline:none;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.item:focus,
+.item:focus-visible {
+  outline: none;
+}
+
+.item:hover {
+  color: var(--color_accent_orange);
+  border:none;
+}
+
+.itemActive {
+  color: #222;
+  background-color: rgba(0, 0, 0, 0.06);
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  border: none;
+  outline: none;
+}
+
+.itemActive:focus{
+  border:none;
+  outline:none;
+}
+
+item:focus{
+  outline: none;
+  border: none;
+}
+
+.empty {
+  font-size: 11px;
+  color: #999;
+  padding: 4px 8px;
+}

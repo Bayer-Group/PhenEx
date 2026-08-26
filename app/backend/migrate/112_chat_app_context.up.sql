@@ -1,0 +1,1 @@
+ALTER TABLE chat_session ADD COLUMN IF NOT EXISTS app_context TEXT NOT NULL DEFAULT 'study';

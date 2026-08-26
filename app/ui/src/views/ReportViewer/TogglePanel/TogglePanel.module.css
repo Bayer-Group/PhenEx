@@ -1,0 +1,44 @@
+.togglePanel {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.chevronButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 4px 4px 4px 4px;
+  background: var(--color_accent_bright);
+  box-shadow: -2px 0 6px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-color, #555);
+  opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.chevronButton:hover {
+  opacity: 1;
+  background: var(--surface-hover-color, #ebe8e6);
+}
+
+.chevronButton:focus {
+  outline: none;
+}
+
+.content {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+}

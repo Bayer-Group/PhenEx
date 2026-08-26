@@ -1,0 +1,32 @@
+.heightAdjustableContainer {
+  position: relative;
+  border-radius: 4px;
+  overflow: visible;
+  background-color: transparent;
+}
+
+.dragHandle {
+  position: absolute;
+  top: 25px;
+  left: 40%;
+  right: 40%;
+  height: 4px;
+  background: #f0f0f0;
+  border-bottom: 1px solid #ddd;
+  cursor: ns-resize;
+  z-index: 10;
+  border-radius: 4px;
+}
+
+.dragHandle:hover {
+  background: #e0e0e0;
+}
+
+.dragHandle:active {
+  background: #d0d0d0;
+}
+
+.content {
+  height: 100%;
+  overflow: auto;
+}

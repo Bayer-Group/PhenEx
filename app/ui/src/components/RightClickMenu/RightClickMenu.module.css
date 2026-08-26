@@ -1,0 +1,80 @@
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99999;
+  background-color: transparent;
+}
+
+.menu {
+  position: fixed;
+  background-color: var(--background_color_focus);
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100000;
+  min-width: 180px;
+  padding: 15px 8px;
+  color: white;
+}
+
+.menuItem {
+  position: relative;
+  margin-bottom: 4px;
+  padding: 0px 10px;
+  background-color: transparent;
+  border-radius: 10px;
+  border: transparent solid 1px;
+  cursor: pointer;
+  font-size: var(--font_size_items, 14px);
+  font-family: 'IBMPlexSans-Regular';
+  transition: background-color 0.1s, border-color 0.1s;
+  user-select: none;
+  color: white;
+}
+
+.menuItem:hover {
+  background-color: var(--color_accent_blue);
+  color: white;
+}
+
+.menuItem.hasSubmenu {
+  padding-right: 8px;
+}
+
+.menuItem.active {
+  background-color: var(--color_accent_blue);
+  color: white;
+}
+
+.menuItem.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.menuItem.disabled:hover {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--line-color);
+  margin: 15px 0;
+  opacity: .2;
+}
+
+.menuItemIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  width: 20px;
+  height: 20px;
+}
+
+.menuItemIcon svg {
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,1147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cohort-explorer.com/cohort.json",
+  "title": "Cohort Definition Schema (API Format)",
+  "type": "object",
+  "description": "The Cohort computes a cohort of individuals based on specified phenotypes with type attributes (entry, inclusions, exclusions, characteristics, outcomes).",
+  "definitions": {
+    "Phenotype": {
+      "type": "object",
+      "description": "A phenotype is a description of the state of a person at a specific time.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the phenotype"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "entry",
+            "inclusion",
+            "exclusion",
+            "baseline",
+            "outcome"
+          ],
+          "description": "Role of the phenotype in the cohort definition (entry criterion, inclusion, exclusion, baseline, or outcome)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Descriptive name of the phenotype"
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "A plain text description of the phenotype"
+        }
+      },
+      "required": [
+        "id",
+        "type"
+      ]
+    },
+    "Domain": {
+      "type": "string",
+      "description": "The domain in the CDM (Common Data Model)",
+      "enum": [
+        "PERSON",
+        "VISIT_OCCURRENCE",
+        "VISIT_DETAIL",
+        "CONDITION_OCCURRENCE",
+        "DEATH",
+        "PROCEDURE_OCCURRENCE",
+        "DRUG_EXPOSURE",
+        "CONDITION_OCCURRENCE_SOURCE",
+        "PROCEDURE_OCCURRENCE_SOURCE",
+        "DRUG_EXPOSURE_SOURCE",
+        "PERSON_SOURCE",
+        "OBSERVATION_PERIOD",
+        "OBSERVATION",
+        "MEASUREMENT"
+      ]
+    },
+    "Codelist": {
+      "type": "object",
+      "description": "Codelist is a class that allows us to conveniently work with medical codes used in RWD analyses. A Codelist represents a (single) specific medical concept, such as 'atrial fibrillation' or 'myocardial infarction'. A Codelist is associated with a set of medical codes from one or multiple source vocabularies (such as ICD10CM or CPT); we call these vocabularies 'code types'. Code type is important, as there are no assurances that codes from different vocabularies (different code types) do not overlap. It is therefore highly recommended to always specify the code type when using a codelist. Actually, for now it is required to set 'use_code_type' to False, set they key of the codelist dictionary to 'null' and use OHDSI ids as codes.",
+      "properties": {
+        "class_name": {
+          "type": "string",
+          "const": "Codelist"
+        },
+        "codelist": {
+          "type": "object",
+          "description": "A dictionary keyed by code type with the list of codes as values. If code type is not specified, set to 'null'",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "number"
+              ]
+            }
+          }
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Descriptive name of codelist"
+        },
+        "use_code_type": {
+          "type": "boolean",
+          "description": "User can define whether code type should be used or not."
+        },
+        "remove_punctuation": {
+          "type": "boolean",
+          "description": "User can define whether punctuation should be removed from codes or not."
+        }
+      },
+      "required": [
+        "class_name",
+        "codelist",
+        "use_code_type",
+        "remove_punctuation"
+      ]
+    },
+    "Value": {
+      "type": "object",
+      "description": "The Value class is used to define threshold on values in databases. Importantly, Value's define not just numeric values but also the boundary (including or excluding the endpoint).",
+      "properties": {
+        "class_name": {
+          "type": "string",
+          "enum": [
+            "Value",
+            "GreaterThanOrEqualTo",
+            "GreaterThan",
+            "LessThanOrEqualTo",
+            "LessThan",
+            "EqualTo",
+            "Date"
+          ]
+        },
+        "operator": {
+          "type": "string",
+          "description": "The operator to use for comparison. Options are: '>=', '<=', '>', '<', '='",
+          "enum": [
+            ">=",
+            "<=",
+            ">",
+            "<",
+            "="
+          ]
+        },
+        "value": {
+          "type": [
+            "string",
+            "number",
+            "object"
+          ],
+          "description": "The threshold value."
+        }
+      },
+      "required": [
+        "class_name",
+        "operator",
+        "value"
+      ]
+    },
+    "Date": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Value"
+        },
+        {
+          "type": "object",
+          "description": "The Date class is a specialized Value class for handling date comparisons.",
+          "properties": {
+            "class_name": {
+              "type": "string",
+              "const": "Date"
+            },
+            "value": {
+              "type": "object",
+              "description": "The date value",
+              "properties": {
+                "__datetime__": {
+                  "type": "string",
+                  "format": "date"
+                }
+              },
+              "required": [
+                "__datetime__"
+              ]
+            },
+            "date_format": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional date format string to parse the date value, e.g., '%Y-%m-%d'. If not provided, ISO 8601 format is assumed."
+            }
+          }
+        }
+      ]
+    },
+    "ReturnDate": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "first",
+            "last",
+            "all"
+          ],
+          "description": "Specifies whether to return the 'first', 'last' or 'all' event date(s)."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "ValueAggregator": {
+      "type": "object",
+      "description": "A ValueAggregator object defining aggregation operations to be performed on measurement values.",
+      "properties": {
+        "class_name": {
+          "type": "string",
+          "enum": [
+            "ValueAggregator",
+            "DailyMedian",
+            "DailyMean",
+            "DailyMin",
+            "DailyMax",
+            "DailyValueAggregator",
+            "Min",
+            "Max",
+            "Mean"
+          ],
+          "description": "The class name of the aggregator"
+        },
+        "aggregation_column": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The column to aggregate on"
+        },
+        "aggregation_function": {
+          "type": "string",
+          "description": "The aggregation function to apply",
+          "enum": [
+            "mean",
+            "median",
+            "min",
+            "max",
+            "daily_mean",
+            "daily_median",
+            "daily_min",
+            "daily_max"
+          ]
+        },
+        "aggregation_index": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The columns to group by for aggregation"
+        },
+        "reduce": {
+          "type": "boolean",
+          "description": "Whether to reduce the result to a single row per combination of index columns"
+        }
+      },
+      "required": [
+        "class_name",
+        "aggregation_function",
+        "aggregation_index",
+        "reduce"
+      ]
+    },
+    "RelativeTimeRangeFilter": {
+      "type": "object",
+      "description": "This class filters events in an EventTable based on a specified time range relative to an anchor date.  The anchor date can either be provided by an anchor phenotype or by an 'INDEX_DATE' column in the EventTable.",
+      "properties": {
+        "class_name": {
+          "type": "string",
+          "const": "RelativeTimeRangeFilter"
+        },
+        "min_days": {
+          "$ref": "#/definitions/Value"
+        },
+        "max_days": {
+          "$ref": "#/definitions/Value"
+        },
+        "when": {
+          "type": "string",
+          "description": "when can be 'before' or 'after'; if 'before', days prior to anchor event_date are positive, and days after are negative; using after, days before the anchor event_date are negative and days after the anchor event_date are positive.",
+          "enum": [
+            "before",
+            "after"
+          ]
+        },
+        "anchor_phenotype": {
+          "$ref": "#/definitions/Phenotype"
+        }
+      },
+      "required": [
+        "class_name",
+        "when",
+        "anchor_phenotype"
+      ]
+    },
+    "ValueFilter": {
+      "type": "object",
+      "description": "ValueFilter filters events in an PhenexTable based on a specified value range.",
+      "properties": {
+        "class_name": {
+          "type": "string",
+          "const": "ValueFilter"
+        },
+        "min_value": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Value"
+            },
+            {
+              "$ref": "#/definitions/Date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "max_value": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Value"
+            },
+            {
+              "$ref": "#/definitions/Date"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "column_name": {
+          "type": "string",
+          "description": "The column name to which the value range should be applied. Default to VALUE, which is the default name of the value column in PhenotypeTable's."
+        }
+      },
+      "required": [
+        "class_name",
+        "column_name"
+      ]
+    },
+    "CategoricalFilter": {
+      "type": "object",
+      "description": "This class filters events in an EventTable based on specified categorical values.",
+      "properties": {
+        "class_name": {
+          "type": "string",
+          "const": "CategoricalFilter"
+        },
+        "column_name": {
+          "type": "string",
+          "description": "The name of the column to filter by."
+        },
+        "allowed_values": {
+          "type": "array",
+          "description": "The list of allowed values for the column.",
+          "items": {
+            "type": [
+              "string",
+              "number",
+              "boolean"
+            ]
+          }
+        },
+        "domain": {
+          "$ref": "#/definitions/Domain"
+        },
+        "operator": {
+          "type": "string",
+          "enum": [
+            "isin",
+            "notin",
+            "isnull",
+            "notnull"
+          ],
+          "description": " The operator used for filtering. Options are \"isin\", \"notin\", \"isnull\", \"notnull\". Default is \"isin\". Be aware that \"notin\" removes null values! Thus \"notin\" can better be described 'has a value and and is not in'"
+        }
+      },
+      "required": [
+        "class_name",
+        "column_name",
+        "allowed_values",
+        "operator"
+      ]
+    },
+    "CodelistPhenotype": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Phenotype"
+        },
+        {
+          "type": "object",
+          "description": "CodelistPhenotype represents a phenotype defined by the presence of specific medical codes from a codelist within a specified domain (e.g., conditions, procedures, drugs). The CodelistPhenotype is used to identify individuals who have records matching any of the codes in the provided codelist. The phenotype can be further refined using date ranges, relative time ranges, and categorical filters. The returned Phenotype has the following interpretation: DATE: If return_date='first', then the returned DATE is the first occurrence of any code from the codelist. If return_date='last', then DATE is the last occurrence of any code from the codelist. If return_date='all', then all occurrences of codes from the codelist are returned. VALUE: The value associated with the code occurrence, typically representing the specific code or a related attribute.",
+          "properties": {
+            "class_name": {
+              "type": "string",
+              "const": "CodelistPhenotype"
+            },
+            "domain": {
+              "$ref": "#/definitions/Domain"
+            },
+            "codelist": {
+              "$ref": "#/definitions/Codelist"
+            },
+            "name": {
+              "type": "string",
+              "description": "Descriptive name of codelist phenotype"
+            },
+            "date_range": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValueFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "relative_time_range": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/RelativeTimeRangeFilter"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "return_date": {
+              "$ref": "#/definitions/ReturnDate"
+            },
+            "return_value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "all"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Specifies which values to return. None for no return value or 'all' for all return values on the selected date(s). Default is None."
+            },
+            "categorical_filter": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/CategoricalFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "class_name",
+            "domain",
+            "codelist",
+            "name",
+            "return_date"
+          ]
+        }
+      ]
+    },
+    "AgePhenotype": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Phenotype"
+        },
+        {
+          "type": "object",
+          "description": "AgePhenotype is a class that represents an age-based phenotype. It calculates the age of individuals based on their date of birth and an optional anchor phenotype. The age is computed in years and can be filtered within a specified range.",
+          "properties": {
+            "class_name": {
+              "type": "string",
+              "const": "AgePhenotype"
+            },
+            "name": {
+              "type": "string",
+              "description": "Descriptive name of age phenotype"
+            },
+            "value_filter": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValueFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "anchor_phenotype": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Phenotype"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "domain": {
+              "$ref": "#/definitions/Domain"
+            }
+          },
+          "required": [
+            "class_name",
+            "name",
+            "domain",
+            "description",
+            "value_filter",
+            "anchor_phenotype"
+          ]
+        }
+      ]
+    },
+    "SexPhenotype": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Phenotype"
+        },
+        {
+          "type": "object",
+          "description": "SexPhenotype represents a sex-based phenotype. It returns the sex of individuals in the VALUE column and optionally filters based on identified sex. The default column name of the categorical filter is 'GENDER_CONCEPT_ID', but can be changed to match the underlying data source. The returned Phenotype has the following interpretation: DATE: If when='before', then DATE is the beginning of the coverage period containing the anchor phenotype. If when='after', then DATE is the end of the coverage period containing the anchor date. VALUE:",
+          "properties": {
+            "class_name": {
+              "type": "string",
+              "const": "SexPhenotype"
+            },
+            "name": {
+              "type": "string",
+              "description": "Descriptive name of sex phenotype"
+            },
+            "domain": {
+              "$ref": "#/definitions/Domain"
+            },
+            "categorical_filter": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/CategoricalFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "date_range": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValueFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "relative_time_range": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/RelativeTimeRangeFilter"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "return_date": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "class_name",
+            "name",
+            "domain"
+          ]
+        }
+      ]
+    },
+    "MeasurementPhenotype": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Phenotype"
+        },
+        {
+          "type": "object",
+          "description": "MeasurementPhenotype represents a measurement-based phenotype for extracting laboratory values, vital signs, and other quantitative measurements from clinical data.The MeasurementPhenotype is for manipulating numerical data found in RWD data sources e.g. laboratory or observation results. These tables often contain numerical values (height, weight, blood pressure, lab results). As an event-based table, each row records a single measurement value for a single patient with a date. All numerical values are in a 'VALUE' column. A medical code indicates the type of numerical measurement and the units of measurement are in an additional column.",
+          "properties": {
+            "class_name": {
+              "type": "string",
+              "const": "MeasurementPhenotype"
+            },
+            "name": {
+              "type": "string",
+              "description": "Descriptive name of measurement phenotype"
+            },
+            "domain": {
+              "$ref": "#/definitions/Domain"
+            },
+            "codelist": {
+              "$ref": "#/definitions/Codelist"
+            },
+            "date_range": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValueFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "relative_time_range": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/RelativeTimeRangeFilter"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "return_date": {
+              "$ref": "#/definitions/ReturnDate"
+            },
+            "return_value": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "all"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Specifies which values to return. None for no return value or 'all' for all return values on the selected date(s). Default is None."
+            },
+            "categorical_filter": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/CategoricalFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "value_filter": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValueFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter to apply on measurement values"
+            },
+            "clean_nonphysiologicals_value_filter": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValueFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A value filter to be applied **prior** to any filtering or aggregation. This should be used to remove nonsensical values e.g. negative blood pressures, or values outside of a physiological range that are certain to be due to measurement error. Ideally, such cleaning steps should performed upstream of apex, but have been provided due to realization of practical necessity."
+            },
+            "clean_null_values": {
+              "type": "boolean",
+              "description": "A boolean indicating whether to remove null values from the measurement table. If set to True, null values are removed prior to value filtering. If set to False, null values are not removed. If not specified, null values are removed (default is true)"
+            },
+            "value_aggregation": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValueAggregator"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A ValueAggregator PhenEx object defining aggregation, whether over the whole defined time period (relative time range filter, date filter) using Mean, Median, Min, Max) or daily aggregation operation (DailyMin, DailyMax, DailyMedian, DailyMean) to be performed on the measurement values. This operation occurs **after** the cleaning value filter but **prior** to the primary value_filter. If Mean and Median are used, no EVENT_DATE will be returned. For daily aggregators, the daily EVENT_DATES will be returned. For Min and Max, all days that have the Min/Max value are returned, resulting in multiple rows per patient."
+            },
+            "further_value_filter_phenotype": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/MeasurementPhenotype"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "If the input to the current MeasurementPhenotype is the output of a previous MeasurementPhenotype, set this parameter to the previous MeasurementPhenotype."
+            }
+          },
+          "required": [
+            "class_name",
+            "name",
+            "domain",
+            "codelist",
+            "return_date",
+            "clean_null_values"
+          ]
+        }
+      ]
+    },
+    "MeasurementChangePhenotype": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Phenotype"
+        },
+        {
+          "type": "object",
+          "description": "MeasurementChangePhenotype looks for changes in the value of a MeasurementPhenotype within a certain time period. Returns EVENT_DATE as either the date of the first or second MeasurementPhenotype event and VALUE as the observed change in the underlying MeasurementPhenotype's VALUE.",
+          "properties": {
+            "class_name": {
+              "type": "string",
+              "const": "MeasurementChangePhenotype"
+            },
+            "name": {
+              "type": "string",
+              "description": "Descriptive name of measurement change phenotype"
+            },
+            "phenotype": {
+              "$ref": "#/definitions/MeasurementPhenotype",
+              "description": "The measurement phenotype to look for changes."
+            },
+            "min_change": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Value"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The minimum change in the measurement value to look for."
+            },
+            "max_change": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Value"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The maximum change in the measurement value to look for."
+            },
+            "direction": {
+              "type": "string",
+              "enum": [
+                "increase",
+                "decrease"
+              ],
+              "description": "Direction of change to track: 'increase' or 'decrease'"
+            },
+            "min_days_between": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Value"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The minimum number of days between the measurements."
+            },
+            "max_days_between": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Value"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The maximum number of days between the measurements."
+            },
+            "component_date_select": {
+              "type": "string",
+              "enum": [
+                "first",
+                "second"
+              ],
+              "description": "Specifies which MeasurementPhenotype event to use for defining the date of the MeasurementChange ('first' or 'second')"
+            },
+            "return_date": {
+              "$ref": "#/definitions/ReturnDate"
+            },
+            "return_value": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValueAggregator"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A ValueAggregator operation describing which value to return when more than one value per person pass all the filters."
+            }
+          },
+          "required": [
+            "class_name",
+            "name",
+            "phenotype",
+            "direction",
+            "component_date_select",
+            "return_date"
+          ]
+        }
+      ]
+    },
+    "EventCountPhenotype": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Phenotype"
+        },
+        {
+          "type": "object",
+          "description": "EventCountPhenotype counts the number of events that occur on distinct days. It is additionally able to filter patients based on: 1.the number of distinct days an event occurred, by setting value_filter. 2. the number of days between pairs of events, by setting relative_time_range. EventCountPhenotype is a composite phenotype, meaning that it does not directly operate on source data and takes a phenotype as an argument. The phenotype passed to EventCountPhenotype must have return_date set to 'all' (if return_date on the provided phenotype is set to `first` or `last`, there will only be one event per patient...)",
+          "properties": {
+            "class_name": {
+              "type": "string",
+              "const": "EventCountPhenotype"
+            },
+            "name": {
+              "type": "string",
+              "description": "Descriptive name of event count phenotype"
+            },
+            "phenotype": {
+              "$ref": "#/definitions/Phenotype",
+              "description": "The phenotype that returns events of interest. Note that return_date must be set to `all`"
+            },
+            "value_filter": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Value"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The minimum and/or maximum number of distinct days on which an event may occur."
+            },
+            "relative_time_range": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/RelativeTimeRangeFilter"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The minimum and/or maximum number of days that are allowed to occur between any pair of events."
+            },
+            "return_date": {
+              "$ref": "#/definitions/ReturnDate",
+              "description": "Specifies whether to return the 'first', 'last', or 'all' dates on which the criteria are fulfilled. Default is 'first'."
+            },
+            "component_date_select": {
+              "type": "string",
+              "enum": [
+                "first",
+                "second"
+              ],
+              "description": " Specifies whether to return the 'first' or 'second' event date within each pair of events. Default is 'second'. It is highly recommended to never use 'first', as there is a high risk of introducing immortal time bias."
+            }
+          },
+          "required": [
+            "class_name",
+            "name",
+            "phenotype",
+            "return_date",
+            "component_date_select"
+          ]
+        }
+      ]
+    },
+    "WithinSameEncounterPhenotype": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Phenotype"
+        },
+        {
+          "type": "object",
+          "description": " WithinSameEncounterPhenotype is a phenotype that filters a target phenotype based on the occurrence of an anchor phenotype within the same encounter. This phenotype can only be used with CodelistPhenotypes and MeasurementPhenotypes as anchor/phenotype.",
+          "properties": {
+            "class_name": {
+              "type": "string",
+              "const": "WithinSameEncounterPhenotype"
+            },
+            "name": {
+              "type": "string",
+              "description": "Descriptive name of within same encounter phenotype"
+            },
+            "anchor_phenotype": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/CodelistPhenotype"
+                },
+                {
+                  "$ref": "#/definitions/MeasurementPhenotype"
+                }
+              ],
+              "description": "The phenotype which should define the encounter of interest (must be CodelistPhenotype or MeasurementPhenotype)"
+            },
+            "phenotype": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/CodelistPhenotype"
+                },
+                {
+                  "$ref": "#/definitions/MeasurementPhenotype"
+                }
+              ],
+              "description": "The phenotype which should occur within the same encounter of interest, defined by the anchor_phenotype (must be CodelistPhenotype or MeasurementPhenotype)"
+            },
+            "column_name": {
+              "type": "string",
+              "description": "The name of the column which must be shared between anchor_phenotype and phenotype (e.g., 'VISIT_OCCURRENCE_ID')"
+            }
+          },
+          "required": [
+            "class_name",
+            "name",
+            "anchor_phenotype",
+            "phenotype",
+            "column_name"
+          ]
+        }
+      ]
+    },
+    "DeathPhenotype": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Phenotype"
+        },
+        {
+          "type": "object",
+          "description": "DeathPhenotype is a class that represents a death-based phenotype. It filters individuals who have died and returns their date of death.",
+          "properties": {
+            "class_name": {
+              "type": "string",
+              "const": "DeathPhenotype"
+            },
+            "name": {
+              "type": "string",
+              "description": "Descriptive name of death phenotype"
+            },
+            "domain": {
+              "$ref": "#/definitions/Domain"
+            },
+            "relative_time_range": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/RelativeTimeRangeFilter"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "class_name",
+            "name",
+            "domain",
+            "relative_time_range"
+          ]
+        }
+      ]
+    },
+    "CategoricalPhenotype": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Phenotype"
+        },
+        {
+          "type": "object",
+          "description": "CategoricalPhenotype represents a categorical-based phenotype for filtering individuals based on categorical values in demographic or other structured data fields. CategoricalPhenotype calculates phenotype whose VALUE is discrete, such for sex, race, or ethnicity. If the categorical filter applies to ethnicity, the column name is 'ETHNICITY'. Categorical Phenotype is especially helpful as a baseline characteristic from PERSON like tables. The returned Phenotype has the following interpretation: DATE: If when='before', then DATE is the beginning of the coverage period containing the anchor phenotype. If when='after', then DATE is the end of the coverage period containing the anchor date. VALUE: Coverage (in days) relative to the anchor date. By convention, always non-negative.",
+          "properties": {
+            "class_name": {
+              "type": "string",
+              "const": "CategoricalPhenotype"
+            },
+            "name": {
+              "type": "string",
+              "description": "Descriptive name of categorical phenotype"
+            },
+            "domain": {
+              "$ref": "#/definitions/Domain"
+            },
+            "categorical_filter": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/CategoricalFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "date_range": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ValueFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "relative_time_range": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/RelativeTimeRangeFilter"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "return_date": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ReturnDate"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "class_name",
+            "name",
+            "domain",
+            "categorical_filter",
+            "date_range",
+            "relative_time_range",
+            "return_date"
+          ]
+        }
+      ]
+    },
+    "TimeRangePhenotype": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Phenotype"
+        },
+        {
+          "type": "object",
+          "description": "TimeRangePhenotype represents a time-range-based phenotype for identifying periods of coverage or observation relative to anchor events. As the name implies, TimeRangePhenotype is designed for working with time ranges. If the input data has a start and an end date, use TimeRangePhenotype to identify other events (or patients) that occur within this time range. The most common use case of this is working with 'health insurance coverage' data i.e. on 'OBSERVATION_PERIOD' table. These tables have one or many rows per patient with the start of coverage and end of coverage i.e. domains compatible with TimeRangePhenotype require a START_DATE and an END_DATE column. At it's simplest, TimeRangePhenotype identifies patients who have their INDEX_DATE (or other anchor date of interest) within this time range. Additionally, a minimum or maximum number of days from the anchor date to the beginning/end of the time range can be defined. The returned Phenotype has the following interpretation:DATE: If relative_time_range.when='before', then DATE is the beginning of the coverage period containing the anchor phenotype. If relative_time_range.when='after', then DATE is the end of the coverage period containing the anchor date.VALUE: Coverage (in days) relative to the anchor date. By convention, always non-negative.There are two primary use cases for TimeRangePhenotype:1. Identify patients with some minimum duration of coverage prior to anchor_phenotype date e.g. \"identify patients with 1 year of continuous coverage prior to index date\".2. Determine the date of loss to followup (right censoring) i.e. the duration of coverage after the anchor_phenotype event",
+          "properties": {
+            "class_name": {
+              "type": "string",
+              "const": "TimeRangePhenotype"
+            },
+            "name": {
+              "type": "string",
+              "description": "Descriptive name of time range phenotype"
+            },
+            "domain": {
+              "$ref": "#/definitions/Domain"
+            },
+            "relative_time_range": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/RelativeTimeRangeFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "allow_null_end_date": {
+              "type": "boolean",
+              "description": "Whether to allow null end dates in the time range calculation"
+            }
+          },
+          "required": [
+            "class_name",
+            "name",
+            "domain",
+            "relative_time_range",
+            "allow_null_end_date"
+          ]
+        }
+      ]
+    }
+  },
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the cohort"
+    },
+    "class_name": {
+      "type": "string",
+      "const": "Cohort"
+    },
+    "name": {
+      "type": "string",
+      "description": "A descriptive name for the cohort"
+    },
+    "description": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "A plain text description of the cohort"
+    },
+    "phenotypes": {
+      "type": "array",
+      "description": "Unified array of phenotypes with explicit type attributes (entry, inclusion, exclusion, characteristic, outcome)",
+      "items": {
+        "$ref": "#/definitions/Phenotype"
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "id",
+    "class_name",
+    "name",
+    "phenotypes"
+  ],
+  "additionalProperties": false
+}

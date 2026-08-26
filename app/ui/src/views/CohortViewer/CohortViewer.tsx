@@ -1,0 +1,474 @@
+import { FC, useState, useRef, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import styles from './CohortViewer.module.css';
+import { CohortDataService } from './CohortDataService/CohortDataService';
+import { HierarchicalLeftPanelDataService } from '../LeftPanel/HierarchicalLeftPanelDataService';
+import { getUserCohort, getStudy } from '../../api/text_to_cohort/route';
+import { PopoverHeader } from '../../components/PopoverHeader/PopoverHeader';
+import { CohortCardViewer } from './CohortCardViewer/CohortCardViewer';
+import { Tabs } from '../../components/ButtonsAndTabs/Tabs/Tabs';
+import { CustomizableDropdownButton } from '@/components/ButtonsAndTabs/ButtonsBar/CustomizableDropdownButton';
+import { TypeSelectorEditor } from './CohortTable/CellEditors/typeSelectorEditor/TypeSelectorEditor';
+import { SmartBreadcrumbs } from '../../components/SmartBreadcrumbs';
+import { TwoPanelCohortViewerService } from './TwoPanelCohortViewer/TwoPanelCohortViewer';
+import { FinalActionNavBar, MenuItem as NavBarMenuItem } from '../../components/PhenExNavBar/FinalActionNavBar';
+import { NavBarMenuProvider } from '../../components/PhenExNavBar/PhenExNavBarMenuContext';
+import navBarStyles from '../../components/PhenExNavBar/PhenExNavBar.module.css';
+
+import { useFadeIn } from '../../hooks/useFadeIn';
+
+enum CohortDefinitionViewType {
+  Cohort = 'cohort',
+  Baseline = 'baseline',
+  Outcomes = 'outcomes',
+  All = 'all',
+}
+
+const sectionDisplayNames = {
+  [CohortDefinitionViewType.Cohort]: 'Cohort definition',
+  [CohortDefinitionViewType.Baseline]: 'Baseline characteristics',
+  [CohortDefinitionViewType.Outcomes]: 'Outcomes',
+  [CohortDefinitionViewType.All]: 'All phenotypes',
+};
+
+interface CohortViewerProps {
+  data?: string;
+  onAddPhenotype?: () => void;
+  activeTabIndex?: number;
+  // FinalActionNavBar (call-to-action) props
+  navMode?: 'cohortviewer' | 'studyviewer';
+  navShadow?: boolean;
+  navMenuItems?: NavBarMenuItem[];
+  onSectionTabChange?: (index: number) => void;
+  onAddButtonClick?: () => void;
+  showReport?: boolean;
+  onShowReportChange?: (value: boolean) => void;
+}
+
+export enum CohortViewType {
+  Info = 'info',
+  CohortDefinition = 'definition',
+  Report = 'report',
+}
+
+export const CohortViewer: FC<CohortViewerProps> = ({
+  data,
+  onAddPhenotype,
+  activeTabIndex,
+  navMode = 'cohortviewer',
+  navShadow = false,
+  navMenuItems = [],
+  onSectionTabChange,
+  onAddButtonClick,
+  showReport,
+  onShowReportChange,
+}) => {
+  const navigate = useNavigate();
+  const { studyId: urlStudyId } = useParams<{ studyId: string }>();
+  const [cohortName, setCohortName] = useState('');
+  const [studyName, setStudyName] = useState('');
+  const gridRef = useRef<any>(null);
+  const [dataService] = useState(() => CohortDataService.getInstance());
+  const [currentView, setCurrentView] = useState<CohortDefinitionViewType>(
+    CohortDefinitionViewType.Cohort
+  );
+  const [showIssuesPopover, setShowIssuesPopover] = useState(false);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
+  const customizableDropdownButtonRef = useRef<{ closeDropdown: () => void }>({} as { closeDropdown: () => void });
+  const bottomSectionRef = useRef<HTMLDivElement>(null);
+  const [scrollPercentage, setScrollPercentage] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [flipScrollDirection, setFlipScrollDirection] = useState(false);
+  
+  const fadeInStyle = useFadeIn();
+
+  useEffect(() => {
+    // Update cohort data when a new cohort is selected
+    const loadData = async () => {
+      if (data !== undefined) {
+        // If data is a string (cohort ID), fetch the full cohort data
+        if (typeof data === 'string') {
+          try {
+            let cohortData;
+            cohortData = await getUserCohort(urlStudyId!, data);
+            
+            // Fetch the study data if study_id exists
+            if (cohortData.study_id) {
+              try {
+                const studyData = await getStudy(cohortData.study_id);
+                cohortData.study = studyData;
+              } catch (error) {
+                console.error('Failed to load study:', error);
+              }
+            }
+            
+            dataService.loadCohortData(cohortData);
+          } catch (error) {
+            console.error('Failed to load cohort:', error);
+          }
+        } else {
+          // Data is already a full cohort object
+          dataService.loadCohortData(data);
+        }
+      } else {
+        dataService.createNewCohort();
+      }
+      setCohortName(dataService.cohort_name);
+      setStudyName(dataService.getStudyNameForCohort());
+    };
+    loadData();
+  }, [data]);
+
+  useEffect(() => {
+    // Listen to right panel state changes
+    const cohortViewerService = TwoPanelCohortViewerService.getInstance();
+    
+    const handleRightPanelChange = (viewType: any) => {
+      // Right panel is open when the phenotype popover is showing
+      setIsRightPanelOpen(viewType === 'phenotype');
+    };
+    
+    cohortViewerService.addListener(handleRightPanelChange);
+    
+    // Check initial state - assume collapsed initially
+    setIsRightPanelOpen(false);
+    
+    return () => {
+      cohortViewerService.removeListener(handleRightPanelChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Update cohort name and study name when data service changes
+    const updateCohortData = () => {
+      setCohortName(dataService.cohort_name);
+      setStudyName(dataService.getStudyNameForCohort());
+    };
+
+    updateCohortData();
+    dataService.addListener(updateCohortData);
+
+    return () => {
+      dataService.removeListener(updateCohortData);
+    };
+  }, [dataService]);
+
+  const refreshGrid = () => {
+    // With getRowId callback in CohortTable, AG Grid automatically maintains scroll position
+    // We just need to update the grid data
+    if (gridRef.current?.api && !gridRef.current.api.isDestroyed()) {
+      const api = gridRef.current.api;
+      
+      // Update grid data - AG Grid will maintain scroll position automatically with getRowId
+      api.setGridOption('rowData', dataService.table_data['rows']);
+      api.setGridOption('columnDefs', dataService.table_data['columns']);
+      // Force cell renderers to re-run (needed when display settings like showFullCodelists change)
+      api.refreshCells({ force: true });
+    }
+  };
+  useEffect(() => {
+    // Add listener for data service updates
+    const listener = () => {
+      refreshGrid();
+    };
+    dataService.addListener(listener);
+
+    // Initial data load
+    refreshGrid();
+
+    return () => {
+      dataService.removeListener(listener);
+    };
+  }, [dataService]);
+
+  useEffect(() => {
+    if (currentView === CohortDefinitionViewType.Cohort) {
+      refreshGrid();
+    }
+  }, [currentView]);
+
+  useEffect(() => {
+    if (activeTabIndex !== undefined) {
+      onTabChange(activeTabIndex);
+    }
+  }, [activeTabIndex]);
+
+  const onCellValueChanged = async (event: any, selectedRows?: any[]) => {
+    if (event.newValue !== event.oldValue) {
+      dataService.onCellValueChanged(event, selectedRows);
+      // setTableData(dataService.table_data);
+    }
+
+    if (['description', 'class_name'].includes(event.colDef.field)) {
+      refreshGrid();
+    }
+  };
+
+  const onRowDragEnd = async (newRowData: any[]) => {
+    console.log('=== CohortViewer onRowDragEnd START ===');
+    console.log(
+      'Received newRowData:',
+      newRowData.map(r => ({ id: r.id, type: r.type, name: r.name, index: r.index }))
+    );
+    console.log(
+      'Current table data before update:',
+      dataService.table_data.rows.map(r => ({
+        id: r.id,
+        type: r.type,
+        name: r.name,
+        index: r.index,
+      }))
+    );
+
+    // Update the data service with the new row order
+    await dataService.updateRowOrder(newRowData);
+
+    console.log(
+      'After updateRowOrder, table data:',
+      dataService.table_data.rows.map(r => ({
+        id: r.id,
+        type: r.type,
+        name: r.name,
+        index: r.index,
+      }))
+    );
+
+    // Refresh the grid to reflect the changes
+    refreshGrid();
+    console.log('=== CohortViewer onRowDragEnd END ===');
+  };
+
+  // Move a phenotype into a different section (changes its type and position).
+  const onSectionDrop = async (draggedId: string, newType: string, newRowData: any[]) => {
+    await dataService.movePhenotypeToSection(draggedId, newType, newRowData);
+    refreshGrid();
+  };
+
+  // Make a dragged phenotype a component of the drop-target phenotype.
+  const onComponentDrop = async (draggedId: string, targetParentId: string) => {
+    await dataService.makePhenotypeComponentOf(draggedId, targetParentId);
+    refreshGrid();
+  };
+
+  const canMakeComponent = (draggedId: string, targetId: string) =>
+    dataService.canMakePhenotypeComponentOf(draggedId, targetId);
+
+  const tabs = Object.values(CohortDefinitionViewType).map(value => {
+    return sectionDisplayNames[value];
+  });
+
+  const onTabChange = (index: number) => {
+    const viewTypes = Object.values(CohortDefinitionViewType);
+    const newView = viewTypes[index];
+
+    // First update the data filter
+    switch (newView) {
+      case CohortDefinitionViewType.Cohort:
+        dataService.filterType(['entry', 'inclusion', 'exclusion']);
+        break;
+      case CohortDefinitionViewType.Baseline:
+        dataService.filterType('baseline');
+        break;
+      case CohortDefinitionViewType.Outcomes:
+        dataService.filterType('outcome');
+        break;
+      case CohortDefinitionViewType.All:
+        dataService.filterType([
+          'entry',
+          'inclusion',
+          'exclusion',
+          'baseline',
+          'outcome',
+        ]);
+        break;
+    }
+
+    // Then update the view and refresh grid
+    setCurrentView(newView);
+    refreshGrid();
+  };
+
+  const determineTabIndex = (): number => {
+    return Object.values(CohortDefinitionViewType).indexOf(currentView);
+  };
+
+  // FOR ADD NEW PHENOTYPE DROPDOWN
+  const renderAddNewPhenotypeDropdown = () => {
+    return (
+      <div className={styles.addNewPhenotypeDropdown}>
+        <PopoverHeader
+          onClick={clickedOnHeader}
+          title={'Add a new phenotype'}
+          className={styles.popoverheader}
+        />
+        <TypeSelectorEditor onValueChange={handleAddNewPhenotypeDropdownSelection} />
+      </div>
+    );
+  };
+
+  // FOR ADD NEW PHENOTYPE DROPDOWN
+  const handleAddNewPhenotypeDropdownSelection = (type: string) => {
+    dataService.addPhenotype(type);
+    // Switch to the appropriate section tab based on phenotype type
+      if (type === 'baseline') {
+      onTabChange(1); // Baseline characteristics tab
+    } else if (type === 'outcome') {
+      onTabChange(2); // Outcomes tab
+    } else if (['entry', 'inclusion', 'exclusion'].includes(type)) {
+      onTabChange(0); // Cohort definition tab
+    }
+    // setIsOpen(false);
+  };
+
+  // FOR ADD NEW PHENOTYPE DROPDOWN
+  const clickedOnHeader = () => {
+    customizableDropdownButtonRef.current?.closeDropdown();
+  };
+
+  // FOR ADD NEW PHENOTYPE DROPDOWN
+  const renderAddNewPhenotypeButton = () => {
+    return (
+        <CustomizableDropdownButton
+          key={"new phenotype"}
+          label={"+ New Phenotype"}
+          content={renderAddNewPhenotypeDropdown()}
+          ref={customizableDropdownButtonRef}
+          buttonClassName={styles.newPhenotypeButtonLabel}
+          outline={false}
+        />
+    );
+  };
+
+  const renderSectionTabs = () => {
+    return (
+      <div className={styles.sectionTabsContainer}>
+        <Tabs
+          width={400}
+          height={25}
+          tabs={tabs}
+          onTabChange={onTabChange}
+          active_tab_index={determineTabIndex()}
+          classNameTabs = {styles.classNameSectionTabs}
+          classNameTabsContainer={styles.classNameTabsContainer}
+        />
+      </div>
+    );
+  };
+
+  const renderTable = () => {
+    const handleCohortNameChange = (name: string) => {
+      dataService.cohort_name = name;
+      if (dataService.cohort_data) dataService.cohort_data.name = name;
+      dataService.saveChangesToCohort(false, false);
+      const cohortId = dataService.cohort_data?.id;
+      if (cohortId) HierarchicalLeftPanelDataService.getInstance().syncCohortDisplayName(cohortId, name);
+    };
+
+    const handleCohortDescriptionChange = (description: string) => {
+      if (dataService.cohort_data) dataService.cohort_data.description = description;
+      dataService.saveChangesToCohort(false, false);
+    };
+
+    return (
+      <CohortCardViewer
+        data={dataService.table_data}
+        currentlyViewing={currentView}
+        cohortId={dataService.cohort_data?.id}
+        cohortName={cohortName}
+        description={dataService.cohort_data?.description}
+        onCellValueChanged={onCellValueChanged}
+        onRowDragEnd={onRowDragEnd}
+        onSectionDrop={onSectionDrop}
+        onComponentDrop={onComponentDrop}
+        canMakeComponent={canMakeComponent}
+        onNameChange={handleCohortNameChange}
+        onDescriptionChange={handleCohortDescriptionChange}
+        onHorizontalScroll={updateScrollState}
+        hideScrollbars={showIssuesPopover}
+        hideVerticalScrollbar={isRightPanelOpen}
+        ref={gridRef}
+        gridBottomPadding={200}
+        flipScrollDirection={flipScrollDirection}
+      />
+    );
+  };
+
+  const navigateToMyStudies = () => {
+    // Navigate back to studies page
+    window.location.href = '/studies';
+  };
+
+
+  const navigateToStudyViewer = () => {
+    const studyId = dataService.cohort_data?.study_id;
+    if (studyId) {
+      navigate(`/studies/${studyId}`);
+    }
+  };
+
+  const handleViewNavigationArrowClicked = (direction: 'left' | 'right') => {
+    if (gridRef.current?.scrollByColumn) {
+      gridRef.current.scrollByColumn(direction);
+    }
+  };
+
+  const handleViewNavigationScroll = (percentage: number) => {
+    if (gridRef.current?.scrollToPercentage) {
+      gridRef.current.scrollToPercentage(percentage);
+      setScrollPercentage(percentage);
+      updateScrollState();
+    }
+  };
+
+  const handleViewNavigationVisibilityClicked = () => {
+    console.log('ViewNavigation visibility clicked');
+  };
+
+  const updateScrollState = () => {
+    if (gridRef.current?.getScrollPercentage) {
+      const percentage = gridRef.current.getScrollPercentage();
+      setScrollPercentage(percentage);
+      setCanScrollLeft(percentage > 0);
+      setCanScrollRight(percentage < 100);
+    }
+  };
+
+  // Listen to grid scroll events to update navbar
+  useEffect(() => {
+    // Nothing to do here — scroll state is updated via the onHorizontalScroll
+    // callback passed to CohortCardViewer, which fires on every horizontal scroll
+    // event (including smooth-scroll animation frames from arrow buttons).
+  }, [dataService.table_data]);
+  
+  return (
+      <div className={styles.cohortTableContainer} style={fadeInStyle}>
+        <div className={styles.bottomSection} ref={bottomSectionRef}>
+          {renderTable()}
+          <div className={styles.bottomGradient} />
+        </div>
+        <div className={navBarStyles.bottomRightUnified}>
+          <NavBarMenuProvider>
+            <FinalActionNavBar
+              height={44}
+              scrollPercentage={scrollPercentage}
+              canScrollLeft={canScrollLeft}
+              canScrollRight={canScrollRight}
+              onViewNavigationArrowClicked={handleViewNavigationArrowClicked}
+              onViewNavigationScroll={handleViewNavigationScroll}
+              onViewNavigationVisibilityClicked={handleViewNavigationVisibilityClicked}
+              flipScrollDirection={flipScrollDirection}
+              onFlipScrollDirectionChange={setFlipScrollDirection}
+              mode={navMode}
+              shadow={navShadow}
+              menuItems={navMenuItems}
+              onSectionTabChange={onSectionTabChange}
+              onAddButtonClick={onAddButtonClick}
+              showReport={showReport}
+              onShowReportChange={onShowReportChange}
+            />
+          </NavBarMenuProvider>
+        </div>
+      </div>
+  );
+};

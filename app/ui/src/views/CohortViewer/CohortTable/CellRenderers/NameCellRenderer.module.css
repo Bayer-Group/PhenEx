@@ -1,0 +1,199 @@
+.editButton {
+  background-color: var(--color_translucent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: none;
+  padding: 6px 7px 3px 7px;
+  cursor: pointer;
+  opacity: 0;
+  margin-top: 0px;
+  transition:
+    opacity 0.2s ease-in-out,
+    transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border: var(--border);
+  position: absolute;
+  right: 37px;
+  bottom: 3px;
+}
+
+.deleteButton {
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  color: currentColor;
+  background: none;
+  border: none;
+  padding: 3px 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  height: 20px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.editButton:hover {
+  background: var(--button-color-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: var(--border-accent);
+}
+
+.deleteButton:hover {
+  background-color: var(--background_color_hover_over_grid);
+  color: var(--color_accent_blue);
+}
+
+.editButton:focus,
+.deleteButton:focus {
+  outline: none;
+}
+
+.editButton:focus-visible,
+.deleteButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+.editIcon {
+  width: 16px;
+  height: 16px;
+}
+
+:global(.ag-row:hover) .editButton {
+  opacity: 1;
+  border: var(--border-accent);
+}
+
+.label {
+  text-wrap: wrap;
+  line-height: 1 !important;
+  font-size: var(--font_size_phenotypename);
+  font-family: "IBMPlexSans-regular";
+  padding-top: var(--item-margin-top);
+  padding-bottom: var(--item-margin-top);
+  flex: 1;
+  hyphens: auto;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+
+.labelContainer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  position: relative;
+  text-align: left;
+}
+
+.verticalLine {
+  width: 4px;
+  height: 100%;
+  background-color: var(--color_accent_blue);
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.expandArrow {
+  flex-shrink: 0;
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  
+  /* Default state — overridden by effective_type color class */
+  opacity: 1;
+  color: var(--line-color);
+  border-radius: 8px;
+
+
+}
+
+/* Row hovered state */
+:global(.ag-row:hover) .expandArrow {
+  opacity: 0.5;
+}
+
+/* Selected state - bold/prominent */
+.expandArrow.selected {
+  opacity: 1;
+  transform: scale(1.2);
+  color: var(--color_accent_blue);
+  /* transition: scale 0.15s ease, color 0.15s ease; */
+}
+
+/* Arrow self-hovered state */
+.expandArrow:hover {
+  opacity: 1 !important;
+  color: var(--color_accent_blue);
+  /* transform: scale(1.1); */
+  stroke: 3px;
+  background-color: var(--background_color_hover_over_grid);
+}
+
+/* Active/clicked state */
+/* .expandArrow:active {
+  transform: scale(0.3);
+} */
+
+.container {
+  padding: 10px;
+  margin: 0px;
+  line-height: 1;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  border-top: 1px solid;
+}
+
+.ancestorLabel{
+  font-family: "IBMPlexSans-bolditalic";
+}
+
+.ancestorDivider{
+  font-family: "IBMPlexSans-bold";
+  color: var(--color-accent-bright);
+  margin:0px 5px 0px 5px;
+}
+
+.ancestorsLabel{
+  font-family: "IBMPlexSans-boldtitalic";
+  font-size: 10px;
+}
+
+.componentPhenotypeName{
+
+}
+
+.selected {
+  font-family: "IBMPlexSans-bold";
+}
+
+.viewing {
+  color: var(--color_accent_blue) !important;
+}
+
+.infotext{
+      font-size: var(--font_size_infotext);
+  font-family:"IBMPlexSans-regular";
+}
+
+.expandArrowContainer {
+  position: absolute;
+  top: var(--item-margin-top);
+  right: var(--item-margin-horizontal);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

@@ -1,0 +1,193 @@
+.panelWrapper {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.stickyHeader {
+  flex-shrink: 0;
+  padding: 10px 10px;
+  background-color: var(--background-color, #f4f4f4);
+  z-index: 2;
+}
+
+.stickyTitle {
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-size: 24px;
+  margin: 0;
+  color: var(--text-color, #222);
+}
+
+.scrollArea {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.headerGradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 12px;
+  height: 48px;
+  background: linear-gradient(to bottom, var(--background-color, #f4f4f4), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.panel {
+  height: 100%;
+  overflow-y: auto;
+  padding: 100px 32px 40px 0px;
+  box-sizing: border-box;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  background-color: var(--background-color, #f4f4f4);
+  scrollbar-width: none;
+}
+
+.panel::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbarRegion {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+}
+
+.scrollBarTrack {
+  background-color: transparent;
+}
+
+.scrollBarThumb {
+  background-color: rgba(101, 96, 96, 0.2) !important;
+  width: 10px;
+  border-radius: 0px;
+}
+
+.panelHeader {
+  display: none;
+}
+
+.panelTitle {
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-size: 24px;
+  margin: 0 0 6px 0;
+  color: var(--text-color, #222);
+}
+
+.panelSubtitle {
+  font-size: 14px;
+  color: var(--text-color-secondary, #888);
+  margin: 0;
+}
+
+/* ─── Phenotype section ──────────────────────────────────────────────────── */
+
+.phenotypeSection {
+  margin-bottom: 40px;
+  transition: opacity 0.2s ease;
+  margin-left: 10px;
+}
+
+.phenotypeSection.dimmed {
+  opacity: 0.2;
+}
+
+.phenotypeSectionHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line-color, #e0e0e0);
+}
+
+.phenotypeName {
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-size: 18px;
+  color: var(--text-color-primary, #222);
+  margin: 0;
+}
+
+.phenotypeTag {
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: 18px;
+  color: var(--text-color-secondary, #aaa);
+}
+
+/* ─── Subsections ────────────────────────────────────────────────────────── */
+
+.subsection {
+  margin-bottom: 20px;
+  padding-left: 20px;
+}
+
+.subsection .exampleList {
+  padding-left: 20px;
+}
+
+.subsectionTitle {
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: 14px;
+  font-weight: normal;
+  color: var(--text-color-secondary, #777);
+  margin: 0 0 8px 0;
+}
+
+/* ─── Example list ───────────────────────────────────────────────────────── */
+
+/* top-level unsectioned list gets the first-level indent */
+.phenotypeSection > .exampleList {
+  padding-left: 20px;
+}
+
+.exampleList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exampleItem {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text-color-secondary, #555);
+  line-height: 1.6;
+}
+
+.exampleItem::before {
+  content: '–';
+  flex-shrink: 0;
+  margin-top: 0;
+  color: var(--text-color-secondary, #999);
+  opacity: 0.8;
+}
+
+.exampleItem p {
+  margin: 0;
+}
+
+.exampleItem strong {
+  font-family: 'IBMPlexSans-bold', sans-serif;
+  font-weight: 700;
+  color: var(--text-color-primary, #222);
+}
+
+.exampleItem code {
+  font-family: 'IBMPlexMono', monospace;
+  font-size: 11px;
+  background-color: var(--background_color_dark, rgba(0, 0, 0, 0.06));
+  padding: 1px 4px;
+  border-radius: 3px;
+}

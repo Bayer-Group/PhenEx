@@ -1,0 +1,198 @@
+:root {
+  --margin_left_slideover_panel: 70px;
+  --margin_top_right_panel_title: 5px;
+}
+.container {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  background-color: transparent !important;
+  border-radius: 0;
+  border-top: 1px solid var(--line-color);
+  border-right: none !important;
+  border-bottom: none;
+  border-left: none;
+  flex-shrink: 0;
+}
+
+.dark {
+  --color-accent-bright: rgba(255, 255, 255, 0.9);
+  --line-color: rgba(255, 255, 255, 0.2);
+}
+
+.title {
+  font-size: 11px;
+  font-family: 'IBMPlexSans-semibold';
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 12px 16px 8px 16px;
+  background-color: transparent;
+  color: var(--color-accent-bright);
+  opacity: 0.55;
+  user-select: none;
+  flex: 1 1 0%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header {
+  cursor: pointer;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.headerLeft > .title {
+  width: 100%;
+}
+
+.headerControls {
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right:15px;
+  margin-top: 5px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0; /* Prevent controls from shrinking */
+}
+
+.actionButton {
+  padding: 8px 16px;
+  background-color: var(--primary-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  transition: background-color 0.2s ease;
+}
+
+.actionButton:hover {
+  background-color: var(--primary-color-hover, #0056b3);
+}
+
+.actionButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary-color-focus, rgba(0, 123, 255, 0.25));
+}
+
+.content {
+  padding: 0px;
+  background-color: transparent !important;
+  /* background-color: green; */
+}
+
+.divider.right {
+  position: absolute !important;
+  left: 0px !important;
+  top: 0px !important;
+  height: 100vh !important;
+  width: 15px !important;
+  z-index: 1000 !important;
+}
+
+i {
+  color: var(--color-accent-bright);
+  font-family: 'IBMPlexSans-bolditalic';
+  font-size: 20px;
+}
+
+em {
+  font-family: 'IBMPlexSans-bold';
+}
+
+ol,
+ul {
+  margin-top: 0px;
+}
+
+code {
+  padding: 2px 10px;
+  font-family: 'IBMPlexSans-bold';
+  font-size: 20px;
+  border-radius: 8px;
+  border: var(--border);
+}
+
+.infoButton {
+  position: absolute !important;
+  right: 60px;
+  top: 10px;
+  color: var(--button-text-color-default);
+
+}
+
+.infoButton.open {
+  color: var(--button-text-color-default);
+  background-color: var(--button-background-color-selected) !important;
+  color: var(--button-text-color-selected);
+  border: 1px solid var(--button-border-color-selected);
+  font-family: var(--button-font-family-selected);
+  /* transform: translateY(-1px); */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.infobox {
+  flex: 0 0 auto;
+  margin: 0px 0px 0px 10px;
+  padding: 10px;
+  background-color: var(--background-color) !important;
+  color: var(--color-text-normal) !important;
+  border-radius: 10px;
+  font-size: 14px;
+  border: var(--border);
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease,
+    margin 0.3s ease;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  user-select: none;
+  cursor: pointer;
+}
+
+.infobox.open {
+  /* transform: translateY(-1px); */
+  max-height: 400px; /* Arbitrary value, adjust as needed */
+  opacity: 1; /* Fully visible when open */
+  margin-right: 20px;
+  margin-bottom: 10px;
+  margin-top: 10px;
+
+  background-color: transparent !important;
+  /* border: 1px solid var(--button-border-color-selected); */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+}
+
+.infobox.closed {
+  max-height: 20; /* Closed state */
+  opacity: 0; /* Hidden */
+  margin-bottom: 0px; /* No margin when closed */
+  padding-top: 0;
+  padding-bottom: 0;
+  border: none; /* Remove border when closed */
+}

@@ -1,0 +1,23 @@
+.panel {
+  width: var(--chart-width, 8000px);
+  padding: clamp(30px, calc(30px / var(--pz-scale, 1)), 60px);
+  padding-top: clamp(50px, calc(80px / var(--pz-scale, 1)), 150px);
+  padding-bottom: clamp(30px, calc(50px / var(--pz-scale, 1)), 100px);
+  margin-bottom: clamp(50px, calc(50px / var(--pz-scale, 1)), 100px);
+}
+
+.title {
+  font-size: calc(48px / var(--pz-scale, 1));
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 0.3em;
+  line-height: 1.1;
+}
+
+.description {
+  font-size: clamp(40px, calc(14px / var(--pz-scale, 1)), 200px);
+  color: #555;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 70%;
+}

@@ -1,0 +1,110 @@
+.panel {
+  padding: 8px 4px;
+  min-width: 340px;
+  font-family: IBMPlexSans, sans-serif;
+}
+
+.title {
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  font-size: 16px;
+  color: var(--color-accent-bright);
+  margin: 0 0 16px;
+}
+
+.dismissBtn {
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 10px;
+  background: var(--color-accent-bright);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+  cursor: pointer;
+}
+
+.dismissBtn:hover {
+  opacity: 0.85;
+}
+
+.cohortList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cohortItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-color-secondary);
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.status_active {
+  background: color-mix(in srgb, var(--color-accent-bright) 8%, transparent);
+  color: var(--text-color-primary);
+}
+
+.status_done {
+  color: var(--text-color-secondary);
+}
+
+.cohortName {
+  flex: 1;
+  font-family: 'IBMPlexSans-semibold', sans-serif;
+}
+
+.status_done .cohortName {
+  font-family: IBMPlexSans, sans-serif;
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.workingLabel {
+  font-size: 11px;
+  color: var(--color-accent-bright);
+  font-style: italic;
+}
+
+.waitingLabel {
+  font-size: 11px;
+  color: var(--text-color-secondary);
+  opacity: 0.6;
+}
+
+.iconDone {
+  color: #10b981;
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+}
+
+.iconActive {
+  color: var(--color-accent-bright);
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.iconWaiting {
+  color: var(--text-color-secondary);
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+  opacity: 0.4;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}

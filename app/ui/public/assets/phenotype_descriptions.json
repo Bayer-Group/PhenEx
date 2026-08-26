@@ -1,0 +1,21 @@
+{
+  "EventPhenotype": "Identify events in Real World Data sources, such as 'an inpatient hospitalization event'.",
+  "CodelistPhenotype": "Identify patients by medical codelists (ICD diagnoses, NDC drugs, CPT procedures, etc.).",
+  "MeasurementPhenotype": "Identify patients by numerical measurement values such as lab results or vital signs, and filter by thresholds.",
+  "CategoricalPhenotype": "Identify patients by categorical values such as sex, ethnicity, or hospitalization type.",
+  "AgePhenotype": "Calculate and filter patients by age at a specific point in time from birth date data.",
+  "DeathPhenotype": "Identify patients by recorded death events and calculate number of days until death from a specific point in time.",
+  "LogicPhenotype": "Combine multiple phenotypes using logical operators (AND, OR, NOT) to build arbitrarily complex phenotypes.",
+  "ArithmeticPhenotype": "Calculate a numerical value from other numerical phenotypes (e.g., BMI from height and weight).",
+  "ScorePhenotype": "Compute medical scores such as CHA2DS2-VASc by combining phenotypes with addition, subtraction, or multiplication.",
+  "BinPhenotype": "Convert numerically valued phenotypes into categorical bins, for example taking age and binning it into decades.",
+  "EventCountPhenotype": "Count or filter by the number of distinct days a phenotype event occurs, or the number of days between distinct events.",
+  "MeasurementChangePhenotype": "Identify or threshold by a change in a numerical measurement value between two time points, such as a 'drop of > 20% in eGFR over 6 months'.",
+  "WithinSameEncounterPhenotype": "Filter events to those co-occurring within the same clinical encounter.",
+  "TimeRangePhenotype": "Identify a time range containing an event of interest and count the number of days to the end or beginning of the time period. For example, determine a minimum number of days of insurance coverage window prior to index or the number of days exposed to a medication",
+  "TimeRangeCountPhenotype": "Count the number of distinct time periods patients have, for example the number of insurance coverage windows or drug exposures.",
+  "TimeRangeDayCountPhenotype": "Count the total number of days within qualifying time periods, for example the total number of days of insurance coverage or drug exposure.",
+  "TimeRangeDaysToNextRange": "Calculates the number of days until the next observation period begins.",
+  "FurtherValueFilterPhenotype": "Apply further value filtering to an existing numerically valued phenotype.",
+  "UserDefinedPhenotype": "Execute a custom user-defined function. This allows hybrid analyses using PhenEx components and custom coded study elements."
+}

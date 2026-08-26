@@ -1,0 +1,51 @@
+.legendDotContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dot:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+.pickerButton {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  margin-right: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: pointer;
+  opacity: 1;
+  transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pickerButton:hover {
+  opacity: 1;
+  transform: scale(1.2);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25);
+}
+
+.pickerButton:focus{
+  outline: none;
+}
+
+.pickerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: transparent;
+}

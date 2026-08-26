@@ -1,0 +1,31 @@
+.xButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 40px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+  padding: 0;
+  line-height: 1;
+  position: absolute;
+  right: 5px;
+  top: 3px;
+  font-family: 'SNPro-black' !important;
+  color: var(--xbutton_color_orange_background);
+  cursor: pointer;
+}
+
+.xButton:hover {
+  background-color: var(--hover-background);
+}
+
+.xButton:focus {
+  outline: none;
+}

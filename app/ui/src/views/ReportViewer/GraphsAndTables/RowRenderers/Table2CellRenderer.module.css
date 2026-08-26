@@ -1,0 +1,94 @@
+:root {
+  --t2c-col-dot: 30px;
+  --t2c-col-tp: 44px;
+  --t2c-col-val: 76px;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.headerRow,
+.dataRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.cohortBlock + .cohortBlock {
+  border-top: 2px solid var(--line-color, #e0e0e0);
+}
+
+.dataRow + .dataRow {
+  border-top: 1px solid var(--line-color, #e0e0e0);
+}
+
+.dataRow:hover {
+  background: rgba(211, 213, 215, 0.06);
+}
+
+/* cohort dot column */
+.cohortCell {
+  width: var(--t2c-col-dot);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* time-point column */
+.timepointCell {
+  width: var(--t2c-col-tp);
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #888;
+  padding: 4px 6px 4px 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+/* shared header */
+.headerCell {
+  width: var(--t2c-col-val);
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: black;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* value cells */
+.valueCell {
+  width: var(--t2c-col-val);
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #333;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  font-size: 12px;
+  color: #999;
+  padding: 8px;
+}

@@ -1,0 +1,101 @@
+{
+  "EventPhenotype": [
+    "Identify all events in theinpatient hospitalization setting prior to index.",
+    "Identify all drug dispensations in the post index period",
+    ""
+  ],
+  "CodelistPhenotype": [
+    {
+      "subsection": "Filter patients by codelist, or fuzzy match for codes beginning with",
+      "examples": [
+        "Identify patients with **type 2 diabetes** using ICD-10-CM and ICD-9-CM codes from the codelist named `Type 2 Diabetes`.",
+        "Identify patients prescribed **metformin** using NDC or RxNorm drug codes.",
+        "Identify patients with a **myocardial infarction** procedure using CPT codes.",
+        "Identify the patients medical codes starting with `E11.*`."
+      ]
+    },
+    {
+      "subsection": "Add categorical filtering",
+      "examples": [
+        "Identify the first diagnosis of **atrial fibrillation** either in the inpatient setting or the outpatient setting in primary diagnosis position",
+        "Identify all diagnoses of **heart failure** recorded in the inpatient setting."
+      ]
+    },
+    {
+      "subsection": "Return the first event",
+      "examples": [
+        "Identify the first occurrence of a **stroke diagnosis** using ICD codes",
+        "Identify the **earliest recorded diabetes diagnosis** per patient."
+      ]
+    }
+  ],
+  "MeasurementPhenotype": [
+    "Identify patients with **HbA1c > 7.5%** using LOINC measurement codes.",
+    "Identify patients with **systolic blood pressure ≥ 140 mmHg** at their last recorded visit.",
+    "Capture the **most recent eGFR** value for each patient."
+  ],
+  "CategoricalPhenotype": [
+    "Identify patients recorded as **female sex** in the PERSON domain.",
+    "Identify patients with an **inpatient** hospitalization visit type."
+  ],
+  "AgePhenotype": [
+    "Identify patients aged **18–65** at index date.",
+    "Identify patients who were **≥ 65 years old** at the time of their first diagnosis."
+  ],
+  "DeathPhenotype": [
+    "Identify patients who **died within 30 days** of a hospitalization.",
+    "Exclude patients who **died before the study start date**."
+  ],
+  "LogicPhenotype": [
+    "Identify patients with **type 2 diabetes AND at least one HbA1c measurement** by combining `CodelistPhenotype` AND `MeasurementPhenotype`.",
+    "Identify patients with **hypertension OR a recorded antihypertensive prescription**."
+  ],
+  "ArithmeticPhenotype": [
+    "Calculate **BMI** by dividing a weight `MeasurementPhenotype` by the square of a height `MeasurementPhenotype`.",
+    "Calculate **eGFR** from serum creatinine, age, and sex measurements."
+  ],
+  "ScorePhenotype": [
+    "Compute the **CHA₂DS₂-VASc** score by summing points for congestive heart failure, hypertension, age, diabetes, stroke history, vascular disease, and sex.",
+    "Compute the **Charlson Comorbidity Index** from a set of diagnosis-based phenotypes."
+  ],
+  "BinPhenotype": [
+    "Bin a **BMI measurement** into categories: underweight (<18.5), normal (18.5–25), overweight (25–30), obese (≥30).",
+    "Bin **HbA1c** into controlled (<7%), borderline (7–9%), and uncontrolled (>9%) categories."
+  ],
+  "EventCountPhenotype": [
+    "Identify patients with **≥ 2 outpatient visits** for a diabetes diagnosis within 12 months.",
+    "Count the number of **distinct days with an HbA1c measurement** and require at least 2."
+  ],
+  "MeasurementChangePhenotype": [
+    "Identify patients with a **haemoglobin drop of ≥ 2 g/dL** within any 7-day window.",
+    "Identify patients with an **LDL decrease of ≥ 30%** between two consecutive measurements."
+  ],
+  "WithinSameEncounterPhenotype": [
+    "Identify patients with a **sepsis diagnosis and a blood culture order on the same visit**.",
+    "Require that a **troponin elevation and chest pain diagnosis** both occur within the same encounter."
+  ],
+  "TimeRangePhenotype": [
+    "Identify patients with **≥ 365 days of continuous insurance coverage** before index.",
+    "Define an **observation window** of at least 180 days for baseline covariate capture."
+  ],
+  "TimeRangeCountPhenotype": [
+    "Count the **number of distinct continuous enrollment periods** a patient has.",
+    "Require that a patient has **≥ 2 separate insurance periods** of at least 90 days each."
+  ],
+  "TimeRangeDayCountPhenotype": [
+    "Count the **total days of insurance coverage** a patient has within the study period.",
+    "Require **≥ 180 cumulative days** of coverage in the 12 months prior to index."
+  ],
+  "TimeRangeDaysToNextRange": [
+    "Calculate the **gap in days between consecutive insurance periods** to identify coverage lapses.",
+    "Flag patients with a **coverage gap of more than 30 days** between two enrollment periods."
+  ],
+  "FurtherValueFilterPhenotype": [
+    "Apply a **physiologically plausible range filter** (e.g., heart rate between 20 and 300 bpm) on top of an existing measurement phenotype.",
+    "Filter a **weight measurement** to exclude implausible values below 10 kg or above 300 kg."
+  ],
+  "UserDefinedPhenotype": [
+    "Use a custom Python function to implement a **complex washout period logic** not expressible with standard phenotypes.",
+    "Implement a **site-specific algorithm** for defining index dates using proprietary data fields."
+  ]
+}

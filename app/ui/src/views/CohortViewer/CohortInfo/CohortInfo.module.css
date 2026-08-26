@@ -1,0 +1,19 @@
+/* .cohortInfoContainer {
+  gap: 20px;
+  height: calc(100% - 30px);
+  padding: 5px 20px;
+  width: calc(100% - 45px);
+  
+} */
+
+.cohortInfoContainer {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.bottom {
+  overflow-y: hidden;
+  flex: 1;
+}

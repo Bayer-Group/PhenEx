@@ -1,0 +1,139 @@
+.container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.panel {
+  transition: opacity 0.2s ease;
+  overflow: hidden;
+  opacity: 1;
+  height: 100%;
+}
+
+.leftPanel {
+  flex: 0 0 auto;
+  width: var(--initial-left-width);
+  background-color: var(--background-color);
+  position: relative;
+  z-index: 2;
+}
+
+.leftPanelContent {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.centerPanel {
+  flex: 1 1 auto;
+  min-width: 500px;
+  position: relative;
+  height: 100%;
+}
+
+.rightPanel {
+  flex: 0 0 auto;
+  width: var(--initial-right-width);
+  background-color: var(--background-color);
+  position: relative;
+}
+
+.panel.collapsed {
+  width: 0 !important;
+  opacity: 0;
+  border: none;
+}
+
+/* ── Dividers ──────────────────────────────────────────────────────────
+   Positioned entirely outside the panel (into the center panel's space)
+   so they never overlap a scrollbar. The 1px border line sits at the
+   panel edge; the remaining width is invisible drag target. */
+.divider {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 16px;
+  cursor: col-resize;
+  background-color: transparent;
+  z-index: 100;
+}
+
+.dividerLine {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 1px;
+  background-color: var(--line-color, #e0e0e0);
+  pointer-events: none;
+  transition: width 0.15s ease, background-color 0.15s ease;
+}
+
+.divider.left .dividerLine {
+  left: 0;
+}
+
+.divider.right .dividerLine {
+  right: 0;
+}
+
+.divider:hover .dividerLine,
+.divider:has(.collapseButton:hover) .dividerLine {
+  width: 2px;
+  background-color: var(--color_accent_blue);
+}
+
+.collapseButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-color, #fff);
+  border: 1px solid var(--line-color, #e0e0e0);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text-secondary, #666);
+  padding: 0;
+  z-index: 101;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.divider.left .collapseButton {
+  left: -1px;
+}
+
+.divider.right .collapseButton {
+  right: -1px;
+}
+
+.divider:hover .collapseButton {
+  opacity: 1;
+}
+
+.collapseButton:hover {
+  color: var(--color_accent_blue);
+  border-color: var(--color_accent_blue);
+}
+
+/* Disable transitions and text selection while dragging */
+[data-dragging='true'] {
+  cursor: col-resize;
+  user-select: none;
+}
+
+[data-dragging='true'] * {
+  user-select: none;
+}
+
+[data-dragging='true'] .leftPanel,
+[data-dragging='true'] .rightPanel {
+  transition: none !important;
+}

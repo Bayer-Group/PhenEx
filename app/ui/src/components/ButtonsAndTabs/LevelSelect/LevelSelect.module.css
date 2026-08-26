@@ -1,0 +1,22 @@
+.levelSelect {
+  font-family: 'IBMPlexSans-regular';
+  font-size: 11px;
+  padding: 2px 6px;
+  border: 1px solid var(--line-color);
+  border-radius: 4px;
+  background-color: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.levelSelect:hover:not(:disabled) {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.levelSelect:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

@@ -1,0 +1,140 @@
+.panel {
+  position: fixed;
+  /* Sit below the popup-portal layer (DraggablePortal/tooltips use 9999) so
+     popups launched from inside a floated panel appear above it. */
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+
+    background: hsl(30, 60%, 94%, 0.8);
+    border: 2px solid var(--line-color);
+    border-radius: 15px;
+    box-shadow: 0 8px 30px hsl(30, 18%, 80%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+}
+
+.header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  padding: 0 6px 0 10px;
+  
+  /* background: var(--background_color_light, #f3f3f3); */
+  cursor: move;
+  user-select: none;
+  position:absolute;
+  z-index: 100;
+  width: calc(100% - 100px) !important;
+}
+
+.title {
+  font-size: var(--font_size_phenotypename);
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: "IBMPlexSans-bold", sans-serif;
+  padding-left:5px;
+  padding-top:5px;
+  width: 100% !important;
+}
+
+.dockButton {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: #666;
+  padding: 3px 5px;
+  border-radius: 3px;
+}
+
+.dockButton:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #000;
+}
+
+.body {
+  flex: 1 1 auto;
+  position: relative;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* ── Resize handles ─────────────────────────────────────────────────── */
+.handle {
+  position: absolute;
+  z-index: 1;
+}
+
+.handle_n {
+  top: -3px;
+  left: 8px;
+  right: 8px;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.handle_s {
+  bottom: -3px;
+  left: 8px;
+  right: 8px;
+  height: 6px;
+  cursor: ns-resize;
+}
+
+.handle_e {
+  right: -3px;
+  top: 8px;
+  bottom: 8px;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.handle_w {
+  left: -3px;
+  top: 8px;
+  bottom: 8px;
+  width: 6px;
+  cursor: ew-resize;
+}
+
+.handle_ne {
+  top: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+}
+
+.handle_nw {
+  top: -3px;
+  left: -3px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+
+.handle_se {
+  bottom: -3px;
+  right: -3px;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}
+
+.handle_sw {
+  bottom: -3px;
+  left: -3px;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+}

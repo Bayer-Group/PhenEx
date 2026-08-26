@@ -1,0 +1,88 @@
+.leftPanel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.title {
+  font-family: 'IBMPlexSans-bold';
+  font-size: 30px;
+}
+
+.header {
+  padding-left: 40px;
+  height: 150px;
+  padding-top: 20px;
+  background-color: blue;
+  /* display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px; */
+}
+.pathInput {
+  width: calc(100% - 40px);
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-family: 'IBMPlexSans-bold';
+  font-size: 14px;
+  outline: none;
+  position: relative;
+  z-index: 10;
+}
+
+.pathInput::placeholder {
+  color: #6c757d;
+}
+
+.controls {
+  flex-shrink: 0; /* Don't let it compress */
+}
+
+.content {
+  flex: 1; /* Fill remaining space */
+  min-height: 0; /* Allow flex scrolling */
+  overflow: hidden; /* No scrolling at this level */
+  padding: 0;
+  width:100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.logoText {
+  font-family: 'IBMPlexSans-bold';
+  font-size: 50px;
+  height: 100px;
+  margin-top: 30px;
+}
+
+.visible {
+  transform: translateX(0);
+}
+
+.hidden {
+  transform: translateX(-100%);
+}
+
+.image {
+  position: absolute;
+
+  /* width: 400px;
+  top: -150px;
+  left: 0px;
+  opacity: 1;
+  pointer-events:none;
+  z-index: -1000;
+  transform: rotate(-90deg); */
+  opacity: 0;
+  pointer-events: none;
+}
+
+.controls {
+  margin-left: 20px;
+  margin-top: 13px;
+}

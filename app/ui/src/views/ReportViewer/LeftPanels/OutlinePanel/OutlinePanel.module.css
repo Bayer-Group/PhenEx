@@ -1,0 +1,340 @@
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow-y: hidden;
+  height: 100%;
+  margin-left:0px;
+}
+
+.floatingHeader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+/* title transitions font-size so the header naturally hugs content height */
+.title {
+  display: block;
+  padding: 10px 12px 8px;
+  font-size: var(--font_size_pagetitle, 18px);
+  font-family: IBMPlexSans-bold, sans-serif;
+  color: var(--text_color_focus, #000);
+  line-height: 1.2;
+  white-space: normal;
+  word-break: break-word;
+  transition: font-size 0.15s ease, padding 0.15s ease;
+  padding-bottom:30px;
+  background: linear-gradient(to bottom, var(--background_color_light) 60%, transparent 100%);
+
+}
+
+.floatingHeaderScrolled .title {
+  font-size: 20px;
+  /* padding: 5px 12px 4px; */
+}
+
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.chevron {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  
+  border: none;
+  background: none;
+  color: #888;
+  cursor: pointer;
+}
+
+.chevron:hover {
+  color: #333;
+  background-color: var(--background_color_light);
+}
+
+.chevron:focus{
+  outline: none;
+}
+
+.chevronIcon {
+  display: inline-block;
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.12s ease;
+  margin-left:4px;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.categoryRow {
+  position: relative;
+}
+
+.addSectionBtn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.categoryRow:hover .addSectionBtn {
+  opacity: 1;
+}
+
+.addSectionBtn:hover {
+  color: #333;
+  background: var(--background_color_light, #f0f0f0);
+}
+
+.addSectionBtn:focus {
+  outline: none;
+  opacity: 1;
+}
+
+.chevronSpacer {
+  flex-shrink: 0;
+  width: 18px;
+}
+
+.item {
+  /* flex: 1; */
+  min-width: 0;
+  display: block;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 3px 8px;
+  font-size: var(--font_size_items, 12px);
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text_color_notfocus, #333);
+  margin-bottom: 0px;
+  margin-right: 23px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 6px;
+  transition: background 0.1s;
+  border: 1px solid transparent;
+  max-width: 100%;
+}
+
+.item:hover {
+  background: var(--background_color_light, #f0f0f0);
+  border: var(--border);
+}
+
+.item:focus {
+  outline: none;
+  border: var(--border);
+}
+
+.itemActive {
+  background: var(--background_color_light, #f0f0f0);
+  border: var(--border);
+}
+
+.level0 {
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}
+
+.level2 {
+  color: #666;
+}
+
+.scrollContent {
+  scrollbar-width: none;
+  overflow-y: auto;
+  padding-top: 96px;
+  padding-bottom: 100px;
+}
+
+
+.scrollBarTrack {
+  background-color: transparent;
+  border-radius: 0px;
+}
+
+.eyeBtn {
+  position: absolute;
+  left: 36px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.eyeBtn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.eyeIcon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.45;
+}
+
+.eyeBtn:hover .eyeIcon {
+  opacity: 1;
+}
+
+.itemSpanWrapper {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.labelHidden {
+  opacity: 0.38;
+}
+
+.scrollBarThumb {
+  background-color: rgba(101, 96, 96, 0.2) !important;
+  width: 8px;
+  border-radius: 0px;
+}
+
+.scrollBarTrack:hover {
+  background-color: transparent;
+}
+
+.sectionLayoutBar {
+  gap: 4px;
+  padding-right: 6px;
+}
+
+/* Resets absolute positioning so the eye sits inline in the flex bar. */
+.eyeBtnInline {
+  position: static;
+  transform: none;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.layoutSelect {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font_size_items, 12px);
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text_color_notfocus, #333);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 2px 4px;
+  cursor: pointer;
+  appearance: auto;
+}
+
+.layoutSelect:hover,
+.layoutSelect:focus {
+  border-color: var(--border_color, #ccc);
+  outline: none;
+  background: var(--background_color_light, #f0f0f0);
+}
+
+.rowDraggable {
+  cursor: grab;
+}
+
+.indentGuide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.10);
+  pointer-events: none;
+}
+
+.rowDraggable:active {
+  cursor: grabbing;
+}
+
+.dropBefore,
+.dropAfter {
+  position: relative;
+}
+
+.dropBefore::before,
+.dropAfter::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 23px;
+  height: 2px;
+  background: var(--accent_color, #4a7fff);
+  border-radius: 1px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dropBefore::before {
+  top: -1px;
+}
+
+.dropAfter::after {
+  bottom: -1px;
+}
+
+.dropInto {
+  background: var(--background_color_light, #f0f0f0);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--accent_color, #4a7fff);
+}
+
+/* Applied momentarily to the label so the drag image is just the pill. */
+.dragImage {
+  background: var(--background_color_light, #f0f0f0) !important;
+  border: var(--border) !important;
+  border-radius: 6px;
+}
+
+.renameInput {
+  flex: 1;
+  min-width: 0;
+  margin-right: 23px;
+  padding: 2px 7px;
+  font-size: var(--font_size_items, 12px);
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: var(--text_color_notfocus, #333);
+  background: var(--background_color, #fff);
+  border: var(--border, 1px solid #4a7fff);
+  border-radius: 6px;
+  outline: none;
+}

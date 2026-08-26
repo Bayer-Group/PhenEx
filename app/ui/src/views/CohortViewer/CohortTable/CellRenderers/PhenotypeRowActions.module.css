@@ -1,0 +1,74 @@
+.actions {
+  position: absolute;
+  top: 3px;
+  right: var(--item-margin-horizontal, 8px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 1;
+}
+
+.actionButton {
+  background: var(--background_color_light);
+  border: 1px solid var(--line_color_dark);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.actionButton:focus {
+  outline: none;
+}
+
+.actionButton:hover {
+  background: var(--color_accent_blue);
+  color: white;
+  border-color: var(--color_accent_blue);
+}
+
+.actionButton.menuOpen {
+  background: var(--color_accent_blue);
+  color: white;
+  border-color: var(--color_accent_blue);
+}
+
+.deleteButton:hover {
+  background: var(--color_danger, #e05252) !important;
+  color: white !important;
+  border-color: var(--color_danger, #e05252) !important;
+}
+
+.addMenuItem {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 2px 8px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.addMenuItem:hover {
+  background: var(--color_accent_blue);
+  color: white;
+}
+
+.addMenuItem:focus {
+  outline: none;
+}
+
+.itemList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

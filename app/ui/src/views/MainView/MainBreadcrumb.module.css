@@ -1,0 +1,98 @@
+/* ── Breadcrumb container ─────────────────────────────────────────────── */
+.container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  pointer-events: auto;
+  background-color: transparent;
+  width: 100%;
+}
+
+/* ── Individual crumb ─────────────────────────────────────────────────── */
+.crumb {
+  display: block;
+  background: none;
+  border: none;
+  padding: 1px 6px;
+  font-size: var(--font_size_phenotypename, 14px);
+  color: black;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.crumb:hover {
+  color: black;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.crumb:focus {
+  outline: none;
+}
+.separator {
+  color: #999;
+  font-size: 13px;
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* Level: study name */
+.crumb_study {
+  font-family: "IBMPlexSans-bold", sans-serif;
+}
+
+/* Level: cohort name */
+.crumb_cohort {
+  font-family: "IBMPlexSans-regular", sans-serif;
+}
+
+/* Level: section selector */
+.crumb_section {
+  font-family: "IBMPlexSans-regular", sans-serif;
+}
+
+/* ── Inline rename input (mirrors OutlinePanel) ───────────────────────── */
+.renameInput {
+  font-size: var(--font_size_phenotypename, 14px);
+  font-family: "IBMPlexSans-regular", sans-serif;
+  color: black;
+  padding: 1px 6px;
+  margin: 0;
+  border: 1px solid var(--color_accent_blue, #4a90d9);
+  border-radius: 4px;
+  background: white;
+  outline: none;
+}
+
+/* ── Section selector menu ────────────────────────────────────────────── */
+.sectionMenu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 4px;
+  min-width: 160px;
+}
+
+.sectionMenuItem {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 10px;
+  color: white;
+  font-size: var(--font_size_items);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.sectionMenuItem:hover {
+  background: var(--color_accent_blue);
+  color: white;
+}
+
+.sectionMenuItem:focus {
+  outline: none;
+}

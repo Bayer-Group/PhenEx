@@ -1,0 +1,116 @@
+/* ── OutcomesChart layout ─────────────────────────────────────────────── */
+
+.container {
+  user-select: none;
+}
+
+/* ── Row ─────────────────────────────────────────────────────────────── */
+
+.row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: calc(1px / var(--pz-scale, 1)) solid var(--line-color, #e0e0e0);
+  min-height: calc(120px / var(--pz-scale, 1));
+  border-radius: calc(8px / var(--pz-scale, 1));
+}
+
+.row:hover {
+  background: rgba(211, 213, 215, 0.04);
+}
+
+.nameCell {
+  width: calc(350px / var(--pz-scale, 1));
+  flex-shrink: 0;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  font-size: clamp(50px, calc(18px / var(--pz-scale, 1)), 500px);
+  color: #333;
+  line-height: 1.25;
+  word-break: break-word;
+  white-space: normal;
+  padding: 0 calc(20px / var(--pz-scale, 1));
+  text-align: right;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.kmCell {
+  width: calc(300px / var(--pz-scale, 1));
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: calc(6px / var(--pz-scale, 1)) 0;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* ── Table2 stats grid ───────────────────────────────────────────────── */
+
+.statsGrid {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  align-self: center;
+  margin: 0;
+}
+
+.statsHeaderRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.statsHeaderCell {
+  width: 90px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: bold;
+  color: rgba(200, 200, 200, 0.8);
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.statsRow {
+  display: flex;
+  align-items: stretch;
+}
+
+.statsRow:hover {
+  background: rgba(211, 213, 215, 0.04);
+}
+
+.statsRow + .statsRow {
+  border-top: 1px solid var(--line-color, #e0e0e0);
+}
+
+.statsCohortCell {
+  width: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.statDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statsValueCell {
+  width: 90px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #333;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}

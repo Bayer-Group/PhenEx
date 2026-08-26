@@ -1,0 +1,26 @@
+.textarea {
+  display: block;
+  padding: 10px 12px;
+  width: 100%;
+  min-width: 280px;
+  height: 80px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  background-color: var(--color-accent-bright);
+  color: #fff;
+  font-family: 'IBMPlexSans-regular';
+  font-size: var(--font_size_phenotypename, 14px);
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+}
+
+.textarea::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.textarea::selection {
+  background: rgba(255, 255, 255, 0.3);
+}

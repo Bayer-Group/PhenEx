@@ -1,0 +1,78 @@
+.codelistContainer {
+  display: inline-flex;
+  flex-direction: column;
+  max-width: 100%;
+  align-items: flex-end;
+}
+
+.codelistContainer.alignLeft {
+  align-items: flex-start;
+}
+
+.codeBlock {
+  border-radius: var(--item-radius);
+  /* padding: 4px; */
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: fit-content;
+  max-width: 100%;
+  /* border: 1px solid red; */
+}
+
+.codeBlock.alignLeft {
+  align-items: flex-start;
+}
+
+.codeBlock:hover {
+}
+
+.codes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.codes.alignLeft {
+  justify-content: flex-start;
+}
+
+.code {
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 11px;
+  display: inline-flex;
+  align-items: center;
+  white-space: normal;
+  word-break: break-word;
+  font-size: var(--item-font-size);
+  font-family: var(--item-font-family);
+  text-align: right;
+}
+
+.code.alignLeft {
+  text-align: left;
+}
+
+.codeType {
+  font-size: 11px;
+  margin-bottom: 0;
+  margin-top: 2px;
+  margin-left: 4px;
+  line-height: 12px;
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+  text-align: right;
+}
+
+.codeType.alignLeft {
+  text-align: left;
+  margin-left: 0;
+  margin-right: 4px;
+}
+
+.missing {
+  color: red;
+}

@@ -1,0 +1,47 @@
+.filtersContainer {
+  /* width: 100%; */
+  text-wrap: wrap;
+  gap: 3px;
+}
+
+.filterRow {
+  gap: 8px;
+
+  background-color: var(--item-color-default);
+  border-radius: var(--item-radius);
+}
+
+.filterRow:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  color: var(--text_color_hover_over_grid) !important;
+  background-color: red !important;
+
+}
+
+.filterContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterContent:hover{
+  color: var(--text_color_hover_over_grid) !important;
+}
+
+.filterValue {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.operator {
+  /* color: var(--text-color-inactive); */
+}
+
+/* .min {
+  color: var(--color-accent);
+}
+
+.max {
+  color: var(--phenex-blue);
+} */

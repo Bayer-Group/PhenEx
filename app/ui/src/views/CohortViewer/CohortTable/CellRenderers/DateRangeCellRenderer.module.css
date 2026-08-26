@@ -1,0 +1,25 @@
+.filterContent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.columnName {
+  font-weight: 500;
+}
+
+.constraint {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.operator {
+  color: var(--text-color-inactive);
+  font-size: 0.85em;
+}
+
+.date {
+  font-variant-numeric: tabular-nums;
+}

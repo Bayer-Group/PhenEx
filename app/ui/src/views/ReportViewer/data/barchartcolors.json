@@ -1,0 +1,25 @@
+{
+  "palette": {
+    "white": [255, 255, 255],
+    "dark_green": [0, 59, 51],
+    "green": [46, 102, 55],
+    "light_green": [141, 198, 63],
+    "cyan": [66, 184, 234],
+    "grey": [127, 127, 127],
+    "purple": [148, 79, 220],
+    "mid_grey": [166, 166, 166],
+    "light_grey": [217, 217, 217],
+    "placebo": [191, 191, 191],
+    "hrt": [161, 127, 102],
+    "ssri": [233, 191, 191],
+    "fezolinetant": [199, 109, 102]
+  },
+  "cohortColorOrder": [
+    "dark_green",
+    "green",
+    "light_green",
+    "cyan",
+    "grey",
+    "purple"
+  ]
+}

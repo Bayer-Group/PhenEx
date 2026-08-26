@@ -1,0 +1,63 @@
+.bar {
+  position: absolute;
+  right: 40px;
+  top: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px; /* match to outline bar GAP */
+  z-index: 10001;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+
+.tick {
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.15);
+  transition: background 0.15s;
+}
+
+.tickActive {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* ── Hover portal ──────────────────────────────────────────────────── */
+
+.portal {
+  position: fixed;
+  transform: translateX(-80%);
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e0e0e0;
+  padding: 6px 0;
+  z-index: 10002;
+  min-width: 160px;
+  padding:20px 10px;
+}
+
+.portalItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-family: 'IBMPlexSans-regular', sans-serif;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+
+.portalItem:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.portalItemActive {
+  background: rgba(0, 0, 0, 0.08);
+  font-family: 'IBMPlexSans-bold', sans-serif;
+}

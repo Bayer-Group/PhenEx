@@ -1,0 +1,22 @@
+.fixWithAIButton {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: var(--item-font-family);
+  background-color: var(--color-accent-bright);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.fixWithAIButton:hover {
+  background-color: var(--accent-color-hover);
+  transform: translateY(-1px);
+}
+
+.fixWithAIButton:active {
+  transform: translateY(0);
+}

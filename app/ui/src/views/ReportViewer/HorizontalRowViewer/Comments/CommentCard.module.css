@@ -1,0 +1,45 @@
+.commentCard {
+  border-radius: 20px 0px 0px 20px;
+  padding: 5px 10px;
+  font-size: 10px;
+  background-color: white;
+  /* box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15); */
+  border: var(--border);
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: #888;
+}
+
+.commentUser {
+  font-weight: 700;
+  color: #333;
+}
+
+.commentStatus {
+  font-size: 12px;
+}
+
+.commentDate {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.commentBody {
+  font-size: var(--font_size_items);
+  line-height: 1.5;
+  color: #333;
+}
+
+.commentBody p {
+  margin: 0 0 6px;
+}
+
+.commentBody p:last-child {
+  margin-bottom: 0;
+}

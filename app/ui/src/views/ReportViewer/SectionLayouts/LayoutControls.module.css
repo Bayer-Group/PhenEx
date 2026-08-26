@@ -1,0 +1,255 @@
+.container {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.topRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Column-count buttons ─────────────────────────────────────────────── */
+
+.columnBtns {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.9);
+  border: var(--border);
+  border-radius: 8px;
+  padding: 3px 5px;
+  backdrop-filter: blur(4px);
+}
+
+.colBtn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 12px;
+  color: #555;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.colBtn:hover {
+  background: rgba(0, 0, 0, 0.07);
+  color: black;
+}
+
+.colBtnActive {
+  background: var(--color_accent, #2f6fed);
+  color: #fff;
+}
+
+.colBtnActive:hover {
+  background: var(--color_accent, #2f6fed);
+  opacity: 0.9;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 13px;
+  color: black;
+  background: rgba(255, 255, 255, 0.9);
+  border: var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background-color 0.1s, box-shadow 0.1s;
+  backdrop-filter: blur(4px);
+}
+
+.trigger:hover {
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+
+.triggerLabel {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.caret {
+  font-size: 10px;
+  color: #666;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 200px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #fff;
+  border: var(--border);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  padding: 6px;
+  z-index: 40;
+}
+
+.menuHeader {
+  padding: 4px 10px 6px;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #999;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 13px;
+  color: black;
+}
+
+.item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.itemActive {
+  font-family: "IBMPlexSans-bold", sans-serif;
+}
+
+.itemLabel {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemLabelBtn {
+  flex: 1 1 auto;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.check {
+  width: 14px;
+  flex-shrink: 0;
+  color: var(--color_accent, #2f6fed);
+}
+
+.itemAction {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+.itemAction:hover {
+  color: #d33;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 6px 4px;
+}
+
+/* ── Save-draft panel ─────────────────────────────────────────────────── */
+
+.savePanel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--color-accent-bright);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.savePrompt {
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: 13px;
+  color: #fff;
+  padding-left: 4px;
+  white-space: nowrap;
+}
+
+.saveInput {
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 13px;
+  color: black;
+  background: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 8px;
+  width: 150px;
+  outline: none;
+}
+
+.saveBtn {
+  font-family: "IBMPlexSans-bold", sans-serif;
+  font-size: 13px;
+  color: var(--color-accent-bright);
+  background: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+
+.saveBtn:hover {
+  opacity: 0.85;
+}
+
+.cancelBtn {
+  font-family: "IBMPlexSans-regular", sans-serif;
+  font-size: 13px;
+  color: #fff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.cancelBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}

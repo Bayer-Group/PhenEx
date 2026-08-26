@@ -1,0 +1,164 @@
+.scrollbar {
+  position: absolute;
+  right: 10px;
+  width: 5px;
+  background: transparent;
+  border-radius: 8px;
+  transition: width 0.2s ease;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.scrollbar:hover {
+  width: 12px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.scrollbar.dragging {
+  width: 12px !important;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.thumb {
+  position: absolute;
+  right: 0;
+  width: 100%;
+  background: var(--color_scrollbar_thumb, #00000033);
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  min-height: 20px;
+  opacity: .5;
+}
+
+.scrollbar:hover .thumb {
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 1;
+}
+
+.scrollbar.dragging .thumb {
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 1;
+}
+
+.thumb:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Horizontal scrollbar styles */
+.scrollbarHorizontal {
+  position: absolute;
+  bottom: 10px;
+  height: 5px;
+  background: transparent;
+  border-radius: 8px;
+  transition: height 0.2s ease;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.scrollbarHorizontal:hover {
+  height: 12px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.scrollbarHorizontal.dragging {
+  height: 12px !important;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.scrollbarHorizontal .thumb {
+  position: absolute;
+  bottom: 0;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  transition: background-color 0.2s ease, height 0.2s ease;
+  min-width: 20px;
+  opacity: .5;
+}
+
+/* Specific thumb class for horizontal scrollbar */
+.thumbHorizontal {
+  height: 5px !important;
+  min-height: 5px !important; /* Override the min-height from .thumb */
+  min-width: 20px !important; /* Keep min-width for horizontal */
+  transition: background-color 0.2s ease, height 0.2s ease !important;
+}
+
+.scrollbarHorizontal:hover .thumb,
+.scrollbarHorizontal:hover .thumbHorizontal {
+  opacity: 1;
+  height: 12px !important;
+}
+
+.scrollbarHorizontal.dragging .thumb,
+.scrollbarHorizontal.dragging .thumbHorizontal {
+  opacity: 1;
+  height: 12px !important;
+}
+
+/* Note: Scrollbar hiding is now handled programmatically per instance */
+
+/* Also add a fallback for containers with the ag-grid-no-scrollbar class */
+:global(.ag-grid-no-scrollbar .ag-body-viewport) {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
+}
+
+:global(.ag-grid-no-scrollbar .ag-body-viewport::-webkit-scrollbar) {
+  display: none !important; /* Chrome, Safari, and Opera */
+  width: 0 !important;
+  height: 0 !important;
+}
+
+:global(.ag-grid-no-scrollbar .ag-center-cols-viewport::-webkit-scrollbar) {
+  display: none !important;
+  width: 0 !important;
+}
+
+:global(.ag-grid-no-scrollbar .ag-body-horizontal-scroll::-webkit-scrollbar) {
+  display: none !important;
+  height: 0 !important;
+}
+
+.scrollbar.accent .thumb:hover {
+  background-color: var(--color-accent-bright, rgba(0, 0, 0, 0.6));
+}
+
+/* Thick horizontal scrollbar - completely separate state, no transitions or hover effects */
+.scrollbarHorizontal.thick {
+  height: 24px !important;
+  border-radius: 10px !important;
+  transition: none !important;
+  border: 2px solid var(--line-color);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  padding: 0 20px !important;
+  box-sizing: border-box !important;
+  background-color: transparent;
+}
+
+.scrollbarHorizontal.thick:hover {
+  /* height: 40px !important; */
+}
+
+.scrollbarHorizontal.thick.dragging {
+  /* height: 40px !important; */
+}
+
+.scrollbarHorizontal.thick .thumb,
+.scrollbarHorizontal.thick .thumbHorizontal {
+  height: calc(100% - 8px) !important;
+  bottom: auto !important;
+  top: 50% !important;
+  transform: translateY(-50%);
+  /* background: var(--color_translucent); */
+  border-radius: 8px !important;
+  opacity: 1 !important;
+  transition: background 0.2s ease !important;
+  background-color: var(--line-color);
+}
+
+/* No hover size changes for thick scrollbar - it stays at 40px always */
