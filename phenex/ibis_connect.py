@@ -6,6 +6,10 @@ import ibis
 from ibis.backends import BaseBackend
 from ibis.expr.types import Table
 
+from phenex.util import create_logger
+
+logger = create_logger(__name__)
+
 
 # SQL dialect helpers
 
@@ -268,6 +272,10 @@ class SnowflakeConnector:
         # In the below connect method, the arguments are the SNOWFLAKE terms.
         #
 
+        # ibis creates JS helper UDFs at connect time, which restricted roles cannot
+        # and PhenEx never uses. PHENEX_SNOWFLAKE_UDFS=1 turns them back on.
+        create_object_udfs = os.environ.get("PHENEX_SNOWFLAKE_UDFS") == "1"
+
         if self.SNOWFLAKE_PKEY:
             return ibis.snowflake.connect(
                 user=self.SNOWFLAKE_USER,
@@ -277,6 +285,7 @@ class SnowflakeConnector:
                 database=database,
                 schema=schema,
                 private_key=self._load_private_key_bytes(self.SNOWFLAKE_PKEY),
+                create_object_udfs=create_object_udfs,
             )
         elif self.SNOWFLAKE_PASSWORD:
             return ibis.snowflake.connect(
@@ -287,6 +296,7 @@ class SnowflakeConnector:
                 role=self.SNOWFLAKE_ROLE,
                 database=database,
                 schema=schema,
+                create_object_udfs=create_object_udfs,
             )
         else:
             return ibis.snowflake.connect(
@@ -297,6 +307,7 @@ class SnowflakeConnector:
                 role=self.SNOWFLAKE_ROLE,
                 database=database,
                 schema=schema,
+                create_object_udfs=create_object_udfs,
             )
 
     def connect_dest(self) -> BaseBackend:
@@ -561,9 +572,9 @@ class DuckDBConnector:
             BaseBackend: Ibis backend connection to the  DuckDB database.
         """
         try:
-            return ibis.duckdb.connect(self.DUCKDB_SOURCE_DATABASE)
+            return self._connect(self.DUCKDB_SOURCE_DATABASE)
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logger.error(f"Could not connect to the source database: {e}")
             raise
 
     def connect_dest(self) -> BaseBackend:
@@ -576,10 +587,18 @@ class DuckDBConnector:
         if self.DUCKDB_DEST_DATABASE is None:
             raise ValueError("Must specify DUCKDB_DEST_DATABASE")
         try:
-            return ibis.duckdb.connect(self.DUCKDB_DEST_DATABASE)
+            return self._connect(self.DUCKDB_DEST_DATABASE)
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logger.error(f"Could not connect to the destination database: {e}")
             raise
+
+    @staticmethod
+    def _connect(database: str) -> BaseBackend:
+        """Open a DuckDB connection and turn off DuckDB's own progress bar,
+        which draws a black bar under phenex's output in notebooks."""
+        con = ibis.duckdb.connect(database)
+        con.raw_sql("SET enable_progress_bar = false")
+        return con
 
     def get_source_table(self, name_table: str):
         """
@@ -635,7 +654,7 @@ class DuckDBConnector:
                 name_table, obj=table, overwrite=overwrite
             )
         except AttributeError as e:
-            print(f"Error creating view: {e}")
+            logger.error(f"Error creating view: {e}")
             raise
 
     def create_table(self, table, name_table=None, overwrite=False):

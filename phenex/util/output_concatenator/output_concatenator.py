@@ -133,6 +133,16 @@ class OutputConcatenator:
 
         cohort_groups = self._group_cohorts(cohort_dirs)
 
+        from phenex.util.progress import active_display
+
+        # Sankey and TTE types are HTML instead of a sheet. Table1-viz gets both.
+        no_sheet = (*self._SANKEY_TYPES, *self._TTE_TYPES)
+        n_sheets = sum(t not in no_sheet for t in self._sheet_order(reports_by_type))
+        n_html = sum(t in reports_by_type for t in (*no_sheet, *self._TABLE1_VIZ_TYPES))
+        display = active_display()
+        # +2: the workbook itself and the combined json
+        display.task_started("Combining reports", n_sheets + n_html + 2)
+
         output_wb = openpyxl.Workbook()
         output_wb.remove(output_wb.active)
 
@@ -151,39 +161,37 @@ class OutputConcatenator:
             display_name = self._SHEET_DISPLAY_NAMES.get(report_type, report_type)
             display_name = display_name[:31]  # Excel sheet name limit
             logger.info(f"Concatenating {report_type} reports...")
-            sheet = output_wb.create_sheet(title=display_name)
-            sheet.sheet_view.showGridLines = False
-            self._write_sheet(
-                sheet,
-                report_type,
-                reports_by_type[report_type],
-                cohort_dirs,
-                cohort_groups,
-            )
-
-        output_wb.save(self.output_file)
-        self._suppress_number_as_text_warnings(self.output_file)
-        logger.info(f"Successfully created: {self.output_file}")
-
-        for report_type in self._SANKEY_TYPES:
-            if report_type in reports_by_type:
-                self._generate_sankey_html(
-                    report_type, reports_by_type[report_type], cohort_dirs
+            with display.task_item(display_name):
+                sheet = output_wb.create_sheet(title=display_name)
+                sheet.sheet_view.showGridLines = False
+                self._write_sheet(
+                    sheet,
+                    report_type,
+                    reports_by_type[report_type],
+                    cohort_dirs,
+                    cohort_groups,
                 )
 
-        for report_type in self._TTE_TYPES:
-            if report_type in reports_by_type:
-                self._generate_tte_html(
-                    report_type, reports_by_type[report_type], cohort_dirs
-                )
+        with display.task_item(Path(self.output_file).name):
+            output_wb.save(self.output_file)
+            self._suppress_number_as_text_warnings(self.output_file)
+            logger.info(f"Successfully created: {self.output_file}")
 
-        for report_type in self._TABLE1_VIZ_TYPES:
-            if report_type in reports_by_type:
-                self._generate_table1_html(
-                    report_type, reports_by_type[report_type], cohort_dirs
-                )
+        for types, build_html in (
+            (self._SANKEY_TYPES, self._generate_sankey_html),
+            (self._TTE_TYPES, self._generate_tte_html),
+            (self._TABLE1_VIZ_TYPES, self._generate_table1_html),
+        ):
+            for report_type in types:
+                if report_type in reports_by_type:
+                    with display.task_item(f"{report_type} html"):
+                        build_html(
+                            report_type, reports_by_type[report_type], cohort_dirs
+                        )
 
-        self.write_combined_json_reports(cohort_dirs)
+        with display.task_item("combined json reports"):
+            self.write_combined_json_reports(cohort_dirs)
+        display.task_completed()
 
     # ------------------------------------------------------------------
 

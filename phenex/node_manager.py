@@ -7,6 +7,7 @@ import pandas as pd
 import ibis
 
 from phenex.util import create_logger
+from phenex.util.progress import active_display
 from phenex.ibis_connect import (
     DuckDBConnector,
     compile_sql,
@@ -363,6 +364,7 @@ class NodeManager:
                 else None
             )
 
+        active_display().set_idle("Reading cached sql ...")
         with self._lock:
             duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=self.db_name)
             if NODE_STATES_TABLE_NAME not in duckdb_con.dest_connection.list_tables():

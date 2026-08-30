@@ -6,6 +6,7 @@ from phenex.core.database import Database
 import ibis
 from phenex.util.serialization.to_dict import to_dict
 from phenex.util import create_logger
+from phenex.util.progress import resolve_display, study_console
 from phenex.util.output_concatenator import OutputConcatenator
 from phenex.core.cohort import Cohort
 from phenex.reporting import Waterfall
@@ -84,13 +85,11 @@ class Study:
 
     def _assign_and_check_databases(self):
         missing_database = []
+        self._cohorts_with_own_database = []
         for cohort in self.cohorts:
             if cohort.database is not None:
                 if self.database is not None:
-                    logger.warning(
-                        f"Cohort '{cohort.name}' has its own database defined; "
-                        f"it overrides the study-level database and will be used instead."
-                    )
+                    self._cohorts_with_own_database.append(cohort.name)
             else:
                 if self.database is not None:
                     cohort.database = self.database
@@ -107,90 +106,139 @@ class Study:
         n_threads: Optional[int] = 1,
         lazy_execution: Optional[bool] = False,
         previous_executions: Optional[Dict[str, str]] = None,
+        verbosity: Optional[str] = None,
     ):
         """Execute all cohorts, writing each one's reports and per-node SQL into a fresh
         timestamped run directory under `self.path`.
 
+        `verbosity` controls the execution progress display and is passed
+        through to each cohort's execute(); see Cohort.execute for values.
+
         Returns:
             str: Path to this run's directory (also on `self.execution_directory`).
         """
-        path_exec_dir_study = self._prepare_study_execution_directory()
-        self.execution_directory = path_exec_dir_study
-        self._freeze_software_versions(path_exec_dir_study)
+        with study_console(verbosity) as pxconsole:
+            path_exec_dir_study = self._prepare_study_execution_directory()
+            self.execution_directory = path_exec_dir_study
 
-        self.custom_reporters = self.custom_reporters or []
-        previous_executions = previous_executions or {}
-        parents_requiring_execution = self._get_parents_requiring_execution(
-            previous_executions
-        )
+            # Add a file handler to the root phenex logger so all phenex.* loggers
+            # write to analysis.log for this execution run.
+            log_path = os.path.join(path_exec_dir_study, "analysis.log")
+            file_handler = logging.FileHandler(log_path)
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                )
+            )
+            phenex_root_logger = logging.getLogger("phenex")
+            phenex_root_logger.addHandler(file_handler)
+            warnings_logger = logging.getLogger("py.warnings")
+            warnings_logger.addHandler(file_handler)
 
-        # Add a file handler to the root phenex logger so all phenex.* loggers
-        # write to analysis.log for this execution run.
-        log_path = os.path.join(path_exec_dir_study, "analysis.log")
-        file_handler = logging.FileHandler(log_path)
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(
-            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        )
-        phenex_root_logger = logging.getLogger("phenex")
-        phenex_root_logger.addHandler(file_handler)
-
-        status = "success"
-        error_message = None
-        try:
-            for _cohort in self.cohorts:
-                path_exec_dir_cohort = self._prepare_cohort_execution_directory(
-                    _cohort, path_exec_dir_study
+            if self._cohorts_with_own_database:
+                # Recorded at construction, reported here, where analysis.log exists
+                logger.info(
+                    f"Study '{self.name}': "
+                    f"{len(self._cohorts_with_own_database)} cohort(s) use their own "
+                    f"database instead of the study-level one: "
+                    f"{', '.join(self._cohorts_with_own_database)}."
                 )
 
-                if self._should_use_previous_execution(
-                    _cohort, previous_executions, parents_requiring_execution
-                ):
-                    if self._copy_previous_execution(
-                        _cohort, previous_executions[_cohort.name], path_exec_dir_cohort
-                    ):
-                        continue
-
-                self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
-
-                # Merge study-level custom reporters into the cohort before execution.
-                # Save and restore so repeated calls to study.execute() don't accumulate duplicates.
-                _original_custom_reporters = _cohort.custom_reporters
-                _cohort.custom_reporters = (
-                    _original_custom_reporters or []
-                ) + self.custom_reporters
-
-                # Each cohort's SQL goes in its own run directory.
-                _cohort.execute(
-                    overwrite=overwrite,
-                    lazy_execution=lazy_execution,
-                    n_threads=n_threads,
-                    sql_dir=os.path.join(path_exec_dir_cohort, "sql"),
-                )
-
-                _cohort.custom_reporters = _original_custom_reporters
-
-                _cohort.write_reports_to_json(path_exec_dir_cohort)
-                _cohort.write_reports_to_html(path_exec_dir_cohort)
-
-            self._concatenate_reports(path_exec_dir_study)
-        except KeyboardInterrupt:
-            status = "interrupted"
-            raise
-        except Exception as e:
-            status = "failed"
-            error_message = str(e)
-            raise
-        finally:
-            phenex_root_logger.removeHandler(file_handler)
-            file_handler.close()
-            self._write_manifest(
-                path_exec_dir_study, status=status, error_message=error_message
+            pxconsole.note(f"Results folder: {path_exec_dir_study}")
+            pxconsole.note(
+                "Progress bars are on · analysis.log in the results folder "
+                "records the complete run live: every log message of every "
+                "level · to see plain text logs here instead, run without "
+                "verbosity='debug'",
+                style="cyan",
             )
 
-        logger.info(
-            f"Study '{self.name}' execution complete. Output written to: {path_exec_dir_study}"
-        )
+            self._freeze_software_versions(path_exec_dir_study)
+            self.custom_reporters = self.custom_reporters or []
+            previous_executions = previous_executions or {}
+            parents_requiring_execution = self._get_parents_requiring_execution(
+                previous_executions
+            )
+
+            status = "success"
+            error_message = None
+            try:
+                for _cohort in self.cohorts:
+                    path_exec_dir_cohort = self._prepare_cohort_execution_directory(
+                        _cohort, path_exec_dir_study
+                    )
+
+                    if self._should_use_previous_execution(
+                        _cohort, previous_executions, parents_requiring_execution
+                    ):
+                        if self._copy_previous_execution(
+                            _cohort,
+                            previous_executions[_cohort.name],
+                            path_exec_dir_cohort,
+                        ):
+                            pxconsole.note(
+                                f"Cohort '{_cohort.name}': reusing results from an earlier run"
+                            )
+                            continue
+
+                    self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
+
+                    # Merge study-level custom reporters into the cohort before execution.
+                    # Save and restore so repeated calls to study.execute() don't accumulate duplicates.
+                    _original_custom_reporters = _cohort.custom_reporters
+                    _cohort.custom_reporters = (
+                        _original_custom_reporters or []
+                    ) + self.custom_reporters
+
+                    # Each cohort's SQL goes in its own run directory.
+                    _cohort.execute(
+                        overwrite=overwrite,
+                        lazy_execution=lazy_execution,
+                        n_threads=n_threads,
+                        sql_dir=os.path.join(path_exec_dir_cohort, "sql"),
+                        verbosity=verbosity,
+                    )
+
+                    _cohort.custom_reporters = _original_custom_reporters
+
+                    # Saving is its own session: a bar over the report files, the one
+                    # being written named beneath it, one timed line per report.
+                    saving = resolve_display(verbosity)
+                    with saving.cohort_session(
+                        _cohort.name, kind="Saving reports", collapse=True
+                    ):
+                        _cohort.write_reports_to_json(path_exec_dir_cohort)
+                        _cohort.write_reports_to_html(path_exec_dir_cohort)
+
+                combining = resolve_display(verbosity)
+                with combining.cohort_session(
+                    self.name, kind="Combining reports", collapse=True
+                ):
+                    self._concatenate_reports(path_exec_dir_study)
+                logger.info(
+                    f"Study '{self.name}' execution complete. Output written to: {path_exec_dir_study}"
+                )
+            except KeyboardInterrupt:
+                status = "interrupted"
+                raise
+            except Exception as e:
+                status = "failed"
+                error_message = str(e)
+                raise
+            finally:
+                self._write_manifest(
+                    path_exec_dir_study, status=status, error_message=error_message
+                )
+                phenex_root_logger.removeHandler(file_handler)
+                warnings_logger.removeHandler(file_handler)
+                file_handler.close()
+
+            pxconsole.note(
+                f"Study '{self.name}' done · results: {path_exec_dir_study} · "
+                f"full text log: analysis.log",
+                strong=True,
+            )
         return path_exec_dir_study
 
     def _write_manifest(

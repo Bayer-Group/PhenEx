@@ -1,6 +1,7 @@
 import inspect
 import json
 from datetime import date, datetime
+from functools import lru_cache
 
 
 def to_dict(obj) -> dict:
@@ -65,9 +66,11 @@ def to_dict(obj) -> dict:
     return _dict
 
 
+@lru_cache(maxsize=None)
 def get_phenex_init_params(cls) -> dict:
     """
     Get all initialization parameters used to construct a PhenEx class.
+    Cached per class: `inspect.signature`.
     """
     params = {}
     if cls.__module__.startswith("phenex"):
