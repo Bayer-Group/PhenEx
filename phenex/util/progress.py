@@ -4,7 +4,7 @@ import threading
 import time
 import traceback
 from contextlib import contextmanager
-from typing import Iterator, List, Optional, TYPE_CHECKING
+from typing import Generator, List, Optional, TYPE_CHECKING
 
 from rich.console import Console, Group, RenderableType
 from rich.live import Live
@@ -47,7 +47,9 @@ def resolve_display(verbosity: Optional[str] = None) -> "DisplayBase":
 
 
 @contextmanager
-def study_console(verbosity: Optional[str] = None) -> Iterator["DisplayBase"]:
+def study_console(
+    verbosity: Optional[str] = None,
+) -> Generator["DisplayBase", None, None]:
     """Hold the screen for one study run: routine messages go quiet,
     warnings are listed at the end."""
     # Holding the screen is what quiets the logging (see logging.py)
@@ -267,7 +269,7 @@ class DisplayBase:
     @contextmanager
     def cohort_session(
         self, cohort_name: str, kind: str = "Cohort", collapse: bool = False
-    ) -> Iterator["DisplayBase"]:
+    ) -> Generator["DisplayBase", None, None]:
         """Hold the screen for one piece of work and always hand it back.
         With `collapse` the session leaves one line behind."""
         global _owner
@@ -323,7 +325,7 @@ class DisplayBase:
         """One item of the current task is done."""
 
     @contextmanager
-    def task_item(self, name: str) -> Iterator[None]:
+    def task_item(self, name: str) -> Generator[None, None, None]:
         """Name one task item, run the body, advance the bar on success."""
         self.task_item_started(name)
         yield

@@ -1,6 +1,3 @@
-"""Tests for the live progress display (phenex/util/progress.py). Each test
-checks one promise the display makes to the person watching a run."""
-
 import io
 import os
 import logging
