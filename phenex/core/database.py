@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 logger = create_logger(__name__)
 
+_announced_databases = set()
+
 
 class Database:
     """
@@ -95,7 +97,11 @@ class Database:
         self.sampler = sampler
         self.name = name or "unnamed_database"
 
-        logger.info(f"Database '{self.name}' initialized")
+        # Announce each database name once: cohort definition modules each
+        # construct their own Database, and the repeats said nothing new
+        if self.name not in _announced_databases:
+            _announced_databases.add(self.name)
+            logger.info(f"Database '{self.name}' initialized")
 
     def to_dict(self) -> dict:
         """

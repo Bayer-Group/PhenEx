@@ -18,6 +18,7 @@ from phenex.ibis_connect import (
     read_sql_file,
 )
 from phenex.tables import PhenexTable
+from phenex.util.progress import active_display
 import threading
 import queue
 from deepdiff import DeepDiff
@@ -457,6 +458,8 @@ class Node:
                         f"Thread {threading.current_thread().name}: executing node '{node_name}'"
                     )
                     node = nodes[node_name]
+                    active_display().node_started(node_name)
+                    served_from_cache = False
 
                     # Execute the node (without recursive child execution since we handle dependencies here)
                     if lazy_execution:
@@ -472,11 +475,9 @@ class Node:
                         # Sampler nodes write no dest table (the SAMPLER_STAGE group returns
                         # None; a fraction=1.0 node is a no-op via _skip_cache). Skip the cache
                         # for them — with no table to look up they would perpetually MISS.
-                        is_sampler_group = (
-                            isinstance(node, NodeGroup)
-                            and "SAMPLER_STAGE" in node.name.upper()
-                        )
-                        if is_sampler_group or getattr(node, "_skip_cache", False):
+                        if isinstance(node, NodeGroup) or getattr(
+                            node, "_skip_cache", False
+                        ):
                             table = node._execute(tables)
                         elif Node._node_manager.should_rerun(node, con):
                             table = _run_and_materialise(node, node_name)
@@ -484,6 +485,7 @@ class Node:
                             db_name = node.get_table_name(table_name_prefix)
                             try:
                                 table = con.get_dest_table(db_name)
+                                served_from_cache = True
                             except Exception:
                                 # Cached table was dropped or is inaccessible; recompute.
                                 logger.warning(
@@ -538,7 +540,10 @@ class Node:
                                     ready_queue.put(dependent)
 
                     # Log completion with timing info
-                    if node.lastexecution_duration is not None:
+                    if (
+                        not served_from_cache
+                        and node.lastexecution_duration is not None
+                    ):
                         logger.info(
                             f"Thread {threading.current_thread().name}: completed node '{node_name}' "
                             f"in {node.lastexecution_duration:.3f} seconds"
@@ -547,6 +552,12 @@ class Node:
                         logger.info(
                             f"Thread {threading.current_thread().name}: completed node '{node_name}' (cached)"
                         )
+
+                    active_display().node_finished(
+                        node_name,
+                        served_from_cache,
+                        duration=node.lastexecution_duration,
+                    )
 
                 except Exception as e:
                     logger.error(f"Error executing node '{node_name}': {str(e)}")

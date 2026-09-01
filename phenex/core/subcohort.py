@@ -8,6 +8,7 @@ from phenex.node import Node
 from phenex.core.cohort import Cohort
 from phenex.reporting import Table1, Waterfall
 from phenex.util import create_logger
+from phenex.util.progress import active_display, resolve_display
 
 logger = create_logger(__name__)
 
@@ -266,6 +267,7 @@ class Subcohort(Cohort):
         n_threads=1,
         lazy_execution=False,
         sql_dir="./sql",
+        verbosity=None,
     ):
         """
         Execute the subcohort by applying additional criteria on top of the
@@ -286,95 +288,128 @@ class Subcohort(Cohort):
                 f"subcohort '{self.name}'."
             )
 
-        con = self._prepare_database_connector_for_execution(con)
+        display = resolve_display(verbosity)
+        with display.cohort_session(self.name, kind="Subcohort"):
+            logger.info(
+                f"Cohort '{self.name}' initialized with entry criterion "
+                f"'{self.entry_criterion.name}'"
+            )
+            display.set_idle("Getting ready: reusing the parent cohort's tables ...")
+            con = self._prepare_database_connector_for_execution(con)
 
-        # Reuse parent state — same entry criterion, same entry-level filtering.
-        self.n_persons_in_source_database = self.cohort.n_persons_in_source_database
-        self.subset_tables_entry = self.cohort.subset_tables_entry
-        self.subset_tables_index = self.cohort.subset_tables_index
+            # Reuse parent state — same entry criterion, same entry-level filtering.
+            self.n_persons_in_source_database = self.cohort.n_persons_in_source_database
+            self.subset_tables_entry = self.cohort.subset_tables_entry
+            self.subset_tables_index = self.cohort.subset_tables_index
 
-        # ------------------------------------------------------------------
-        # Execute ONLY additional phenotypes against the parent's index-subset
-        # tables (post-inclusion/exclusion filtered domain data).
-        # ------------------------------------------------------------------
-        for phenotype in (
-            self.additional_inclusions
-            + self.additional_exclusions
-            + self.additional_outcomes
-        ):
-            if phenotype.table is None:
-                phenotype.execute(
-                    tables=self.cohort.subset_tables_index,
-                    con=con,
-                    overwrite=overwrite,
-                    n_threads=n_threads,
-                    lazy_execution=lazy_execution,
-                    table_name_prefix=self._table_prefix,
-                )
+            # --------------------------------------------------------------
+            # Execute ONLY additional phenotypes against the parent's
+            # index-subset tables (post-inclusion/exclusion filtered domain data).
+            # --------------------------------------------------------------
+            extra_criteria = (
+                self.additional_inclusions
+                + self.additional_exclusions
+                + self.additional_outcomes
+            )
+            if extra_criteria:
+                display.task_started("Extra criteria", len(extra_criteria))
+            for phenotype in extra_criteria:
+                with display.task_item(phenotype.name):
+                    if phenotype.table is None:
+                        phenotype.execute(
+                            tables=self.cohort.subset_tables_index,
+                            con=con,
+                            overwrite=overwrite,
+                            n_threads=n_threads,
+                            lazy_execution=lazy_execution,
+                            table_name_prefix=self._table_prefix,
+                        )
+            if extra_criteria:
+                display.task_completed()
 
-        # ------------------------------------------------------------------
-        # Build subcohort index table: start from parent's index table and
-        # apply only the additional criteria.
-        # ------------------------------------------------------------------
-        index_table = self.cohort.index_table
-        _ij_keys = ["PERSON_ID"] + (
-            ["INDEX_DATE"] if "INDEX_DATE" in index_table.columns else []
-        )
-
-        for inclusion in self.additional_inclusions:
-            include_pids = inclusion.table.filter(
-                inclusion.table["BOOLEAN"] == True
-            ).select(*_ij_keys)
-            index_table = index_table.inner_join(include_pids, _ij_keys)
-
-        for exclusion in self.additional_exclusions:
-            exclude_pids = exclusion.table.select(*_ij_keys)
-            index_table = index_table.anti_join(exclude_pids, _ij_keys)
-
-        self.table = index_table
-
-        # Capture the index query BEFORE materialising it, so its SQL can be
-        # written out (materialising overwrites self.table with a plain table
-        # reference, losing the join expression).
-        index_db_name = f"{self.name}__INDEX".upper()
-        self._subcohort_index_node = _SubcohortIndexNode(
-            table_name=index_db_name, expression=index_table
-        )
-
-        # Materialise the index table if a connector is provided.
-        if con and self.table is not None:
-            con.create_table(self.table, index_db_name, overwrite=overwrite)
-            self.table = con.get_dest_table(index_db_name)
-
-        # ------------------------------------------------------------------
-        # Build waterfall reports.  We construct the Waterfall manually so
-        # that parent criteria are read from the parent's already-computed
-        # waterfall data and only additional criteria are freshly appended.
-        # This avoids reading phenotype.table on parent phenotypes whose
-        # .table may have been overwritten by the parent's reporting stage.
-        # ------------------------------------------------------------------
-        self._build_waterfall(include_component_phenotypes_level=None)
-        self._build_waterfall(include_component_phenotypes_level=100)
-
-        # Execute custom reporters using a filtered proxy so phenotype tables
-        # are scoped to the subcohort's patient population, mirroring how
-        # Table1 and other built-in reporters are handled.
-        _proxy = _SubcohortProxy(self.cohort, self.index_table, outcomes=self.outcomes)
-        self.custom_reporter_nodes = []
-        for reporter in self.custom_reporters:
-            reporter.execute(_proxy)
-            self.custom_reporter_nodes.append(
-                _CustomReporterPseudoNode(
-                    name=f"{self.name}__custom__{reporter.name}".upper(),
-                    reporter=reporter,
-                )
+            # --------------------------------------------------------------
+            # Build subcohort index table: start from parent's index table and
+            # apply only the additional criteria.
+            # --------------------------------------------------------------
+            display.set_idle("Building the subcohort index table ...")
+            index_table = self.cohort.index_table
+            _ij_keys = ["PERSON_ID"] + (
+                ["INDEX_DATE"] if "INDEX_DATE" in index_table.columns else []
             )
 
-        # Write the subcohort's OWN SQL: its extra criteria and its index query.
-        # Parent nodes are written by the parent cohort's own execute().
-        self._write_node_sql_files(sql_dir, con, overwrite)
+            for inclusion in self.additional_inclusions:
+                include_pids = inclusion.table.filter(
+                    inclusion.table["BOOLEAN"] == True
+                ).select(*_ij_keys)
+                index_table = index_table.inner_join(include_pids, _ij_keys)
 
-        return self.index_table
+            for exclusion in self.additional_exclusions:
+                exclude_pids = exclusion.table.select(*_ij_keys)
+                index_table = index_table.anti_join(exclude_pids, _ij_keys)
+
+            self.table = index_table
+
+            # Capture the index query BEFORE materialising it, so its SQL can be
+            # written out (materialising overwrites self.table with a plain table
+            # reference, losing the join expression).
+            index_db_name = f"{self.name}__INDEX".upper()
+            self._subcohort_index_node = _SubcohortIndexNode(
+                table_name=index_db_name, expression=index_table
+            )
+
+            # Materialise the index table if a connector is provided.
+            if con and self.table is not None:
+                con.create_table(self.table, index_db_name, overwrite=overwrite)
+                self.table = con.get_dest_table(index_db_name)
+
+            # --------------------------------------------------------------
+            # Build waterfall reports.  We construct the Waterfall manually so
+            # that parent criteria are read from the parent's already-computed
+            # waterfall data and only additional criteria are freshly appended.
+            # This avoids reading phenotype.table on parent phenotypes whose
+            # .table may have been overwritten by the parent's reporting stage.
+            # --------------------------------------------------------------
+            # One counted bar over both waterfall builds (plain + detailed),
+            # advanced per appended criterion inside _build_waterfall.
+            _n_waterfall_steps = 2 * len(
+                self.additional_inclusions + self.additional_exclusions
+            )
+            if _n_waterfall_steps:
+                display.task_started("Waterfall reports", _n_waterfall_steps)
+            else:
+                display.set_idle("Building waterfall reports ...")
+            self._build_waterfall(include_component_phenotypes_level=None)
+            self._build_waterfall(include_component_phenotypes_level=100)
+            if _n_waterfall_steps:
+                display.task_completed()
+
+            # Execute custom reporters using a filtered proxy so phenotype tables
+            # are scoped to the subcohort's patient population, mirroring how
+            # Table1 and other built-in reporters are handled.
+            _proxy = _SubcohortProxy(
+                self.cohort, self.index_table, outcomes=self.outcomes
+            )
+            self.custom_reporter_nodes = []
+            if self.custom_reporters:
+                display.task_started("Custom reporters", len(self.custom_reporters))
+            for reporter in self.custom_reporters:
+                with display.task_item(reporter.name):
+                    reporter.execute(_proxy)
+                    self.custom_reporter_nodes.append(
+                        _CustomReporterPseudoNode(
+                            name=f"{self.name}__custom__{reporter.name}".upper(),
+                            reporter=reporter,
+                        )
+                    )
+            if self.custom_reporters:
+                display.task_completed()
+
+            # Write the subcohort's own SQL: its extra criteria and its index query.
+            # Parent nodes are written by the parent cohort's execute().
+            display.set_idle("Writing sql files ...")
+            self._write_node_sql_files(sql_dir, con, overwrite)
+
+            return self.index_table
 
     # ------------------------------------------------------------------
     # Waterfall construction
@@ -448,6 +483,7 @@ class Subcohort(Cohort):
                 waterfall._append_components_recursively(
                     inclusion, running_table, parent_index=str(index)
                 )
+            active_display().task_advance()
 
         for exclusion in self.additional_exclusions:
             index += 1
@@ -462,6 +498,7 @@ class Subcohort(Cohort):
                 waterfall._append_components_recursively(
                     exclusion, running_table, parent_index=str(index)
                 )
+            active_display().task_advance()
 
         # Now build the dataframe the same way Waterfall.execute does
         waterfall.ds = waterfall.append_delta(waterfall.ds)
@@ -679,64 +716,47 @@ class Subcohort(Cohort):
         reporter = self._make_table1_reporter()
         return reporter.get_pretty_display() if reporter else None
 
-    def write_reports_to_excel(self, path: str):
-        """Write all available reports to Excel. Characteristics and outcomes
-        Table1 reports are computed from filtered views of the parent cohort's
-        already-executed phenotype tables."""
-        reporter = self._make_table1_reporter()
-        if reporter:
-            reporter.to_excel(os.path.join(path, "table1.xlsx"))
-        detailed_reporter = self._make_table1_detailed_reporter()
-        if detailed_reporter:
-            detailed_reporter.to_excel(os.path.join(path, "table1_detailed.xlsx"))
-        outcomes_reporter = self._make_table1_outcomes_reporter()
-        if outcomes_reporter:
-            outcomes_reporter.to_excel(os.path.join(path, "table1_outcomes.xlsx"))
-        outcomes_detailed_reporter = self._make_table1_outcomes_detailed_reporter()
-        if outcomes_detailed_reporter:
-            outcomes_detailed_reporter.to_excel(
-                os.path.join(path, "table1_outcomes_detailed.xlsx")
-            )
-        if self.waterfall_node:
-            self.waterfall_node.to_excel(os.path.join(path, "waterfall.xlsx"))
-        if self.waterfall_detailed_node:
-            self.waterfall_detailed_node.to_excel(
-                os.path.join(path, "waterfall_detailed.xlsx")
-            )
-        for custom_reporter_node in self.custom_reporter_nodes:
-            report_filename = custom_reporter_node.reporter.name
-            custom_reporter_node.to_excel(os.path.join(path, report_filename + ".xlsx"))
+    def _report_files(self, ext, method_name):
+        """All subcohort reports as (filename, write) pairs for the shared writer,
+        computed from filtered views of the parent's executed phenotype tables."""
 
-    def write_reports_to_json(self, path: str):
-        """Write all available reports as JSON files. Characteristics and outcomes
-        Table1 reports are computed from filtered views of the parent cohort's
-        already-executed phenotype tables."""
-        reporter = self._make_table1_reporter()
-        if reporter:
-            reporter.characteristic_sections = getattr(
-                self.cohort, "characteristic_sections", None
-            )
-            reporter.to_json(os.path.join(path, "table1.json"))
-        detailed_reporter = self._make_table1_detailed_reporter()
-        if detailed_reporter:
-            detailed_reporter.characteristic_sections = getattr(
-                self.cohort, "characteristic_sections", None
-            )
-            detailed_reporter.to_json(os.path.join(path, "table1_detailed.json"))
-        outcomes_reporter = self._make_table1_outcomes_reporter()
-        if outcomes_reporter:
-            outcomes_reporter.to_json(os.path.join(path, "table1_outcomes.json"))
-        outcomes_detailed_reporter = self._make_table1_outcomes_detailed_reporter()
-        if outcomes_detailed_reporter:
-            outcomes_detailed_reporter.to_json(
-                os.path.join(path, "table1_outcomes_detailed.json")
-            )
-        if self.waterfall_node:
-            self.waterfall_node.to_json(os.path.join(path, "waterfall.json"))
-        if self.waterfall_detailed_node:
-            self.waterfall_detailed_node.to_json(
-                os.path.join(path, "waterfall_detailed.json")
-            )
-        for custom_reporter_node in self.custom_reporter_nodes:
-            report_filename = custom_reporter_node.reporter.name
-            custom_reporter_node.to_json(os.path.join(path, report_filename + ".json"))
+        def from_maker(make, set_sections=False):
+            def write(filepath):
+                reporter = make()
+                if reporter is None:
+                    return
+                if set_sections:
+                    reporter.characteristic_sections = getattr(
+                        self.cohort, "characteristic_sections", None
+                    )
+                getattr(reporter, method_name)(filepath)
+
+            return write
+
+        set_sections = method_name == "to_json"  # excel never set sections
+        reports = [
+            (f"table1{ext}", from_maker(self._make_table1_reporter, set_sections)),
+            (
+                f"table1_detailed{ext}",
+                from_maker(self._make_table1_detailed_reporter, set_sections),
+            ),
+            (
+                f"table1_outcomes{ext}",
+                from_maker(self._make_table1_outcomes_reporter),
+            ),
+            (
+                f"table1_outcomes_detailed{ext}",
+                from_maker(self._make_table1_outcomes_detailed_reporter),
+            ),
+        ]
+        for filename, node in (
+            (f"waterfall{ext}", self.waterfall_node),
+            (f"waterfall_detailed{ext}", self.waterfall_detailed_node),
+        ):
+            if node:
+                reports.append((filename, getattr(node, method_name)))
+        reports += [
+            (node.reporter.name + ext, getattr(node, method_name))
+            for node in self.custom_reporter_nodes
+        ]
+        return reports

@@ -1,5 +1,7 @@
 psycopg2-binary==2.9.11
 ibis-framework[snowflake,duckdb,examples]==9.5.0
+rich>=12.4.4,<14
+ipywidgets>=8
 black==24.10.0
 python-dotenv
 pytest

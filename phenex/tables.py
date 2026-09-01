@@ -231,7 +231,7 @@ class PhenexTable:
         Apply date formatting if the source column has a DATE_FORMAT entry.
 
         DATE_FORMAT values can be:
-        - A format string: the column is parsed directly via to_timestamp, then cast to date.
+        - A format string: the column is parsed directly via as_timestamp, then cast to date.
         - A [format, position] list: for year-only (YYYY / %Y) or year-month
           (YYYYMM / %Y%m) formats, position resolves the ambiguous day:
             'first'  — Jan 1 or the 1st of the month
@@ -266,24 +266,24 @@ class PhenexTable:
         col_ref = col_ref.nullif("")
 
         if position is None:
-            return col_ref.to_timestamp(fmt).cast("date")
+            return col_ref.as_timestamp(fmt).cast("date")
 
         # Detect backend style: Snowflake has no '%'; DuckDB/BigQuery use '%' prefixes.
         full_date_fmt = "YYYYMMDD" if "%" not in fmt else "%Y%m%d"
 
         if fmt in ("YYYY", "%Y"):  # year-only
             suffix = {"first": "0101", "middle": "0702", "last": "1231"}[position]
-            return col_ref.concat(suffix).to_timestamp(full_date_fmt).cast("date")
+            return col_ref.concat(suffix).as_timestamp(full_date_fmt).cast("date")
 
         if fmt in ("YYYYMM", "%Y%m"):  # year-month
             if position == "last":
                 # Parse as 1st of month, then advance to the true last day.
-                first_of_month = col_ref.concat("01").to_timestamp(full_date_fmt)
+                first_of_month = col_ref.concat("01").as_timestamp(full_date_fmt)
                 return (
                     first_of_month + ibis.interval(months=1) - ibis.interval(days=1)
                 ).cast("date")
             suffix = {"first": "01", "middle": "15"}[position]
-            return col_ref.concat(suffix).to_timestamp(full_date_fmt).cast("date")
+            return col_ref.concat(suffix).as_timestamp(full_date_fmt).cast("date")
 
         raise ValueError(
             f"DATE_FORMAT position '{position}' is only supported for year-only "
@@ -370,7 +370,7 @@ class PhenexTable:
                     f"Unable to find unqiue {right_table_class_name} required to join {other.__class__.__name__}"
                 )
             right_table = right_table_search_results[0]
-            print(
+            logger.info(
                 f"\tJoining : {current_left_table.__class__.__name__} to {right_table.__class__.__name__}"
             )
 

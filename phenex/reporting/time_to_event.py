@@ -18,6 +18,16 @@ from phenex.util import create_logger
 logger = create_logger(__name__)
 
 
+def _show_or_close(fig) -> None:
+    """Show the figure in an interactive session."""
+    from phenex.util.progress import console_owner
+
+    if console_owner() is None:
+        plt.show()
+    else:
+        plt.close(fig)
+
+
 class TimeToEvent(Reporter):
     """
     Perform a time to event analysis using Kaplan-Meier estimation.
@@ -269,7 +279,7 @@ class TimeToEvent(Reporter):
             cohort_name = getattr(self.cohort, "name", "cohort")
             path = os.path.join(path_dir, f"KaplanMeierPanelFor_{cohort_name}.svg")
             plt.savefig(path, dpi=150)
-        plt.show()
+        _show_or_close(fig)
 
     def plot_single_kaplan_meier(
         self,
@@ -304,7 +314,7 @@ class TimeToEvent(Reporter):
                 f"KaplanMeier_{getattr(self.cohort, 'name', 'cohort')}_{phenotype.name}.svg",
             )
             plt.savefig(path, dpi=150)
-        plt.show()
+        _show_or_close(fig)
 
     def fit_kaplan_meier_for_phenotype(self, phenotype):
         """

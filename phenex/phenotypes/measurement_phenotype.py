@@ -122,7 +122,9 @@ class MeasurementPhenotype(CodelistPhenotype):
     def _perform_null_value_filtering(self, code_table):
         if self.clean_null_values and self.value_filter:
             logger.debug(f"Applying null filtering for {self.name}")
-            code_table = code_table[code_table[self.value_filter.column_name].notnull()]
+            code_table = code_table.filter(
+                code_table[self.value_filter.column_name].notnull()
+            )
         return code_table
 
     def _perform_value_casting(self, code_table):
@@ -140,7 +142,7 @@ class MeasurementPhenotype(CodelistPhenotype):
             return code_table
         logger.debug(f"Casting VALUE column to float for {self.name}")
         code_table = code_table.mutate(VALUE=code_table.VALUE.try_cast("float64"))
-        code_table = code_table[code_table.VALUE.notnull()]
+        code_table = code_table.filter(code_table.VALUE.notnull())
         return code_table
 
     def _perform_nonphysiological_value_filtering(self, code_table):
