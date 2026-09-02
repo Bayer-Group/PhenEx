@@ -5,7 +5,7 @@ import ibis
 from ibis.expr.types.relations import Table
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.node import Node
-from phenex.core.cohort import Cohort
+from phenex.core.cohort import Cohort, _PENDING
 from phenex.reporting import Table1, Waterfall
 from phenex.util import create_logger
 from phenex.util.progress import active_display, resolve_display
@@ -420,8 +420,6 @@ class Subcohort(Cohort):
         database, and `table1` is rebuilt from the parent's tables. The
         waterfall is built by execute(), which is quick after a load.
         """
-        from phenex.core.cohort import _list_dest_tables
-
         con = self._prepare_database_connector_for_execution(con)
         if con is None:
             raise ValueError(
@@ -431,15 +429,7 @@ class Subcohort(Cohort):
         if self.cohort.index_table_node is None:
             self.cohort.load(con=con, _existing_tables=_existing_tables)
 
-        existing = _existing_tables
-        if existing is None:
-            existing = _list_dest_tables(con)
-        if existing is None:
-            logger.warning(
-                f"Subcohort '{self.name}': destination database not found; "
-                f"all tables will load as None"
-            )
-            existing = set()
+        existing = self._existing_dest_tables(con, _existing_tables)
 
         # the subcohort's own nodes: extra criteria plus their dependencies
         seen, nodes = set(), []
@@ -466,33 +456,12 @@ class Subcohort(Cohort):
         )
 
         # subset dicts come from the parent, resolved on first access
-        self._subset_tables_entry = None
-        self._subset_tables_index = None
-        self._subset_entry_pending_load = True
-        self._subset_index_pending_load = True
+        self._subset_tables_entry = _PENDING
+        self._subset_tables_index = _PENDING
 
-        # One line about the outcome; a warning only when something is wrong
-        total = len(nodes) + 1  # its own nodes plus the index table
+        # One line about the outcome; its own nodes plus the index table
         found = attached + (1 if self.table is not None else 0)
-        self._load_summary_is_warning = found == 0
-        if found == 0:
-            self._load_summary = (
-                f"Subcohort '{self.name}': found 0 of {total} result tables; "
-                f"check that this study was executed against this destination, "
-                f"with the same cohort name and sampler settings"
-            )
-            logger.warning(self._load_summary)
-        else:
-            self._load_summary = (
-                f"Subcohort '{self.name}': found {found} of {total} result "
-                f"tables in the destination (fetched on first access)"
-            )
-            logger.info(self._load_summary)
-            if self.table is None:
-                logger.warning(
-                    f"Subcohort '{self.name}': index table not found; "
-                    f"subcohort.table is None"
-                )
+        self._log_load_summary(found=found, total=len(nodes) + 1)
         return self.table
 
     def _build_subset_tables_entry_after_load(self):

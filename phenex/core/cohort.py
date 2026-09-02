@@ -50,6 +50,9 @@ def _list_dest_tables(con) -> Optional[set]:
         return None
 
 
+_PENDING = object()
+
+
 class Cohort:
     """
     The Cohort computes a cohort of individuals based on specified entry criteria, inclusions, exclusions, and computes baseline characteristics and outcomes from the extracted index dates.
@@ -617,67 +620,6 @@ class Cohort:
         if self.outcomes_table_node:
             return self.outcomes_table_node.table
 
-    # After load(), these dicts and the person count build themselves on first
-    # access instead of during load; execute() assigns them directly as before.
-    _subset_tables_entry = None
-    _subset_tables_index = None
-    _subset_entry_pending_load = False
-    _subset_index_pending_load = False
-    _n_persons_in_source_database = None
-    _person_table_for_count = None
-
-    @property
-    def subset_tables_entry(self) -> Optional[Dict]:
-        """The entry-subset tables. After load() they are built here, on the
-        first read, rather than during the load itself."""
-        if self._subset_tables_entry is None and self._subset_entry_pending_load:
-            self._subset_entry_pending_load = False
-            self._subset_tables_entry = self._build_subset_tables_entry_after_load()
-        return self._subset_tables_entry
-
-    @subset_tables_entry.setter
-    def subset_tables_entry(self, value: Optional[Dict]) -> None:
-        """Set them directly; execute() does this, load() does not."""
-        self._subset_tables_entry = value
-        self._subset_entry_pending_load = False
-
-    @property
-    def subset_tables_index(self) -> Optional[Dict]:
-        """The index-subset tables. After load() they are built here, on the
-        first read, rather than during the load itself."""
-        if self._subset_tables_index is None and self._subset_index_pending_load:
-            self._subset_index_pending_load = False
-            self._subset_tables_index = self._build_subset_tables_index_after_load()
-        return self._subset_tables_index
-
-    @subset_tables_index.setter
-    def subset_tables_index(self, value: Optional[Dict]) -> None:
-        """Set them directly; execute() does this, load() does not."""
-        self._subset_tables_index = value
-        self._subset_index_pending_load = False
-
-    @property
-    def n_persons_in_source_database(self) -> Optional[int]:
-        """How many people are in the source database. After load() this is
-        counted here, on the first read."""
-        if (
-            self._n_persons_in_source_database is None
-            and self._person_table_for_count is not None
-        ):
-            person, self._person_table_for_count = self._person_table_for_count, None
-            logger.info(
-                f"Cohort '{self.name}': counting persons in source database "
-                f"(deferred from load) ..."
-            )
-            self._n_persons_in_source_database = person.distinct().count().execute()
-        return self._n_persons_in_source_database
-
-    @n_persons_in_source_database.setter
-    def n_persons_in_source_database(self, value: Optional[int]) -> None:
-        """Set the count directly, so nothing is counted later."""
-        self._n_persons_in_source_database = value
-        self._person_table_for_count = None
-
     def get_subset_tables_entry(self, tables):
         """
         Get the PhenexTable from the ibis Table for subsetting tables for all domains in this cohort subsetting by the given entry_phenotype.
@@ -1113,54 +1055,64 @@ class Cohort:
                 logger.warning(
                     f"Cohort '{self.name}': could not map source tables during load: {e}"
                 )
+        if not tables:
+            # Everything derived from the source is unavailable
+            logger.warning(
+                f"Cohort '{self.name}': source tables not reachable at load; "
+                f"subset tables and the source person count will be unavailable"
+            )
         self._loaded_source_tables = tables
 
+        # Rebuild the plan in memory
         self.build_stages(tables)
 
-        existing = _existing_tables
-        if existing is None:
-            existing = _list_dest_tables(con)
-        if existing is None:
-            logger.warning(
-                f"Cohort '{self.name}': destination database not found; "
-                f"all tables will load as None"
-            )
-            existing = set()
+        existing = self._existing_dest_tables(con, _existing_tables)
 
         all_nodes = self._collect_all_nodes()
         attached = self._attach_loaded_tables(all_nodes, con, existing)
 
         # These build themselves the first time someone reads them
-        self._subset_tables_entry = None
-        self._subset_tables_index = None
-        self._subset_entry_pending_load = True
-        self._subset_index_pending_load = True
+        self._subset_tables_entry = _PENDING
+        self._subset_tables_index = _PENDING
         self._person_table_for_count = tables.get("PERSON")
 
         self.table = self.index_table_node.table
 
-        # One line per cohort; a warning only when something is wrong
-        total = len(all_nodes)
-        self._load_summary_is_warning = attached == 0
-        if attached == 0:
-            self._load_summary = (
-                f"Cohort '{self.name}': found 0 of {total} result tables; check "
+        self._log_load_summary(found=attached, total=len(all_nodes))
+        return self.table
+
+    def _existing_dest_tables(self, con, existing: Optional[set]) -> set:
+        """The destination listing: the one Study.load already fetched,
+        or one."""
+        if existing is None:
+            existing = _list_dest_tables(con)
+        if existing is None:
+            logger.warning(
+                f"{type(self).__name__} '{self.name}': destination database not "
+                f"found; all tables will load as None"
+            )
+            existing = set()
+        return existing
+
+    def _log_load_summary(self, found: int, total: int) -> None:
+        """One line about the outcome; a warning only when something is wrong."""
+        kind = type(self).__name__
+        if found == 0:
+            logger.warning(
+                f"{kind} '{self.name}': found 0 of {total} result tables; check "
                 f"that this study was executed against this destination, with "
                 f"the same cohort name and sampler settings"
             )
-            logger.warning(self._load_summary)
-        else:
-            self._load_summary = (
-                f"Cohort '{self.name}': found {attached} of {total} result "
-                f"tables in the destination (fetched on first access)"
+            return
+        logger.info(
+            f"{kind} '{self.name}': found {found} of {total} result "
+            f"tables in the destination (fetched on first access)"
+        )
+        if self.table is None:
+            logger.warning(
+                f"{kind} '{self.name}': index table not found; "
+                f"{kind.lower()}.table is None"
             )
-            logger.info(self._load_summary)
-            if self.table is None:
-                logger.warning(
-                    f"Cohort '{self.name}': index table not found; "
-                    f"cohort.table is None"
-                )
-        return self.table
 
     def _attach_loaded_tables(self, nodes: List[Node], con, existing: set) -> int:
         """Note where each step's saved table lives, and count how many were
@@ -1176,6 +1128,63 @@ class Cohort:
             else:
                 node.table = None
         return attached
+
+    # After load(), these dicts and the person count build themselves on first
+    # access instead of during load. execute() assigns them directly as before.
+    _subset_tables_entry = None
+    _subset_tables_index = None
+    _n_persons_in_source_database = None
+    _person_table_for_count = None
+
+    @property
+    def subset_tables_entry(self) -> Optional[Dict]:
+        """The entry-subset tables. After load() they are built here, on the
+        first read, rather than during the load itself."""
+        if self._subset_tables_entry is _PENDING:
+            self._subset_tables_entry = None  # a failed build is not retried
+            self._subset_tables_entry = self._build_subset_tables_entry_after_load()
+        return self._subset_tables_entry
+
+    @subset_tables_entry.setter
+    def subset_tables_entry(self, value: Optional[Dict]) -> None:
+        """Set them directly; execute() does this, load() does not."""
+        self._subset_tables_entry = value
+
+    @property
+    def subset_tables_index(self) -> Optional[Dict]:
+        """The index-subset tables. After load() they are built here, on the
+        first read, rather than during the load itself."""
+        if self._subset_tables_index is _PENDING:
+            self._subset_tables_index = None  # a failed build is not retried
+            self._subset_tables_index = self._build_subset_tables_index_after_load()
+        return self._subset_tables_index
+
+    @subset_tables_index.setter
+    def subset_tables_index(self, value: Optional[Dict]) -> None:
+        """Set them directly; execute() does this, load() does not."""
+        self._subset_tables_index = value
+
+    @property
+    def n_persons_in_source_database(self) -> Optional[int]:
+        """How many people are in the source database. After load() this is
+        counted here, on the first read."""
+        if (
+            self._n_persons_in_source_database is None
+            and self._person_table_for_count is not None
+        ):
+            person, self._person_table_for_count = self._person_table_for_count, None
+            logger.info(
+                f"Cohort '{self.name}': counting persons in source database "
+                f"(deferred from load) ..."
+            )
+            self._n_persons_in_source_database = person.distinct().count().execute()
+        return self._n_persons_in_source_database
+
+    @n_persons_in_source_database.setter
+    def n_persons_in_source_database(self, value: Optional[int]) -> None:
+        """Set the count directly, so nothing is counted later."""
+        self._n_persons_in_source_database = value
+        self._person_table_for_count = None
 
     def _build_subset_tables_entry_after_load(self) -> Dict:
         """Build the entry-subset tables for a loaded cohort, the same way
@@ -1208,6 +1217,10 @@ class Cohort:
         ):
             # never written to the destination; rebuild the same in-memory
             # expressions execute() uses on its con=None path
+            logger.info(
+                f"Cohort '{self.name}': entry subset tables were not written to "
+                f"the destination; rebuilding them from the source"
+            )
             if self.sampler_stage is not None and any(
                 n.table is None for n in self.sampler_stage.children
             ):
@@ -1252,6 +1265,10 @@ class Cohort:
             and self.index_table_node is not None
             and self.index_table_node.table is not None
         ):
+            logger.info(
+                f"Cohort '{self.name}': index subset tables were not written to "
+                f"the destination; rebuilding them from the source"
+            )
             for node in self.subset_tables_index_nodes or []:
                 if node.table is None and entry.get(node.domain) is not None:
                     try:
