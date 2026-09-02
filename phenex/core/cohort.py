@@ -36,6 +36,20 @@ from phenex.core.database import Database
 logger = create_logger(__name__)
 
 
+def _list_dest_tables(con) -> Optional[set]:
+    """Ask the database once for the names of the tables it holds.
+    Returns None when the destination cannot be listed at all."""
+    try:
+        if hasattr(con, "list_dest_tables"):
+            names = con.list_dest_tables()
+        else:
+            names = con.dest_connection.list_tables()
+        return {str(n).upper() for n in names}
+    except Exception as e:
+        logger.warning(f"Could not list destination tables: {e}")
+        return None
+
+
 class Cohort:
     """
     The Cohort computes a cohort of individuals based on specified entry criteria, inclusions, exclusions, and computes baseline characteristics and outcomes from the extracted index dates.
@@ -603,6 +617,67 @@ class Cohort:
         if self.outcomes_table_node:
             return self.outcomes_table_node.table
 
+    # After load(), these dicts and the person count build themselves on first
+    # access instead of during load; execute() assigns them directly as before.
+    _subset_tables_entry = None
+    _subset_tables_index = None
+    _subset_entry_pending_load = False
+    _subset_index_pending_load = False
+    _n_persons_in_source_database = None
+    _person_table_for_count = None
+
+    @property
+    def subset_tables_entry(self) -> Optional[Dict]:
+        """The entry-subset tables. After load() they are built here, on the
+        first read, rather than during the load itself."""
+        if self._subset_tables_entry is None and self._subset_entry_pending_load:
+            self._subset_entry_pending_load = False
+            self._subset_tables_entry = self._build_subset_tables_entry_after_load()
+        return self._subset_tables_entry
+
+    @subset_tables_entry.setter
+    def subset_tables_entry(self, value: Optional[Dict]) -> None:
+        """Set them directly; execute() does this, load() does not."""
+        self._subset_tables_entry = value
+        self._subset_entry_pending_load = False
+
+    @property
+    def subset_tables_index(self) -> Optional[Dict]:
+        """The index-subset tables. After load() they are built here, on the
+        first read, rather than during the load itself."""
+        if self._subset_tables_index is None and self._subset_index_pending_load:
+            self._subset_index_pending_load = False
+            self._subset_tables_index = self._build_subset_tables_index_after_load()
+        return self._subset_tables_index
+
+    @subset_tables_index.setter
+    def subset_tables_index(self, value: Optional[Dict]) -> None:
+        """Set them directly; execute() does this, load() does not."""
+        self._subset_tables_index = value
+        self._subset_index_pending_load = False
+
+    @property
+    def n_persons_in_source_database(self) -> Optional[int]:
+        """How many people are in the source database. After load() this is
+        counted here, on the first read."""
+        if (
+            self._n_persons_in_source_database is None
+            and self._person_table_for_count is not None
+        ):
+            person, self._person_table_for_count = self._person_table_for_count, None
+            logger.info(
+                f"Cohort '{self.name}': counting persons in source database "
+                f"(deferred from load) ..."
+            )
+            self._n_persons_in_source_database = person.distinct().count().execute()
+        return self._n_persons_in_source_database
+
+    @n_persons_in_source_database.setter
+    def n_persons_in_source_database(self, value: Optional[int]) -> None:
+        """Set the count directly, so nothing is counted later."""
+        self._n_persons_in_source_database = value
+        self._person_table_for_count = None
+
     def get_subset_tables_entry(self, tables):
         """
         Get the PhenexTable from the ibis Table for subsetting tables for all domains in this cohort subsetting by the given entry_phenotype.
@@ -1013,6 +1088,201 @@ class Cohort:
 
             return self.index_table
 
+    def load(self, con=None, _existing_tables: Optional[set] = None) -> Optional[Table]:
+        """
+        Point this cohort back at the tables a previous run already wrote,
+        without computing anything. Use it in a fresh session after re-running
+        the cells that define the cohort, instead of execute().
+
+        It asks the database once which tables exist, then notes where each
+        result lives. Each table is fetched the first time you read it. A step
+        whose table is not there reads as None.
+        """
+        con = self._prepare_database_connector_for_execution(con)
+        if con is None:
+            raise ValueError(
+                "A database connector is required to load a cohort; "
+                "pass con= or set cohort.database."
+            )
+
+        tables = {}
+        if self.database is not None and self.database.mapper is not None:
+            try:
+                tables = dict(self.database.mapper.get_mapped_tables(con))
+            except Exception as e:
+                logger.warning(
+                    f"Cohort '{self.name}': could not map source tables during load: {e}"
+                )
+        self._loaded_source_tables = tables
+
+        self.build_stages(tables)
+
+        existing = _existing_tables
+        if existing is None:
+            existing = _list_dest_tables(con)
+        if existing is None:
+            logger.warning(
+                f"Cohort '{self.name}': destination database not found; "
+                f"all tables will load as None"
+            )
+            existing = set()
+
+        all_nodes = self._collect_all_nodes()
+        attached = self._attach_loaded_tables(all_nodes, con, existing)
+
+        # These build themselves the first time someone reads them
+        self._subset_tables_entry = None
+        self._subset_tables_index = None
+        self._subset_entry_pending_load = True
+        self._subset_index_pending_load = True
+        self._person_table_for_count = tables.get("PERSON")
+
+        self.table = self.index_table_node.table
+
+        # One line per cohort; a warning only when something is wrong
+        total = len(all_nodes)
+        self._load_summary_is_warning = attached == 0
+        if attached == 0:
+            self._load_summary = (
+                f"Cohort '{self.name}': found 0 of {total} result tables; check "
+                f"that this study was executed against this destination, with "
+                f"the same cohort name and sampler settings"
+            )
+            logger.warning(self._load_summary)
+        else:
+            self._load_summary = (
+                f"Cohort '{self.name}': found {attached} of {total} result "
+                f"tables in the destination (fetched on first access)"
+            )
+            logger.info(self._load_summary)
+            if self.table is None:
+                logger.warning(
+                    f"Cohort '{self.name}': index table not found; "
+                    f"cohort.table is None"
+                )
+        return self.table
+
+    def _attach_loaded_tables(self, nodes: List[Node], con, existing: set) -> int:
+        """Note where each step's saved table lives, and count how many were
+        found. A step with no table there gets `.table = None`."""
+        prefix = self._clean_prefix
+        attached = 0
+        for node in nodes:
+            node._table_name_prefix = prefix
+            db_name = node.get_table_name(prefix)
+            if db_name.upper() in existing:
+                node.attach_lazy_table(con, db_name)
+                attached += 1
+            else:
+                node.table = None
+        return attached
+
+    def _build_subset_tables_entry_after_load(self) -> Dict:
+        """Build the entry-subset tables for a loaded cohort, the same way
+        execute() builds them."""
+        tables = dict(getattr(self, "_loaded_source_tables", None) or {})
+        # sampler and data-period results take the place of the source table
+        for stage in (self.sampler_stage, self.data_period_filter_stage):
+            if stage is None:
+                continue
+            for node in stage.children:
+                if node.table is None:
+                    continue
+                original = tables.get(node.domain)
+                swapped = node.table
+                if isinstance(original, PhenexTable) and not isinstance(
+                    swapped, PhenexTable
+                ):
+                    swapped = type(original)(
+                        swapped, name=original.NAME_TABLE, column_mapping={}
+                    )
+                node.table = swapped
+                tables[node.domain] = swapped
+        for dt in self.derived_tables or []:
+            if dt.table is not None:
+                tables[dt.name] = PhenexTable(dt.table)
+
+        if (
+            not self.write_subset_tables_entry
+            and self.entry_criterion.table is not None
+        ):
+            # never written to the destination; rebuild the same in-memory
+            # expressions execute() uses on its con=None path
+            if self.sampler_stage is not None and any(
+                n.table is None for n in self.sampler_stage.children
+            ):
+                logger.warning(
+                    f"Cohort '{self.name}': sampler tables not found in the "
+                    f"destination; recomputed subset tables are unsampled"
+                )
+            for node in self.subset_tables_entry_nodes or []:
+                if node.table is None and tables.get(node.domain) is not None:
+                    try:
+                        node.table = node._execute(tables)
+                    except Exception as e:
+                        logger.warning(
+                            f"Cohort '{self.name}': could not rebuild subset "
+                            f"table '{node.name}' in memory: {e}"
+                        )
+
+        lookup = {
+            n.domain: tables.get(n.domain)
+            for n in (self.subset_tables_entry_nodes or [])
+        }
+        result = self.get_subset_tables_entry(lookup)
+
+        # post-entry derived tables carry the entry dates, as in execute()
+        if self.derived_tables_post_entry and self.entry_criterion.table is not None:
+            entry_dates = self.entry_criterion.table.select(
+                "PERSON_ID", "EVENT_DATE"
+            ).rename({"INDEX_DATE": "EVENT_DATE"})
+            for node in self.derived_tables_post_entry:
+                if node.table is not None:
+                    result[node.name] = PhenexTable(
+                        node.table.join(entry_dates, "PERSON_ID")
+                    )
+        return result
+
+    def _build_subset_tables_index_after_load(self) -> Dict:
+        """Build the index-subset tables for a loaded cohort. Reading these
+        also builds the entry ones, which they are based on."""
+        entry = self.subset_tables_entry or {}
+        if (
+            not self.write_subset_tables_index
+            and self.index_table_node is not None
+            and self.index_table_node.table is not None
+        ):
+            for node in self.subset_tables_index_nodes or []:
+                if node.table is None and entry.get(node.domain) is not None:
+                    try:
+                        node.table = node._execute(entry)
+                    except Exception as e:
+                        logger.warning(
+                            f"Cohort '{self.name}': could not rebuild index-subset "
+                            f"table '{node.name}' in memory: {e}"
+                        )
+
+        lookup = {
+            n.domain: entry.get(n.domain)
+            for n in (self.subset_tables_index_nodes or [])
+        }
+        result = self.get_subset_tables_index(lookup)
+
+        # post-entry derived tables filtered to the index population, as in execute()
+        if (
+            self.derived_tables_post_entry
+            and self.index_table_node is not None
+            and self.index_table_node.table is not None
+        ):
+            index_person_ids = self.index_table_node.table.select("PERSON_ID")
+            for node in self.derived_tables_post_entry:
+                if node.name in entry:
+                    entry_tbl = entry[node.name]
+                    result[node.name] = type(entry_tbl)(
+                        entry_tbl.table.semi_join(index_person_ids, "PERSON_ID")
+                    )
+        return result
+
     def _write_node_sql_files(self, sql_dir, con, overwrite):
         """Write one .sql per node (+ codelist sidecars) into `sql_dir`, named by get_table_name().
         Overwrite drops this cohort's orphan .sql, lazy hits restore from phenex.db.
@@ -1357,26 +1627,33 @@ class Cohort:
                 "No tables provided for cohort execution and no database defined to retrieve tables for execution!"
             )
 
+    def _report_df(self, node: Optional[Node], label: str) -> Optional["pd.DataFrame"]:
+        """The report as a DataFrame. Says why instead of quietly returning
+        None when the report has no saved result."""
+        if node is None:
+            return None
+        df = node.df_report
+        if df is None:
+            logger.warning(
+                f"Cohort '{self.name}': {label} has no saved result (not found "
+                f"in the destination at load, or not executed yet); returning None"
+            )
+        return df
+
     @property
     def table1(self):
         """Get the Table1 report DataFrame from the table1_node if it exists."""
-        if self.table1_node:
-            return self.table1_node.df_report
-        return None
+        return self._report_df(self.table1_node, "table1")
 
     @property
     def waterfall(self):
         """Get the Waterfall report DataFrame from the waterfall_node if it exists."""
-        if self.waterfall_node:
-            return self.waterfall_node.df_report
-        return None
+        return self._report_df(self.waterfall_node, "waterfall")
 
     @property
     def waterfall_detailed(self):
         """Get the detailed Waterfall report DataFrame from the waterfall_node if it exists."""
-        if self.waterfall_detailed_node:
-            return self.waterfall_detailed_node.df_report
-        return None
+        return self._report_df(self.waterfall_detailed_node, "waterfall_detailed")
 
     def write_reports_to_excel(self, path: str):
         """Write all available reports to Excel files in the given directory."""

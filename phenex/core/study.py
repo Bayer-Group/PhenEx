@@ -241,6 +241,59 @@ class Study:
             )
         return path_exec_dir_study
 
+    def load(self, verbosity: Optional[str] = None) -> "Study":
+        """
+        Point every cohort back at the tables a previous run already wrote,
+        without computing anything. Use it in a fresh session after re-running
+        the cells that define the study, instead of execute().
+
+        Each database is asked once which tables it holds. Parent cohorts are
+        loaded before their subcohorts. Nothing is written: no results folder,
+        no log file.
+        """
+        from phenex.core.cohort import _list_dest_tables
+        from phenex.core.subcohort import Subcohort
+
+        with study_console(verbosity) as pxconsole:
+            pxconsole.note(
+                f"Study '{self.name}': loading executed results (no computation)"
+            )
+            self.custom_reporters = self.custom_reporters or []
+            ordered = [c for c in self.cohorts if not isinstance(c, Subcohort)] + [
+                c for c in self.cohorts if isinstance(c, Subcohort)
+            ]
+            listings = {}
+            for cohort in ordered:
+                con = cohort.database.connector
+                if id(con) not in listings:
+                    listings[id(con)] = _list_dest_tables(con)
+                    if listings[id(con)] is None:
+                        pxconsole.note(
+                            f"Destination database for cohort '{cohort.name}' not "
+                            f"found; its tables will load as None",
+                            style="yellow",
+                        )
+                # Add the study's own reports to the cohort, as execute() does,
+                # so their saved tables are reachable too; undone right after
+                _original_custom_reporters = cohort.custom_reporters
+                cohort.custom_reporters = (
+                    _original_custom_reporters or []
+                ) + self.custom_reporters
+                try:
+                    cohort.load(con=con, _existing_tables=listings[id(con)] or set())
+                finally:
+                    cohort.custom_reporters = _original_custom_reporters
+                # the same line the plain log shows, yellow when it is a warning
+                pxconsole.note(
+                    getattr(cohort, "_load_summary", f"Cohort '{cohort.name}': loaded"),
+                    style=(
+                        "yellow"
+                        if getattr(cohort, "_load_summary_is_warning", False)
+                        else None
+                    ),
+                )
+        return self
+
     def _write_manifest(
         self, path_exec_dir_study, status="success", error_message=None
     ):

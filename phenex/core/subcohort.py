@@ -1,8 +1,8 @@
 from typing import List, Optional
-import os
 import pandas as pd
 import numpy as np
 import ibis
+from ibis.expr.types.relations import Table
 from phenex.phenotypes.phenotype import Phenotype
 from phenex.node import Node
 from phenex.core.cohort import Cohort
@@ -410,6 +410,98 @@ class Subcohort(Cohort):
             self._write_node_sql_files(sql_dir, con, overwrite)
 
             return self.index_table
+
+    def load(self, con=None, _existing_tables: Optional[set] = None) -> Optional[Table]:
+        """
+        Point this subcohort back at the tables a previous run wrote, loading
+        the parent cohort first if it is not loaded yet.
+
+        Afterwards the index table and the extra phenotypes read from the
+        database, and `table1` is rebuilt from the parent's tables. The
+        waterfall is built by execute(), which is quick after a load.
+        """
+        from phenex.core.cohort import _list_dest_tables
+
+        con = self._prepare_database_connector_for_execution(con)
+        if con is None:
+            raise ValueError(
+                "A database connector is required to load a subcohort; "
+                "pass con= or set the parent cohort's database."
+            )
+        if self.cohort.index_table_node is None:
+            self.cohort.load(con=con, _existing_tables=_existing_tables)
+
+        existing = _existing_tables
+        if existing is None:
+            existing = _list_dest_tables(con)
+        if existing is None:
+            logger.warning(
+                f"Subcohort '{self.name}': destination database not found; "
+                f"all tables will load as None"
+            )
+            existing = set()
+
+        # the subcohort's own nodes: extra criteria plus their dependencies
+        seen, nodes = set(), []
+        roots = (
+            self.additional_inclusions
+            + self.additional_exclusions
+            + self.additional_outcomes
+        )
+        for root in roots:
+            for node in [*root.dependencies, root]:
+                if id(node) not in seen:
+                    seen.add(id(node))
+                    nodes.append(node)
+        attached = self._attach_loaded_tables(nodes, con, existing)
+
+        # the index query node exists only for to_sql; its SQL resolves from
+        # the saved .sql file (there is no live expression after a load)
+        index_db_name = f"{self.name}__INDEX".upper()
+        self._subcohort_index_node = _SubcohortIndexNode(
+            table_name=index_db_name, expression=None
+        )
+        self.table = (
+            con.get_dest_table(index_db_name) if index_db_name in existing else None
+        )
+
+        # subset dicts come from the parent, resolved on first access
+        self._subset_tables_entry = None
+        self._subset_tables_index = None
+        self._subset_entry_pending_load = True
+        self._subset_index_pending_load = True
+
+        # One line about the outcome; a warning only when something is wrong
+        total = len(nodes) + 1  # its own nodes plus the index table
+        found = attached + (1 if self.table is not None else 0)
+        self._load_summary_is_warning = found == 0
+        if found == 0:
+            self._load_summary = (
+                f"Subcohort '{self.name}': found 0 of {total} result tables; "
+                f"check that this study was executed against this destination, "
+                f"with the same cohort name and sampler settings"
+            )
+            logger.warning(self._load_summary)
+        else:
+            self._load_summary = (
+                f"Subcohort '{self.name}': found {found} of {total} result "
+                f"tables in the destination (fetched on first access)"
+            )
+            logger.info(self._load_summary)
+            if self.table is None:
+                logger.warning(
+                    f"Subcohort '{self.name}': index table not found; "
+                    f"subcohort.table is None"
+                )
+        return self.table
+
+    def _build_subset_tables_entry_after_load(self):
+        """A loaded subcohort shares the parent's entry-subset tables."""
+        return self.cohort.subset_tables_entry
+
+    def _build_subset_tables_index_after_load(self):
+        """A loaded subcohort shares the parent's index-subset tables."""
+        return self.cohort.subset_tables_index
 
     # ------------------------------------------------------------------
     # Waterfall construction
