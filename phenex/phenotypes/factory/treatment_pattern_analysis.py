@@ -28,6 +28,7 @@ class TreatmentPatternAnalysis:
         name: Prefix added to generated phenotype names.
         days_between_periods: Number of days in each period. Default is 90.
         n_periods: Number of periods to generate. Default is 4.
+        initial_phenotypes: Optional phenotypes for a baseline "period 0", combined combinatorically like the other periods. Their relative_time_range is configured externally (not shifted per period).
 
     Attributes:
         output_phenotypes_dict: Dictionary mapping period labels to lists of StackableRegimen phenotypes.
@@ -74,6 +75,7 @@ class TreatmentPatternAnalysis:
         days_between_periods: int = 90,
         end_of_study_period: Optional[date] = None,
         n_periods: int = 4,
+        initial_phenotypes: Optional[List[Any]] = None,
     ):
         self.input_phenotypes = phenotypes
         self.regimen_keys = regimen_keys
@@ -81,6 +83,7 @@ class TreatmentPatternAnalysis:
         self.days_between_periods = days_between_periods
         self.end_of_study_period = end_of_study_period
         self.n_periods = n_periods
+        self.initial_phenotypes = initial_phenotypes
 
         self._output_phenotypes = None
         self._output_phenotypes_dict = None
@@ -117,10 +120,43 @@ class TreatmentPatternAnalysis:
         """Override to add a standalone, mutually exclusive 'censored' bin per period."""
         return None
 
+    def _create_initial_phenotypes(self):
+        """Baseline (period 0) phenotypes; relative_time_range is set externally, so no shifting is applied here."""
+        pts = []
+        for phenotype in self.initial_phenotypes:
+            pt = copy.deepcopy(phenotype)
+            pt.name = f"{self.name}{phenotype.name}0"
+            pt.table = None
+            pts.append(pt)
+        return pts
+
+    def _finalize_period(self, period_num, period_key, regimen):
+        self._output_phenotypes_dict[period_key] = regimen.output_phenotypes
+        self._output_phenotypes.extend(regimen.output_phenotypes)
+
+        # Annotate each output phenotype with TPA metadata for reporters
+        period_label = period_key.replace("_", " ")
+        for pt in regimen.output_phenotypes:
+            pt._tpa_name = self.name
+            pt._tpa_period_num = period_num
+            pt._tpa_period_label = period_label
+
     def _generate(self):
 
         self._output_phenotypes_dict = {}
         self._output_phenotypes = []
+
+        if self.initial_phenotypes is not None:
+            regimen = StackableRegimen(
+                name=f"{self.name}0",
+                phenotypes=self._create_initial_phenotypes(),
+                regimen_keys=self.regimen_keys,
+            )
+            self._finalize_period(
+                period_num=0,
+                period_key="distribution_of_patients_per_stacked_regimen_at_baseline",
+                regimen=regimen,
+            )
 
         for idx_period in range(self.n_periods):
 
@@ -138,15 +174,7 @@ class TreatmentPatternAnalysis:
                 f"distribution_of_patients_per_stacked_regimen_from_day_{idx_period * self.days_between_periods}"
                 f"_to_{(idx_period + 1) * self.days_between_periods}"
             )
-            self._output_phenotypes_dict[period_key] = regimen.output_phenotypes
-            self._output_phenotypes.extend(regimen.output_phenotypes)
-
-            # Annotate each output phenotype with TPA metadata for reporters
-            period_label = period_key.replace("_", " ")
-            for pt in regimen.output_phenotypes:
-                pt._tpa_name = self.name
-                pt._tpa_period_num = idx_period + 1
-                pt._tpa_period_label = period_label
+            self._finalize_period(idx_period + 1, period_key, regimen)
 
 
 
