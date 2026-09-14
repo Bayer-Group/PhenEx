@@ -198,7 +198,7 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
 
     _SANKEY_TYPES = {"equal_size_sankey", "relative_size_sankey"}
 
-    def __init__(self, sankey_type: str = "relative_size_sankey", **kwargs):
+    def __init__(self, sankey_type: str = "equal_size_sankey", **kwargs):
         if sankey_type not in self._SANKEY_TYPES:
             raise ValueError(
                 f"sankey_type must be one of {sorted(self._SANKEY_TYPES)}, got {sankey_type!r}"
@@ -706,7 +706,9 @@ allData.forEach(function(groupData) {
     return head + data_json + middle + colors_json + tail
 
 
-def _build_sankey_html_relative(sankey_data_list: list, version: str = "unknown") -> str:
+def _build_sankey_html_relative(
+    sankey_data_list: list, version: str = "unknown"
+) -> str:
     """Proportional stacked-bar sankey: each period is a vertical bar whose segment
     heights represent each regimen's percentage share of that period; flows between
     segments are ribbons scaled by the same percentage. Segments are sorted

@@ -182,11 +182,11 @@ class TreatmentPatternAnalysis:
             self._finalize_period(idx_period + 1, period_key, regimen)
 
 
-
 class TreatmentPatternAnalysisOnTreatment(TreatmentPatternAnalysis):
     """
     TreatmentPatternAnalysisOnTreatment receives TimeRangePhenotypes as inputs (not CodelistPhenotypes)
     """
+
     def _create_time_shifted_phenotypes(self, idx_period):
         pt_anchor_shifted = None
         if idx_period != 0:

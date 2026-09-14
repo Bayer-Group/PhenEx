@@ -9,7 +9,17 @@ logger = create_logger(__name__)
 
 
 class SankeyWriter(_BaseHtmlWriter):
-    """Generates a combined Sankey diagram HTML from per-cohort TPA JSON files."""
+    """Generates a combined Sankey diagram HTML from per-cohort TPA JSON files.
+
+    Parameters
+    ----------
+    sankey_type :
+        ``"equal_size_sankey"`` (default) or ``"relative_size_sankey"`` — see
+        :class:`~phenex.reporting.treatment_pattern_analysis_sankey.TreatmentPatternAnalysisSankeyReporter`.
+    """
+
+    def __init__(self, sankey_type: str = "equal_size_sankey") -> None:
+        self.sankey_type = sankey_type
 
     def write(
         self,
@@ -21,6 +31,13 @@ class SankeyWriter(_BaseHtmlWriter):
     ) -> None:
         from phenex.reporting.treatment_pattern_analysis_sankey import (
             _build_sankey_html,
+            _build_sankey_html_relative,
+        )
+
+        builder = (
+            _build_sankey_html
+            if self.sankey_type == "equal_size_sankey"
+            else _build_sankey_html_relative
         )
 
         all_entries = []
@@ -46,7 +63,5 @@ class SankeyWriter(_BaseHtmlWriter):
             return
 
         html_path = output_file.with_name(output_file.stem + f"_{report_type}.html")
-        html_path.write_text(
-            _build_sankey_html(all_entries, version=version), encoding="utf-8"
-        )
+        html_path.write_text(builder(all_entries, version=version), encoding="utf-8")
         logger.info(f"Generated sankey HTML: {html_path}")

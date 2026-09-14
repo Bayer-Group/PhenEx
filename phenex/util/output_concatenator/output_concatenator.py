@@ -75,6 +75,7 @@ class OutputConcatenator:
         study_name: str = "study",
         cohort_names: Optional[List[str]] = None,
         description: Optional[str] = None,
+        sankey_type: str = "relative_size_sankey",
     ) -> None:
         self.study_path = Path(study_execution_path)
         self.cohort_names = cohort_names
@@ -87,7 +88,7 @@ class OutputConcatenator:
         self._numeric_writer = Table1NumericSheetWriter()
         self._attrition_writer = SimplifiedAttritionTable()
         self._tte_writer = TimeToEventWriter()
-        self._sankey_writer = SankeyWriter()
+        self._sankey_writer = SankeyWriter(sankey_type=sankey_type)
         self._table1_html_writer = Table1HtmlWriter()
 
     # ------------------------------------------------------------------
