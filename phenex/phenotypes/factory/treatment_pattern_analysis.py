@@ -122,9 +122,14 @@ class TreatmentPatternAnalysis:
 
     def _create_initial_phenotypes(self):
         """Baseline (period 0) phenotypes; relative_time_range is set externally, so no shifting is applied here."""
+        # Shared memo: initial_phenotypes commonly cross-reference each other as
+        # anchor_phenotypes, so they must be deep-copied together to preserve a
+        # single shared clone of each anchor (deep-copying independently would
+        # produce duplicate, unexecuted clones under the same node name).
+        memo = {}
         pts = []
         for phenotype in self.initial_phenotypes:
-            pt = copy.deepcopy(phenotype)
+            pt = copy.deepcopy(phenotype, memo)
             pt.name = f"{self.name}{phenotype.name}0"
             pt.table = None
             pts.append(pt)
