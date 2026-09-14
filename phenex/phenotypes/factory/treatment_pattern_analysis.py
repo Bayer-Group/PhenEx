@@ -1,10 +1,14 @@
 import copy
+from datetime import date
 from typing import Optional, List, Dict, Any
 
 from phenex.phenotypes.factory.stackable_regimen import StackableRegimen
 from phenex.filters.relative_time_range_filter import RelativeTimeRangeFilter
-from phenex.filters.value import GreaterThanOrEqualTo, LessThan
+from phenex.filters.value import GreaterThanOrEqualTo, LessThanOrEqualTo, LessThan
+from phenex.filters.date_filter import DateFilter, AfterOrOn
 
+from phenex.phenotypes.time_shift_phenotype import TimeShiftPhenotype
+from phenex.phenotypes.further_value_filter_phenotype import FurtherValueFilterPhenotype
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
@@ -68,12 +72,14 @@ class TreatmentPatternAnalysis:
         regimen_keys: Optional[List[str]] = None,
         name: str = "tp",
         days_between_periods: int = 90,
+        end_of_study_period: Optional[date] = None,
         n_periods: int = 4,
     ):
         self.input_phenotypes = phenotypes
         self.regimen_keys = regimen_keys
         self.name = name
         self.days_between_periods = days_between_periods
+        self.end_of_study_period = end_of_study_period
         self.n_periods = n_periods
 
         self._output_phenotypes = None
@@ -91,6 +97,26 @@ class TreatmentPatternAnalysis:
             self._generate()
         return self._output_phenotypes_dict
 
+    def _create_time_shifted_phenotypes(self, idx_period):
+        period_filter = RelativeTimeRangeFilter(
+            when="after",
+            min_days=GreaterThanOrEqualTo((idx_period) * self.days_between_periods),
+            max_days=LessThan((idx_period + 1) * self.days_between_periods),
+        )
+
+        pts_in_period = []
+        for phenotype in self.input_phenotypes:
+            pt = copy.deepcopy(phenotype)
+            pt.name = f"{self.name}{phenotype.name}{idx_period + 1}"
+            pt.table = None
+            pt.relative_time_range = [period_filter]
+            pts_in_period.append(pt)
+        return pts_in_period
+
+    def _create_censored_phenotype(self, idx_period):
+        """Override to add a standalone, mutually exclusive 'censored' bin per period."""
+        return None
+
     def _generate(self):
 
         self._output_phenotypes_dict = {}
@@ -98,24 +124,14 @@ class TreatmentPatternAnalysis:
 
         for idx_period in range(self.n_periods):
 
-            period_filter = RelativeTimeRangeFilter(
-                when="after",
-                min_days=GreaterThanOrEqualTo((idx_period) * self.days_between_periods),
-                max_days=LessThan((idx_period + 1) * self.days_between_periods),
-            )
-
-            pts_in_period = []
-            for phenotype in self.input_phenotypes:
-                pt = copy.deepcopy(phenotype)
-                pt.name = f"{self.name}{phenotype.name}{idx_period + 1}"
-                pt.table = None
-                pt.relative_time_range = [period_filter]
-                pts_in_period.append(pt)
+            pts_in_period = self._create_time_shifted_phenotypes(idx_period)
+            pt_censored = self._create_censored_phenotype(idx_period)
 
             regimen = StackableRegimen(
                 name=f"{self.name}{idx_period + 1}",
                 phenotypes=pts_in_period,
                 regimen_keys=self.regimen_keys,
+                censored_phenotype=pt_censored,
             )
 
             period_key = (
@@ -131,3 +147,54 @@ class TreatmentPatternAnalysis:
                 pt._tpa_name = self.name
                 pt._tpa_period_num = idx_period + 1
                 pt._tpa_period_label = period_label
+
+
+
+class TreatmentPatternAnalysisOnTreatment(TreatmentPatternAnalysis):
+    """
+    TreatmentPatternAnalysisOnTreatment receives TimeRangePhenotypes as inputs (not CodelistPhenotypes)
+    """
+    def _create_time_shifted_phenotypes(self, idx_period):
+        pt_anchor_shifted = None
+        if idx_period != 0:
+            pt_anchor_shifted = TimeShiftPhenotype(
+                name=f"{self.name}_index_shifted_{idx_period + 1}",
+                domain="PERSON",
+                days=(idx_period) * self.days_between_periods,
+            )
+        # cached so _create_censored_phenotype reuses the same node instead of
+        # constructing a second phenotype with the same name
+        self._pt_anchor_shifted = pt_anchor_shifted
+
+        # Relative time range phenotype uses relativerangerangefilter to filter number of days to start/end date. We don't set any min/max values
+        period_filter = RelativeTimeRangeFilter(
+            when="before",
+            anchor_phenotype=pt_anchor_shifted,
+        )
+
+        pts_in_period = []
+        for phenotype in self.input_phenotypes:
+            pt = copy.deepcopy(phenotype)
+            pt.name = f"{self.name}{phenotype.name}{idx_period + 1}"
+            pt.table = None
+            pt.relative_time_range = period_filter
+            # relative_time_range was assigned post-construction, so the anchor dependency normally registered in __init__ must be added manually.
+            if idx_period != 0:
+                pt.add_children(pt_anchor_shifted)
+            pts_in_period.append(pt)
+        return pts_in_period
+
+    def _create_censored_phenotype(self, idx_period):
+        if self.end_of_study_period is None:
+            return None
+        # censored: the period's anchor date (INDEX_DATE for period 0) is on/after end_of_study_period
+        anchor_for_censoring = self._pt_anchor_shifted or TimeShiftPhenotype(
+            name=f"{self.name}_index_shifted_{idx_period + 1}",
+            domain="PERSON",
+            days=0,
+        )
+        return FurtherValueFilterPhenotype(
+            name=f"{self.name}censored{idx_period + 1}",
+            phenotype=anchor_for_censoring,
+            date_range=DateFilter(min_date=AfterOrOn(self.end_of_study_period)),
+        )
