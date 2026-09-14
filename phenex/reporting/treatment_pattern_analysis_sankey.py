@@ -185,7 +185,26 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
         Self-contained HTML page with one d3-sankey SVG per TPA group.
     ``to_png(filename)``
         PNG screenshot of that HTML (requires ``playwright``).
+
+    Parameters
+    ----------
+    sankey_type :
+        ``"equal_size_sankey"`` (default) draws the grid bump-chart where every
+        regimen row has equal height regardless of patient count.
+        ``"relative_size_sankey"`` draws each period as a vertical bar whose
+        segment heights are proportional to each regimen's percentage share of
+        that period, with flows scaled the same way.
     """
+
+    _SANKEY_TYPES = {"equal_size_sankey", "relative_size_sankey"}
+
+    def __init__(self, sankey_type: str = "relative_size_sankey", **kwargs):
+        if sankey_type not in self._SANKEY_TYPES:
+            raise ValueError(
+                f"sankey_type must be one of {sorted(self._SANKEY_TYPES)}, got {sankey_type!r}"
+            )
+        super().__init__(**kwargs)
+        self.sankey_type = sankey_type
 
     @property
     def name(self):
@@ -278,7 +297,12 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
             {"tpa_name": name, "nodes": gen.nodes, "links": gen.links}
             for name, gen in self.sankey_generators.items()
         ]
-        filepath.write_text(_build_sankey_html(sankey_data_list), encoding="utf-8")
+        builder = (
+            _build_sankey_html
+            if self.sankey_type == "equal_size_sankey"
+            else _build_sankey_html_relative
+        )
+        filepath.write_text(builder(sankey_data_list), encoding="utf-8")
         return str(filepath.absolute())
 
     def to_png(self, filename: str) -> str:
@@ -321,6 +345,31 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
 # ---------------------------------------------------------------------------
 
 
+def _load_icon_data_uri() -> str:
+    """Embed the PhenEx bird icon as a base64 data URI, or "" if not found."""
+    icon_path = (
+        Path(__file__).resolve().parent.parent.parent
+        / "docs"
+        / "assets"
+        / "bird_icon.png"
+    )
+    if not icon_path.exists():
+        return ""
+    icon_b64 = base64.b64encode(icon_path.read_bytes()).decode("ascii")
+    return f"data:image/png;base64,{icon_b64}"
+
+
+def _render_footer_html(icon_data_uri: str, version: str) -> str:
+    from html import escape
+
+    version_escaped = escape(version)
+    icon_img = f'<img src="{icon_data_uri}" alt="PhenEx">' if icon_data_uri else ""
+    return (
+        f'<div class="phenex-footer">{icon_img}'
+        f"<span>Generated with PhenEx v{version_escaped}</span></div>"
+    )
+
+
 def _build_sankey_html(sankey_data_list: list, version: str = "unknown") -> str:
     """Grid bump-chart: rows = regimen combos grouped by stack size (Single / Dual / Triple…),
     columns = time periods.  A dot (diameter = MAX_THICK) marks every (regimen, period) cell
@@ -329,23 +378,7 @@ def _build_sankey_html(sankey_data_list: list, version: str = "unknown") -> str:
     """
     data_json = json.dumps(sankey_data_list, default=str)
     colors_json = json.dumps(_COLORS)
-
-    # Embed bird icon as base64 data URI
-    icon_path = (
-        Path(__file__).resolve().parent.parent.parent
-        / "docs"
-        / "assets"
-        / "bird_icon.png"
-    )
-    if icon_path.exists():
-        icon_b64 = base64.b64encode(icon_path.read_bytes()).decode("ascii")
-        icon_data_uri = f"data:image/png;base64,{icon_b64}"
-    else:
-        icon_data_uri = ""
-
-    from html import escape
-
-    version_escaped = escape(version)
+    icon_data_uri = _load_icon_data_uri()
 
     head = """\
 <!DOCTYPE html>
@@ -664,17 +697,243 @@ allData.forEach(function(groupData) {
 });
 </script>
 """
-        + (
-            '<div class="phenex-footer"><img src="'
-            + icon_data_uri
-            + '" alt="PhenEx"><span>Generated with PhenEx v'
-            + version_escaped
-            + "</span></div>"
-            if icon_data_uri
-            else '<div class="phenex-footer"><span>Generated with PhenEx v'
-            + version_escaped
-            + "</span></div>"
-        )
+        + _render_footer_html(icon_data_uri, version)
+        + """
+</body>
+</html>"""
+    )
+
+    return head + data_json + middle + colors_json + tail
+
+
+def _build_sankey_html_relative(sankey_data_list: list, version: str = "unknown") -> str:
+    """Proportional stacked-bar sankey: each period is a vertical bar whose segment
+    heights represent each regimen's percentage share of that period; flows between
+    segments are ribbons scaled by the same percentage. Segments are sorted
+    greatest-to-least; segments >10% carry a permanent label, others reveal on hover.
+    """
+    data_json = json.dumps(sankey_data_list, default=str)
+    colors_json = json.dumps(_COLORS)
+    icon_data_uri = _load_icon_data_uri()
+
+    head = """\
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8">
+<title>Treatment Pattern Flow</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #fff; margin: 0; padding: 20px 20px 60px 20px; }
+  .diagram-section { margin-bottom: 60px; }
+  .diagram-title { font-size: 15px; font-weight: bold; color: #333; margin: 0 0 8px 0; }
+  .phenex-footer { position: fixed; bottom: 0; left: 0; padding: 10px 16px;
+    display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.9);
+    z-index: 9999; }
+  .phenex-footer img { height: 24px; width: auto; }
+  .phenex-footer span { font-size: 11px; color: #999; }
+</style>
+</head>
+<body>
+<div id="charts"></div>
+<script>
+const allData = """
+
+    middle = """;
+const COLORS = """
+
+    tail = (
+        """;
+
+/* ── layout constants ───────────────────────────────────────────────────── */
+var BAR_W = 34, FULL_H = 420, GAP = 2;
+var PERIOD_SPC = 230, LEFT = 40, TOP = 60, RIGHT = 180;
+var LABEL_THRESHOLD = 0.10;
+var NS = 'http://www.w3.org/2000/svg';
+
+/* ── tiny SVG helpers ───────────────────────────────────────────────────── */
+function mkEl(tag, attrs, parent) {
+  var e = document.createElementNS(NS, tag);
+  if (attrs) Object.keys(attrs).forEach(function(k) { e.setAttribute(k, attrs[k]); });
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function mkTip(text, parent) {
+  var t = document.createElementNS(NS, 'title');
+  t.textContent = text;
+  parent.appendChild(t);
+}
+function mkTxt(text, attrs, parent) {
+  var e = mkEl('text', attrs, parent);
+  e.textContent = text;
+  return e;
+}
+function shortPeriodLabel(label, num) {
+  var m = label.match(/from day (\\d+) to (\\d+)/i);
+  return m ? 'D' + m[1] + '\u2013' + m[2] : 'P' + num;
+}
+function pctLabel(name, pct) {
+  return name + ' (' + (pct * 100).toFixed(1) + '%)';
+}
+
+/* ── main render loop ───────────────────────────────────────────────────── */
+allData.forEach(function(groupData) {
+  var container = document.getElementById('charts');
+  var section   = document.createElement('div');
+  section.className = 'diagram-section';
+  container.appendChild(section);
+
+  var titleEl = document.createElement('p');
+  titleEl.className = 'diagram-title';
+  titleEl.textContent = 'Treatment Pattern Flow: ' + groupData.tpa_name;
+  section.appendChild(titleEl);
+
+  var nodes = groupData.nodes || [];
+  var links = groupData.links || [];
+  if (nodes.length === 0) return;
+
+  var periods = Array.from(new Set(nodes.map(function(n) { return n.period; })))
+    .sort(function(a, b) { return a - b; });
+
+  /* group + sort nodes greatest-to-least within each period */
+  var byPeriod = {};
+  periods.forEach(function(p) {
+    byPeriod[p] = nodes.filter(function(n) { return n.period === p; })
+      .sort(function(a, b) { return b.value - a.value; });
+  });
+  var periodTotal = {};
+  periods.forEach(function(p) {
+    periodTotal[p] = byPeriod[p].reduce(function(s, n) { return s + n.value; }, 0) || 1;
+  });
+
+  /* stable colour per regimen name across periods */
+  var allUniq = Array.from(new Set(nodes.map(function(n) { return n.display_name; }))).sort();
+  var colorMap = {};
+  allUniq.forEach(function(nm, i) { colorMap[nm] = COLORS[i % COLORS.length]; });
+
+  /* x positions + period column labels */
+  var periodX = {}, periodLabel = {};
+  periods.forEach(function(p, i) {
+    periodX[p] = LEFT + i * PERIOD_SPC;
+    var pNode = byPeriod[p][0];
+    periodLabel[p] = pNode ? shortPeriodLabel(pNode.period_label, p) : ('P' + p);
+  });
+
+  /* stack segments top-down within each period, height proportional to % share */
+  periods.forEach(function(p) {
+    var y = 0;
+    byPeriod[p].forEach(function(n) {
+      n._pct = n.value / periodTotal[p];
+      n._y0 = y;
+      n._y1 = y + n._pct * FULL_H;
+      y = n._y1 + GAP;
+    });
+  });
+
+  /* svg canvas */
+  var svgW = LEFT + (periods.length - 1) * PERIOD_SPC + BAR_W + RIGHT;
+  var svgH = TOP + FULL_H + 30;
+  var svg  = mkEl('svg', { width: svgW, height: svgH });
+  section.appendChild(svg);
+  var g = mkEl('g', { transform: 'translate(0,' + TOP + ')' }, svg);
+
+  periods.forEach(function(p) {
+    mkTxt(periodLabel[p], {
+      x: periodX[p] + BAR_W / 2, y: -14, 'text-anchor': 'middle',
+      'font-size': '11px', 'font-weight': 'bold', fill: '#444'
+    }, svg);
+  });
+
+  /* allocate proportional sub-ranges of each node's span among its flows,
+     ordered by the counterpart node's position to reduce ribbon crossings */
+  var outGroups = {}, inGroups = {};
+  links.forEach(function(lk) {
+    var s = nodes[lk.source], t = nodes[lk.target];
+    var skey = s.period + '|' + s.display_name, tkey = t.period + '|' + t.display_name;
+    (outGroups[skey] = outGroups[skey] || []).push(lk);
+    (inGroups[tkey] = inGroups[tkey] || []).push(lk);
+  });
+  function allocate(groups, endKey, otherKey, y0Key, y1Key) {
+    Object.keys(groups).forEach(function(key) {
+      var group = groups[key];
+      group.sort(function(a, b) { return nodes[a[otherKey]]._y0 - nodes[b[otherKey]]._y0; });
+      var node = nodes[group[0][endKey]];
+      var span = node._y1 - node._y0;
+      var cum = node._y0;
+      group.forEach(function(lk) {
+        var h = (lk.value / node.value) * span;
+        lk[y0Key] = cum; lk[y1Key] = cum + h;
+        cum += h;
+      });
+    });
+  }
+  allocate(outGroups, 'source', 'target', '_sy0', '_sy1');
+  allocate(inGroups, 'target', 'source', '_ty0', '_ty1');
+
+  /* ribbons: two bezier edges (top/bottom) forming a filled flow polygon */
+  links.forEach(function(lk) {
+    var s = nodes[lk.source], t = nodes[lk.target];
+    if (lk._sy0 === undefined || lk._ty0 === undefined) return;
+    var x1 = periodX[s.period] + BAR_W, x2 = periodX[t.period];
+    var mx = (x1 + x2) / 2;
+    var d = 'M' + x1 + ',' + lk._sy0 +
+      ' C' + mx + ',' + lk._sy0 + ' ' + mx + ',' + lk._ty0 + ' ' + x2 + ',' + lk._ty0 +
+      ' L' + x2 + ',' + lk._ty1 +
+      ' C' + mx + ',' + lk._ty1 + ' ' + mx + ',' + lk._sy1 + ' ' + x1 + ',' + lk._sy1 +
+      ' Z';
+    var path = mkEl('path', {
+      d: d, fill: colorMap[s.display_name] || '#888', 'fill-opacity': 0.35,
+      stroke: 'none', 'data-regimen': s.display_name, 'data-to': t.display_name
+    }, g);
+    mkTip(s.display_name + ' \u2192 ' + t.display_name + '\\n' + lk.value + ' patients', path);
+  });
+
+  /* segments (nodes) + labels, drawn on top of the ribbons */
+  var allRects = [], allLabels = [];
+  periods.forEach(function(p) {
+    byPeriod[p].forEach(function(n) {
+      var rect = mkEl('rect', {
+        x: periodX[p], y: n._y0, width: BAR_W, height: Math.max(0.5, n._y1 - n._y0),
+        fill: colorMap[n.display_name] || '#888', stroke: '#fff', 'stroke-width': 1,
+        'data-regimen': n.display_name
+      }, g);
+      mkTip(pctLabel(n.display_name, n._pct) + ' \u2014 ' + n.value + ' patients (' + periodLabel[p] + ')', rect);
+      allRects.push(rect);
+
+      var label = mkTxt(pctLabel(n.display_name, n._pct), {
+        x: periodX[p] + BAR_W + 6, y: (n._y0 + n._y1) / 2 + 4,
+        'font-size': '11px', fill: colorMap[n.display_name] || '#333',
+        opacity: n._pct > LABEL_THRESHOLD ? 1 : 0,
+        'data-regimen': n.display_name, 'data-permanent': n._pct > LABEL_THRESHOLD ? '1' : '0'
+      }, g);
+      allLabels.push(label);
+
+      rect.addEventListener('mouseover', function() {
+        allRects.forEach(function(r) {
+          r.setAttribute('fill-opacity', r.getAttribute('data-regimen') === n.display_name ? 1 : 0.15);
+        });
+        g.querySelectorAll('path[data-regimen]').forEach(function(pth) {
+          var related = pth.getAttribute('data-regimen') === n.display_name ||
+                        pth.getAttribute('data-to') === n.display_name;
+          pth.setAttribute('fill-opacity', related ? 0.7 : 0.05);
+        });
+        allLabels.forEach(function(l) {
+          l.setAttribute('opacity', l.getAttribute('data-regimen') === n.display_name ? 1 : 0.1);
+        });
+      });
+      rect.addEventListener('mouseout', function() {
+        allRects.forEach(function(r) { r.setAttribute('fill-opacity', 1); });
+        g.querySelectorAll('path[data-regimen]').forEach(function(pth) {
+          pth.setAttribute('fill-opacity', 0.35);
+        });
+        allLabels.forEach(function(l) {
+          l.setAttribute('opacity', l.getAttribute('data-permanent') === '1' ? 1 : 0);
+        });
+      });
+    });
+  });
+});
+</script>
+"""
+        + _render_footer_html(icon_data_uri, version)
         + """
 </body>
 </html>"""
