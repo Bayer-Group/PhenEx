@@ -213,10 +213,12 @@ class OutputConcatenator:
             "waterfall.json",
             "TimeToEvent.json",
             "Table2.json",
+            "TreatmentPatternSankey.json",
         ]
 
         for filename in _COHORT_KEYED_FILES:
             is_table1 = filename.startswith("table1")
+            is_sankey = filename == "TreatmentPatternSankey.json"
             combined: dict = {}
             combined_kdes: dict = {}
 
@@ -231,6 +233,11 @@ class OutputConcatenator:
                     data = {
                         "rows": data.get("rows", []),
                         "sections": data.get("sections", {}),
+                    }
+                elif is_sankey:
+                    data = {
+                        "sankey_data": data.get("sankey_data", []),
+                        "rows": data.get("rows", []),
                     }
                 else:
                     data = data.get("rows", data)
