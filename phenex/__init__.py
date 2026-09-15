@@ -112,6 +112,7 @@ from .derived_tables import (
     CombineOverlappingPeriods,
     EventsToTimeRange,
     MinMaxDatesToTimeRange,
+    IntersectTimePeriods,
 )
 
 # Serialization utilities
@@ -221,6 +222,7 @@ __all__ = [
     "CombineOverlappingPeriods",
     "EventsToTimeRange",
     "MinMaxDatesToTimeRange",
+    "IntersectTimePeriods",
     # Serialization
     "dump",
     "dumps",
