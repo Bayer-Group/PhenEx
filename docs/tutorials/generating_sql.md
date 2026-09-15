@@ -77,6 +77,9 @@ A subcohort builds its index only during `execute()`, so after a kernel restart 
 After a kernel restart, re-run the cells that define the cohort (but **not**
 `execute()`), then call `cohort.to_sql()` to read your saved SQL back.
 
+To get the result tables and reports back the same way, see
+[Loading saved results](loading_results.md).
+
 ### Seeing where a query came from
 
 Each resolve logs its source at `INFO` (memory, a file, or the cache):

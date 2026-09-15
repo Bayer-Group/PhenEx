@@ -73,6 +73,43 @@ class Node:
     # Class-level node manager for state tracking
     _node_manager = NodeManager()
 
+    # Class-level defaults so the table getter is safe before __init__ runs
+    _table = None
+    _table_loader = None
+
+    @property
+    def table(self) -> Optional[Table]:
+        """This step's result table. After load(), the first read fetches it
+        from the database and keeps it."""
+        if self._table is None and self._table_loader is not None:
+            # Two threads may arrive together; the worst case is one extra
+            # harmless read, and the assignment itself is safe
+            loader, self._table_loader = self._table_loader, None
+            self._table = loader()
+        return self._table
+
+    @table.setter
+    def table(self, value: Optional[Table]) -> None:
+        """Set the result directly, forgetting any address left by load()."""
+        self._table = value
+        self._table_loader = None
+
+    def attach_lazy_table(self, con: "DatabaseConnector", db_name: str) -> None:
+        """Note where this step's saved table lives, without reading it.
+        The first read of `table` fetches it. Used by load()."""
+        self._table = None
+
+        def _load() -> Optional[Table]:
+            try:
+                return con.get_dest_table(db_name)
+            except Exception as e:
+                logger.warning(
+                    f"Node '{self.name}': could not attach table '{db_name}': {e}"
+                )
+                return None
+
+        self._table_loader = _load
+
     def __init__(self, name: Optional[str] = None):
         self._name = name or type(self).__name__
         self._children = []

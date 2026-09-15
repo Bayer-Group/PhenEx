@@ -362,6 +362,12 @@ class SnowflakeConnector:
             name_table, database=self.SNOWFLAKE_DEST_DATABASE
         )
 
+    def list_dest_tables(self) -> List[str]:
+        """Names of all tables in the destination Snowflake database."""
+        if self.SNOWFLAKE_DEST_DATABASE is None:
+            raise ValueError("Must specify SNOWFLAKE_DEST_DATABASE!")
+        return self.dest_connection.list_tables(database=self.SNOWFLAKE_DEST_DATABASE)
+
     def _get_output_table_name(self, table):
         if table.has_name:
             name_table = table.get_name().split(".")[-1]
@@ -625,6 +631,12 @@ class DuckDBConnector:
         if self.dest_connection is None:
             raise ValueError("Must specify DUCKDB_DEST_DATABASE!")
         return self.dest_connection.table(name_table)
+
+    def list_dest_tables(self) -> List[str]:
+        """Names of all tables in the destination DuckDB database."""
+        if self.dest_connection is None:
+            raise ValueError("Must specify DUCKDB_DEST_DATABASE!")
+        return self.dest_connection.list_tables()
 
     def create_view(self, table, name_table=None, overwrite=False):
         """
@@ -893,6 +905,14 @@ class PostgresConnector:
             raise ValueError(
                 f"Table '{name_table}' does not exist in destination database/schema."
             )
+
+    def list_dest_tables(self) -> List[str]:
+        """Names of all tables in the destination PostgreSQL database/schema."""
+        if self.POSTGRES_DEST_DATABASE is None:
+            raise ValueError("Must specify POSTGRES_DEST_DATABASE!")
+        return self.dest_connection.list_tables(
+            database=(self.POSTGRES_DEST_DATABASE, self.POSTGRES_DEST_SCHEMA)
+        )
 
     def _get_output_table_name(
         self, table: Table, name_table: Optional[str] = None
