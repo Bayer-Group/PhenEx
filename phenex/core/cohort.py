@@ -71,6 +71,8 @@ class Cohort:
         custom_reporters: Additional reporter instances to run on this cohort only, after the default Waterfall and Table1 reporters. Each reporter must implement ``execute(cohort)`` and ``to_json(path)``.
         write_subset_tables_entry: If True (default), materialize the entry-subset tables to the destination database. If False, keep them as lazy expressions instead.
         write_subset_tables_index: If True (default), materialize the index-subset tables to the destination database. If False, keep them as lazy expressions instead.
+        write_characteristics_table: If True (default), materialize the characteristics table to the destination database. If False, keep it as a lazy expression, stacked from the saved characteristic tables on first read.
+        write_outcomes_table: If True (default), materialize the outcomes table to the destination database. If False, keep it as a lazy expression, stacked from the saved outcome tables on first read.
 
     Attributes:
         table (PhenotypeTable): The resulting index table after filtering (None until execute is called)
@@ -488,6 +490,8 @@ class Cohort:
         # Post-index / reporting stage: OPTIONAL
         #
         reporting_nodes = []
+        self._characteristics_table_lazy = None
+        self._outcomes_table_lazy = None
 
         if self.characteristics and self.write_characteristics_table:
             self.characteristics_table_node = HStackNode(
@@ -610,15 +614,55 @@ class Cohort:
     def index_table(self):
         return self.index_table_node.table
 
+    # With a write flag off, execute() never makes the stacked table, so it is
+    # built here on first read from the saved results.
+    _characteristics_table_lazy = None
+    _outcomes_table_lazy = None
+
     @property
     def characteristics_table(self):
-        if self.characteristics_table_node:
+        if self.characteristics_table_node is not None:
             return self.characteristics_table_node.table
+        if self.characteristics and not self.write_characteristics_table:
+            return self._stack_after_the_fact("characteristics")
+        return None
 
     @property
     def outcomes_table(self):
-        if self.outcomes_table_node:
+        if self.outcomes_table_node is not None:
             return self.outcomes_table_node.table
+        if self.outcomes and not self.write_outcomes_table:
+            return self._stack_after_the_fact("outcomes")
+        return None
+
+    def _stack_after_the_fact(self, which: str) -> Optional[Table]:
+        """The characteristics or outcomes table when its write flag is off:
+        the same stack execute() would have written, built lazily from the
+        saved phenotype tables and the index. Built once; a missing input
+        warns and reads as None."""
+        from phenex.phenotypes.functions import hstack_pivot
+
+        cache = f"_{which}_table_lazy"
+        if getattr(self, cache) is None:
+            phenotypes = getattr(self, which)
+            missing = [p.name for p in phenotypes if p.table is None]
+            index = self.index_table if self.index_table_node is not None else None
+            if missing or index is None:
+                logger.warning(
+                    f"Cohort '{self.name}': cannot build the {which} table; "
+                    + (
+                        f"these {which} have no saved result: {missing}"
+                        if missing
+                        else "the index table is not available"
+                    )
+                )
+                return None
+            logger.info(
+                f"Cohort '{self.name}': {which} table was not written to the "
+                f"destination; stacking it from the saved {which} tables"
+            )
+            setattr(self, cache, hstack_pivot(phenotypes, join_table=index))
+        return getattr(self, cache)
 
     def get_subset_tables_entry(self, tables):
         """
