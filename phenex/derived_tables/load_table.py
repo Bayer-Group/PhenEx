@@ -69,7 +69,9 @@ class LoadTable(Node):
         self.database = database
         self.function = function
         self.function_string = function_string
-        super(LoadTable, self).__init__(name=name if name is not None else self.table_name, **kwargs)
+        super(LoadTable, self).__init__(
+            name=name if name is not None else self.table_name, **kwargs
+        )
 
     def to_dict(self):
         _dict = super().to_dict()

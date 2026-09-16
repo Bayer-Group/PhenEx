@@ -481,6 +481,85 @@ def test_events_to_time_range_duplicate_days_column_mixed_null():
     test_generator.run_tests(verbose=True)
 
 
+class EventsToTimeRangeExitDomainTestGenerator(DerivedTablesTestGenerator):
+    """
+    Test that EventsToTimeRange truncates END_DATE early when a contradictory
+    observation appears in exit_domain within the tentative period.
+
+    P1: exit event partway through the window → END_DATE truncated to the day
+        before the exit event.
+    P2: exit event on the same day as START_DATE (same-day discordant) → END_DATE
+        equals START_DATE.
+    P3: exit event after the tentative END_DATE → no truncation.
+    P4: no exit event at all → no truncation.
+    """
+
+    name_space = "ettr_exit_domain"
+
+    def define_input_tables(self):
+        df_start = pd.DataFrame.from_records(
+            [
+                ("P1", "c1", "2022-01-01"),
+                ("P2", "c1", "2022-01-01"),
+                ("P3", "c1", "2022-01-01"),
+                ("P4", "c1", "2022-01-01"),
+            ],
+            columns=["PERSON_ID", "CODE", "EVENT_DATE"],
+        )
+        df_start["EVENT_DATE"] = pd.to_datetime(df_start["EVENT_DATE"])
+
+        df_exit = pd.DataFrame.from_records(
+            [
+                ("P1", "2022-01-10"),
+                ("P2", "2022-01-01"),
+                ("P3", "2022-03-01"),
+            ],
+            columns=["PERSON_ID", "EVENT_DATE"],
+        )
+        df_exit["EVENT_DATE"] = pd.to_datetime(df_exit["EVENT_DATE"])
+
+        return [
+            {"name": "DRUG_EXPOSURE", "df": df_start},
+            {"name": "EXIT_EVENTS", "df": df_exit},
+        ]
+
+    def define_derived_table_tests(self):
+        df_expected = pd.DataFrame.from_records(
+            [
+                ("P1", "2022-01-01", "2022-01-09"),
+                ("P2", "2022-01-01", "2022-01-01"),
+                ("P3", "2022-01-01", "2022-01-11"),
+                ("P4", "2022-01-01", "2022-01-11"),
+            ],
+            columns=["PERSON_ID", "START_DATE", "END_DATE"],
+        )
+        df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
+        df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
+
+        cl = Codelist(["c1"])
+        ettr = EventsToTimeRange(
+            name="COMBINED_EVENTS",
+            domain="DRUG_EXPOSURE",
+            codelist=cl,
+            max_days=10,
+            exit_domain="EXIT_EVENTS",
+        )
+
+        return [
+            {
+                "name": "events_to_time_range_exit_domain_test",
+                "derived_table": ettr,
+                "expected_df": df_expected,
+                "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
+            }
+        ]
+
+
+def test_events_to_time_range_exit_domain():
+    test_generator = EventsToTimeRangeExitDomainTestGenerator()
+    test_generator.run_tests(verbose=True)
+
+
 if __name__ == "__main__":
     test_events_to_time_range_less_than()
     test_events_to_time_range_less_than_or_equal_to()
@@ -488,3 +567,5 @@ if __name__ == "__main__":
     test_events_to_time_range_days_columnname()
     test_events_to_time_range_days_columnname_null_fallback()
     test_events_to_time_range_gap_period()
+    test_events_to_time_range_exit_domain()
+

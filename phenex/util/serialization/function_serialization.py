@@ -30,7 +30,5 @@ def deserialize_function(function_string: str) -> Callable:
         if callable(value) and not key.startswith("__")
     ]
     if not functions:
-        raise ValueError(
-            "function_string did not define any callable."
-        )
+        raise ValueError("function_string did not define any callable.")
     return functions[-1]
