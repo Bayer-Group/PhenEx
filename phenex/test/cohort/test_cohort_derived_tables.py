@@ -145,4 +145,3 @@ def test_wire_derived_table_dependencies_wires_domain_and_exit_domain_together()
 
     assert domain_upstream in downstream.children
     assert exit_upstream in downstream.children
-

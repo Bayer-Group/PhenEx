@@ -568,4 +568,3 @@ if __name__ == "__main__":
     test_events_to_time_range_days_columnname_null_fallback()
     test_events_to_time_range_gap_period()
     test_events_to_time_range_exit_domain()
-
