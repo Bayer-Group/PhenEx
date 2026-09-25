@@ -28,6 +28,13 @@ class TreatmentPatternAnalysis:
         name: Prefix added to generated phenotype names.
         days_between_periods: Number of days in each period. Default is 90.
         n_periods: Number of periods to generate. Default is 4.
+        time_periods: Optional explicit list of period indices to generate, e.g.
+            ``list(range(-4, 4))``. Each index ``p`` defines the window
+            ``[p * days_between_periods, (p + 1) * days_between_periods)`` relative to the
+            index date, so ``0`` is the first post-index period, positive indices are later
+            post-index periods, and negative indices are pre-index periods. When provided,
+            it takes precedence over ``n_periods``. If any negative index is included,
+            ``initial_phenotypes`` must be None.
         initial_phenotypes: Optional phenotypes for a baseline "period 0", combined combinatorically like the other periods. Their relative_time_range is configured externally (not shifted per period).
 
     Attributes:
@@ -75,6 +82,7 @@ class TreatmentPatternAnalysis:
         days_between_periods: int = 90,
         end_of_study_period: Optional[date] = None,
         n_periods: int = 4,
+        time_periods: Optional[List[int]] = None,
         initial_phenotypes: Optional[List[Any]] = None,
     ):
         self.input_phenotypes = phenotypes
@@ -83,10 +91,26 @@ class TreatmentPatternAnalysis:
         self.days_between_periods = days_between_periods
         self.end_of_study_period = end_of_study_period
         self.n_periods = n_periods
+        self.time_periods = time_periods
         self.initial_phenotypes = initial_phenotypes
+
+        if any(p < 0 for p in self._periods) and initial_phenotypes is not None:
+            raise ValueError(
+                "initial_phenotypes must be None when negative (pre-index) time_periods "
+                "are included."
+            )
 
         self._output_phenotypes = None
         self._output_phenotypes_dict = None
+
+    @property
+    def _periods(self) -> List[int]:
+        """The explicit list of period indices to generate; falls back to
+        ``range(n_periods)`` (the classic all-post-index behavior) when
+        ``time_periods`` is not provided."""
+        if self.time_periods is not None:
+            return list(self.time_periods)
+        return list(range(self.n_periods))
 
     @property
     def output_phenotypes(self):
@@ -100,6 +124,15 @@ class TreatmentPatternAnalysis:
             self._generate()
         return self._output_phenotypes_dict
 
+    @staticmethod
+    def _period_suffix(idx_period: int) -> str:
+        """Unique, name-safe suffix for a period index. Post-index periods keep the
+        classic 1-based suffix (0 -> '1', 1 -> '2', ...); pre-index periods use a
+        'pre' prefix ('pre1', 'pre2', ...) so names stay unique and free of '-'."""
+        if idx_period >= 0:
+            return str(idx_period + 1)
+        return f"pre{abs(idx_period)}"
+
     def _create_time_shifted_phenotypes(self, idx_period):
         period_filter = RelativeTimeRangeFilter(
             when="after",
@@ -110,7 +143,7 @@ class TreatmentPatternAnalysis:
         pts_in_period = []
         for phenotype in self.input_phenotypes:
             pt = copy.deepcopy(phenotype)
-            pt.name = f"{self.name}{phenotype.name}{idx_period + 1}"
+            pt.name = f"{self.name}{phenotype.name}{self._period_suffix(idx_period)}"
             pt.table = None
             pt.relative_time_range = [period_filter]
             pts_in_period.append(pt)
@@ -163,13 +196,13 @@ class TreatmentPatternAnalysis:
                 regimen=regimen,
             )
 
-        for idx_period in range(self.n_periods):
+        for idx_period in self._periods:
 
             pts_in_period = self._create_time_shifted_phenotypes(idx_period)
             pt_censored = self._create_censored_phenotype(idx_period)
 
             regimen = StackableRegimen(
-                name=f"{self.name}{idx_period + 1}",
+                name=f"{self.name}{self._period_suffix(idx_period)}",
                 phenotypes=pts_in_period,
                 regimen_keys=self.regimen_keys,
                 censored_phenotype=pt_censored,
@@ -191,7 +224,7 @@ class TreatmentPatternAnalysisOnTreatment(TreatmentPatternAnalysis):
         pt_anchor_shifted = None
         if idx_period != 0:
             pt_anchor_shifted = TimeShiftPhenotype(
-                name=f"{self.name}_index_shifted_{idx_period + 1}",
+                name=f"{self.name}_index_shifted_{self._period_suffix(idx_period)}",
                 domain="PERSON",
                 days=(idx_period) * self.days_between_periods,
             )
@@ -208,7 +241,7 @@ class TreatmentPatternAnalysisOnTreatment(TreatmentPatternAnalysis):
         pts_in_period = []
         for phenotype in self.input_phenotypes:
             pt = copy.deepcopy(phenotype)
-            pt.name = f"{self.name}{phenotype.name}{idx_period + 1}"
+            pt.name = f"{self.name}{phenotype.name}{self._period_suffix(idx_period)}"
             pt.table = None
             pt.relative_time_range = period_filter
             # relative_time_range was assigned post-construction, so the anchor dependency normally registered in __init__ must be added manually.
@@ -222,12 +255,12 @@ class TreatmentPatternAnalysisOnTreatment(TreatmentPatternAnalysis):
             return None
         # censored: the period's anchor date (INDEX_DATE for period 0) is on/after end_of_study_period
         anchor_for_censoring = self._pt_anchor_shifted or TimeShiftPhenotype(
-            name=f"{self.name}_index_shifted_{idx_period + 1}",
+            name=f"{self.name}_index_shifted_{self._period_suffix(idx_period)}",
             domain="PERSON",
             days=0,
         )
         return FurtherValueFilterPhenotype(
-            name=f"{self.name}censored{idx_period + 1}",
+            name=f"{self.name}censored{self._period_suffix(idx_period)}",
             phenotype=anchor_for_censoring,
             date_range=DateFilter(min_date=AfterOrOn(self.end_of_study_period)),
         )
