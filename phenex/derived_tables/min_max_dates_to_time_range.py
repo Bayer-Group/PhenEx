@@ -2,13 +2,13 @@ from typing import Dict
 from ibis.expr.types.relations import Table
 import ibis
 
-from phenex.node import Node
+from phenex.node import DerivedTable
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
 
 
-class MinMaxDatesToTimeRange(Node):
+class MinMaxDatesToTimeRange(DerivedTable):
     """
     MinMaxDatesToTimeRange identifies a global start and end date for each patient.
     The start date is the first EVENT_DATE associated with a patient, and the end date is
