@@ -3,7 +3,7 @@ from ibis.expr.types.relations import Table
 import ibis
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.filters.codelist_filter import CodelistFilter
-from phenex.node import Node
+from phenex.node import DerivedTable
 from phenex.util import create_logger
 from phenex.codelists import Codelist
 
@@ -12,7 +12,7 @@ from .combine_overlapping_periods import CombineOverlappingPeriods
 logger = create_logger(__name__)
 
 
-class EventsToTimeRange(Node):
+class EventsToTimeRange(DerivedTable):
     """
     EventsToTimeRange converts individual code events into time ranges with start and end dates.
 

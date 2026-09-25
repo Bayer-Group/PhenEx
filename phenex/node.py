@@ -542,7 +542,11 @@ class Node:
                     # Publish immediately (not only after the whole graph finishes) so
                     # sibling nodes depending on this domain (declared via add_children)
                     # can look it up in `tables` during the same execute() call.
-                    if table is not None:
+                    # Only DerivedTable nodes register a domain: ordinary nodes
+                    # (phenotypes, reporters, subset tables) must never be added to the
+                    # domains dict, e.g. a phenotype named 'DEATH' must not overwrite the
+                    # 'DEATH' source domain that later subset nodes still read from.
+                    if table is not None and isinstance(node, DerivedTable):
                         with tables_lock:
                             tables[node_name] = table
 
@@ -795,6 +799,13 @@ class Node:
                 lines.append(f"  {node_name} (no dependencies)")
 
         return "\n".join(lines)
+
+
+class DerivedTable(Node):
+    """Base class for nodes that register a NEW domain table in the shared `tables`
+    dict during execution, so downstream derived tables can consume their output by
+    domain name. Only DerivedTable outputs are published to `tables`; ordinary nodes
+    (phenotypes, reporters, subset tables) must never be added to the domains dict."""
 
 
 class NodeGroup(Node):

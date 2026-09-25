@@ -2,7 +2,7 @@ from typing import Callable, Dict, Optional
 from ibis.expr.types.relations import Table
 import ibis
 
-from phenex.node import Node
+from phenex.node import DerivedTable
 from phenex.tables import PhenexTable
 from phenex.util import create_logger
 from phenex.util.serialization.function_serialization import (
@@ -13,7 +13,7 @@ from phenex.util.serialization.function_serialization import (
 logger = create_logger(__name__)
 
 
-class LoadTable(Node):
+class LoadTable(DerivedTable):
     """
     LoadTable loads an arbitrary named table and registers it as a new domain, without
     depending on any other domain table.

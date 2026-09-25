@@ -2,7 +2,7 @@ from typing import Dict, List
 from ibis.expr.types.relations import Table
 import ibis
 
-from phenex.node import Node
+from phenex.node import DerivedTable, Node
 from phenex.util import create_logger
 
 from .combine_overlapping_periods import CombineOverlappingPeriods
@@ -10,7 +10,7 @@ from .combine_overlapping_periods import CombineOverlappingPeriods
 logger = create_logger(__name__)
 
 
-class IntersectTimePeriods(Node):
+class IntersectTimePeriods(DerivedTable):
     """
     IntersectTimePeriods takes two or more time-range derived tables (each with columns
     PERSON_ID, START_DATE, END_DATE) and, for every patient, computes the periods during
