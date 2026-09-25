@@ -380,6 +380,11 @@ class Node:
         # Handle None tables
         if tables is None:
             tables = {}
+        else:
+            # Work on a shallow copy so publishing completed nodes' tables (below)
+            # for intra-execution sibling lookups never mutates the caller's dict,
+            # which is reused as subset_tables_entry/index (domain -> PhenexTable).
+            tables = dict(tables)
 
         # Build dependency graph for all dependencies
         all_deps = self.dependencies
