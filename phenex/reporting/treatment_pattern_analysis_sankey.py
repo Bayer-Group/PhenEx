@@ -366,7 +366,7 @@ def _render_footer_html(icon_data_uri: str, version: str) -> str:
     icon_img = f'<img src="{icon_data_uri}" alt="PhenEx">' if icon_data_uri else ""
     return (
         f'<div class="phenex-footer">{icon_img}'
-        f"<span>Generated with PhenEx v{version_escaped}</span></div>"
+        f"<span>Generated with PhenEx {version_escaped}</span></div>"
     )
 
 
@@ -438,8 +438,12 @@ function stackSize(name) {
   return (name.match(/\\+/g) || []).length + 1;
 }
 function shortPeriodLabel(label, num) {
-  var m = label.match(/from day (\\d+) to (\\d+)/i);
-  return m ? 'D' + m[1] + '\u2013' + m[2] : 'P' + num;
+  var m = label.match(/from day (-?\\d+) to (-?\\d+)/i);
+  if (!m) return 'Baseline';
+  var months = Math.round(parseInt(m[1], 10) / 30);
+  if (months === 0) return 'Index';
+  var unit = Math.abs(months) === 1 ? ' month ' : ' months ';
+  return Math.abs(months) + unit + (months > 0 ? 'post index' : 'pre index');
 }
 function sectionLabel(n) {
   if (n === 99) return 'Untreated';
@@ -532,7 +536,13 @@ allData.forEach(function(groupData) {
   /* ── build SVG ────────────────────────────────────────────────────────── */
   var svgW = LEFT + (periods.length - 1) * PERIOD_SPC + MAX_THICK / 2 + RIGHT;
   var svgH = TOP + totalH + 20;
-  var svg  = mkEl('svg', { width: svgW, height: svgH });
+  var svg  = mkEl('svg', {
+    viewBox: '0 0 ' + svgW + ' ' + svgH,
+    preserveAspectRatio: 'xMinYMin meet',
+    style: 'display:block;width:100%;height:auto;max-width:' + svgW + 'px;' +
+           'border:1px solid #e5e7eb;border-radius:12px;background:#fff;' +
+           'box-shadow:0 1px 3px rgba(0,0,0,0.06);'
+  });
   section.appendChild(svg);
 
   var g = mkEl('g', { transform: 'translate(0,' + TOP + ')' }, svg);
@@ -746,9 +756,12 @@ const COLORS = """
         """;
 
 /* ── layout constants ───────────────────────────────────────────────────── */
-var BAR_W = 34, FULL_H = 420, GAP = 2;
-var PERIOD_SPC = 230, LEFT = 40, TOP = 60, RIGHT = 180;
-var LABEL_THRESHOLD = 0.10;
+var BAR_W = 34, FULL_H = 680, GAP = 2;
+var PERIOD_SPC = 230, LEFT = 100, TOP = 60, RIGHT = 120;
+/* label shown only when its segment is at least this tall, guaranteeing that
+   top-aligned labels of consecutive segments never overlap */
+var MIN_LABEL_H = 12, LABEL_PAD_TOP = 15;
+var LABEL_BG_PAD_X = 4, LABEL_BG_PAD_Y = 1.5;
 var NS = 'http://www.w3.org/2000/svg';
 
 /* ── tiny SVG helpers ───────────────────────────────────────────────────── */
@@ -769,12 +782,18 @@ function mkTxt(text, attrs, parent) {
   return e;
 }
 function shortPeriodLabel(label, num) {
-  var m = label.match(/from day (\\d+) to (\\d+)/i);
-  return m ? 'D' + m[1] + '\u2013' + m[2] : 'P' + num;
+  var m = label.match(/from day (-?\\d+) to (-?\\d+)/i);
+  if (!m) return 'Baseline';
+  var months = Math.round(parseInt(m[1], 10) / 30);
+  if (months === 0) return 'Index';
+  var unit = Math.abs(months) === 1 ? ' month ' : ' months ';
+  return Math.abs(months) + unit + (months > 0 ? 'post index' : 'pre index');
 }
 function pctLabel(name, pct) {
   return name + ' (' + (pct * 100).toFixed(1) + '%)';
 }
+function isCensored(name) { return name === 'Censored'; }
+var CENSORED_COLOR = '#cccccc';
 
 /* ── main render loop ───────────────────────────────────────────────────── */
 allData.forEach(function(groupData) {
@@ -795,11 +814,16 @@ allData.forEach(function(groupData) {
   var periods = Array.from(new Set(nodes.map(function(n) { return n.period; })))
     .sort(function(a, b) { return a - b; });
 
-  /* group + sort nodes greatest-to-least within each period */
+  /* group + sort nodes greatest-to-least within each period; censored bins
+     are always pushed to the bottom of the stack regardless of size */
   var byPeriod = {};
   periods.forEach(function(p) {
     byPeriod[p] = nodes.filter(function(n) { return n.period === p; })
-      .sort(function(a, b) { return b.value - a.value; });
+      .sort(function(a, b) {
+        var ca = isCensored(a.display_name), cb = isCensored(b.display_name);
+        if (ca !== cb) return ca ? 1 : -1;
+        return b.value - a.value;
+      });
   });
   var periodTotal = {};
   periods.forEach(function(p) {
@@ -833,14 +857,20 @@ allData.forEach(function(groupData) {
   /* svg canvas */
   var svgW = LEFT + (periods.length - 1) * PERIOD_SPC + BAR_W + RIGHT;
   var svgH = TOP + FULL_H + 30;
-  var svg  = mkEl('svg', { width: svgW, height: svgH });
+  var svg = mkEl('svg', {
+    viewBox: '0 0 ' + svgW + ' ' + svgH,
+    preserveAspectRatio: 'xMinYMin meet',
+    style: 'display:block;width:100%;height:auto;max-width:' + svgW + 'px;' +
+           'background:#fff;border:1px solid #e5e7eb;' +
+           'border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06);'
+  });
   section.appendChild(svg);
   var g = mkEl('g', { transform: 'translate(0,' + TOP + ')' }, svg);
 
   periods.forEach(function(p) {
     mkTxt(periodLabel[p], {
-      x: periodX[p] + BAR_W / 2, y: -14, 'text-anchor': 'middle',
-      'font-size': '11px', 'font-weight': 'bold', fill: '#444'
+      x: periodX[p] + BAR_W / 2, y: TOP - 22, 'text-anchor': 'middle',
+      'font-size': '12px', 'font-weight': 'bold', fill: '#444'
     }, svg);
   });
 
@@ -882,7 +912,10 @@ allData.forEach(function(groupData) {
       ' C' + mx + ',' + lk._ty1 + ' ' + mx + ',' + lk._sy1 + ' ' + x1 + ',' + lk._sy1 +
       ' Z';
     var path = mkEl('path', {
-      d: d, fill: colorMap[s.display_name] || '#888', 'fill-opacity': 0.35,
+      d: d,
+      fill: (isCensored(s.display_name) || isCensored(t.display_name))
+        ? CENSORED_COLOR : (colorMap[s.display_name] || '#888'),
+      'fill-opacity': 0.35,
       stroke: 'none', 'data-regimen': s.display_name, 'data-to': t.display_name
     }, g);
     mkTip(s.display_name + ' \u2192 ' + t.display_name + '\\n' + lk.value + ' patients', path);
@@ -894,19 +927,32 @@ allData.forEach(function(groupData) {
     byPeriod[p].forEach(function(n) {
       var rect = mkEl('rect', {
         x: periodX[p], y: n._y0, width: BAR_W, height: Math.max(0.5, n._y1 - n._y0),
-        fill: colorMap[n.display_name] || '#888', stroke: '#fff', 'stroke-width': 1,
+        fill: isCensored(n.display_name) ? CENSORED_COLOR : (colorMap[n.display_name] || '#888'),
+        stroke: '#fff', 'stroke-width': 1,
         'data-regimen': n.display_name
       }, g);
       mkTip(pctLabel(n.display_name, n._pct) + ' \u2014 ' + n.value + ' patients (' + periodLabel[p] + ')', rect);
       allRects.push(rect);
 
-      var label = mkTxt(pctLabel(n.display_name, n._pct), {
-        x: periodX[p] + BAR_W + 6, y: (n._y0 + n._y1) / 2 + 4,
-        'font-size': '11px', fill: colorMap[n.display_name] || '#333',
-        opacity: n._pct > LABEL_THRESHOLD ? 1 : 0,
-        'data-regimen': n.display_name, 'data-permanent': n._pct > LABEL_THRESHOLD ? '1' : '0'
+      var showLabel = (n._y1 - n._y0) >= MIN_LABEL_H;
+      var labelG = mkEl('g', {
+        opacity: showLabel ? 1 : 0,
+        'data-regimen': n.display_name,
+        'data-permanent': showLabel ? '1' : '0'
       }, g);
-      allLabels.push(label);
+      var labelBg = mkEl('rect', {
+        rx: 3, ry: 3, fill: '#fff', 'fill-opacity': 0.75, stroke: 'none'
+      }, labelG);
+      var label = mkTxt(pctLabel(n.display_name, n._pct), {
+        x: periodX[p] + BAR_W + 6, y: n._y0 + LABEL_PAD_TOP,
+        'font-size': '11px', fill: colorMap[n.display_name] || '#333'
+      }, labelG);
+      var lb = label.getBBox();
+      labelBg.setAttribute('x', lb.x - LABEL_BG_PAD_X);
+      labelBg.setAttribute('y', lb.y - LABEL_BG_PAD_Y);
+      labelBg.setAttribute('width', lb.width + 2 * LABEL_BG_PAD_X);
+      labelBg.setAttribute('height', lb.height + 2 * LABEL_BG_PAD_Y);
+      allLabels.push(labelG);
 
       rect.addEventListener('mouseover', function() {
         allRects.forEach(function(r) {
@@ -932,6 +978,9 @@ allData.forEach(function(groupData) {
       });
     });
   });
+
+  /* re-append labels last so they stack above every segment/ribbon to the right */
+  allLabels.forEach(function(l) { g.appendChild(l); });
 });
 </script>
 """
