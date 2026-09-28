@@ -2,13 +2,13 @@ from typing import Dict, Optional
 from ibis.expr.types.relations import Table
 import ibis
 
-from phenex.node import Node
+from phenex.node import DerivedTable
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
 
 
-class CombineOverlappingPeriods(Node):
+class CombineOverlappingPeriods(DerivedTable):
     """
     CombineOverlappingPeriods takes overlapping and consecutive time periods the source table and combines them into a single time period with a single start and end date on a per patient level. For example, if a patient has two visits with the same start and end date, they will be combined into one visit. If a patient has two visits with overlapping dates, they will be combined into one visit with the earliest start date and the latest end date. If a patient has two visits with consecutive dates, they will be combined into one visit with the earliest start date and the latest end date.
     This is useful for creating a single time period for a patient, e.g. admission discharge periods, vaccination periods, etc. It is also useful for creating a single time period for a patient when there are multiple visits with the same start and end date, or overlapping dates.

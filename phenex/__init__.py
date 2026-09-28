@@ -27,6 +27,7 @@ from .phenotypes import (
     TimeRangeDayCountPhenotype,
     TimeRangeDaysToNextRange,
     TimeShiftPhenotype,
+    TimeRangeDateSelectPhenotype,
     WithinSameEncounterPhenotype,
     UserDefinedPhenotype,
     ScorePhenotype,
@@ -112,6 +113,8 @@ from .derived_tables import (
     CombineOverlappingPeriods,
     EventsToTimeRange,
     MinMaxDatesToTimeRange,
+    IntersectTimePeriods,
+    LoadTable,
 )
 
 # Serialization utilities
@@ -151,6 +154,7 @@ __all__ = [
     "TimeRangeDayCountPhenotype",
     "TimeRangeDaysToNextRange",
     "TimeShiftPhenotype",
+    "TimeRangeDateSelectPhenotype",
     "WithinSameEncounterPhenotype",
     "UserDefinedPhenotype",
     "ScorePhenotype",
@@ -221,6 +225,8 @@ __all__ = [
     "CombineOverlappingPeriods",
     "EventsToTimeRange",
     "MinMaxDatesToTimeRange",
+    "IntersectTimePeriods",
+    "LoadTable",
     # Serialization
     "dump",
     "dumps",

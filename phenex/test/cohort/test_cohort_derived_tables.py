@@ -2,6 +2,7 @@ import datetime
 import ibis
 import pandas as pd
 from phenex.core.cohort import Cohort
+from phenex.node import Node
 from phenex.phenotypes.codelist_phenotype import CodelistPhenotype
 from phenex.codelists import Codelist
 from phenex.derived_tables import EventsToTimeRange
@@ -108,3 +109,39 @@ if __name__ == "__main__":
     t.test_pre_entry_derived_table_in_subset_tables_entry()
     t.test_post_entry_derived_table_in_subset_tables_entry()
     t.test_pre_entry_derived_table_in_subset_tables_index()
+
+
+class _FakeDerivedTable(Node):
+    """Minimal Node stand-in exposing `domain`/`exit_domain` attributes for testing
+    dependency wiring without executing any real computation."""
+
+    def __init__(self, name, domain=None, exit_domain=None):
+        super().__init__(name=name)
+        self.domain = domain
+        self.exit_domain = exit_domain
+
+
+def test_wire_derived_table_dependencies_wires_exit_domain():
+    upstream = _FakeDerivedTable(name="LVEF_NORMAL")
+    downstream = _FakeDerivedTable(
+        name="LVEF_TIME_RANGE", domain="LVEF_LOW", exit_domain="LVEF_NORMAL"
+    )
+
+    Cohort._wire_derived_table_dependencies([upstream, downstream])
+
+    assert upstream in downstream.children
+
+
+def test_wire_derived_table_dependencies_wires_domain_and_exit_domain_together():
+    domain_upstream = _FakeDerivedTable(name="LVEF_LOW")
+    exit_upstream = _FakeDerivedTable(name="LVEF_NORMAL")
+    downstream = _FakeDerivedTable(
+        name="LVEF_TIME_RANGE", domain="LVEF_LOW", exit_domain="LVEF_NORMAL"
+    )
+
+    Cohort._wire_derived_table_dependencies(
+        [domain_upstream, exit_upstream, downstream]
+    )
+
+    assert domain_upstream in downstream.children
+    assert exit_upstream in downstream.children

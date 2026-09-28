@@ -1,7 +1,5 @@
 from typing import Callable, Dict, Optional
 from datetime import date
-import inspect
-import textwrap
 
 import ibis
 from ibis import _
@@ -12,43 +10,14 @@ from phenex.filters import DateFilter, ValueFilter
 from phenex.tables import is_phenex_code_table, PHENOTYPE_TABLE_COLUMNS, PhenotypeTable
 from phenex.phenotypes.functions import select_phenotype_columns
 from phenex.aggregators import First, Last
+from phenex.util.serialization.function_serialization import (
+    serialize_function,
+    deserialize_function,
+)
 
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
-
-
-def _serialize_function(function: Callable) -> str:
-    """
-    Serialize a user defined function to its source code as a string.
-    """
-    try:
-        source = inspect.getsource(function)
-    except (OSError, TypeError) as e:
-        raise ValueError(
-            "Could not serialize the function passed to UserDefinedPhenotype. "
-            "The function must be defined such that its source code is retrievable "
-            f"(not a lambda or an interactively defined function): {e}"
-        )
-    return textwrap.dedent(source)
-
-
-def _deserialize_function(function_string: str) -> Callable:
-    """
-    Reconstruct a callable from source code stored as a string.
-    """
-    namespace: Dict[str, object] = {}
-    exec(function_string, namespace)
-    functions = [
-        value
-        for key, value in namespace.items()
-        if callable(value) and not key.startswith("__")
-    ]
-    if not functions:
-        raise ValueError(
-            "function_string for UserDefinedPhenotype did not define any callable."
-        )
-    return functions[-1]
 
 
 class UserDefinedPhenotype(Phenotype):
@@ -108,9 +77,9 @@ class UserDefinedPhenotype(Phenotype):
         **kwargs,
     ):
         if function is not None:
-            function_string = _serialize_function(function)
+            function_string = serialize_function(function)
         elif function_string is not None:
-            function = _deserialize_function(function_string)
+            function = deserialize_function(function_string)
 
         self.function = function
         self.function_string = function_string
