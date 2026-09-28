@@ -34,6 +34,7 @@ from .phenotypes import (
     ArithmeticPhenotype,
     LogicPhenotype,
     TreatmentPatternAnalysis,
+    TreatmentPatternAnalysisOnTreatment,
     CHADSVASCPhenotype,
     CHADSVASCComponents,
     SmartCodelistPhenotype,

@@ -29,6 +29,7 @@ from .factory import (
     ISTHBleedComponents,
     StackableRegimen,
     TreatmentPatternAnalysis,
+    TreatmentPatternAnalysisOnTreatment,
     SmartCodelistPhenotype,
     CHADSVASCPhenotype,
     CHADSVASCComponents,
