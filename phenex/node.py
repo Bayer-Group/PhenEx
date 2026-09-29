@@ -380,6 +380,11 @@ class Node:
         # Handle None tables
         if tables is None:
             tables = {}
+        else:
+            # Work on a shallow copy so publishing completed nodes' tables (below)
+            # for intra-execution sibling lookups never mutates the caller's dict,
+            # which is reused as subset_tables_entry/index (domain -> PhenexTable).
+            tables = dict(tables)
 
         # Build dependency graph for all dependencies
         all_deps = self.dependencies
@@ -393,6 +398,9 @@ class Node:
         # Track completion status and results
         completed = set()
         completion_lock = threading.Lock()
+        # Guards reads (snapshotting) and writes of the shared `tables` dict so a node's
+        # _execute() never iterates it while another thread concurrently inserts into it.
+        tables_lock = threading.Lock()
         worker_exceptions = []  # Track exceptions from worker threads
         stop_all_workers = (
             threading.Event()
@@ -424,11 +432,11 @@ class Node:
                 )
             return materialized
 
-        def _run_and_materialise(node, node_name):
+        def _run_and_materialise(node, node_name, node_tables):
             """Execute *node*, materialise the result, record timing, and update the run hash."""
             db_name = node.get_table_name(table_name_prefix)
             node.lastexecution_start_time = datetime.now()
-            table = node._execute(tables)
+            table = node._execute(node_tables)
             # Save the generating query before create_table() materializes it (to_sql layer 1).
             node._expression = table
             if table is not None:
@@ -461,6 +469,12 @@ class Node:
                     active_display().node_started(node_name)
                     served_from_cache = False
 
+                    # Snapshot `tables` once per node so this node's _execute() (which may
+                    # iterate the dict, e.g. LoadTable) never races with another thread
+                    # inserting a newly-completed sibling's table into the shared dict.
+                    with tables_lock:
+                        node_tables = dict(tables)
+
                     # Execute the node (without recursive child execution since we handle dependencies here)
                     if lazy_execution:
                         if not overwrite:
@@ -478,9 +492,9 @@ class Node:
                         if isinstance(node, NodeGroup) or getattr(
                             node, "_skip_cache", False
                         ):
-                            table = node._execute(tables)
+                            table = node._execute(node_tables)
                         elif Node._node_manager.should_rerun(node, con):
-                            table = _run_and_materialise(node, node_name)
+                            table = _run_and_materialise(node, node_name, node_tables)
                         else:
                             db_name = node.get_table_name(table_name_prefix)
                             try:
@@ -491,11 +505,13 @@ class Node:
                                 logger.warning(
                                     f"Cached table for '{node_name}' not found at {db_name}; recomputing."
                                 )
-                                table = _run_and_materialise(node, node_name)
+                                table = _run_and_materialise(
+                                    node, node_name, node_tables
+                                )
                     else:
                         # Time the execution
                         node.lastexecution_start_time = datetime.now()
-                        table = node._execute(tables)
+                        table = node._execute(node_tables)
                         # Save the generating query before create_table() materializes it (to_sql layer 1).
                         node._expression = table
 
@@ -523,6 +539,16 @@ class Node:
                         ).total_seconds()
 
                     node.table = table
+                    # Publish immediately (not only after the whole graph finishes) so
+                    # sibling nodes depending on this domain (declared via add_children)
+                    # can look it up in `tables` during the same execute() call.
+                    # Only DerivedTable nodes register a domain: ordinary nodes
+                    # (phenotypes, reporters, subset tables) must never be added to the
+                    # domains dict, e.g. a phenotype named 'DEATH' must not overwrite the
+                    # 'DEATH' source domain that later subset nodes still read from.
+                    if table is not None and isinstance(node, DerivedTable):
+                        with tables_lock:
+                            tables[node_name] = table
 
                     with completion_lock:
                         completed.add(node_name)
@@ -773,6 +799,13 @@ class Node:
                 lines.append(f"  {node_name} (no dependencies)")
 
         return "\n".join(lines)
+
+
+class DerivedTable(Node):
+    """Base class for nodes that register a NEW domain table in the shared `tables`
+    dict during execution, so downstream derived tables can consume their output by
+    domain name. Only DerivedTable outputs are published to `tables`; ordinary nodes
+    (phenotypes, reporters, subset tables) must never be added to the domains dict."""
 
 
 class NodeGroup(Node):

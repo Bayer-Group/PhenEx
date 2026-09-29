@@ -369,6 +369,7 @@ class Cohort:
         # Derived tables pre-entry stage: OPTIONAL
         #
         if self.derived_tables:
+            self._wire_derived_table_dependencies(self.derived_tables)
             self.derived_tables_stage = NodeGroup(
                 name="derived_tables_stage", nodes=self.derived_tables
             )
@@ -392,6 +393,7 @@ class Cohort:
         # Derived tables post-entry stage: OPTIONAL
         #
         if self.derived_tables_post_entry:
+            self._wire_derived_table_dependencies(self.derived_tables_post_entry)
             self.derived_tables_post_entry_stage = NodeGroup(
                 name="derived_tables_post_entry_stage",
                 nodes=self.derived_tables_post_entry,
@@ -530,6 +532,24 @@ class Cohort:
             self.reporting_stage = NodeGroup(
                 name="reporting_stage", nodes=reporting_nodes
             )
+
+    @staticmethod
+    def _wire_derived_table_dependencies(derived_tables: List["Node"]) -> None:
+        """Link derived tables that consume another derived table's domain (e.g. an
+        `EventsToTimeRange` whose `domain` or `exit_domain` equals a `LoadTable`'s
+        name) as children of that upstream table, so the execution graph runs the
+        upstream table first and makes its output available under that domain for
+        the downstream table."""
+        by_name = {dt.name: dt for dt in derived_tables}
+        for dt in derived_tables:
+            for domain_attr in ("domain", "exit_domain"):
+                upstream = by_name.get(getattr(dt, domain_attr, None))
+                if (
+                    upstream is not None
+                    and upstream is not dt
+                    and not any(c is upstream for c in dt.children)
+                ):
+                    dt.add_children(upstream)
 
     def _get_domains(self):
         """
