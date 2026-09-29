@@ -75,6 +75,7 @@ class OutputConcatenator:
         study_name: str = "study",
         cohort_names: Optional[List[str]] = None,
         description: Optional[str] = None,
+        sankey_type: str = "relative_size_sankey",
     ) -> None:
         self.study_path = Path(study_execution_path)
         self.cohort_names = cohort_names
@@ -87,7 +88,7 @@ class OutputConcatenator:
         self._numeric_writer = Table1NumericSheetWriter()
         self._attrition_writer = SimplifiedAttritionTable()
         self._tte_writer = TimeToEventWriter()
-        self._sankey_writer = SankeyWriter()
+        self._sankey_writer = SankeyWriter(sankey_type=sankey_type)
         self._table1_html_writer = Table1HtmlWriter()
 
     # ------------------------------------------------------------------
@@ -212,10 +213,12 @@ class OutputConcatenator:
             "waterfall.json",
             "TimeToEvent.json",
             "Table2.json",
+            "TreatmentPatternSankey.json",
         ]
 
         for filename in _COHORT_KEYED_FILES:
             is_table1 = filename.startswith("table1")
+            is_sankey = filename == "TreatmentPatternSankey.json"
             combined: dict = {}
             combined_kdes: dict = {}
 
@@ -230,6 +233,11 @@ class OutputConcatenator:
                     data = {
                         "rows": data.get("rows", []),
                         "sections": data.get("sections", {}),
+                    }
+                elif is_sankey:
+                    data = {
+                        "sankey_data": data.get("sankey_data", []),
+                        "rows": data.get("rows", []),
                     }
                 else:
                     data = data.get("rows", data)
