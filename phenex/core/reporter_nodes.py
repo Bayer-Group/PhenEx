@@ -1,3 +1,4 @@
+import json
 from typing import Dict
 import ibis
 from ibis.expr.types.relations import Table
@@ -6,6 +7,10 @@ from phenex.reporting import Table1, Waterfall
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
+
+# Table1's histograms are not part of its DataFrame, so they are saved as JSON
+# in this extra column and read back with it.
+_KDES_COLUMN = "_KDES"
 
 
 class Reporter(Node):
@@ -43,8 +48,28 @@ class Reporter(Node):
         self.reporter.execute(self.cohort)
         df = self.reporter.df
         logger.debug(f"{self.name} report generated for cohort '{self.cohort.name}'.")
-        table = ibis.memtable(self._normalize_df(df))
-        return table
+        return self._report_table(df)
+
+    def _report_table(self, df):
+        """The table to save: the report, plus Table1's histograms if it has any."""
+        df = self._normalize_df(df)
+        distributions = getattr(self.reporter, "_value_distributions", None)
+        if distributions and len(df):
+            df = df.copy()
+            df[_KDES_COLUMN] = ""
+            df.iloc[0, df.columns.get_loc(_KDES_COLUMN)] = json.dumps(distributions)
+        return ibis.memtable(df)
+
+    def _read_report_df(self):
+        """The saved report. Histograms saved with it go back onto the reporter."""
+        df = self.table.execute() if hasattr(self.table, "execute") else self.table
+        if _KDES_COLUMN in df.columns:
+            saved = next(
+                (v for v in df[_KDES_COLUMN] if isinstance(v, str) and v), None
+            )
+            self.reporter._value_distributions = json.loads(saved) if saved else {}
+            df = df.drop(columns=[_KDES_COLUMN])
+        return df
 
     @staticmethod
     def _normalize_df(df):
@@ -62,15 +87,7 @@ class Reporter(Node):
     def df_report(self):
         """Get the generated Table1 DataFrame with pretty formatting."""
         if self.table is not None:
-            # If table is an Ibis table, convert to pandas
-            if hasattr(self.table, "execute"):
-                df = self.table.execute()
-            else:
-                # Already a pandas DataFrame
-                df = self.table
-
-            # Apply pretty formatting
-            self.reporter.df = df
+            self.reporter.df = self._read_report_df()
             return self.reporter.get_pretty_display()
         return None
 
@@ -112,6 +129,11 @@ class Table1Node(Reporter):
         if cohort.characteristics:
             self.add_children(cohort.characteristics)
 
+    def to_dict(self):
+        """The definition, plus which format the saved table is in. Bumping it
+        rebuilds tables that were saved without histograms, once."""
+        return {**super().to_dict(), "saved_format": 2}
+
     def to_json(self, path: str):
         """Export Table1 to JSON, propagating section metadata from the cohort."""
         if self.table is not None:
@@ -147,6 +169,10 @@ class Table1OutcomesNode(Reporter):
         if cohort.outcomes:
             self.add_children(cohort.outcomes)
 
+    def to_dict(self):
+        """The definition, plus which format the saved table is in (see Table1Node)."""
+        return {**super().to_dict(), "saved_format": 2}
+
     def _execute(self, tables: Dict[str, Table]):
         logger.debug(
             f"Generating {self.name} outcomes report for cohort '{self.cohort.name}'..."
@@ -159,7 +185,7 @@ class Table1OutcomesNode(Reporter):
         logger.debug(
             f"{self.name} outcomes report generated for cohort '{self.cohort.name}'."
         )
-        return ibis.memtable(self._normalize_df(df))
+        return self._report_table(df)
 
     def to_json(self, path: str):
         """Export Table1 outcomes to JSON, propagating outcome section metadata."""
@@ -230,7 +256,7 @@ class CustomReporterNode(Reporter):
         logger.debug(
             f"Generating custom report '{self.reporter.name}' for cohort '{self.cohort.name}'..."
         )
-        self.reporter.execute(self.cohort)
+        self._run_reporter()
         logger.debug(
             f"Custom report '{self.reporter.name}' generated for cohort '{self.cohort.name}'."
         )
@@ -246,7 +272,7 @@ class CustomReporterNode(Reporter):
     def df_report(self):
         """Get the formatted report DataFrame."""
         if self.table is not None:
-            self._ensure_reporter_executed()
+            self._ensure_reporter_df()
             if hasattr(self.reporter, "get_pretty_display"):
                 return self.reporter.get_pretty_display()
             if hasattr(self.table, "execute"):
@@ -254,37 +280,60 @@ class CustomReporterNode(Reporter):
             return self.table
         return None
 
-    def _ensure_reporter_executed(self):
-        """Populate reporter.df, reloading the materialized table when it exists (lazy/cached execution)
-        and re-running the reporter only when there is nothing to reload."""
-        if not hasattr(self.reporter, "df") or self.reporter.df is None:
-            if self.table is not None:
-                self.reporter.df = (
-                    self.table.execute()
-                    if hasattr(self.table, "execute")
-                    else self.table
-                )
-            else:
-                self.reporter.execute(self.cohort)
+    def _report_target(self):
+        """What the reporter runs on."""
+        return self.cohort
+
+    # A study-level reporter is one object shared by every cohort, so what it
+    # holds may be another cohort's results. It is stamped with the node it ran
+    # for, and each node checks the stamp.
+
+    def _run_reporter(self):
+        """Run the reporter and stamp it as holding this node's results."""
+        self.reporter.execute(self._report_target())
+        self.reporter._phenex_results_of = id(self)
+
+    def _holds_my_results(self) -> bool:
+        return getattr(self.reporter, "_phenex_results_of", None) == id(self)
+
+    def _ensure_reporter_df(self):
+        """Give the reporter this node's df: keep it if the stamp matches, else
+        read the saved table, else compute."""
+        if self._holds_my_results() and getattr(self.reporter, "df", None) is not None:
+            return
+        if self.table is not None:
+            self.reporter.df = (
+                self.table.execute() if hasattr(self.table, "execute") else self.table
+            )
+            # the saved table has the df only, not what plots need
+            self.reporter._phenex_results_of = None
+        else:
+            self._run_reporter()
+
+    def _ensure_reporter_run(self):
+        """Run the reporter unless it already holds this node's results. Plots
+        need more than the saved table."""
+        if not self._holds_my_results():
+            self._run_reporter()
 
     def to_excel(self, path: str):
         """Delegate to the wrapped reporter's to_excel."""
-        self._ensure_reporter_executed()
+        self._ensure_reporter_df()
         self.reporter.to_excel(path)
 
     def to_json(self, path: str):
         """Delegate to the wrapped reporter's to_json."""
-        self._ensure_reporter_executed()
+        self._ensure_reporter_df()
         self.reporter.to_json(path)
 
     def to_html(self, path: str):
         """Delegate to the wrapped reporter's to_html, if implemented."""
         if hasattr(self.reporter, "to_html"):
-            self._ensure_reporter_executed()
+            self._ensure_reporter_run()
             self.reporter.to_html(path)
 
     def to_png(self, path: str):
         """Delegate to the wrapped reporter's to_png, if implemented."""
         if hasattr(self.reporter, "to_png"):
-            self._ensure_reporter_executed()
+            self._ensure_reporter_run()
             self.reporter.to_png(path)
