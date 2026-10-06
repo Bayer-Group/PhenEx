@@ -4,13 +4,14 @@ import ibis
 from ibis.expr.types.relations import Table
 from phenex.node import Node
 from phenex.reporting import Table1, Waterfall
+from phenex.reporting.reporter import Reporter as BaseReporter
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
 
-# Table1's histograms are not part of its DataFrame, so they are saved as JSON
-# in this extra column and read back with it.
-_KDES_COLUMN = "_KDES"
+# What a reporter needs besides its DataFrame (its sidecar) is saved as JSON in
+# this extra column and read back with it.
+_SIDECAR_COLUMN = "_SIDECAR"
 
 
 class Reporter(Node):
@@ -50,25 +51,34 @@ class Reporter(Node):
         logger.debug(f"{self.name} report generated for cohort '{self.cohort.name}'.")
         return self._report_table(df)
 
+    def to_dict(self):
+        """The definition, plus which format the saved table is in. Changing it
+        rebuilds tables that were saved in an older format, once."""
+        return {**super().to_dict(), "saved_format": "sidecar"}
+
     def _report_table(self, df):
-        """The table to save: the report, plus Table1's histograms if it has any."""
+        """The table to save: the report, plus the reporter's sidecar if it has one."""
         df = self._normalize_df(df)
-        distributions = getattr(self.reporter, "_value_distributions", None)
-        if distributions and len(df):
+        get_sidecar = getattr(self.reporter, "get_sidecar", None)
+        sidecar = get_sidecar() if get_sidecar else None
+        if sidecar and len(df):
             df = df.copy()
-            df[_KDES_COLUMN] = ""
-            df.iloc[0, df.columns.get_loc(_KDES_COLUMN)] = json.dumps(distributions)
+            df[_SIDECAR_COLUMN] = ""
+            df.iloc[0, df.columns.get_loc(_SIDECAR_COLUMN)] = json.dumps(
+                sidecar, default=str
+            )
         return ibis.memtable(df)
 
     def _read_report_df(self):
-        """The saved report. Histograms saved with it go back onto the reporter."""
+        """The saved report. A sidecar saved with it goes back onto the reporter."""
         df = self.table.execute() if hasattr(self.table, "execute") else self.table
-        if _KDES_COLUMN in df.columns:
+        if _SIDECAR_COLUMN in df.columns:
             saved = next(
-                (v for v in df[_KDES_COLUMN] if isinstance(v, str) and v), None
+                (v for v in df[_SIDECAR_COLUMN] if isinstance(v, str) and v), None
             )
-            self.reporter._value_distributions = json.loads(saved) if saved else {}
-            df = df.drop(columns=[_KDES_COLUMN])
+            if saved:
+                self.reporter.set_sidecar(json.loads(saved))
+            df = df.drop(columns=[_SIDECAR_COLUMN])
         return df
 
     @staticmethod
@@ -129,11 +139,6 @@ class Table1Node(Reporter):
         if cohort.characteristics:
             self.add_children(cohort.characteristics)
 
-    def to_dict(self):
-        """The definition, plus which format the saved table is in. Bumping it
-        rebuilds tables that were saved without histograms, once."""
-        return {**super().to_dict(), "saved_format": 2}
-
     def to_json(self, path: str):
         """Export Table1 to JSON, propagating section metadata from the cohort."""
         if self.table is not None:
@@ -168,10 +173,6 @@ class Table1OutcomesNode(Reporter):
 
         if cohort.outcomes:
             self.add_children(cohort.outcomes)
-
-    def to_dict(self):
-        """The definition, plus which format the saved table is in (see Table1Node)."""
-        return {**super().to_dict(), "saved_format": 2}
 
     def _execute(self, tables: Dict[str, Table]):
         logger.debug(
@@ -265,7 +266,7 @@ class CustomReporterNode(Reporter):
             and self.reporter.df is not None
             and len(self.reporter.df) > 0
         ):
-            return ibis.memtable(self._normalize_df(self.reporter.df.copy()))
+            return self._report_table(self.reporter.df.copy())
         return None
 
     @property
@@ -302,18 +303,21 @@ class CustomReporterNode(Reporter):
         if self._holds_my_results() and getattr(self.reporter, "df", None) is not None:
             return
         if self.table is not None:
-            self.reporter.df = (
-                self.table.execute() if hasattr(self.table, "execute") else self.table
-            )
-            # the saved table has the df only, not what plots need
-            self.reporter._phenex_results_of = None
+            self.reporter.df = self._read_report_df()
+            # with a sidecar the saved table is the whole result; without one
+            # it is the df only
+            has_sidecar = _SIDECAR_COLUMN in self.table.columns
+            self.reporter._phenex_results_of = id(self) if has_sidecar else None
         else:
             self._run_reporter()
 
-    def _ensure_reporter_run(self):
-        """Run the reporter unless it already holds this node's results. Plots
-        need more than the saved table."""
-        if not self._holds_my_results():
+    def _ensure_reporter_can_draw(self, method: str):
+        """The default to_html needs only the df. A reporter's own to_html or
+        to_png needs its whole result: run it unless it already holds that."""
+        self._ensure_reporter_df()
+        default = getattr(BaseReporter, method, None)
+        draws_itself = getattr(type(self.reporter), method, None) is not default
+        if draws_itself and not self._holds_my_results():
             self._run_reporter()
 
     def to_excel(self, path: str):
@@ -329,11 +333,11 @@ class CustomReporterNode(Reporter):
     def to_html(self, path: str):
         """Delegate to the wrapped reporter's to_html, if implemented."""
         if hasattr(self.reporter, "to_html"):
-            self._ensure_reporter_run()
+            self._ensure_reporter_can_draw("to_html")
             self.reporter.to_html(path)
 
     def to_png(self, path: str):
         """Delegate to the wrapped reporter's to_png, if implemented."""
         if hasattr(self.reporter, "to_png"):
-            self._ensure_reporter_run()
+            self._ensure_reporter_can_draw("to_png")
             self.reporter.to_png(path)

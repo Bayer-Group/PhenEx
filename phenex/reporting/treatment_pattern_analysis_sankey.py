@@ -222,6 +222,7 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
         if not tpa_groups:
             logger.warning("No TreatmentPatternAnalysis phenotypes found in cohort.")
             self.sankey_generators = {}
+            self.sankey_data = []
             self.df = pd.DataFrame(
                 columns=[
                     "tpa_name",
@@ -241,6 +242,10 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
             gen.build()
             self.sankey_generators[tpa_name] = gen
             all_dfs.append(gen.df_links)
+        self.sankey_data = [
+            {"tpa_name": name, "nodes": gen.nodes, "links": gen.links}
+            for name, gen in self.sankey_generators.items()
+        ]
 
         self.df = (
             pd.concat(all_dfs, ignore_index=True)
@@ -258,9 +263,17 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
         )
         return self.df
 
+    def get_sidecar(self):
+        """The diagrams' nodes and links: they are not in self.df."""
+        data = getattr(self, "sankey_data", None)
+        return {"sankey_data": data} if data else None
+
+    def set_sidecar(self, sidecar):
+        self.sankey_data = sidecar["sankey_data"]
+
     def to_json(self, filename: str) -> str:
         """Export to JSON, including the full sankey graph (nodes + links) needed for HTML generation."""
-        if not hasattr(self, "sankey_generators"):
+        if not hasattr(self, "sankey_data"):
             raise AttributeError("Call execute() first.")
 
         filepath = Path(filename)
@@ -268,13 +281,9 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
             filepath = filepath.with_suffix(".json")
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        sankey_data_list = [
-            {"tpa_name": name, "nodes": gen.nodes, "links": gen.links}
-            for name, gen in self.sankey_generators.items()
-        ]
         payload = {
             "reporter_type": self.__class__.__name__,
-            "sankey_data": sankey_data_list,
+            "sankey_data": self.sankey_data,
             "rows": self.df.to_dict(orient="records"),
         }
 
@@ -285,7 +294,7 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
 
     def to_html(self, filename: str) -> str:
         """Export as a self-contained HTML page with d3-sankey diagram(s)."""
-        if not hasattr(self, "sankey_generators"):
+        if not hasattr(self, "sankey_data"):
             raise AttributeError("Call execute() first.")
 
         filepath = Path(filename)
@@ -293,16 +302,12 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
             filepath = filepath.with_suffix(".html")
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
-        sankey_data_list = [
-            {"tpa_name": name, "nodes": gen.nodes, "links": gen.links}
-            for name, gen in self.sankey_generators.items()
-        ]
         builder = (
             _build_sankey_html
             if self.sankey_type == "equal_size_sankey"
             else _build_sankey_html_relative
         )
-        filepath.write_text(builder(sankey_data_list), encoding="utf-8")
+        filepath.write_text(builder(self.sankey_data), encoding="utf-8")
         return str(filepath.absolute())
 
     def to_png(self, filename: str) -> str:

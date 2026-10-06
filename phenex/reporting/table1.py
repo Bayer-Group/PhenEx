@@ -283,6 +283,13 @@ class Table1(Reporter):
         df.index = names
         return df
 
+    def get_sidecar(self):
+        """The value distributions (histograms): they are not in self.df."""
+        return getattr(self, "_value_distributions", None) or None
+
+    def set_sidecar(self, sidecar):
+        self._value_distributions = sidecar
+
     def _collect_value_distributions(self):
         """Compute KDE curves for numeric phenotypes.
 
