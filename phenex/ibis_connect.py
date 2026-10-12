@@ -308,6 +308,8 @@ class SnowflakeConnector:
                 database=database,
                 schema=schema,
                 create_object_udfs=create_object_udfs,
+                # Caches the SSO ID token in the OS keychain so later connects skip the browser.
+                client_store_temporary_credential=True,
             )
 
     def connect_dest(self) -> BaseBackend:
