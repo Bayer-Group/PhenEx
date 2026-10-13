@@ -42,8 +42,8 @@ class MinMaxDatesToTimeRange(DerivedTable):
 
         # Group by patient to find the global min and max event dates
         result = combined_table.group_by("PERSON_ID").aggregate(
-            start_date=combined_table["EVENT_DATE"].min(),
-            end_date=combined_table["EVENT_DATE"].max(),
+            START_DATE=combined_table["EVENT_DATE"].min(),
+            END_DATE=combined_table["EVENT_DATE"].max(),
         )
 
         return result

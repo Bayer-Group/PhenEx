@@ -193,13 +193,21 @@ class SnowflakeConnector:
                     "Use a fully qualified database name (e.g. CATALOG.DATABASE)."
                 )
 
-        required_vars = [
-            "SNOWFLAKE_USER",
-            "SNOWFLAKE_ACCOUNT",
-            "SNOWFLAKE_WAREHOUSE",
-            "SNOWFLAKE_ROLE",
-            "SNOWFLAKE_SOURCE_DATABASE",
-        ]
+        # Managed credentials: when no user/password/key is given, the environment
+        # (e.g. a VS Code session) supplies credentials to snowflake.connector.
+        self._managed = not (
+            self.SNOWFLAKE_USER or self.SNOWFLAKE_PASSWORD or self.SNOWFLAKE_PKEY
+        )
+        if self._managed:
+            required_vars = ["SNOWFLAKE_SOURCE_DATABASE"]
+        else:
+            required_vars = [
+                "SNOWFLAKE_USER",
+                "SNOWFLAKE_ACCOUNT",
+                "SNOWFLAKE_WAREHOUSE",
+                "SNOWFLAKE_ROLE",
+                "SNOWFLAKE_SOURCE_DATABASE",
+            ]
         self._check_env_vars(required_vars)
         self._check_source_dest()
         # Source and destination live in the same Snowflake account, so a single
@@ -276,7 +284,22 @@ class SnowflakeConnector:
         # and PhenEx never uses. PHENEX_SNOWFLAKE_UDFS=1 turns them back on.
         create_object_udfs = os.environ.get("PHENEX_SNOWFLAKE_UDFS") == "1"
 
-        if self.SNOWFLAKE_PKEY:
+        if self._managed:
+            # connect() with NO arguments makes snowflake.connector load the session's
+            # managed credentials; any argument (even database) disables that.
+            import snowflake.connector
+
+            sf_con = snowflake.connector.connect()
+            with sf_con.cursor() as cur:
+                if self.SNOWFLAKE_ROLE:
+                    cur.execute(f'USE ROLE "{self.SNOWFLAKE_ROLE}"')
+                if self.SNOWFLAKE_WAREHOUSE:
+                    cur.execute(f'USE WAREHOUSE "{self.SNOWFLAKE_WAREHOUSE}"')
+                cur.execute(f'USE SCHEMA "{database}"."{schema}"')
+            return ibis.snowflake.from_connection(
+                sf_con, create_object_udfs=create_object_udfs
+            )
+        elif self.SNOWFLAKE_PKEY:
             return ibis.snowflake.connect(
                 user=self.SNOWFLAKE_USER,
                 account=self.SNOWFLAKE_ACCOUNT,
@@ -308,6 +331,8 @@ class SnowflakeConnector:
                 database=database,
                 schema=schema,
                 create_object_udfs=create_object_udfs,
+                # Caches the SSO ID token in the OS keychain so later connects skip the browser.
+                client_store_temporary_credential=True,
             )
 
     def connect_dest(self) -> BaseBackend:

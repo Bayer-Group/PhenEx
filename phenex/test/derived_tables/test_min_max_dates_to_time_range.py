@@ -77,10 +77,10 @@ class MinMaxDatesToTimeRangeTestGenerator(DerivedTablesTestGenerator):
                 ("P4", "2019-12-31", "2019-12-31"),
                 ("P5", "2023-01-01", "2023-01-10"),
             ],
-            columns=["PERSON_ID", "start_date", "end_date"],
+            columns=["PERSON_ID", "START_DATE", "END_DATE"],
         )
-        df_expected["start_date"] = pd.to_datetime(df_expected["start_date"])
-        df_expected["end_date"] = pd.to_datetime(df_expected["end_date"])
+        df_expected["START_DATE"] = pd.to_datetime(df_expected["START_DATE"])
+        df_expected["END_DATE"] = pd.to_datetime(df_expected["END_DATE"])
 
         # Create the derived table
         node = MinMaxDatesToTimeRange(name="GLOBAL_TIME_RANGE")
@@ -91,7 +91,7 @@ class MinMaxDatesToTimeRangeTestGenerator(DerivedTablesTestGenerator):
                 "name": "min_max_dates_to_time_range_test",
                 "derived_table": node,
                 "expected_df": df_expected,
-                "join_on": ["PERSON_ID", "start_date", "end_date"],
+                "join_on": ["PERSON_ID", "START_DATE", "END_DATE"],
             }
         ]
 
