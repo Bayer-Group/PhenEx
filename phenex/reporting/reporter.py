@@ -1,4 +1,4 @@
-from typing import Any, Union, Dict
+from typing import Any, Union, Dict, Optional
 import pandas as pd
 from pathlib import Path
 from phenex.util.serialization.to_dict import to_dict as _to_dict
@@ -66,6 +66,16 @@ class Reporter:
             NotImplementedError: Must be implemented by subclass
         """
         raise NotImplementedError("Subclasses must implement execute()")
+
+    def get_sidecar(self) -> Optional[dict]:
+        """Small JSON-serializable results the output files need besides self.df
+        (e.g. the data behind a plot; no patient-level data). Saved with self.df,
+        so a report read back from the database needs no new execute()."""
+        return None
+
+    def set_sidecar(self, sidecar: dict) -> None:
+        """Take back what get_sidecar() returned when the report was saved."""
+        pass
 
     def get_pretty_display(self) -> pd.DataFrame:
         """
