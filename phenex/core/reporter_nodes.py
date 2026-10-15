@@ -1,11 +1,17 @@
+import json
 from typing import Dict
 import ibis
 from ibis.expr.types.relations import Table
 from phenex.node import Node
 from phenex.reporting import Table1, Waterfall
+from phenex.reporting.reporter import Reporter as BaseReporter
 from phenex.util import create_logger
 
 logger = create_logger(__name__)
+
+# What a reporter needs besides its DataFrame (its sidecar) is saved as JSON in
+# this extra column and read back with it.
+_SIDECAR_COLUMN = "_SIDECAR"
 
 
 class Reporter(Node):
@@ -43,8 +49,37 @@ class Reporter(Node):
         self.reporter.execute(self.cohort)
         df = self.reporter.df
         logger.debug(f"{self.name} report generated for cohort '{self.cohort.name}'.")
-        table = ibis.memtable(self._normalize_df(df))
-        return table
+        return self._report_table(df)
+
+    def to_dict(self):
+        """The definition, plus which format the saved table is in. Changing it
+        rebuilds tables that were saved in an older format, once."""
+        return {**super().to_dict(), "saved_format": "sidecar"}
+
+    def _report_table(self, df):
+        """The table to save: the report, plus the reporter's sidecar if it has one."""
+        df = self._normalize_df(df)
+        get_sidecar = getattr(self.reporter, "get_sidecar", None)
+        sidecar = get_sidecar() if get_sidecar else None
+        if sidecar and len(df):
+            df = df.copy()
+            df[_SIDECAR_COLUMN] = ""
+            df.iloc[0, df.columns.get_loc(_SIDECAR_COLUMN)] = json.dumps(
+                sidecar, default=str
+            )
+        return ibis.memtable(df)
+
+    def _read_report_df(self):
+        """The saved report. A sidecar saved with it goes back onto the reporter."""
+        df = self.table.execute() if hasattr(self.table, "execute") else self.table
+        if _SIDECAR_COLUMN in df.columns:
+            saved = next(
+                (v for v in df[_SIDECAR_COLUMN] if isinstance(v, str) and v), None
+            )
+            if saved:
+                self.reporter.set_sidecar(json.loads(saved))
+            df = df.drop(columns=[_SIDECAR_COLUMN])
+        return df
 
     @staticmethod
     def _normalize_df(df):
@@ -62,15 +97,7 @@ class Reporter(Node):
     def df_report(self):
         """Get the generated Table1 DataFrame with pretty formatting."""
         if self.table is not None:
-            # If table is an Ibis table, convert to pandas
-            if hasattr(self.table, "execute"):
-                df = self.table.execute()
-            else:
-                # Already a pandas DataFrame
-                df = self.table
-
-            # Apply pretty formatting
-            self.reporter.df = df
+            self.reporter.df = self._read_report_df()
             return self.reporter.get_pretty_display()
         return None
 
@@ -159,7 +186,7 @@ class Table1OutcomesNode(Reporter):
         logger.debug(
             f"{self.name} outcomes report generated for cohort '{self.cohort.name}'."
         )
-        return ibis.memtable(self._normalize_df(df))
+        return self._report_table(df)
 
     def to_json(self, path: str):
         """Export Table1 outcomes to JSON, propagating outcome section metadata."""
@@ -230,7 +257,7 @@ class CustomReporterNode(Reporter):
         logger.debug(
             f"Generating custom report '{self.reporter.name}' for cohort '{self.cohort.name}'..."
         )
-        self.reporter.execute(self.cohort)
+        self._run_reporter()
         logger.debug(
             f"Custom report '{self.reporter.name}' generated for cohort '{self.cohort.name}'."
         )
@@ -239,14 +266,14 @@ class CustomReporterNode(Reporter):
             and self.reporter.df is not None
             and len(self.reporter.df) > 0
         ):
-            return ibis.memtable(self._normalize_df(self.reporter.df.copy()))
+            return self._report_table(self.reporter.df.copy())
         return None
 
     @property
     def df_report(self):
         """Get the formatted report DataFrame."""
         if self.table is not None:
-            self._ensure_reporter_executed()
+            self._ensure_reporter_df()
             if hasattr(self.reporter, "get_pretty_display"):
                 return self.reporter.get_pretty_display()
             if hasattr(self.table, "execute"):
@@ -254,37 +281,63 @@ class CustomReporterNode(Reporter):
             return self.table
         return None
 
-    def _ensure_reporter_executed(self):
-        """Populate reporter.df, reloading the materialized table when it exists (lazy/cached execution)
-        and re-running the reporter only when there is nothing to reload."""
-        if not hasattr(self.reporter, "df") or self.reporter.df is None:
-            if self.table is not None:
-                self.reporter.df = (
-                    self.table.execute()
-                    if hasattr(self.table, "execute")
-                    else self.table
-                )
-            else:
-                self.reporter.execute(self.cohort)
+    def _report_target(self):
+        """What the reporter runs on."""
+        return self.cohort
+
+    # A study-level reporter is one object shared by every cohort, so what it
+    # holds may be another cohort's results. It is stamped with the node it ran
+    # for, and each node checks the stamp.
+
+    def _run_reporter(self):
+        """Run the reporter and stamp it as holding this node's results."""
+        self.reporter.execute(self._report_target())
+        self.reporter._phenex_results_of = id(self)
+
+    def _holds_my_results(self) -> bool:
+        return getattr(self.reporter, "_phenex_results_of", None) == id(self)
+
+    def _ensure_reporter_df(self):
+        """Give the reporter this node's df: keep it if the stamp matches, else
+        read the saved table, else compute."""
+        if self._holds_my_results() and getattr(self.reporter, "df", None) is not None:
+            return
+        if self.table is not None:
+            self.reporter.df = self._read_report_df()
+            # with a sidecar the saved table is the whole result; without one
+            # it is the df only
+            has_sidecar = _SIDECAR_COLUMN in self.table.columns
+            self.reporter._phenex_results_of = id(self) if has_sidecar else None
+        else:
+            self._run_reporter()
+
+    def _ensure_reporter_can_draw(self, method: str):
+        """The default to_html needs only the df. A reporter's own to_html or
+        to_png needs its whole result: run it unless it already holds that."""
+        self._ensure_reporter_df()
+        default = getattr(BaseReporter, method, None)
+        draws_itself = getattr(type(self.reporter), method, None) is not default
+        if draws_itself and not self._holds_my_results():
+            self._run_reporter()
 
     def to_excel(self, path: str):
         """Delegate to the wrapped reporter's to_excel."""
-        self._ensure_reporter_executed()
+        self._ensure_reporter_df()
         self.reporter.to_excel(path)
 
     def to_json(self, path: str):
         """Delegate to the wrapped reporter's to_json."""
-        self._ensure_reporter_executed()
+        self._ensure_reporter_df()
         self.reporter.to_json(path)
 
     def to_html(self, path: str):
         """Delegate to the wrapped reporter's to_html, if implemented."""
         if hasattr(self.reporter, "to_html"):
-            self._ensure_reporter_executed()
+            self._ensure_reporter_can_draw("to_html")
             self.reporter.to_html(path)
 
     def to_png(self, path: str):
         """Delegate to the wrapped reporter's to_png, if implemented."""
         if hasattr(self.reporter, "to_png"):
-            self._ensure_reporter_executed()
+            self._ensure_reporter_can_draw("to_png")
             self.reporter.to_png(path)

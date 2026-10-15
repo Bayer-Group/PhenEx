@@ -1,14 +1,19 @@
 from typing import List, Optional
-import os
 import pandas as pd
 import numpy as np
-import ibis
 from phenex.phenotypes.phenotype import Phenotype
-from phenex.node import Node
+from phenex.node import Node, NodeGroup
 from phenex.core.cohort import Cohort
+from phenex.core.reporter_nodes import (
+    CustomReporterNode,
+    Reporter,
+    Table1Node,
+    Table1OutcomesNode,
+    WaterfallNode,
+)
 from phenex.reporting import Table1, Waterfall
 from phenex.util import create_logger
-from phenex.util.progress import active_display, resolve_display
+from phenex.util.progress import resolve_display, stage_node_total
 
 logger = create_logger(__name__)
 
@@ -100,61 +105,85 @@ class _SubcohortProxy:
             self.subset_tables_index = None
 
 
-class _CustomReporterPseudoNode:
-    """Lightweight stand-in for a CustomReporterNode in a Subcohort.
-
-    Wraps an already-executed custom reporter so that the subcohort's
-    ``write_reports_to_json`` / ``write_reports_to_html`` /
-    ``write_reports_to_excel`` methods can delegate uniformly."""
-
-    def __init__(self, name: str, reporter):
-        self.name = name
-        self.reporter = reporter
-
-    def to_json(self, path: str):
-        if hasattr(self.reporter, "df") and self.reporter.df is not None:
-            self.reporter.to_json(path)
-
-    def to_html(self, path: str):
-        if hasattr(self.reporter, "to_html"):
-            self.reporter.to_html(path)
-
-    def to_excel(self, path: str):
-        if hasattr(self.reporter, "df") and self.reporter.df is not None:
-            self.reporter.to_excel(path)
+# The subcohort's reports are saved steps, like the parent cohort's: read back when nothing changed.
 
 
-class _PseudoReporterNode:
-    """Lightweight stand-in for a WaterfallNode / Table1Node so that
-    ``write_reports_to_excel`` / ``write_reports_to_json`` can call
-    ``node.to_excel()`` and ``node.to_json()`` uniformly."""
+class _SubcohortTable1Node(Table1Node):
+    """The subcohort's Table1: the parent's characteristics, restricted to the
+    subcohort's patients."""
 
-    def __init__(self, name: str, reporter, table):
-        self.name = name
-        self.reporter = reporter
-        self.table = table
+    def __init__(
+        self, name: str, cohort: "Subcohort", include_component_phenotypes_level=None
+    ):
+        Reporter.__init__(self, name=name, cohort=cohort)
+        self.reporter = Table1(
+            include_component_phenotypes_level=include_component_phenotypes_level
+        )
 
-    @property
-    def df_report(self):
-        if self.table is not None:
-            if hasattr(self.table, "execute"):
-                df = self.table.execute()
-            else:
-                df = self.table
-            self.reporter.df = df
-            result = self.reporter.get_pretty_display(color=False)
-            return result.drop(columns=["_color"], errors="ignore")
-        return None
-
-    def to_excel(self, path: str):
-        if self.table is not None:
-            _ = self.df_report
-            self.reporter.to_excel(path)
+    def _execute(self, tables=None):
+        self.reporter.execute(self.cohort._report_proxy())
+        return self._report_table(self.reporter.df)
 
     def to_json(self, path: str):
+        """Sections come from the parent, which owns the characteristics."""
         if self.table is not None:
             _ = self.df_report
+            self.reporter.characteristic_sections = getattr(
+                self.cohort.cohort, "characteristic_sections", None
+            )
             self.reporter.to_json(path)
+
+
+class _SubcohortTable1OutcomesNode(Table1OutcomesNode):
+    """The subcohort's outcomes Table1: its outcomes (the parent's plus its
+    own), restricted to the subcohort's patients."""
+
+    def __init__(
+        self, name: str, cohort: "Subcohort", include_component_phenotypes_level=None
+    ):
+        Reporter.__init__(self, name=name, cohort=cohort)
+        self.reporter = Table1(
+            name="Table1Outcomes",
+            include_component_phenotypes_level=include_component_phenotypes_level,
+        )
+
+    def _execute(self, tables=None):
+        proxy = self.cohort._report_proxy(
+            outcomes=self.cohort.outcomes,
+            outcome_sections=self.cohort.outcome_sections,
+        )
+        self.reporter.execute(proxy, phenotypes=proxy.outcomes)
+        self.reporter.characteristic_sections = proxy.outcome_sections
+        return self._report_table(self.reporter.df)
+
+
+class _SubcohortWaterfallNode(WaterfallNode):
+    """The subcohort's waterfall: the parent's rows, plus a row for each of the
+    subcohort's extra criteria."""
+
+    def __init__(
+        self, name: str, cohort: "Subcohort", include_component_phenotypes_level=None
+    ):
+        Reporter.__init__(self, name=name, cohort=cohort)
+        self.include_component_phenotypes_level = include_component_phenotypes_level
+        self.reporter = Waterfall(
+            include_component_phenotypes_level=include_component_phenotypes_level
+        )
+
+    def _execute(self, tables=None):
+        df = self.cohort._build_waterfall(self.reporter)
+        return None if df is None else self._report_table(df)
+
+
+class _SubcohortCustomReporterNode(CustomReporterNode):
+    """A custom reporter run on the subcohort's patients."""
+
+    def __init__(self, name: str, cohort: "Subcohort", reporter):
+        Reporter.__init__(self, name=name, cohort=cohort)
+        self.reporter = reporter
+
+    def _report_target(self):
+        return self.cohort._report_proxy(outcomes=self.cohort.outcomes)
 
 
 class _SubcohortIndexNode(Node):
@@ -281,6 +310,9 @@ class Subcohort(Cohort):
         The subcohort's index table is derived by filtering the parent's
         ``index_table`` with the additional inclusion/exclusion criteria.
         No subset tables are built or materialised for the subcohort.
+
+        The reports are saved like the parent cohort's: with
+        ``lazy_execution=True`` an unchanged report is read back, not rebuilt.
         """
         if self.cohort.subset_tables_entry is None:
             raise RuntimeError(
@@ -363,46 +395,23 @@ class Subcohort(Cohort):
                 self.table = con.get_dest_table(index_db_name)
 
             # --------------------------------------------------------------
-            # Build waterfall reports.  We construct the Waterfall manually so
-            # that parent criteria are read from the parent's already-computed
-            # waterfall data and only additional criteria are freshly appended.
-            # This avoids reading phenotype.table on parent phenotypes whose
-            # .table may have been overwritten by the parent's reporting stage.
+            # Reports as saved steps: unchanged ones are read back, the rest
+            # are built in parallel on n_threads.
             # --------------------------------------------------------------
-            # One counted bar over both waterfall builds (plain + detailed),
-            # advanced per appended criterion inside _build_waterfall.
-            _n_waterfall_steps = 2 * len(
-                self.additional_inclusions + self.additional_exclusions
+            self.reporting_stage = NodeGroup(
+                name="subcohort_reporting_stage", nodes=self._build_report_nodes()
             )
-            if _n_waterfall_steps:
-                display.task_started("Waterfall reports", _n_waterfall_steps)
-            else:
-                display.set_idle("Building waterfall reports ...")
-            self._build_waterfall(include_component_phenotypes_level=None)
-            self._build_waterfall(include_component_phenotypes_level=100)
-            if _n_waterfall_steps:
-                display.task_completed()
-
-            # Execute custom reporters using a filtered proxy so phenotype tables
-            # are scoped to the subcohort's patient population, mirroring how
-            # Table1 and other built-in reporters are handled.
-            _proxy = _SubcohortProxy(
-                self.cohort, self.index_table, outcomes=self.outcomes
+            display.stage_started(
+                "Reporting stage", stage_node_total(self.reporting_stage)
             )
-            self.custom_reporter_nodes = []
-            if self.custom_reporters:
-                display.task_started("Custom reporters", len(self.custom_reporters))
-            for reporter in self.custom_reporters:
-                with display.task_item(reporter.name):
-                    reporter.execute(_proxy)
-                    self.custom_reporter_nodes.append(
-                        _CustomReporterPseudoNode(
-                            name=f"{self.name}__custom__{reporter.name}".upper(),
-                            reporter=reporter,
-                        )
-                    )
-            if self.custom_reporters:
-                display.task_completed()
+            self.reporting_stage.execute(
+                con=con,
+                overwrite=overwrite,
+                n_threads=n_threads,
+                lazy_execution=lazy_execution,
+                table_name_prefix=self._table_prefix,
+            )
+            display.stage_completed()
 
             # Write the subcohort's own SQL: its extra criteria and its index query.
             # Parent nodes are written by the parent cohort's execute().
@@ -412,15 +421,55 @@ class Subcohort(Cohort):
             return self.index_table
 
     # ------------------------------------------------------------------
-    # Waterfall construction
+    # Reports
     # ------------------------------------------------------------------
 
-    def _build_waterfall(self, include_component_phenotypes_level=None):
-        """Build a waterfall by copying the parent's waterfall rows and
-        appending rows for the additional subcohort criteria."""
-        import numpy as np
+    def _build_report_nodes(self) -> List[Node]:
+        """The subcohort's reports as nodes, named like the parent cohort's
+        (`<NAME>__TABLE1` and so on)."""
+        name = self.name.upper()
+        self.waterfall_node = _SubcohortWaterfallNode(f"{name}__WATERFALL", self)
+        self.waterfall_detailed_node = _SubcohortWaterfallNode(
+            f"{name}__WATERFALL_DETAILED", self, include_component_phenotypes_level=100
+        )
+        nodes = [self.waterfall_node, self.waterfall_detailed_node]
 
-        is_detailed = include_component_phenotypes_level is not None
+        self.table1_node = self.table1_detailed_node = None
+        if self.cohort.characteristics:
+            self.table1_node = _SubcohortTable1Node(f"{name}__TABLE1", self)
+            self.table1_detailed_node = _SubcohortTable1Node(
+                f"{name}__TABLE1_DETAILED", self, include_component_phenotypes_level=100
+            )
+            nodes += [self.table1_node, self.table1_detailed_node]
+
+        self.table1_outcomes_node = self.table1_outcomes_detailed_node = None
+        if self.outcomes:
+            self.table1_outcomes_node = _SubcohortTable1OutcomesNode(
+                f"{name}__TABLE1_OUTCOMES", self
+            )
+            self.table1_outcomes_detailed_node = _SubcohortTable1OutcomesNode(
+                f"{name}__TABLE1_OUTCOMES_DETAILED",
+                self,
+                include_component_phenotypes_level=100,
+            )
+            nodes += [self.table1_outcomes_node, self.table1_outcomes_detailed_node]
+
+        self.custom_reporter_nodes = [
+            _SubcohortCustomReporterNode(
+                f"{name}__CUSTOM__{reporter.name}".upper(), self, reporter
+            )
+            for reporter in self.custom_reporters
+        ]
+        return nodes + self.custom_reporter_nodes
+
+    def _report_proxy(self, **kwargs) -> _SubcohortProxy:
+        """The parent's phenotypes, cut down to this subcohort's patients."""
+        return _SubcohortProxy(self.cohort, self.index_table, **kwargs)
+
+    def _build_waterfall(self, waterfall: Waterfall) -> Optional[pd.DataFrame]:
+        """Fill `waterfall` with the parent's saved rows plus one row per extra
+        criterion, and return its DataFrame. None if the parent has none."""
+        is_detailed = waterfall.include_component_phenotypes_level is not None
 
         # Pick the right parent waterfall reporter
         parent_reporter = (
@@ -429,7 +478,7 @@ class Subcohort(Cohort):
             else self.cohort.waterfall_node
         )
         if parent_reporter is None or parent_reporter.table is None:
-            return
+            return None
 
         # Get the parent waterfall dataframe (the raw df, not pretty-printed)
         parent_df = parent_reporter.table
@@ -462,9 +511,6 @@ class Subcohort(Cohort):
         )
         running_table = self.cohort.index_table.select(index_keys)
 
-        waterfall = Waterfall(
-            include_component_phenotypes_level=include_component_phenotypes_level
-        )
         waterfall.cohort = self
         waterfall.ds = list(parent_rows)
 
@@ -479,11 +525,10 @@ class Subcohort(Cohort):
                 level=0,
                 index=index,
             )
-            if include_component_phenotypes_level is not None:
+            if is_detailed:
                 waterfall._append_components_recursively(
                     inclusion, running_table, parent_index=str(index)
                 )
-            active_display().task_advance()
 
         for exclusion in self.additional_exclusions:
             index += 1
@@ -494,11 +539,10 @@ class Subcohort(Cohort):
                 level=0,
                 index=index,
             )
-            if include_component_phenotypes_level is not None:
+            if is_detailed:
                 waterfall._append_components_recursively(
                     exclusion, running_table, parent_index=str(index)
                 )
-            active_display().task_advance()
 
         # Now build the dataframe the same way Waterfall.execute does
         waterfall.ds = waterfall.append_delta(waterfall.ds)
@@ -580,21 +624,7 @@ class Subcohort(Cohort):
         # Ensure Index column is uniformly typed (string) so ibis.memtable
         # doesn't choke on mixed int / str values.
         waterfall.df["Index"] = waterfall.df["Index"].astype(str)
-
-        # Wrap in a pseudo-node so write_reports_to_excel/json works
-        table = ibis.memtable(waterfall.df)
-        if is_detailed:
-            self.waterfall_detailed_node = _PseudoReporterNode(
-                name=f"{self.name}__waterfall_detailed".upper(),
-                reporter=waterfall,
-                table=table,
-            )
-        else:
-            self.waterfall_node = _PseudoReporterNode(
-                name=f"{self.name}__waterfall".upper(),
-                reporter=waterfall,
-                table=table,
-            )
+        return waterfall.df
 
     # ------------------------------------------------------------------
     # Property overrides
@@ -657,8 +687,8 @@ class Subcohort(Cohort):
         return build_sql_view(self._collect_all_nodes(), sql_dir, connector)
 
     # ------------------------------------------------------------------
-    # Report helpers — build reporters lazily using _FilteredPhenotypeView
-    # so all counts are automatically scoped to the subcohort population.
+    # On-demand reporters: a fresh Table1 that is not saved. The saved reports
+    # come from the report nodes.
     # ------------------------------------------------------------------
 
     def _make_table1_reporter(
@@ -670,13 +700,8 @@ class Subcohort(Cohort):
         reporter = Table1(
             include_component_phenotypes_level=include_component_phenotypes_level
         )
-        proxy = _SubcohortProxy(self.cohort, self.index_table)
-        reporter.execute(proxy)
+        reporter.execute(self._report_proxy())
         return reporter
-
-    def _make_table1_detailed_reporter(self) -> Optional["Table1"]:
-        """Build and execute a detailed Table1 reporter (component phenotypes expanded)."""
-        return self._make_table1_reporter(include_component_phenotypes_level=100)
 
     def _make_table1_outcomes_reporter(
         self, include_component_phenotypes_level=None
@@ -687,76 +712,12 @@ class Subcohort(Cohort):
         reporter = Table1(
             include_component_phenotypes_level=include_component_phenotypes_level
         )
-        proxy = _SubcohortProxy(
-            self.cohort,
-            self.index_table,
-            outcomes=self.outcomes,
-            outcome_sections=self.outcome_sections,
+        proxy = self._report_proxy(
+            outcomes=self.outcomes, outcome_sections=self.outcome_sections
         )
         reporter.execute(proxy, phenotypes=proxy.outcomes)
         reporter.characteristic_sections = proxy.outcome_sections
         return reporter
 
-    def _make_table1_outcomes_detailed_reporter(self) -> Optional["Table1"]:
-        """Build and execute a detailed outcomes Table1 reporter."""
-        return self._make_table1_outcomes_reporter(
-            include_component_phenotypes_level=100
-        )
-
-    @property
-    def table1(self) -> Optional["pd.DataFrame"]:
-        """
-        Baseline characteristics Table1 for the subcohort population.
-
-        Takes the parent cohort's characteristics (already computed), filters
-        each phenotype's results to the patients in this subcohort, and returns
-        a formatted Table1 DataFrame. Returns ``None`` if the parent cohort has
-        no characteristics or if the subcohort has not yet been executed.
-        """
-        reporter = self._make_table1_reporter()
-        return reporter.get_pretty_display() if reporter else None
-
-    def _report_files(self, ext, method_name):
-        """All subcohort reports as (filename, write) pairs for the shared writer,
-        computed from filtered views of the parent's executed phenotype tables."""
-
-        def from_maker(make, set_sections=False):
-            def write(filepath):
-                reporter = make()
-                if reporter is None:
-                    return
-                if set_sections:
-                    reporter.characteristic_sections = getattr(
-                        self.cohort, "characteristic_sections", None
-                    )
-                getattr(reporter, method_name)(filepath)
-
-            return write
-
-        set_sections = method_name == "to_json"  # excel never set sections
-        reports = [
-            (f"table1{ext}", from_maker(self._make_table1_reporter, set_sections)),
-            (
-                f"table1_detailed{ext}",
-                from_maker(self._make_table1_detailed_reporter, set_sections),
-            ),
-            (
-                f"table1_outcomes{ext}",
-                from_maker(self._make_table1_outcomes_reporter),
-            ),
-            (
-                f"table1_outcomes_detailed{ext}",
-                from_maker(self._make_table1_outcomes_detailed_reporter),
-            ),
-        ]
-        for filename, node in (
-            (f"waterfall{ext}", self.waterfall_node),
-            (f"waterfall_detailed{ext}", self.waterfall_detailed_node),
-        ):
-            if node:
-                reports.append((filename, getattr(node, method_name)))
-        reports += [
-            (node.reporter.name + ext, getattr(node, method_name))
-            for node in self.custom_reporter_nodes
-        ]
-        return reports
+    # table1, waterfall and the report files come from Cohort: they read the
+    # report nodes, which a subcohort names and fills like a cohort.
