@@ -12,6 +12,7 @@ nav:
       - LogicPhenotype: tutorials/LogicPhenotype_Tutorial.ipynb
       - Python For PhenEx Tutorial: tutorials/Python_For_Phenex_Tutorial.ipynb
       - Generating SQL: tutorials/generating_sql.md
+      - Loading saved results: tutorials/loading_results.md
   - API:
       - Core:
           - Cohort: api/core/cohort.md

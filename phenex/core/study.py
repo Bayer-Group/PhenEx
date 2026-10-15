@@ -1,4 +1,5 @@
 import os, datetime, json, logging, sys
+from contextlib import contextmanager
 from typing import List, Dict, Optional
 
 from phenex.node import Node, NodeGroup
@@ -184,23 +185,17 @@ class Study:
 
                     self._save_serialized_cohort(_cohort, path_exec_dir_cohort)
 
-                    # Merge study-level custom reporters into the cohort before execution.
-                    # Save and restore so repeated calls to study.execute() don't accumulate duplicates.
-                    _original_custom_reporters = _cohort.custom_reporters
-                    _cohort.custom_reporters = (
-                        _original_custom_reporters or []
-                    ) + self.custom_reporters
-
-                    # Each cohort's SQL goes in its own run directory.
-                    _cohort.execute(
-                        overwrite=overwrite,
-                        lazy_execution=lazy_execution,
-                        n_threads=n_threads,
-                        sql_dir=os.path.join(path_exec_dir_cohort, "sql"),
-                        verbosity=verbosity,
-                    )
-
-                    _cohort.custom_reporters = _original_custom_reporters
+                    # Study-level reporters join the cohort for the run;
+                    # restored after, even on failure
+                    with self._with_study_reporters(_cohort):
+                        # Each cohort's SQL goes in its own run directory.
+                        _cohort.execute(
+                            overwrite=overwrite,
+                            lazy_execution=lazy_execution,
+                            n_threads=n_threads,
+                            sql_dir=os.path.join(path_exec_dir_cohort, "sql"),
+                            verbosity=verbosity,
+                        )
 
                     # Saving is its own session: a bar over the report files, the one
                     # being written named beneath it, one timed line per report.
@@ -240,6 +235,48 @@ class Study:
                 strong=True,
             )
         return path_exec_dir_study
+
+    @contextmanager
+    def _with_study_reporters(self, cohort):
+        """Temporarily add the study's own reporters to the cohort. Restored
+        after, so repeated calls do not accumulate duplicates."""
+        original = cohort.custom_reporters
+        cohort.custom_reporters = (original or []) + self.custom_reporters
+        try:
+            yield
+        finally:
+            cohort.custom_reporters = original
+
+    def load(self) -> "Study":
+        """
+        Point every cohort back at the tables a previous run already wrote,
+        without computing anything. Use it in a fresh session after re-running
+        the cells that define the study, instead of execute().
+        """
+        from phenex.core.cohort import _list_dest_tables
+        from phenex.core.subcohort import Subcohort
+
+        logger.info(f"Study '{self.name}': loading executed results (no computation)")
+        self.custom_reporters = self.custom_reporters or []
+        ordered = [c for c in self.cohorts if not isinstance(c, Subcohort)] + [
+            c for c in self.cohorts if isinstance(c, Subcohort)
+        ]
+        listings = {}
+        for cohort in ordered:
+            con = cohort.database.connector
+            if id(con) not in listings:
+                listing = _list_dest_tables(con)
+                if listing is None:
+                    logger.warning(
+                        f"Destination database for cohort '{cohort.name}' not "
+                        f"found; its tables will load as None"
+                    )
+                listings[id(con)] = listing or set()
+            # Study-level reporters join the cohort, as execute() does, so
+            # their saved tables are reachable too
+            with self._with_study_reporters(cohort):
+                cohort.load(con=con, _existing_tables=listings[id(con)])
+        return self
 
     def _write_manifest(
         self, path_exec_dir_study, status="success", error_message=None
