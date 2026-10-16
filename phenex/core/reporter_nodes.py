@@ -23,6 +23,9 @@ class Reporter(Node):
     can be accessed via the table1 property.
     """
 
+    # reports show labels, so a new label rebuilds the report
+    _hash_includes_display_names = True
+
     def __init__(self, name: str, cohort: "Cohort"):
         super(Reporter, self).__init__(name=name)
         self.cohort = cohort

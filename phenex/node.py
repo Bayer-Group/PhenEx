@@ -26,6 +26,19 @@ from collections import defaultdict
 
 logger = create_logger(__name__)
 
+
+def _without_display_names(value):
+    """Remove every `display_name` key, also inside nested dicts and lists."""
+    if isinstance(value, dict):
+        return {
+            k: _without_display_names(v)
+            for k, v in value.items()
+            if k != "display_name"
+        }
+    if isinstance(value, list):
+        return [_without_display_names(v) for v in value]
+    return value
+
 NODE_STATES_TABLE_NAME = "__PHENEX_META__NODE_STATES"
 NODE_STATES_DB_NAME = "phenex.db"
 
@@ -72,6 +85,10 @@ class Node:
 
     # Class-level node manager for state tracking
     _node_manager = NodeManager()
+
+    # labels (`display_name`) only change how reports look, so a new label
+    # does not re-run the node
+    _hash_includes_display_names = False
 
     # Class-level defaults so the table getter is safe before __init__ runs
     _table = None
@@ -263,6 +280,8 @@ class Node:
             int: An integer hash of the node's attributes.
         """
         as_dict = self.to_dict()
+        if not self._hash_includes_display_names:
+            as_dict = _without_display_names(as_dict)
         # to make sure that difference classes that take the same parameters return different hashes!
         as_dict["class"] = self.__class__.__name__
         dhash = hashlib.md5()

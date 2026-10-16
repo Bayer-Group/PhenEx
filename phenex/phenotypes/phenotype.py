@@ -26,6 +26,7 @@ class Phenotype(Node):
 
     Parameters:
         description: A plain text description of the phenotype.
+        display_name: Optional label for reports, shown exactly as written. If not set, the label is made from `name`. Changing it does not re-run the phenotype.
         kwargs: For additional parameters, see Node.
     """
 
@@ -35,9 +36,11 @@ class Phenotype(Node):
         self,
         description: str = None,
         output_display_type: Optional[str] = None,
+        display_name: Optional[str] = None,
         **kwargs,
     ):
         self.description = description
+        self._display_name = display_name
         if output_display_type is not None:
             self.output_display_type = output_display_type
         super(Phenotype, self).__init__(**kwargs)
@@ -168,7 +171,14 @@ class Phenotype(Node):
         return codelists
 
     def to_dict(self):
-        return to_dict(self)
+        d = to_dict(self)
+        # save the label only if the user set one
+        label = getattr(self, "_display_name", None)
+        if label is None:
+            d.pop("display_name", None)
+        else:
+            d["display_name"] = label
+        return d
 
     @property
     def display_name(self):
