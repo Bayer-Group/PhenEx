@@ -39,6 +39,7 @@ def _without_display_names(value):
         return [_without_display_names(v) for v in value]
     return value
 
+
 NODE_STATES_TABLE_NAME = "__PHENEX_META__NODE_STATES"
 NODE_STATES_DB_NAME = "phenex.db"
 
