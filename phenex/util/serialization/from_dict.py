@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from phenex.aggregators import *
 from phenex.codelists import *
@@ -42,10 +43,9 @@ def from_dict(data: dict, _node_registry: dict = None):
     A single logical phenotype (Node) may appear multiple times in a serialized
     cohort (for example a phenotype used both inside a LogicPhenotype expression
     and as its `return_date`). In memory these are the same object; serialization
-    writes them out repeatedly. `_node_registry` maps phenotype name -> the
-    reconstructed Node so that repeated occurrences resolve to the same instance,
-    preserving the original object identity and avoiding spurious
-    "Duplicate node name found" errors.
+    writes them out repeatedly. `_node_registry` maps each phenotype's full
+    definition -> the reconstructed Node, so repeated occurrences resolve to the
+    same instance. Two different phenotypes with the same name stay two.
     """
     # logger.debug(f"Decoding data: {data}")
     if _node_registry is None:
@@ -75,8 +75,10 @@ def from_dict(data: dict, _node_registry: dict = None):
     # instance so shared phenotypes keep a single object identity.
     node_name = data.get("name")
     is_node = inspect.isclass(cls) and issubclass(cls, Node)
-    if is_node and node_name is not None and node_name in _node_registry:
-        return _node_registry[node_name]
+    # the whole definition, not just the name: children may share a name
+    node_key = json.dumps(data, sort_keys=True, default=str) if is_node else None
+    if is_node and node_name is not None and node_key in _node_registry:
+        return _node_registry[node_key]
 
     data.pop("class_name", None)
     all_params = get_phenex_init_params(cls)
@@ -176,7 +178,7 @@ def from_dict(data: dict, _node_registry: dict = None):
     # logger.debug(f"Kwargs: {kwargs}")
     obj = cls(**init_args)
     if is_node and node_name is not None:
-        _node_registry[node_name] = obj
+        _node_registry[node_key] = obj
     return obj
 
 
