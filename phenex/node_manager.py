@@ -26,7 +26,8 @@ class NodeManager:
     should be rerun and storing/retrieving execution metadata.
 
     The NodeManager tracks node executions by matching:
-    1. Node name
+    1. Node table name (`node.get_table_name()`), so two phenotypes with the same
+       name (e.g. children of different parents) never share a row
     2. Execution context (database connector configuration)
     3. Node hash (computed from node parameters)
 
@@ -39,12 +40,6 @@ class NodeManager:
 
     def __init__(self, db_name: str = NODE_STATES_DB_NAME):
         self.db_name = db_name
-
-    @staticmethod
-    def _state_key(node) -> str:
-        """Nodes are remembered by their table name, so two phenotypes with the
-        same name (e.g. children of different parents) never share a row."""
-        return node.get_table_name()
 
     def should_rerun(self, node, con) -> bool:
         """
@@ -113,7 +108,7 @@ class NodeManager:
         return (
             self._get_node_hash(node),
             self._getlasthash(
-                self._state_key(node), execution_params=self._get_execution_params(con)
+                node.get_table_name(), execution_params=self._get_execution_params(con)
             ),
         )
 
@@ -132,7 +127,7 @@ class NodeManager:
         """
         execution_params = self._get_execution_params(con)
         last_hash = self._getlasthash(
-            self._state_key(node), execution_params=execution_params
+            node.get_table_name(), execution_params=execution_params
         )
         execution_params_json = (
             json.dumps(execution_params, sort_keys=True)
@@ -179,7 +174,7 @@ class NodeManager:
                     # Read ONLY the matching row's SQL, not the whole table.
                     matches = (
                         state.filter(
-                            (state.NODE_NAME == self._state_key(node))
+                            (state.NODE_NAME == node.get_table_name())
                             & (state.NODE_HASH == last_hash)
                         )
                         .select("EXECUTION_PARAMS", "NODE_SQL")
@@ -201,7 +196,7 @@ class NodeManager:
             # New row values, in the canonical schema order
             new_row_values = {
                 "EXECUTION_ID": str(uuid.uuid4()),
-                "NODE_NAME": self._state_key(node),
+                "NODE_NAME": node.get_table_name(),
                 "NODE_HASH": current_hash,
                 "NODE_PARAMS": json.dumps(node.to_dict()),
                 "EXECUTION_PARAMS": execution_params_json,
@@ -220,7 +215,7 @@ class NodeManager:
                             f'DELETE FROM "{NODE_STATES_TABLE_NAME}" '
                             f"WHERE NODE_NAME = ? AND NODE_HASH = ? "
                             f"AND EXECUTION_PARAMS IS NULL",
-                            [self._state_key(node), int(last_hash)],
+                            [node.get_table_name(), int(last_hash)],
                         )
                     else:
                         native.execute(
@@ -228,7 +223,7 @@ class NodeManager:
                             f"WHERE NODE_NAME = ? AND NODE_HASH = ? "
                             f"AND EXECUTION_PARAMS = ?",
                             [
-                                self._state_key(node),
+                                node.get_table_name(),
                                 int(last_hash),
                                 execution_params_json,
                             ],
@@ -249,13 +244,13 @@ class NodeManager:
                     if last_hash is not None:
                         if execution_params_json is None:
                             mask = (
-                                (existing_table.NODE_NAME == self._state_key(node))
+                                (existing_table.NODE_NAME == node.get_table_name())
                                 & (existing_table.NODE_HASH == last_hash)
                                 & pd.isna(existing_table.EXECUTION_PARAMS)
                             )
                         else:
                             mask = (
-                                (existing_table.NODE_NAME == self._state_key(node))
+                                (existing_table.NODE_NAME == node.get_table_name())
                                 & (existing_table.NODE_HASH == last_hash)
                                 & (
                                     existing_table.EXECUTION_PARAMS
@@ -302,7 +297,7 @@ class NodeManager:
             duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=self.db_name)
             if NODE_STATES_TABLE_NAME in duckdb_con.dest_connection.list_tables():
                 table = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
-                table = table[table.NODE_NAME == self._state_key(node)]
+                table = table[table.NODE_NAME == node.get_table_name()]
 
                 if con is not None:
                     # Filter by execution context
@@ -337,7 +332,7 @@ class NodeManager:
                 return None
             current_hash = self._get_node_hash(node)
             matches = table[
-                (table.NODE_NAME == self._state_key(node))
+                (table.NODE_NAME == node.get_table_name())
                 & (table.NODE_HASH == current_hash)
             ]
             if con is not None and "EXECUTION_PARAMS" in matches.columns:
@@ -403,10 +398,10 @@ class NodeManager:
 
         found = {}
         for node in nodes:
-            sql = by_key.get((self._state_key(node), self._get_node_hash(node)))
+            sql = by_key.get((node.get_table_name(), self._get_node_hash(node)))
             if sql is None or (isinstance(sql, float) and pd.isna(sql)):
                 continue
-            found[self._state_key(node)] = str(sql)
+            found[node.get_table_name()] = str(sql)
         return found
 
     def clear_cache(self, node, con=None, recursive=False) -> bool:
@@ -448,19 +443,19 @@ class NodeManager:
 
                     if execution_params_json is None:
                         # Remove entries with matching node name and null execution params
-                        mask = (table.NODE_NAME == self._state_key(node)) & pd.isna(
+                        mask = (table.NODE_NAME == node.get_table_name()) & pd.isna(
                             table.EXECUTION_PARAMS
                         )
                     else:
                         # Remove entries with matching node name and execution params
-                        mask = (table.NODE_NAME == self._state_key(node)) & (
+                        mask = (table.NODE_NAME == node.get_table_name()) & (
                             table.EXECUTION_PARAMS == execution_params_json
                         )
 
                     table = table[~mask]
                 else:
                     # Remove all entries for this node
-                    table = table[table.NODE_NAME != self._state_key(node)]
+                    table = table[table.NODE_NAME != node.get_table_name()]
 
                 # Update the table
                 if len(table) > 0:
