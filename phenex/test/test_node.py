@@ -60,7 +60,7 @@ class TestPhenexNode:
         with pytest.raises(ValueError, match="Duplicate node found"):
             parent.add_children(child1)  # Add same child again
 
-        with pytest.raises(ValueError, match="Duplicate node name found"):
+        with pytest.raises(ValueError, match="two different children called"):
             parent.add_children(child2)  # Add child with same name
 
         assert len(parent.children) == 1
@@ -93,7 +93,7 @@ class TestPhenexNode:
         child2 = Node("duplicate_name")
 
         parent.add_children(child1)
-        with pytest.raises(ValueError, match="Duplicate node name found"):
+        with pytest.raises(ValueError, match="two different children called"):
             parent.add_children(child2)
 
     def test_rshift_operator(self):

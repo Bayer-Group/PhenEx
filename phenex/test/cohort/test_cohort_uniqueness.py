@@ -13,8 +13,8 @@ MOCK_TABLES = {"PERSON": None, "DRUG_EXPOSURE": None}
 class TestCohortNodeUniqueness:
     """Test class for cohort node uniqueness validation"""
 
-    def test_cohort_node_uniqueness_violation(self):
-        """Test that cohort raises error when nodes have same name but different parameters"""
+    def test_cohort_same_name_in_two_sections_is_allowed(self):
+        """Same name in entry and inclusions, different definitions: allowed, two tables"""
 
         # Create two CodelistPhenotype nodes with the same name but different parameters
         entry1 = CodelistPhenotype(
@@ -31,13 +31,15 @@ class TestCohortNodeUniqueness:
             domain="DRUG_EXPOSURE",
         )
 
-        # This should fail due to node uniqueness violation
-        with pytest.raises(ValueError, match="Duplicate node name found"):
-            Cohort(
-                name="test_cohort",
-                entry_criterion=entry1,
-                inclusions=[entry2],  # Same name as entry, but different params
-            ).build_stages(MOCK_TABLES)
+        # Allowed: entry and inclusions are different sections
+        cohort = Cohort(
+            name="test_cohort",
+            entry_criterion=entry1,
+            inclusions=[entry2],  # Same name as entry, but different params
+        )
+        cohort.build_stages(MOCK_TABLES)
+        assert entry1.get_table_name() == "TEST_COHORT__ENTRY__TEST_PHENOTYPE"
+        assert entry2.get_table_name() == "TEST_COHORT__INCLUSIONS__TEST_PHENOTYPE"
 
     def test_cohort_node_uniqueness_success(self):
         """Test that cohort allows nodes with same name and same parameters"""
@@ -100,8 +102,8 @@ class TestCohortNodeUniqueness:
         assert len(cohort.inclusions) == 1
         assert cohort.inclusions[0] == inclusion
 
-    def test_cohort_multiple_stages_uniqueness_violation(self):
-        """Test uniqueness validation across multiple cohort stages"""
+    def test_cohort_same_name_in_entry_and_characteristics_is_allowed(self):
+        """Same name in entry and characteristics: allowed, two tables"""
 
         entry = CodelistPhenotype(
             name="shared_phenotype",
@@ -125,13 +127,12 @@ class TestCohortNodeUniqueness:
             domain="DRUG_EXPOSURE",
         )
 
-        # This should fail due to node uniqueness violation
-        with pytest.raises(ValueError, match="Duplicate node name found"):
-            Cohort(
-                name="test_cohort",
-                entry_criterion=entry,
-                inclusions=[inclusion],
-                characteristics=[
-                    characteristic
-                ],  # Same name as entry, different params
-            ).build_stages(MOCK_TABLES)
+        # Allowed: entry and characteristics are different sections
+        Cohort(
+            name="test_cohort",
+            entry_criterion=entry,
+            inclusions=[inclusion],
+            characteristics=[characteristic],  # Same name as entry, different params
+        ).build_stages(MOCK_TABLES)
+        assert entry.unique_name == "ENTRY__SHARED_PHENOTYPE"
+        assert characteristic.unique_name == "CHARACTERISTICS__SHARED_PHENOTYPE"

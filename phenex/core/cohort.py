@@ -178,7 +178,8 @@ class Cohort:
             + self.outcomes
         )
 
-        self._validate_node_uniqueness()
+        self._validate_names()
+        self._assign_unique_names()
 
         # stages: set at execute() time
         self.data_period_filter_stage = None
@@ -269,39 +270,77 @@ class Cohort:
 
     def add_inclusions(self, phenotypes):
         """Add phenotypes to the inclusion criteria."""
-        if not isinstance(phenotypes, list):
-            phenotypes = [phenotypes]
-        self._apply_table_name_prefix(phenotypes)
-        self.inclusions.extend(phenotypes)
-        self.phenotypes.extend(phenotypes)
+        self._add_to_section(self.inclusions, phenotypes)
 
     def add_exclusions(self, phenotypes):
         """Add phenotypes to the exclusion criteria."""
-        if not isinstance(phenotypes, list):
-            phenotypes = [phenotypes]
-        self._apply_table_name_prefix(phenotypes)
-        self.exclusions.extend(phenotypes)
-        self.phenotypes.extend(phenotypes)
+        self._add_to_section(self.exclusions, phenotypes)
 
     def add_characteristics(self, phenotypes):
         """Add phenotypes to the baseline characteristics."""
-        if not isinstance(phenotypes, list):
-            phenotypes = [phenotypes]
-        self._apply_table_name_prefix(phenotypes)
-        self.characteristics.extend(phenotypes)
-        self.phenotypes.extend(phenotypes)
+        self._add_to_section(self.characteristics, phenotypes)
 
     def add_outcomes(self, phenotypes):
         """Add phenotypes to the outcomes."""
+        self._add_to_section(self.outcomes, phenotypes)
+
+    def _add_to_section(self, section: List, phenotypes) -> None:
+        """Add phenotypes to one section. Nothing is added if a name breaks the rules."""
         if not isinstance(phenotypes, list):
             phenotypes = [phenotypes]
+        section.extend(phenotypes)
+        try:
+            self._validate_names()
+        except ValueError:
+            del section[len(section) - len(phenotypes) :]
+            raise
         self._apply_table_name_prefix(phenotypes)
-        self.outcomes.extend(phenotypes)
         self.phenotypes.extend(phenotypes)
+        self._assign_unique_names()
 
-    def _validate_node_uniqueness(self):
-        # Use Node's capability to check for node uniqueness rather than reimplementing it here
-        Node().add_children(self.phenotypes)
+    def _sections(self) -> List[tuple]:
+        """The top-level phenotypes, by section, in a fixed order."""
+        return [
+            ("ENTRY", [self.entry_criterion]),
+            ("INCLUSIONS", self.inclusions),
+            ("EXCLUSIONS", self.exclusions),
+            ("CHARACTERISTICS", self.characteristics),
+            ("OUTCOMES", self.outcomes),
+        ]
+
+    def _validate_names(self):
+        """Top-level phenotypes need different names within their section.
+        Children are checked against their siblings when they are added."""
+        for label, phenotypes in self._sections():
+            seen = {}
+            for p in phenotypes:
+                if p.name not in seen:
+                    seen[p.name] = p
+                elif seen[p.name] is p:
+                    raise ValueError(f'"{p.name}" is listed twice in {label.lower()}.')
+                else:
+                    raise ValueError(
+                        f'Two {label.lower()} are called "{p.name}". Please rename one.'
+                    )
+
+    def _assign_unique_names(self):
+        """Name each phenotype's table by its place, e.g. `OUTCOMES__BLEEDING__CHILD_1`.
+        A phenotype used in two places takes the first one, top-level first."""
+        named = set()
+        queue = []
+        for label, phenotypes in self._sections():
+            for p in phenotypes:
+                if id(p) not in named:
+                    named.add(id(p))
+                    p._unique_name = f"{label}__{p.name}"
+                    queue.append(p)
+        # the queue grows while we walk it, so children are named level by level
+        for parent in queue:
+            for child in parent.children:
+                if isinstance(child, Phenotype) and id(child) not in named:
+                    named.add(id(child))
+                    child._unique_name = f"{parent.unique_name}__{child.name}"
+                    queue.append(child)
 
     def build_stages(self, tables: Dict[str, PhenexTable]):
         """
@@ -332,6 +371,9 @@ class Cohort:
             This method must be called before execute() to initialize the computation graph.
             Node uniqueness is validated across all stages to prevent naming conflicts.
         """
+        # a phenotype shared with another cohort may carry that cohort's names
+        self._assign_unique_names()
+
         # Check required domains are present to fail early (note this check is not perfect as _get_domains() doesn't catch everything, e.g., intermediate tables in autojoins, but this is better than nothing)
         # Filter out None tables (tables not found in source data)
         available_tables = {k: v for k, v in tables.items() if v is not None}
@@ -1186,6 +1228,9 @@ class Cohort:
         for node in nodes:
             node._table_name_prefix = prefix
             db_name = node.get_table_name(prefix)
+            if db_name.upper() not in existing and node._unique_name is not None:
+                # runs made before phenotypes were named by their place
+                db_name = node._plain_table_name(prefix)
             if db_name.upper() in existing:
                 node.attach_lazy_table(con, db_name)
                 attached += 1
@@ -1455,7 +1500,7 @@ class Cohort:
                         if not needs_restore:
                             continue
                         # Dialect-aware lookup: only accept SQL cached for this backend.
-                        sql = _cached_sql.get(node.name)
+                        sql = _cached_sql.get(node.get_table_name())
                         if sql is not None:
                             try:
                                 write_sql_file(filepath, sql)
@@ -1617,6 +1662,7 @@ class Cohort:
 
         # index/inclusions/exclusions become objects only inside execute(). In a fresh
         # session they are None, so rebuild those three from the phenotypes (no query).
+        self._assign_unique_names()
         if self.index_table_node is None:
             self._build_rollup_nodes()
         # Say up front where the SQL is read from, so a short or surprising list is traceable.

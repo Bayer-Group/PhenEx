@@ -111,6 +111,8 @@ class Table1(Reporter):
             self._phenotypes = self._expand_with_components(self._phenotypes)
 
         self.cohort_names_in_order = [x.name for x in self._phenotypes]
+        # row order by position, since children of different parents may share a name
+        self._position = {id(x): i for i, x in enumerate(self._phenotypes)}
         self.N = (
             cohort.index_table.filter(cohort.index_table.BOOLEAN == True)
             .select("PERSON_ID")
@@ -203,9 +205,7 @@ class Table1(Reporter):
             for phenotype in boolean_phenotypes
         ]
         df_t1.index = [x.display_name for x in boolean_phenotypes]
-        df_t1["inex_order"] = [
-            self.cohort_names_in_order.index(x.name) for x in boolean_phenotypes
-        ]
+        df_t1["inex_order"] = [self._position[id(x)] for x in boolean_phenotypes]
         df_t1["_level"] = [getattr(x, "_level", 0) for x in boolean_phenotypes]
         return df_t1
 
@@ -237,7 +237,7 @@ class Table1(Reporter):
                 "P75": _value.quantile(0.75).execute(),
                 "P90": _value.quantile(0.90).execute(),
                 "Max": _value.max().execute(),
-                "inex_order": self.cohort_names_in_order.index(phenotype.name),
+                "inex_order": self._position[id(phenotype)],
                 "_level": getattr(phenotype, "_level", 0),
             }
             dfs.append(pd.DataFrame.from_dict([d]))
@@ -272,7 +272,7 @@ class Table1(Reporter):
                 f"{name}={v if v is not None else 'None'}" for v in cat_counts["VALUE"]
             ]
             _df = pd.DataFrame(cat_counts["N"])
-            _df["inex_order"] = self.cohort_names_in_order.index(phenotype.name)
+            _df["inex_order"] = self._position[id(phenotype)]
             _df["_level"] = getattr(phenotype, "_level", 0)
             dfs.append(_df)
             names.extend(cat_counts.index)

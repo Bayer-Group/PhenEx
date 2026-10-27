@@ -206,7 +206,7 @@ class CohortExplorer(Reporter):
                 # Determine phenotype role
                 role = self._get_phenotype_role(phenotype)
 
-                self.phenotype_data[phenotype.name] = {
+                self.phenotype_data[phenotype.unique_name] = {
                     "display_name": getattr(phenotype, "display_name", phenotype.name),
                     "type": type(phenotype).__name__,
                     "role": role,
@@ -221,8 +221,8 @@ class CohortExplorer(Reporter):
 
                 logger.debug(
                     f"Processed {phenotype.name}: {len(df)} events, "
-                    f"values={self.phenotype_data[phenotype.name]['has_values']}, "
-                    f"dates={self.phenotype_data[phenotype.name]['has_dates']}"
+                    f"values={self.phenotype_data[phenotype.unique_name]['has_values']}, "
+                    f"dates={self.phenotype_data[phenotype.unique_name]['has_dates']}"
                 )
 
             except Exception as e:
@@ -1376,7 +1376,7 @@ class CohortExplorer(Reporter):
         # Find entry criterion first (it will be the default)
         entry_name = None
         if hasattr(self.cohort, "entry_criterion") and self.cohort.entry_criterion:
-            entry_name = self.cohort.entry_criterion.name
+            entry_name = self.cohort.entry_criterion.unique_name
 
         default_phenotype = (
             entry_name if entry_name else list(self.phenotype_data.keys())[0]
