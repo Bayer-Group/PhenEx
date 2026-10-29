@@ -198,9 +198,6 @@ class NodeManager:
                 "EXECUTION_ID": str(uuid.uuid4()),
                 "NODE_NAME": node.get_table_name(),
                 "NODE_HASH": current_hash,
-                # Settings are not stored, the hash already tells if a node changed.
-                # The column stays so existing phenex.db files keep the same schema.
-                "NODE_PARAMS": None,
                 "EXECUTION_PARAMS": execution_params_json,
                 "EXECUTION_START_TIME": node.lastexecution_start_time,
                 "EXECUTION_END_TIME": node.lastexecution_end_time,
@@ -239,7 +236,8 @@ class NodeManager:
                 )
             else:
                 # First write, or a phenex.db from an older version whose schema
-                # differs: rebuild the table with the full schema
+                # differs: rebuild the table with the current schema. This also
+                # removes the old NODE_PARAMS column, once per file.
                 new_row = pd.DataFrame({k: [v] for k, v in new_row_values.items()})
                 if state is not None:
                     existing_table = state.to_pandas()
@@ -269,7 +267,6 @@ class NodeManager:
                         "EXECUTION_ID": "string",
                         "NODE_NAME": "string",
                         "NODE_HASH": "int64",
-                        "NODE_PARAMS": "string",
                         "EXECUTION_PARAMS": "string",
                         "EXECUTION_START_TIME": "timestamp",
                         "EXECUTION_END_TIME": "timestamp",

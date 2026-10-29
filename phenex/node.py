@@ -76,6 +76,7 @@ class Node:
     # Class-level defaults so the table getter is safe before __init__ runs
     _table = None
     _table_loader = None
+    _unique_name = None
 
     @property
     def table(self) -> Optional[Table]:
@@ -140,7 +141,7 @@ class Node:
             1. Be of type Node
             2. Not already be in self.children
             3. Does not create a circular dependency and
-            4. Have a unique name from all other dependencies
+            4. Have a different name from its siblings (the other children)
         """
         if not isinstance(child, Node):
             raise ValueError("Dependent children must be of type Node!")
@@ -163,10 +164,11 @@ class Node:
                 f"would create a circular dependency because '{self.name}' is already a dependency of '{child.name}'."
             )
 
-        for dep in self.dependencies:
-            if child.name == dep.name and child is not dep:
+        for sibling in self.children:
+            if sibling.unique_name == child.unique_name:
                 raise ValueError(
-                    f"Duplicate node name found: the name '{child.name}' is used both for this node and one of its dependencies."
+                    f'"{self.name}" has two different children called "{child.name}". '
+                    f"Please rename one."
                 )
 
         return True
@@ -216,21 +218,22 @@ class Node:
                 reverse_graph[child].add(parent)
         return dict(reverse_graph)
 
-    def _collect_all_dependencies(self, visited: Set[str] = None) -> Dict[str, "Node"]:
+    def _collect_all_dependencies(self, visited: Set[int] = None) -> Dict[int, "Node"]:
+        # keyed by object, so two different nodes with the same name are both kept
         if visited is None:
             visited = set()
 
         all_deps = {}
 
         # Avoid infinite loops with circular dependencies
-        if self.name in visited:
+        if id(self) in visited:
             return all_deps
-        visited.add(self.name)
+        visited.add(id(self))
 
         # Add direct children (dependencies)
         for child in self.children:
-            if child.name not in all_deps:
-                all_deps[child.name] = child
+            if id(child) not in all_deps:
+                all_deps[id(child)] = child
                 # Recursively collect dependencies of this child
                 child_deps = child._collect_all_dependencies(visited.copy())
                 all_deps.update(child_deps)
@@ -246,12 +249,29 @@ class Node:
         self._name = name
 
     @property
+    def unique_name(self) -> str:
+        """The name of this node's table. A Cohort sets it to the phenotype's
+        place, e.g. `OUTCOMES__BLEEDING__CHILD_1`. Otherwise it is `name`."""
+        return self._unique_name or self.name
+
+    def _graph_nodes(self) -> Dict[str, "Node"]:
+        """This node and all its dependencies, by unique name."""
+        nodes = {}
+        for node in self.dependencies + [self]:
+            if nodes.setdefault(node.unique_name, node) is not node:
+                raise ValueError(
+                    f'Two different phenotypes are called "{node.unique_name}". '
+                    f"Rename one, or add them to a Cohort, which names them by their place."
+                )
+        return nodes
+
+    @property
     def execution_metadata(self):
         """
         Retrieve the full execution metadata row for this node from the local DuckDB database.
 
         Returns:
-            pandas.DataFrame: A table containing NODE_NAME, NODE_HASH, NODE_PARAMS, EXECUTION_PARAMS, EXECUTION_START_TIME, EXECUTION_END_TIME, and EXECUTION_DURATION for execution of this node, or None if the node has never been executed.
+            pandas.DataFrame: A table containing NODE_NAME, NODE_HASH, EXECUTION_PARAMS, EXECUTION_START_TIME, EXECUTION_END_TIME, and EXECUTION_DURATION for execution of this node, or None if the node has never been executed.
         """
         return Node._node_manager.get_run_params(self)
 
@@ -290,8 +310,17 @@ class Node:
         prefix = table_name_prefix or self._table_name_prefix
         if prefix:
             prefix = re.sub(r"[^A-Za-z0-9_]", "_", prefix).upper()
-            if not self.name.startswith(prefix):
-                return f"{prefix}__{self.name}"
+            # a phenotype named by its place always gets the prefix
+            if self._unique_name is not None or not self.name.startswith(prefix):
+                return f"{prefix}__{self.unique_name}"
+        return self.unique_name
+
+    def _plain_table_name(self, table_name_prefix: str) -> str:
+        """The table name runs made before phenotypes were named by their place
+        used. `load()` falls back to it."""
+        prefix = re.sub(r"[^A-Za-z0-9_]", "_", table_name_prefix).upper()
+        if not self.name.startswith(prefix):
+            return f"{prefix}__{self.name}"
         return self.name
 
     def get_sql_filename(self) -> str:
@@ -424,9 +453,7 @@ class Node:
             tables = dict(tables)
 
         # Build dependency graph for all dependencies
-        all_deps = self.dependencies
-        nodes = {node.name: node for node in all_deps}
-        nodes[self.name] = self  # Add self to the nodes
+        nodes = self._graph_nodes()
 
         # Build dependency and reverse graphs
         dependency_graph = self._build_dependency_graph(nodes)
@@ -585,7 +612,7 @@ class Node:
                     # 'DEATH' source domain that later subset nodes still read from.
                     if table is not None and isinstance(node, DerivedTable):
                         with tables_lock:
-                            tables[node_name] = table
+                            tables[node.name] = table
 
                     with completion_lock:
                         completed.add(node_name)
@@ -691,8 +718,8 @@ class Node:
         graph = defaultdict(set)
         for node_name, node in nodes.items():
             for child in node.children:
-                if child.name in nodes:
-                    graph[node_name].add(child.name)
+                if child.unique_name in nodes:
+                    graph[node_name].add(child.unique_name)
         return dict(graph)
 
     def _build_reverse_graph(
@@ -819,10 +846,7 @@ class Node:
         """
         lines = [f"Dependencies for Node '{self.name}':"]
 
-        # Get all dependencies
-        all_deps = self.dependencies
-        nodes = {node.name: node for node in all_deps}
-        nodes[self.name] = self  # Add self to the nodes
+        nodes = self._graph_nodes()
 
         # Build dependency graph
         dependency_graph = self._build_dependency_graph(nodes)
