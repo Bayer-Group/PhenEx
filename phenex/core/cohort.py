@@ -1014,13 +1014,55 @@ class Cohort:
                     self.subset_tables_entry[node.name] = PhenexTable(table_with_index)
                 tables = self.subset_tables_entry
 
-            logger.info(f"Cohort '{self.name}': executing index stage ...")
-            display.stage_started("Index stage", stage_node_total(self.index_stage))
-
             index_membership_changed = (
                 lazy_execution
                 and Node._node_manager.node_changed(self.index_table_node, con)
             )
+
+            # Clear before the index stage saves its new hash, so a run that
+            # stops part-way still finds the index changed and clears again
+            if self.reporting_stage and index_membership_changed:
+                logger.info(
+                    f"Cohort '{self.name}': index population changed; invalidating cached "
+                    f"characteristics/outcomes so they recompute against the new index."
+                )
+                # Clear only reporting-only nodes. Entry/index-stage nodes
+                # don't depend on the index, so their caches are still valid
+                _protected = set()
+                for _stage in (self.entry_stage, self.index_stage):
+                    if _stage is not None:
+                        _protected.add(_stage.name)
+                        _protected.update(n.name for n in _stage.dependencies)
+
+                # collect first so the display can show an exact-count bar
+                _seen = set()
+                _to_clear = []
+
+                def _collect_reporting_only(node: Node) -> None:
+                    """Walk a reporting node and its children into
+                    `_to_clear`, skipping protected and already-seen ones."""
+                    if node.name in _protected or node.name in _seen:
+                        return
+                    _seen.add(node.name)
+                    _to_clear.append(node)
+                    for _child in node.children:
+                        _collect_reporting_only(_child)
+
+                for _node in list(self.characteristics or []) + list(
+                    self.outcomes or []
+                ):
+                    _collect_reporting_only(_node)
+
+                display.task_started(
+                    "Clearing outdated results", len(_to_clear) or None
+                )
+                for _node in _to_clear:
+                    display.task_advance()
+                    Node._node_manager.clear_cache(_node, con=con, recursive=False)
+                display.task_completed()
+
+            logger.info(f"Cohort '{self.name}': executing index stage ...")
+            display.stage_started("Index stage", stage_node_total(self.index_stage))
 
             self.index_stage.execute(
                 tables=self.subset_tables_entry,
@@ -1078,46 +1120,6 @@ class Cohort:
                         )
 
             if self.reporting_stage:
-                # If the index population changed, clear characteristics/outcomes
-                if index_membership_changed:
-                    logger.info(
-                        f"Cohort '{self.name}': index population changed; invalidating cached "
-                        f"characteristics/outcomes so they recompute against the new index."
-                    )
-                    # Clear only reporting-only nodes. Entry/index-stage nodes
-                    # don't depend on the index, so their caches are still valid
-                    _protected = set()
-                    for _stage in (self.entry_stage, self.index_stage):
-                        if _stage is not None:
-                            _protected.add(_stage.name)
-                            _protected.update(n.name for n in _stage.dependencies)
-
-                    # collect first so the display can show an exact-count bar
-                    _seen = set()
-                    _to_clear = []
-
-                    def _collect_reporting_only(node: Node) -> None:
-                        """Walk a reporting node and its children into
-                        `_to_clear`, skipping protected and already-seen ones."""
-                        if node.name in _protected or node.name in _seen:
-                            return
-                        _seen.add(node.name)
-                        _to_clear.append(node)
-                        for _child in node.children:
-                            _collect_reporting_only(_child)
-
-                    for _node in list(self.characteristics or []) + list(
-                        self.outcomes or []
-                    ):
-                        _collect_reporting_only(_node)
-
-                    display.task_started(
-                        "Clearing outdated results", len(_to_clear) or None
-                    )
-                    for _node in _to_clear:
-                        display.task_advance()
-                        Node._node_manager.clear_cache(_node, con=con, recursive=False)
-                    display.task_completed()
                 logger.info(f"Cohort '{self.name}': executing reporting stage ...")
                 display.stage_started(
                     "Reporting stage", stage_node_total(self.reporting_stage)

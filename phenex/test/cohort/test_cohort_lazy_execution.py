@@ -728,5 +728,75 @@ class TestCohortLazyReporterIndexChange(unittest.TestCase):
         self.assertEqual(age3, n3, "RUN 3: Age count should match restored cohort N.")
 
 
+class TestLazyRunStoppedWhileClearing(unittest.TestCase):
+    """A run that stops while clearing old results must not leave them cached."""
+
+    def setUp(self):
+        from phenex.node import Node
+        from phenex.node_manager import NodeManager
+
+        self._tmpdir = tempfile.mkdtemp()
+        self._orig_node_manager = Node._node_manager
+        Node._node_manager = NodeManager(
+            db_name=os.path.join(self._tmpdir, "phenex.db")
+        )
+        self.con = DuckDBConnector(
+            DUCKDB_DEST_DATABASE=os.path.join(self._tmpdir, "test_stop.duckdb")
+        )
+        self.tables = _build_test_tables(self.con)
+        logging.getLogger("phenex").setLevel(logging.DEBUG)
+
+    def tearDown(self):
+        from phenex.node import Node
+
+        Node._node_manager = self._orig_node_manager
+
+    def _cohort(self, exclusion_code):
+        entry = CodelistPhenotype(
+            name="entry_drug",
+            return_date="first",
+            codelist=Codelist(["d1"]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+        )
+        exclusion = CodelistPhenotype(
+            name="prior_exclusion_drug",
+            codelist=Codelist([exclusion_code]).copy(use_code_type=False),
+            domain="DRUG_EXPOSURE",
+        )
+        return Cohort(
+            name="stop_test_cohort",
+            entry_criterion=entry,
+            exclusions=[exclusion],
+            characteristics=[AgePhenotype(anchor_phenotype=entry)],
+        )
+
+    def _run(self, cohort):
+        cohort.execute(
+            tables=self.tables, con=self.con, overwrite=True, lazy_execution=True
+        )
+
+    def test_next_run_recomputes_after_stop_during_clearing(self):
+        from unittest.mock import patch
+        from phenex.node_manager import NodeManager
+
+        self._run(self._cohort("e_excl"))
+
+        # The exclusion changes the index; the run stops at the first clear
+        with patch.object(
+            NodeManager, "clear_cache", side_effect=KeyboardInterrupt("stopped")
+        ):
+            with self.assertRaises(KeyboardInterrupt):
+                self._run(self._cohort("d_censor"))
+
+        with _ExecutionTracker() as tracker:
+            self._run(self._cohort("d_censor"))
+        computed = [
+            msg.split("'")[1]
+            for msg in tracker._messages()
+            if "computing..." in msg.lower()
+        ]
+        self.assertIn("AGE", computed, "AGE must recompute against the new index")
+
+
 if __name__ == "__main__":
     unittest.main()

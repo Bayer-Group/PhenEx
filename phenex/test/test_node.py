@@ -436,46 +436,66 @@ class TestPhenexNodeExecution:
         ):
             node.execute(tables, lazy_execution=True, overwrite=True)
 
-    @patch("phenex.node_manager.DuckDBConnector")
-    def test_clear_cache_removes_hash(self, mock_connector_class):
-        """Test that clear_cache removes node hash from state table"""
-        # Mock the DuckDB connector for node states
-        mock_duckdb_con = Mock()
-        mock_duckdb_con.dest_connection.list_tables.return_value = [
-            NODE_STATES_TABLE_NAME
-        ]
+    def test_clear_cache_removes_hash(self, tmp_path):
+        """clear_cache deletes only this node's row; other rows and the table stay as they were"""
+        import duckdb
 
-        # Create mock table data with our node and another node
-        mock_table_data = pd.DataFrame(
-            {
-                "NODE_NAME": ["TEST", "OTHER_NODE"],
-                "LAST_HASH": [123456789, "hash456"],
-                "NODE_PARAMS": ["{}", "{}"],
-                "LAST_EXECUTED": ["2023-01-01", "2023-01-02"],
-            }
-        )
-        mock_table = Mock()
-        mock_table.to_pandas.return_value = mock_table_data
-        mock_duckdb_con.get_dest_table.return_value = mock_table
+        db_path = str(tmp_path / "phenex.db")
+        manager = NodeManager(db_name=db_path)
+        con = Mock()
+        con.__class__.__name__ = "DuckDBConnector"
+        con.DUCKDB_SOURCE_DATABASE = None
+        con.DUCKDB_DEST_DATABASE = "dest.db"
+        node, other = ConcreteNode("test"), ConcreteNode("other_node")
+        for n in (node, other):
+            n.lastexecution_start_time = n.lastexecution_end_time = datetime.now()
+            n.lastexecution_duration = 1.0
+            manager.update_run_params(n, con)
 
-        # Mock ibis.memtable
-        mock_updated_table = Mock()
-        with patch("phenex.node.ibis.memtable", return_value=mock_updated_table):
-            mock_connector_class.return_value = mock_duckdb_con
+        def table_id():
+            c = duckdb.connect(db_path, read_only=True)
+            try:
+                return c.sql(
+                    f"select table_oid from duckdb_tables() where table_name = '{NODE_STATES_TABLE_NAME}'"
+                ).fetchone()[0]
+            finally:
+                c.close()
 
-            node = ConcreteNode("test")
-            node.table = MockTable()  # Set a table to be reset
+        other_before = manager.get_run_params(other).reset_index(drop=True)
+        id_before = table_id()
 
-            # Clear cache
+        with patch.object(Node, "_node_manager", manager):
+            node.table = MockTable()
             node.clear_cache()
 
-            # Verify table attribute was reset
-            assert node.table is None
+        assert node.table is None
+        assert manager.get_run_params(node) is None
+        pd.testing.assert_frame_equal(
+            manager.get_run_params(other).reset_index(drop=True), other_before
+        )
+        # The same table, changed in place
+        assert table_id() == id_before
 
-            # Verify create_table was called to update the states table
-            mock_duckdb_con.create_table.assert_called_once_with(
-                mock_updated_table, name_table=NODE_STATES_TABLE_NAME, overwrite=True
-            )
+    @patch("phenex.node_manager.DuckDBConnector")
+    def test_clear_cache_drops_table_by_table_name(self, mock_connector_class):
+        """With a cohort prefix the result table is MY_COHORT__TEST, not TEST"""
+        mock_duckdb_con = Mock()
+        mock_duckdb_con.dest_connection.list_tables.return_value = []
+        mock_connector_class.return_value = mock_duckdb_con
+
+        mock_user_con = Mock()
+        mock_user_con.dest_connection.list_tables.return_value = [
+            "TEST",
+            "MY_COHORT__TEST",
+        ]
+
+        node = ConcreteNode("test")
+        node._table_name_prefix = "my_cohort"
+        node.clear_cache(con=mock_user_con)
+
+        mock_user_con.dest_connection.drop_table.assert_called_once_with(
+            "MY_COHORT__TEST"
+        )
 
     @patch("phenex.node_manager.DuckDBConnector")
     def test_clear_cache_with_connector_drops_table(self, mock_connector_class):

@@ -198,7 +198,6 @@ class NodeManager:
                 "EXECUTION_ID": str(uuid.uuid4()),
                 "NODE_NAME": node.get_table_name(),
                 "NODE_HASH": current_hash,
-                "NODE_PARAMS": json.dumps(node.to_dict()),
                 "EXECUTION_PARAMS": execution_params_json,
                 "EXECUTION_START_TIME": node.lastexecution_start_time,
                 "EXECUTION_END_TIME": node.lastexecution_end_time,
@@ -237,7 +236,8 @@ class NodeManager:
                 )
             else:
                 # First write, or a phenex.db from an older version whose schema
-                # differs: rebuild the table with the full schema
+                # differs: rebuild the table with the current schema. This also
+                # removes the old NODE_PARAMS column, once per file.
                 new_row = pd.DataFrame({k: [v] for k, v in new_row_values.items()})
                 if state is not None:
                     existing_table = state.to_pandas()
@@ -267,7 +267,6 @@ class NodeManager:
                         "EXECUTION_ID": "string",
                         "NODE_NAME": "string",
                         "NODE_HASH": "int64",
-                        "NODE_PARAMS": "string",
                         "EXECUTION_PARAMS": "string",
                         "EXECUTION_START_TIME": "timestamp",
                         "EXECUTION_END_TIME": "timestamp",
@@ -296,8 +295,9 @@ class NodeManager:
         with self._lock:
             duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=self.db_name)
             if NODE_STATES_TABLE_NAME in duckdb_con.dest_connection.list_tables():
-                table = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
-                table = table[table.NODE_NAME == node.get_table_name()]
+                # Filter in the database, so only this node's rows are read
+                state = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME)
+                state = state.filter(state.NODE_NAME == node.get_table_name())
 
                 if con is not None:
                     # Filter by execution context
@@ -307,12 +307,11 @@ class NodeManager:
                         if execution_params is not None
                         else None
                     )
+                    state = state.filter(
+                        self._matches_context(state, execution_params_json)
+                    )
 
-                    if execution_params_json is None:
-                        table = table[pd.isna(table.EXECUTION_PARAMS)]
-                    else:
-                        table = table[table.EXECUTION_PARAMS == execution_params_json]
-
+                table = state.to_pandas()
                 return table if len(table) > 0 else None
 
             return None
@@ -327,15 +326,16 @@ class NodeManager:
             duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=self.db_name)
             if NODE_STATES_TABLE_NAME not in duckdb_con.dest_connection.list_tables():
                 return None
-            table = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
-            if "NODE_SQL" not in table.columns:
+            state = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME)
+            if "NODE_SQL" not in state.columns:
                 return None
             current_hash = self._get_node_hash(node)
-            matches = table[
-                (table.NODE_NAME == node.get_table_name())
-                & (table.NODE_HASH == current_hash)
-            ]
-            if con is not None and "EXECUTION_PARAMS" in matches.columns:
+            # Filter in the database and read only the SQL column
+            matches = state.filter(
+                (state.NODE_NAME == node.get_table_name())
+                & (state.NODE_HASH == current_hash)
+            )
+            if con is not None and "EXECUTION_PARAMS" in state.columns:
                 # Dialect-aware, keep only rows cached for this backend (no match returns None).
                 execution_params = self._get_execution_params(con)
                 execution_params_json = (
@@ -343,10 +343,10 @@ class NodeManager:
                     if execution_params is not None
                     else None
                 )
-                if execution_params_json is None:
-                    matches = matches[pd.isna(matches.EXECUTION_PARAMS)]
-                else:
-                    matches = matches[matches.EXECUTION_PARAMS == execution_params_json]
+                matches = matches.filter(
+                    self._matches_context(matches, execution_params_json)
+                )
+            matches = matches.select("NODE_SQL").limit(1).to_pandas()
             if len(matches) == 0:
                 return None
             val = matches.iloc[0]["NODE_SQL"]
@@ -377,17 +377,16 @@ class NodeManager:
             duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=self.db_name)
             if NODE_STATES_TABLE_NAME not in duckdb_con.dest_connection.list_tables():
                 return {}
-            table = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
-
-        if "NODE_SQL" not in table.columns:
-            return {}
-
-        if con is not None and "EXECUTION_PARAMS" in table.columns:
-            # Dialect-aware: keep only rows cached for this backend.
-            if execution_params_json is None:
-                table = table[pd.isna(table.EXECUTION_PARAMS)]
-            else:
-                table = table[table.EXECUTION_PARAMS == execution_params_json]
+            state = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME)
+            if "NODE_SQL" not in state.columns:
+                return {}
+            if con is not None and "EXECUTION_PARAMS" in state.columns:
+                # Dialect-aware: keep only rows cached for this backend.
+                state = state.filter(
+                    self._matches_context(state, execution_params_json)
+                )
+            # Read only the three columns used below
+            table = state.select("NODE_NAME", "NODE_HASH", "NODE_SQL").to_pandas()
 
         # Index by (name, hash); keep the first row per key to match get_sql's iloc[0].
         by_key = {}
@@ -431,48 +430,38 @@ class NodeManager:
             # Clear from node states table
             duckdb_con = DuckDBConnector(DUCKDB_DEST_DATABASE=self.db_name)
             if NODE_STATES_TABLE_NAME in duckdb_con.dest_connection.list_tables():
-                table = duckdb_con.get_dest_table(NODE_STATES_TABLE_NAME).to_pandas()
-
+                # Delete this node's rows in place; all other rows stay untouched
+                query = f'DELETE FROM "{NODE_STATES_TABLE_NAME}" WHERE NODE_NAME = ?'
+                params = [node.get_table_name()]
                 if con is not None:
-                    # Remove only entries with matching execution context
+                    # Only the rows of this execution context
                     execution_params_json = (
                         json.dumps(execution_params, sort_keys=True)
                         if execution_params is not None
                         else None
                     )
-
                     if execution_params_json is None:
-                        # Remove entries with matching node name and null execution params
-                        mask = (table.NODE_NAME == node.get_table_name()) & pd.isna(
-                            table.EXECUTION_PARAMS
-                        )
+                        query += " AND EXECUTION_PARAMS IS NULL"
                     else:
-                        # Remove entries with matching node name and execution params
-                        mask = (table.NODE_NAME == node.get_table_name()) & (
-                            table.EXECUTION_PARAMS == execution_params_json
-                        )
+                        query += " AND EXECUTION_PARAMS = ?"
+                        params.append(execution_params_json)
+                native = duckdb_con.dest_connection.con
+                native.execute(query, params)
 
-                    table = table[~mask]
-                else:
-                    # Remove all entries for this node
-                    table = table[table.NODE_NAME != node.get_table_name()]
-
-                # Update the table
-                if len(table) > 0:
-                    updated_table = ibis.memtable(table)
-                    duckdb_con.create_table(
-                        updated_table, name_table=NODE_STATES_TABLE_NAME, overwrite=True
-                    )
-                else:
-                    # Drop the table if it's empty
+                # Drop the table if it's empty
+                remaining = native.execute(
+                    f'SELECT count(*) FROM "{NODE_STATES_TABLE_NAME}"'
+                ).fetchone()[0]
+                if remaining == 0:
                     duckdb_con.dest_connection.drop_table(NODE_STATES_TABLE_NAME)
 
-        # Drop materialized table if connector is provided
+        # Drop the materialized table, found by its table name (e.g. COHORT__CHARACTERISTICS__AGE)
         if con is not None:
             try:
-                if node.name in con.dest_connection.list_tables():
+                table_name = node.get_table_name()
+                if table_name in con.dest_connection.list_tables():
                     logger.info(f"Node '{node.name}': dropping materialized table...")
-                    con.dest_connection.drop_table(node.name)
+                    con.dest_connection.drop_table(table_name)
             except Exception as e:
                 logger.warning(
                     f"Node '{node.name}': failed to drop materialized table: {e}"
@@ -539,6 +528,13 @@ class NodeManager:
                         return int(matching_rows.iloc[0].NODE_HASH)
 
                 return None
+
+    @staticmethod
+    def _matches_context(state, execution_params_json):
+        """Filter for rows of this execution context (no context means NULL)."""
+        if execution_params_json is None:
+            return state.EXECUTION_PARAMS.isnull()
+        return state.EXECUTION_PARAMS == execution_params_json
 
     def _get_node_hash(self, node) -> int:
         """

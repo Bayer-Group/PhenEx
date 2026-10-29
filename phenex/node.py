@@ -271,7 +271,7 @@ class Node:
         Retrieve the full execution metadata row for this node from the local DuckDB database.
 
         Returns:
-            pandas.DataFrame: A table containing NODE_NAME, NODE_HASH, NODE_PARAMS, EXECUTION_PARAMS, EXECUTION_START_TIME, EXECUTION_END_TIME, and EXECUTION_DURATION for execution of this node, or None if the node has never been executed.
+            pandas.DataFrame: A table containing NODE_NAME, NODE_HASH, EXECUTION_PARAMS, EXECUTION_START_TIME, EXECUTION_END_TIME, and EXECUTION_DURATION for execution of this node, or None if the node has never been executed.
         """
         return Node._node_manager.get_run_params(self)
 
