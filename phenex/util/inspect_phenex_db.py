@@ -114,7 +114,9 @@ class PhenexDBInspector:
         return df.loc[mask].reset_index(drop=True)
 
     def get_node_params(self, node_name: str) -> Optional[dict]:
-        """Return the parsed NODE_PARAMS dict for a node, or None if not found."""
+        """Return the parsed NODE_PARAMS dict for a node, or None if not found.
+
+        New runs no longer store NODE_PARAMS, so this is None for them."""
         row = self.get_node(node_name)
         if row.empty:
             return None

@@ -274,6 +274,20 @@ class TestNodeManager(unittest.TestCase):
         self.assertIsInstance(sql_val, str)
         self.assertIn("SELECT", sql_val.upper())
 
+    def test_update_run_params_does_not_store_settings(self):
+        """NODE_PARAMS stays empty, while lazy skip and change detection still work."""
+        node = self._node_with_expression(param1="value1")
+        con = self._make_mock_con()
+        self.node_manager.update_run_params(node, con)
+
+        row = self.node_manager.get_run_params(node).iloc[0]
+        self.assertTrue(pd.isna(row["NODE_PARAMS"]))
+        self.assertIsNotNone(row["NODE_SQL"])
+
+        self.assertFalse(self.node_manager.should_rerun(node, con))
+        node.param1 = "value2"
+        self.assertTrue(self.node_manager.should_rerun(node, con))
+
     def test_get_sql_returns_none_when_no_db(self):
         """phenex.db has never been written -> get_sql returns None."""
         node = MockNode("test_node")
