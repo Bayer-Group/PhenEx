@@ -59,28 +59,42 @@ class Table1(Reporter):
         """Return a flat, ordered list that interleaves component phenotypes.
 
         Each top-level phenotype is followed (depth-first) by its children up
-        to *include_component_phenotypes_level* levels deep.  Component phenotypes
+        to *include_component_phenotypes_level* levels deep.  Each distinct
+        phenotype appears only once.  Component phenotypes
         are wrapped in a :class:`_ComponentPhenotypeView` whose ``display_name``
         is prefixed with two spaces per nesting level so the hierarchy is visible
         in the final table.
         """
-        result = []
+        # Phenotypes are compared by definition (Node.__eq__/hash), so the same
+        # phenotype shared by several parents, or defined as separate but identical
+        # objects, is reported (and counted) only once.
+        top_level = []
+        seen = set()
         for p in phenotypes:
+            if p not in seen:
+                seen.add(p)
+                top_level.append(p)
+
+        result = []
+        for p in top_level:
             result.append(p)
-            self._collect_components(p, result, level=1)
+            self._collect_components(p, result, level=1, seen=seen)
         return result
 
-    def _collect_components(self, phenotype, result, level):
+    def _collect_components(self, phenotype, result, level, seen):
         if level > self.include_component_phenotypes_level:
             return
         children = getattr(phenotype, "children", None) or []
         for child in children:
+            if child in seen:
+                continue
+            seen.add(child)
             indent = "\u00a0\u00a0" * level  # non-breaking spaces for visual indent
             view = _ComponentPhenotypeView(
                 child, f"{indent}{child.display_name}", level=level
             )
             result.append(view)
-            self._collect_components(child, result, level + 1)
+            self._collect_components(child, result, level + 1, seen)
 
     def execute(
         self, cohort: "Cohort", phenotypes: "Optional[Union[List, Dict]]" = None
