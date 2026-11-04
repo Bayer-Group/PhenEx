@@ -17,14 +17,14 @@ logger = create_logger(__name__)
 # ----------------------------------------------------------------------------
 _COLORS = [
     "#4e79a7",
-    "#f28e2b",
-    "#e15759",
-    "#76b7b2",
-    "#59a14f",
-    "#edc948",
-    "#b07aa1",
-    "#ff9da7",
-    "#9c755f",
+    "#d55d54",
+    "#c76d66",  # rgb(199, 109, 102)
+    "#a17f66",  # rgb(161, 127, 102)
+    "#944fdc",  # rgb(148, 79, 220)
+    "#975a1c",
+    "#883a35",
+    "#765c4a",
+    "#e9d5ca",
     "#bab0ac",
 ]
 
@@ -222,7 +222,6 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
         if not tpa_groups:
             logger.warning("No TreatmentPatternAnalysis phenotypes found in cohort.")
             self.sankey_generators = {}
-            self.sankey_data = []
             self.df = pd.DataFrame(
                 columns=[
                     "tpa_name",
@@ -242,10 +241,6 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
             gen.build()
             self.sankey_generators[tpa_name] = gen
             all_dfs.append(gen.df_links)
-        self.sankey_data = [
-            {"tpa_name": name, "nodes": gen.nodes, "links": gen.links}
-            for name, gen in self.sankey_generators.items()
-        ]
 
         self.df = (
             pd.concat(all_dfs, ignore_index=True)
@@ -263,17 +258,9 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
         )
         return self.df
 
-    def get_sidecar(self):
-        """The diagrams' nodes and links: they are not in self.df."""
-        data = getattr(self, "sankey_data", None)
-        return {"sankey_data": data} if data else None
-
-    def set_sidecar(self, sidecar):
-        self.sankey_data = sidecar["sankey_data"]
-
     def to_json(self, filename: str) -> str:
         """Export to JSON, including the full sankey graph (nodes + links) needed for HTML generation."""
-        if not hasattr(self, "sankey_data"):
+        if not hasattr(self, "sankey_generators"):
             raise AttributeError("Call execute() first.")
 
         filepath = Path(filename)
@@ -281,9 +268,13 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
             filepath = filepath.with_suffix(".json")
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
+        sankey_data_list = [
+            {"tpa_name": name, "nodes": gen.nodes, "links": gen.links}
+            for name, gen in self.sankey_generators.items()
+        ]
         payload = {
             "reporter_type": self.__class__.__name__,
-            "sankey_data": self.sankey_data,
+            "sankey_data": sankey_data_list,
             "rows": self.df.to_dict(orient="records"),
         }
 
@@ -294,7 +285,7 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
 
     def to_html(self, filename: str) -> str:
         """Export as a self-contained HTML page with d3-sankey diagram(s)."""
-        if not hasattr(self, "sankey_data"):
+        if not hasattr(self, "sankey_generators"):
             raise AttributeError("Call execute() first.")
 
         filepath = Path(filename)
@@ -302,12 +293,16 @@ class TreatmentPatternAnalysisSankeyReporter(_TreatmentPatternAnalysisMixin, Rep
             filepath = filepath.with_suffix(".html")
         filepath.parent.mkdir(parents=True, exist_ok=True)
 
+        sankey_data_list = [
+            {"tpa_name": name, "nodes": gen.nodes, "links": gen.links}
+            for name, gen in self.sankey_generators.items()
+        ]
         builder = (
             _build_sankey_html
             if self.sankey_type == "equal_size_sankey"
             else _build_sankey_html_relative
         )
-        filepath.write_text(builder(self.sankey_data), encoding="utf-8")
+        filepath.write_text(builder(sankey_data_list), encoding="utf-8")
         return str(filepath.absolute())
 
     def to_png(self, filename: str) -> str:
@@ -450,6 +445,8 @@ function shortPeriodLabel(label, num) {
   var unit = Math.abs(months) === 1 ? ' month ' : ' months ';
   return Math.abs(months) + unit + (months > 0 ? 'post index' : 'pre index');
 }
+function dispName(name) { return name === 'Censored' ? 'Loss to followup' : name; }
+function isCensored(name) { return name === 'Censored'; }
 function sectionLabel(n) {
   if (n === 99) return 'Untreated';
   return (['', 'Single', 'Dual', 'Triple', 'Quadruple'])[n] || (n + '-Drug');
@@ -572,15 +569,21 @@ allData.forEach(function(groupData) {
   /* period column labels */
   periods.forEach(function(p) {
     mkTxt(periodLabel[p],
-          { x: periodX[p], y: TOP - 10, 'text-anchor': 'middle',
+          { x: periodX[p], y: TOP - 26, 'text-anchor': 'middle',
             'font-size': '11px', 'font-weight': 'bold', fill: '#444' }, svg);
+    var uncens = nodes.reduce(function(s, n) {
+      return n.period === p && !isCensored(n.display_name) ? s + n.value : s;
+    }, 0);
+    mkTxt('N = ' + uncens,
+          { x: periodX[p], y: TOP - 10, 'text-anchor': 'middle',
+            'font-size': '11px', fill: '#666' }, svg);
   });
 
   /* row labels — all names; zero rows styled lighter */
   allUniq.forEach(function(nm) {
     if (rowY[nm] === undefined) return;
     var isZero = zeroSet.has(nm);
-    mkTxt(nm, { x: LEFT - 35, y: rowY[nm] + 4, 'text-anchor': 'end',
+    mkTxt(dispName(nm), { x: LEFT - 35, y: rowY[nm] + 4, 'text-anchor': 'end',
                 'font-size': '12px', 'font-weight': isZero ? 'normal' : 'bold',
                 fill: isZero ? '#bbb' : (colorMap[nm] || '#333'),
                 'data-row-label': nm }, g);
@@ -604,7 +607,7 @@ allData.forEach(function(groupData) {
       'stroke-opacity': 0.45, 'stroke-linecap': 'round',
       'data-regimen': srcN.display_name, 'data-to': tgtN.display_name
     }, g);
-    mkTip(srcN.display_name + ' \u2192 ' + tgtN.display_name +
+    mkTip(dispName(srcN.display_name) + ' \u2192 ' + dispName(tgtN.display_name) +
           '\\n' + lk.value + ' patients', pathEl);
   });
 
@@ -626,7 +629,7 @@ allData.forEach(function(groupData) {
       stroke: col, 'stroke-width': 2.5,
       'paint-order': 'stroke fill', 'data-regimen': n.display_name
     }, g);
-    mkTip(n.display_name + ' (' + periodLabel[n.period] + ')\\n' + n.value + ' patients', c);
+    mkTip(dispName(n.display_name) + ' (' + periodLabel[n.period] + ')\\n' + n.value + ' patients', c);
     var pctVal = period1Total > 0 ? (n.value / period1Total * 100).toFixed(1) : '';
     mkTxt(pctVal, {
       x: cx, y: cy - r - 20, 'text-anchor': 'middle',
@@ -794,8 +797,9 @@ function shortPeriodLabel(label, num) {
   var unit = Math.abs(months) === 1 ? ' month ' : ' months ';
   return Math.abs(months) + unit + (months > 0 ? 'post index' : 'pre index');
 }
+function dispName(name) { return name === 'Censored' ? 'Loss to followup' : name; }
 function pctLabel(name, pct) {
-  return name + ' (' + (pct * 100).toFixed(1) + '%)';
+  return dispName(name) + ' (' + (pct * 100).toFixed(1) + '%)';
 }
 function isCensored(name) { return name === 'Censored'; }
 var CENSORED_COLOR = '#cccccc';
@@ -874,8 +878,17 @@ allData.forEach(function(groupData) {
 
   periods.forEach(function(p) {
     mkTxt(periodLabel[p], {
-      x: periodX[p] + BAR_W / 2, y: TOP - 22, 'text-anchor': 'middle',
+      x: periodX[p] + BAR_W / 2, y: TOP - 36, 'text-anchor': 'middle',
       'font-size': '12px', 'font-weight': 'bold', fill: '#444'
+    }, svg);
+    var total = 0, cens = 0;
+    byPeriod[p].forEach(function(n) {
+      total += n.value;
+      if (isCensored(n.display_name)) cens += n.value;
+    });
+    mkTxt('N = ' + (total - cens), {
+      x: periodX[p] + BAR_W / 2, y: TOP - 20, 'text-anchor': 'middle',
+      'font-size': '11px', fill: '#666'
     }, svg);
   });
 
@@ -923,7 +936,7 @@ allData.forEach(function(groupData) {
       'fill-opacity': 0.35,
       stroke: 'none', 'data-regimen': s.display_name, 'data-to': t.display_name
     }, g);
-    mkTip(s.display_name + ' \u2192 ' + t.display_name + '\\n' + lk.value + ' patients', path);
+    mkTip(dispName(s.display_name) + ' \u2192 ' + dispName(t.display_name) + '\\n' + lk.value + ' patients', path);
   });
 
   /* segments (nodes) + labels, drawn on top of the ribbons */
