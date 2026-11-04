@@ -14,7 +14,7 @@ jobs:
       - name: Install Python 3.12 🐍
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.12"
       - name: Set up runner 📦
         run: pip3 install black==24.10.0
       - name: "Black: Code Formatting 👮🏽‍♀️"
