@@ -12,6 +12,14 @@ def _parse_tpa_phenotype_name(name: str):
     return None
 
 
+def is_tpa_phenotype(phenotype) -> bool:
+    """Whether a phenotype is an output of TreatmentPatternAnalysis."""
+    return (
+        getattr(phenotype, "_tpa_name", None) is not None
+        or _parse_tpa_phenotype_name(phenotype.name) is not None
+    )
+
+
 class _TreatmentPatternAnalysisMixin:
     """
     Mixin that identifies and groups TreatmentPatternAnalysis phenotypes within a
