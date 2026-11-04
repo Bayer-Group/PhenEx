@@ -60,9 +60,7 @@ class TestTable1Threads(unittest.TestCase):
         tpa_phenotype._tpa_name = "TPA"
         try:
             reporter = Table1()
-            df = reporter.execute(
-                self.cohort, {"Section": self.cohort.characteristics}
-            )
+            df = reporter.execute(self.cohort, {"Section": self.cohort.characteristics})
         finally:
             del tpa_phenotype._tpa_name
         self.assertNotIn(tpa_phenotype.display_name, set(df["Name"]))
