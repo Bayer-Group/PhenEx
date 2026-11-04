@@ -374,14 +374,14 @@ class Codelist:
         import pandas as pd
 
         if sheet_name is None:
-            _df = pd.read_excel(path)
+            _df = pd.read_excel(path, dtype=str)
         else:
             xl = pd.ExcelFile(path)
             if sheet_name not in xl.sheet_names:
                 raise ValueError(
                     f"Sheet name {sheet_name} not found in the Excel file."
                 )
-            _df = xl.parse(sheet_name)
+            _df = xl.parse(sheet_name, dtype=str)
 
         if codelist_name is not None:
             # codelist name is not none, therefore we subset the table to the current codelist
@@ -407,7 +407,7 @@ class Codelist:
         code_type_column: Optional[str] = "code_type",
         codelist_column: Optional[str] = "codelist",
     ) -> "Codelist":
-        _df = pd.read_csv(path)
+        _df = pd.read_csv(path, dtype=str)
 
         if codelist_name is not None:
             # codelist name is not none, therefore we subset the table to the current codelist
