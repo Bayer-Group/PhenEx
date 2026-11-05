@@ -268,10 +268,10 @@ class Node:
     @property
     def execution_metadata(self):
         """
-        Retrieve the full execution metadata row for this node from the local DuckDB database.
+        Retrieve the execution metadata rows for this node from phenex.db.
 
         Returns:
-            pandas.DataFrame: A table containing NODE_NAME, NODE_HASH, NODE_PARAMS, EXECUTION_PARAMS, EXECUTION_START_TIME, EXECUTION_END_TIME, and EXECUTION_DURATION for execution of this node, or None if the node has never been executed.
+            pandas.DataFrame: One row per database the node ran against, or None if it has never been executed. Columns: NODE_NAME (its table name), NODE_HASH (fingerprint of the node's settings), EXECUTION_PARAMS (where it ran: connector type, source and destination database), EXECUTION_ID, EXECUTION_START_TIME, EXECUTION_END_TIME, EXECUTION_DURATION, NODE_SQL (the query that built its table).
         """
         return Node._node_manager.get_run_params(self)
 

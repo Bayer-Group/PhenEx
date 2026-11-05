@@ -49,7 +49,6 @@ class PhenexDBInspector:
                     "EXECUTION_ID",
                     "NODE_NAME",
                     "NODE_HASH",
-                    "NODE_PARAMS",
                     "EXECUTION_PARAMS",
                     "EXECUTION_START_TIME",
                     "EXECUTION_END_TIME",
@@ -114,11 +113,13 @@ class PhenexDBInspector:
         return df.loc[mask].reset_index(drop=True)
 
     def get_node_params(self, node_name: str) -> Optional[dict]:
-        """Return the parsed NODE_PARAMS dict for a node, or None if not found."""
+        """Return the parsed NODE_PARAMS dict for a node, or None if not found.
+
+        phenex.db no longer stores NODE_PARAMS, so this only finds it in old files."""
         row = self.get_node(node_name)
         if row.empty:
             return None
-        params_json = row.iloc[0]["NODE_PARAMS"]
+        params_json = row.iloc[0].get("NODE_PARAMS")
         if params_json and isinstance(params_json, str):
             return json.loads(params_json)
         return None
