@@ -193,7 +193,8 @@ def test_detailed_table1_puts_each_child_under_its_parent(db):
     )
     _run(cohort, db)
     df = cohort._report_df(cohort.table1_detailed_node, "table1_detailed")
-    # group the rows under their parent (children are indented)
+    # group the rows under their parent (children are indented); a child shared
+    # by several parents (here Child 2) is listed once, under the first
     groups = {}
     for name, n in list(zip(df["Name"], df["N"]))[1:]:
         if name == name.strip():
@@ -202,7 +203,7 @@ def test_detailed_table1_puts_each_child_under_its_parent(db):
             parent[name.strip()] = int(n)
     assert groups == {
         "Bleed": {"Child 1": 5, "Child 2": 0},
-        "Bleed v2": {"Child 1": 2, "Child 2": 0},
+        "Bleed v2": {"Child 1": 2},
     }
 
 

@@ -30,6 +30,7 @@ from phenex.core.reporter_nodes import (
     Table1Node,
     Table1OutcomesNode,
     CustomReporterNode,
+    set_table1_threads,
 )
 from phenex.core.database import Database
 
@@ -1124,6 +1125,7 @@ class Cohort:
                 display.stage_started(
                     "Reporting stage", stage_node_total(self.reporting_stage)
                 )
+                set_table1_threads(self.reporting_stage.nodes, n_threads)
                 self.reporting_stage.execute(
                     tables=self.subset_tables_index,
                     con=con,

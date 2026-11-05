@@ -1,6 +1,9 @@
+from concurrent.futures import ThreadPoolExecutor
+
 import pandas as pd
 
 from phenex.reporting.reporter import Reporter
+from phenex.reporting.treatment_pattern_analysis_mixin import is_tpa_phenotype
 from phenex.util import create_logger
 from ibis import _
 
@@ -44,11 +47,14 @@ class Table1(Reporter):
             (child) phenotypes are expanded inline beneath each parent phenotype,
             indented according to their nesting depth.  ``None`` (default) disables
             expansion.  Set to a large number (e.g. 100) to include all levels.
+        n_threads: Number of threads used to compute the rows (one database query
+            per phenotype) in parallel. Default: 1 (sequential)
     """
 
-    def __init__(self, include_component_phenotypes_level=None, **kwargs):
+    def __init__(self, include_component_phenotypes_level=None, n_threads=3, **kwargs):
         super().__init__(**kwargs)
         self.include_component_phenotypes_level = include_component_phenotypes_level
+        self.n_threads = n_threads
         self.characteristic_sections = None
 
     # ------------------------------------------------------------------
@@ -59,28 +65,62 @@ class Table1(Reporter):
         """Return a flat, ordered list that interleaves component phenotypes.
 
         Each top-level phenotype is followed (depth-first) by its children up
-        to *include_component_phenotypes_level* levels deep.  Component phenotypes
+        to *include_component_phenotypes_level* levels deep.  Each distinct
+        phenotype appears only once.  Component phenotypes
         are wrapped in a :class:`_ComponentPhenotypeView` whose ``display_name``
         is prefixed with two spaces per nesting level so the hierarchy is visible
         in the final table.
         """
-        result = []
+        # Phenotypes are compared by definition (Node.__eq__/hash), so the same
+        # phenotype shared by several parents, or defined as separate but identical
+        # objects, is reported (and counted) only once.
+        top_level = []
+        seen = set()
         for p in phenotypes:
+            if p not in seen:
+                seen.add(p)
+                top_level.append(p)
+
+        result = []
+        for p in top_level:
             result.append(p)
-            self._collect_components(p, result, level=1)
+            self._collect_components(p, result, level=1, seen=seen)
         return result
 
-    def _collect_components(self, phenotype, result, level):
+    def _collect_components(self, phenotype, result, level, seen):
         if level > self.include_component_phenotypes_level:
             return
         children = getattr(phenotype, "children", None) or []
         for child in children:
+            if child in seen:
+                continue
+            seen.add(child)
             indent = "\u00a0\u00a0" * level  # non-breaking spaces for visual indent
             view = _ComponentPhenotypeView(
                 child, f"{indent}{child.display_name}", level=level
             )
             result.append(view)
-            self._collect_components(child, result, level + 1)
+            self._collect_components(child, result, level + 1, seen)
+
+    def _without_tpa_phenotypes(self, phenotypes):
+        """Drop the TreatmentPatternAnalysis phenotypes, which have their own report
+        (the sankey), from the phenotypes and from the sections."""
+        tpa_names = {p.display_name for p in phenotypes if is_tpa_phenotype(p)}
+        if self.characteristic_sections:
+            self.characteristic_sections = {
+                section: [name for name in names if name not in tpa_names]
+                for section, names in self.characteristic_sections.items()
+            }
+        return [p for p in phenotypes if not is_tpa_phenotype(p)]
+
+    def _map(self, fn, items):
+        """Apply ``fn`` to each item, on ``n_threads`` threads, keeping the order of
+        ``items``. The first exception raised by ``fn`` is re-raised."""
+        items = list(items)
+        if self.n_threads <= 1 or len(items) <= 1:
+            return [fn(item) for item in items]
+        with ThreadPoolExecutor(max_workers=self.n_threads) as executor:
+            return list(executor.map(fn, items))
 
     def execute(
         self, cohort: "Cohort", phenotypes: "Optional[Union[List, Dict]]" = None
@@ -101,6 +141,8 @@ class Table1(Reporter):
         else:
             self._phenotypes = phenotypes
             self.characteristic_sections = None
+
+        self._phenotypes = self._without_tpa_phenotypes(self._phenotypes)
 
         if len(self._phenotypes) == 0:
             logger.info("No phenotypes. table1 is empty")
@@ -200,14 +242,34 @@ class Table1(Reporter):
             return None
         # get count of 'Trues' in the boolean columns i.e. the phenotype counts
         df_t1 = pd.DataFrame()
-        df_t1["N"] = [
-            self._get_boolean_count_for_phenotype(phenotype)
-            for phenotype in boolean_phenotypes
-        ]
+        df_t1["N"] = self._map(
+            self._get_boolean_count_for_phenotype, boolean_phenotypes
+        )
         df_t1.index = [x.display_name for x in boolean_phenotypes]
         df_t1["inex_order"] = [self._position[id(x)] for x in boolean_phenotypes]
         df_t1["_level"] = [getattr(x, "_level", 0) for x in boolean_phenotypes]
         return df_t1
+
+    def _value_row(self, phenotype):
+        _table = phenotype.table.select(["PERSON_ID", "VALUE"]).distinct()
+        # Cast VALUE to float to avoid integer-overflow in variance/std
+        # computations on fixed-precision backends (e.g. Snowflake computes
+        # SUM(VALUE^2), which overflows NUMBER(38,0) for large values).
+        _value = _table["VALUE"].cast("float64")
+        return {
+            "N": self._get_boolean_count_for_phenotype(phenotype),
+            "Mean": _value.mean().execute(),
+            "STD": _value.std().execute(),
+            "Min": _value.min().execute(),
+            "P10": _value.quantile(0.10).execute(),
+            "P25": _value.quantile(0.25).execute(),
+            "Median": _value.median().execute(),
+            "P75": _value.quantile(0.75).execute(),
+            "P90": _value.quantile(0.90).execute(),
+            "Max": _value.max().execute(),
+            "inex_order": self._position[id(phenotype)],
+            "_level": getattr(phenotype, "_level", 0),
+        }
 
     def _report_value_columns(self):
         value_phenotypes = self._get_value_characteristics()
@@ -218,36 +280,27 @@ class Table1(Reporter):
         if len(value_phenotypes) == 0:
             return None
 
-        names = []
-        dfs = []
-        for phenotype in value_phenotypes:
-            _table = phenotype.table.select(["PERSON_ID", "VALUE"]).distinct()
-            # Cast VALUE to float to avoid integer-overflow in variance/std
-            # computations on fixed-precision backends (e.g. Snowflake computes
-            # SUM(VALUE^2), which overflows NUMBER(38,0) for large values).
-            _value = _table["VALUE"].cast("float64")
-            d = {
-                "N": self._get_boolean_count_for_phenotype(phenotype),
-                "Mean": _value.mean().execute(),
-                "STD": _value.std().execute(),
-                "Min": _value.min().execute(),
-                "P10": _value.quantile(0.10).execute(),
-                "P25": _value.quantile(0.25).execute(),
-                "Median": _value.median().execute(),
-                "P75": _value.quantile(0.75).execute(),
-                "P90": _value.quantile(0.90).execute(),
-                "Max": _value.max().execute(),
-                "inex_order": self._position[id(phenotype)],
-                "_level": getattr(phenotype, "_level", 0),
-            }
-            dfs.append(pd.DataFrame.from_dict([d]))
-            names.append(phenotype.display_name)
-        if len(dfs) == 1:
-            df = dfs[0]
-        else:
-            df = pd.concat(dfs)
-        df.index = names
+        rows = self._map(self._value_row, value_phenotypes)
+        df = pd.DataFrame(rows, index=[x.display_name for x in value_phenotypes])
         return df
+
+    def _categorical_rows(self, phenotype):
+        name = phenotype.display_name
+        _table = phenotype.table.select(["PERSON_ID", "VALUE"])
+        # Get counts for each category.
+        # Keep the raw VALUE (which may carry a "NNNN_" sort prefix from
+        # BinPhenotype) in the index so that the final sort_values("Name")
+        # in execute() orders bins correctly. The prefix is stripped there.
+        cat_counts = (
+            _table.distinct().group_by("VALUE").aggregate(N=_.count()).execute()
+        )
+        _df = pd.DataFrame(cat_counts["N"])
+        _df.index = [
+            f"{name}={v if v is not None else 'None'}" for v in cat_counts["VALUE"]
+        ]
+        _df["inex_order"] = self._position[id(phenotype)]
+        _df["_level"] = getattr(phenotype, "_level", 0)
+        return _df
 
     def _report_categorical_columns(self):
         categorical_phenotypes = self._get_categorical_characteristics()
@@ -256,32 +309,8 @@ class Table1(Reporter):
         )
         if len(categorical_phenotypes) == 0:
             return None
-        dfs = []
-        names = []
-        for phenotype in categorical_phenotypes:
-            name = phenotype.display_name
-            _table = phenotype.table.select(["PERSON_ID", "VALUE"])
-            # Get counts for each category.
-            # Keep the raw VALUE (which may carry a "NNNN_" sort prefix from
-            # BinPhenotype) in the index so that the final sort_values("Name")
-            # in execute() orders bins correctly. The prefix is stripped there.
-            cat_counts = (
-                _table.distinct().group_by("VALUE").aggregate(N=_.count()).execute()
-            )
-            cat_counts.index = [
-                f"{name}={v if v is not None else 'None'}" for v in cat_counts["VALUE"]
-            ]
-            _df = pd.DataFrame(cat_counts["N"])
-            _df["inex_order"] = self._position[id(phenotype)]
-            _df["_level"] = getattr(phenotype, "_level", 0)
-            dfs.append(_df)
-            names.extend(cat_counts.index)
-        if len(dfs) == 1:
-            df = dfs[0]
-        else:
-            df = pd.concat(dfs)
-        df.index = names
-        return df
+        dfs = self._map(self._categorical_rows, categorical_phenotypes)
+        return pd.concat(dfs)
 
     def get_sidecar(self):
         """The value distributions (histograms): they are not in self.df."""
@@ -297,43 +326,49 @@ class Table1(Reporter):
         normalised so the peak equals 100.  This is far more compact than
         raw patient-level values and avoids binning decisions at display time.
         """
+        value_phenotypes = self._get_value_characteristics()
+        kdes = self._map(self._value_distribution, value_phenotypes)
+        return {
+            phenotype.display_name: kde
+            for phenotype, kde in zip(value_phenotypes, kdes)
+            if kde is not None
+        }
+
+    def _value_distribution(self, phenotype):
+        """The KDE curve of one phenotype's values, or None if it has none to plot."""
         import numpy as np
         from scipy.stats import gaussian_kde
 
         N_POINTS = 200
         PADDING = 0.10  # 10% range padding on each side
 
-        value_phenotypes = self._get_value_characteristics()
-        distributions = {}
-        for phenotype in value_phenotypes:
-            try:
-                values = np.array(
-                    phenotype.table.select(["PERSON_ID", "VALUE"])
-                    .distinct()["VALUE"]
-                    .execute()
-                    .dropna()
-                    .tolist(),
-                    dtype=float,
-                )
-                if len(values) < 2:
-                    continue
-                # For integer-valued data, widen the bandwidth to avoid
-                # spiky peaks at each integer and produce smooth plateaus.
-                is_integer = np.allclose(values, np.round(values))
-                bw = 1.5 if is_integer else None
-                kde = gaussian_kde(values, bw_method=bw)
-                lo, hi = float(values.min()), float(values.max())
-                pad = (hi - lo) * PADDING if hi > lo else 1.0
-                x = np.linspace(lo - pad, hi + pad, N_POINTS)
-                y = kde(x)
-                y = y / y.max() * 100  # normalise peak to 100
-                distributions[phenotype.display_name] = {
-                    "x": np.round(x, 4).tolist(),
-                    "y": np.round(y, 2).tolist(),
-                }
-            except Exception:
-                pass
-        return distributions
+        try:
+            values = np.array(
+                phenotype.table.select(["PERSON_ID", "VALUE"])
+                .distinct()["VALUE"]
+                .execute()
+                .dropna()
+                .tolist(),
+                dtype=float,
+            )
+            if len(values) < 2:
+                return None
+            # For integer-valued data, widen the bandwidth to avoid
+            # spiky peaks at each integer and produce smooth plateaus.
+            is_integer = np.allclose(values, np.round(values))
+            bw = 1.5 if is_integer else None
+            kde = gaussian_kde(values, bw_method=bw)
+            lo, hi = float(values.min()), float(values.max())
+            pad = (hi - lo) * PADDING if hi > lo else 1.0
+            x = np.linspace(lo - pad, hi + pad, N_POINTS)
+            y = kde(x)
+            y = y / y.max() * 100  # normalise peak to 100
+            return {
+                "x": np.round(x, 4).tolist(),
+                "y": np.round(y, 2).tolist(),
+            }
+        except Exception:
+            return None
 
     def get_pretty_display(self) -> pd.DataFrame:
         """
