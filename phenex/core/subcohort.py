@@ -12,6 +12,7 @@ from phenex.core.reporter_nodes import (
     Table1Node,
     Table1OutcomesNode,
     WaterfallNode,
+    set_table1_threads,
 )
 from phenex.reporting import Table1, Waterfall
 from phenex.util import create_logger
@@ -408,6 +409,7 @@ class Subcohort(Cohort):
             display.stage_started(
                 "Reporting stage", stage_node_total(self.reporting_stage)
             )
+            set_table1_threads(self.reporting_stage.nodes, n_threads)
             self.reporting_stage.execute(
                 con=con,
                 overwrite=overwrite,
