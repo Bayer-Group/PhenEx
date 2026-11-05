@@ -14,6 +14,13 @@ logger = create_logger(__name__)
 _SIDECAR_COLUMN = "_SIDECAR"
 
 
+def set_table1_threads(nodes, n_threads: int):
+    """Let the Table1 reports among ``nodes`` compute their rows on ``n_threads``."""
+    for node in nodes:
+        if isinstance(getattr(node, "reporter", None), Table1):
+            node.reporter.n_threads = n_threads
+
+
 class Reporter(Node):
     """
     A compute node that generates a Table1 (baseline characteristics) report for a cohort.
