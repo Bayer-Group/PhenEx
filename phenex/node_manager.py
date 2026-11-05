@@ -28,7 +28,8 @@ class NodeManager:
     The NodeManager tracks node executions by matching:
     1. Node table name (`node.get_table_name()`), so two phenotypes with the same
        name (e.g. children of different parents) never share a row
-    2. Execution context (database connector configuration)
+    2. Execution context, stored as EXECUTION_PARAMS: connector type plus source and
+       destination database, so a new source database never reuses old results
     3. Node hash (computed from node parameters)
 
     This allows for context-aware lazy execution where nodes are only recomputed
